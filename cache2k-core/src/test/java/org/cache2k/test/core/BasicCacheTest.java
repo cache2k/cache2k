@@ -163,8 +163,8 @@ public class BasicCacheTest extends TestingBase {
     Set<Integer> _requestedKeys = new HashSet<Integer>(Arrays.asList(2, 3));
     Map<Integer, Integer> m = c.getAll(_requestedKeys);
     assertEquals(2, m.size());
-    assertEquals(2, (int) m.get((int) 2));
-    assertEquals(3, (int) m.get((int) 3));
+    assertEquals(2, (int) m.get(2));
+    assertEquals(3, (int) m.get(3));
     assertNull(m.get(47));
   }
 
@@ -176,7 +176,7 @@ public class BasicCacheTest extends TestingBase {
     Set<Integer> _requestedKeys = new HashSet<Integer>(Arrays.asList(2, 3));
     Map<Integer, Integer> m = c.peekAll(_requestedKeys);
     assertEquals(1, m.size());
-    assertEquals(2, (int) m.get((int) 2));
+    assertEquals(2, (int) m.get(2));
   }
 
   @Test
@@ -462,13 +462,14 @@ public class BasicCacheTest extends TestingBase {
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo,
+        public long suppressExceptionUntil(Integer key,
+                                           LoadExceptionInfo<Integer> loadExceptionInfo,
                                            CacheEntry<Integer, Integer> cachedContent) {
           return Long.MAX_VALUE;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
           return Long.MAX_VALUE;
         }
       })
@@ -485,14 +486,14 @@ public class BasicCacheTest extends TestingBase {
     checkExistingAndTimeStampGreaterOrEquals(c, 1, t0);
     try {
       c.get(2);
-      final long refreshedBefore = millis();
+      long refreshedBefore = millis();
       assertFalse("entry disappears since expiry=0", c.containsKey(2));
       assertEquals("entry has no refreshed time since suppressed", 0, getRefreshedTimeViaEntryProcessor(c, 2));
       sleep(3);
       c.get(2);
       c.invoke(2, new EntryProcessor<Integer, Integer, Long>() {
         @Override
-        public Long process(final MutableCacheEntry<Integer, Integer> e) {
+        public Long process(MutableCacheEntry<Integer, Integer> e) {
           assertNull("exception suppressed", e.getException());
           assertTrue("entry present", e.exists());
           assertThat("refresh time of entry, not when exception happened",
@@ -512,11 +513,11 @@ public class BasicCacheTest extends TestingBase {
     assertEquals(2, src.key2count.get(2).get());
   }
 
-  void checkExistingAndTimeStampGreaterOrEquals(Cache<Integer, Integer> c, int key, final long t) {
+  void checkExistingAndTimeStampGreaterOrEquals(Cache<Integer, Integer> c, int key, long t) {
     assertTrue(c.containsKey(key));
     c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
       @Override
-      public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Long process(MutableCacheEntry<Integer, Integer> e) throws Exception {
         assertTrue("entry present", e.exists());
         assertThat(e.getModificationTime(), greaterThanOrEqualTo(t));
         return null;
@@ -527,7 +528,7 @@ public class BasicCacheTest extends TestingBase {
   long getRefreshedTimeViaEntryProcessor(Cache<Integer, Integer> c, int key) {
     return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
       @Override
-      public Long process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
+      public Long process(MutableCacheEntry<Integer, Integer> e) throws Exception {
         return e.getModificationTime();
       }
     });
@@ -540,12 +541,12 @@ public class BasicCacheTest extends TestingBase {
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
           return Long.MAX_VALUE;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
           return Long.MAX_VALUE;
         }
       })
@@ -599,12 +600,13 @@ public class BasicCacheTest extends TestingBase {
     }
 
     @Override
-    public long retryLoadAfter(final String key, final LoadExceptionInfo loadExceptionInfo) {
+    public long retryLoadAfter(String key, LoadExceptionInfo<String> loadExceptionInfo) {
       return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }
 
     @Override
-    public long suppressExceptionUntil(final String key, final LoadExceptionInfo loadExceptionInfo, final CacheEntry<String, String> cachedContent) {
+    public long suppressExceptionUntil(String key, LoadExceptionInfo<String> loadExceptionInfo,
+                                       CacheEntry<String, String> cachedContent) {
       return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }
   }

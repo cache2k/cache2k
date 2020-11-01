@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
+import org.cache2k.config.ConfigAugmenter;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -207,9 +208,14 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     if (config.getKeyType() == null) {
       config.setKeyType((Class<K>) Object.class);
     }
+    ConfigAugmenter<K, V> augmenter = createCustomization(config.getConfigAugmenter());
+    if (augmenter != null) {
+      augmenter.augment(this, config);
+    }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
     }
+
     checkConfiguration();
     InternalCache<K, V> cache;
     Class<?> keyType = config.getKeyType().getType();

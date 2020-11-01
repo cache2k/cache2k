@@ -31,8 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  */
 public class UniversalResilienceConfig
-  implements ConfigSection
-  <UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
+  implements ConfigSection<UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
 
   private boolean suppressExceptions = true;
 
@@ -77,7 +76,7 @@ public class UniversalResilienceConfig
     return new Builder(this);
   }
 
-  public static class Builder implements SectionBuilder<UniversalResilienceConfig> {
+  public static class Builder implements SectionBuilder<Builder, UniversalResilienceConfig> {
 
     private UniversalResilienceConfig config;
 

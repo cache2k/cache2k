@@ -235,7 +235,9 @@ public class TestingBase {
   protected <K, T> Cache<K, T> freshCache(
       Class<K> keyClass, Class<T> dataClass, CacheLoader g, long maxElements, int expiry) {
     Cache2kBuilder<K, T> b =
-      builder(keyClass, dataClass).loader(g).refreshAhead(expiry >= 0 && g != null);
+      builder(keyClass, dataClass)
+        .apply(x -> { if (g != null) x.loader(g); })
+        .refreshAhead(expiry >= 0 && g != null);
     if (expiry < 0) {
       b.eternal(true);
     } else {

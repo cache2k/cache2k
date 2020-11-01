@@ -1,8 +1,8 @@
-package org.cache2k.core;
+package org.cache2k.config;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,28 +20,24 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
-import org.cache2k.io.LoadExceptionInfo;
-import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.Customization;
 
 /**
- * Do not cache or suppress exceptions.
+ * This is called when {@link Cache2kBuilder#build()} is called but before
+ * the actual build is done. May inspect and modify configuration parameters.
  *
  * @author Jens Wilke
  */
-public class ZeroResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
+public interface ConfigAugmenter<K, V> extends Customization<K, V> {
 
-  public static final ResiliencePolicy INSTANCE = new ZeroResiliencePolicy();
-
-  @Override
-  public long suppressExceptionUntil(K key, LoadExceptionInfo loadExceptionInfo,
-                                     CacheEntry<K, V> cachedContent) {
-    return 0;
-  }
-
-  @Override
-  public long retryLoadAfter(K key, LoadExceptionInfo loadExceptionInfo) {
-    return 0;
-  }
+  /**
+   * Inspect and change the cache configuration.
+   *
+   * @param context The build context
+   * @param config The configuration, same as {@link CacheBuildContext#getConfiguration()}
+   *               but with generic type information
+   */
+  void augment(CacheBuildContext context, Cache2kConfig<K, V> config);
 
 }

@@ -23,6 +23,7 @@ package org.cache2k;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
+import org.cache2k.config.ConfigAugmenter;
 import org.cache2k.config.ConfigBuilder;
 import org.cache2k.config.CustomizationSupplierWithConfig;
 import org.cache2k.config.SectionBuilder;
@@ -51,6 +52,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Builder to create a {@link Cache} instance. The usage is:
@@ -88,7 +90,8 @@ import java.util.function.Consumer;
  * @author Jens Wilke
  * @since 1.0
  */
-public class Cache2kBuilder<K, V> implements ConfigBuilder<Cache2kConfig<K, V>> {
+public class Cache2kBuilder<K, V>
+  implements ConfigBuilder<Cache2kBuilder<K, V>, Cache2kConfig<K, V>> {
 
   private static final String MSG_NO_TYPES =
     "Use Cache2kBuilder.forUnknownTypes(), to construct a builder with no key and value types";
@@ -872,7 +875,15 @@ public class Cache2kBuilder<K, V> implements ConfigBuilder<Cache2kConfig<K, V>> 
    * performance impact on the update of existing entries.
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K, V> v) {
-    cfg().setWeigher(new CustomizationReferenceSupplier<Weigher>(v));
+    cfg().setWeigher(new CustomizationReferenceSupplier<Weigher<K, V>>(v));
+    return this;
+  }
+
+  /**
+   * Set an configuration augmenter.
+   */
+  public final Cache2kBuilder<K, V> configAugmenter(ConfigAugmenter<K, V> v) {
+    cfg().setConfigAugmenter(new CustomizationReferenceSupplier<ConfigAugmenter<K, V>>(v));
     return this;
   }
 
@@ -906,12 +917,12 @@ public class Cache2kBuilder<K, V> implements ConfigBuilder<Cache2kConfig<K, V>> 
    * @param configSectionClass type of the config section that is created or altered
    * @param builderAction lambda that alters the config section via its builder
    * @param <B> type of the builder for the config section
-   * @param <T> the type of the config section
+   * @param <CFG> the type of the config section
    * @return
    */
-  public final <B extends SectionBuilder<T>, T extends ConfigSection<T, B>> Cache2kBuilder<K, V>
-  section(Class<T> configSectionClass, Consumer<B> builderAction) {
-    T section =
+  public final <B extends SectionBuilder<B, CFG>, CFG extends ConfigSection<CFG, B>>
+    Cache2kBuilder<K, V> section(Class<CFG> configSectionClass, Consumer<B> builderAction) {
+    CFG section =
       cfg().getSections().getSection(configSectionClass);
     if (section == null) {
       try {
@@ -936,24 +947,21 @@ public class Cache2kBuilder<K, V> implements ConfigBuilder<Cache2kConfig<K, V>> 
   }
 
   /**
-   * Set a customization supplier that consumes a configuration section and
-   * set the parameters on that configuration section via a builder.
+   * Enable a customization that has an associated configuration section with
+   * an enabling function and configure it.
    *
-   * @param configAction lambda that sets the supplier
-   * @param supplier the supplier
-   * @param builderAction lambda that configures the supplier via the
-   *                      builder associated to its config section
+   * @param enabler function enabling the customization in the configuration
+   * @param builderAction function for coniguring the customization
+   * @param <B> the builder for the customizations' configuration section
+   * @param <CFG> the configuration section
+   * @param <SUP> the supplier for the customization
    */
-  public <T extends Customization<K, V>,
-          B extends SectionBuilder<CFG>,
-          CFG extends ConfigSection<CFG, B>,
-          SUP extends CustomizationSupplierWithConfig<K, V, T, CFG>>
-    Cache2kBuilder<K, V> customize(
-      BiConsumer<Cache2kConfig<K, V>, SUP> configAction,
-      SUP supplier,
-      Consumer<B> builderAction) {
-    configAction.accept(config(), supplier);
-    section(supplier.getConfigClass(), builderAction);
+  public <B extends SectionBuilder<B, CFG>,
+    CFG extends ConfigSection<CFG, B>,
+    SUP extends CustomizationSupplierWithConfig<K, V, ?, CFG, B>>  Cache2kBuilder<K, V> apply(
+    Function<Cache2kBuilder<K, V>, SUP> enabler,
+    Consumer<B> builderAction) {
+    section(enabler.apply(this).getConfigClass(), builderAction);
     return this;
   }
 

@@ -23,6 +23,7 @@ package org.cache2k.addon;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CustomizationException;
+import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
 import org.junit.After;
@@ -49,13 +50,21 @@ public class UniversalResiliencePolicyTest {
     }
   }
 
-  private <K, V> void supplyResilience(Cache2kBuilder<K, V> b) {
-    b.config().setResiliencePolicy(
-      buildContext -> {
-        policy = UniversalResiliencePolicy.supplier().supply(buildContext);
-        return (ResiliencePolicy<K, V>) policy;
-      }
-    );
+  private Cache2kBuilder<Integer, Integer> builder() {
+    return new Cache2kBuilder<Integer, Integer>() { }
+      .configAugmenter((context, config) -> {
+        CustomizationSupplier<? extends ResiliencePolicy> configuredSupplier =
+          config.getResiliencePolicy();
+        if (configuredSupplier != null) {
+          config.setResiliencePolicy(buildContext -> {
+            ResiliencePolicy policy = configuredSupplier.supply(buildContext);
+            if (policy instanceof UniversalResiliencePolicy) {
+              this.policy = (UniversalResiliencePolicy<?, ?>) policy;
+            }
+            return policy;
+          });
+        }
+      });
   }
 
   /**
@@ -65,7 +74,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void expiry0_any() {
     cache = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(this::supplyResilience)
+      .apply(UniversalResiliencePolicy::enable)
       .expireAfterWrite(0, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -74,18 +83,58 @@ public class UniversalResiliencePolicyTest {
 
   @Test
   public void configVariants() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
+    cache = builder()
       /* set supplier and add config section in two commands */
       .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
       .section(UniversalResilienceConfig.class, builder -> builder
         .resilienceDuration(0, TimeUnit.MILLISECONDS)
       )
-      /* set supplier and add config section in single command */
-      .customize((cfg, sup) -> cfg.setResiliencePolicy(sup),
-        UniversalResiliencePolicy.supplier(), builder -> builder
-          .resilienceDuration(0, TimeUnit.MILLISECONDS)
+      /* Exhausting set of alternatives to enable the policy. */
+      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .apply(b -> b.config().setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .apply(UniversalResiliencePolicy::enable)
+      /* Let's disable it again. */
+      .apply(ResiliencePolicy::disable)
+      /* enable and add config section in single command */
+      .apply(UniversalResiliencePolicy::enable, b -> b
+          .resilienceDuration(4711, TimeUnit.MILLISECONDS)
+       )
+      /* maybe we enable the resilience in a global section and set some defaults ... */
+      .apply(UniversalResiliencePolicy::enable, b -> b
+        .resilienceDuration(4711, TimeUnit.MILLISECONDS)
+        .retryInterval(1234, TimeUnit.MILLISECONDS)
+      )
+      /* ... and overwrite the default later ...  */
+      .section(UniversalResilienceConfig.class, builder -> builder
+        .resilienceDuration(123, TimeUnit.MILLISECONDS)
+      )
+      /* ... results in combined section parameters */
+      .section(UniversalResilienceConfig.class, b -> {
+        assertEquals(1234, b.config().getRetryInterval().toMillis());
+        assertEquals(123, b.config().getResilienceDuration().toMillis());
+      })
+      .build();
+    assertNotNull(policy);
+  }
+
+  @Test
+  public void enableDisable() {
+    cache = builder()
+      .apply(UniversalResiliencePolicy::enable)
+      .apply(ResiliencePolicy::disable)
+      .build();
+    assertNull(policy);
+  }
+
+  @Test
+  public void enableDisableViaResilience0() {
+    cache = builder()
+      .apply(UniversalResiliencePolicy::enable)
+      .section(UniversalResilienceConfig.class, builder -> builder
+        .resilienceDuration(0, TimeUnit.MILLISECONDS)
       )
       .build();
+    assertNull(policy);
   }
 
   /**
@@ -93,15 +142,12 @@ public class UniversalResiliencePolicyTest {
    * resilience is not enabled even if the policy is added.
    */
   @Test
-  public void noExpiry() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(this::supplyResilience)
+  public void noExpiry_noResilienceParameters() {
+    cache = builder()
+      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
       /* ... set loader ... */
       .build();
-    assertNotNull(policy);
-    assertEquals(0, policy.getResilienceDuration());
-    assertEquals(0, policy.getMaxRetryInterval());
-    assertEquals(0, policy.getRetryInterval());
+    assertNull(policy);
   }
 
   /**
@@ -110,8 +156,8 @@ public class UniversalResiliencePolicyTest {
    */
   @Test
   public void expiryPolicy() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(this::supplyResilience)
+    cache = builder()
+      .apply(UniversalResiliencePolicy::enable)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
       .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
@@ -132,8 +178,8 @@ public class UniversalResiliencePolicyTest {
    */
   @Test
   public void expiry10m() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(this::supplyResilience)
+    cache = builder()
+      .apply(UniversalResiliencePolicy::enable)
       .expireAfterWrite(10, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -144,12 +190,11 @@ public class UniversalResiliencePolicyTest {
 
   @Test
   public void expiry10m_duration30s() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(this::supplyResilience)
-      .expireAfterWrite(10, TimeUnit.MINUTES)
-      .section(UniversalResilienceConfig.class, b -> b
+    cache = builder()
+      .apply(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
+      .expireAfterWrite(10, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
@@ -159,10 +204,9 @@ public class UniversalResiliencePolicyTest {
 
   @Test
   public void expiry10m_retry10s() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
+    cache = builder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .apply(this::supplyResilience)
-      .section(UniversalResilienceConfig.class, b -> b
+      .apply(UniversalResiliencePolicy::enable, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -184,9 +228,9 @@ public class UniversalResiliencePolicyTest {
    */
   @Test
   public void eternal_duration30s() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
+    cache = builder()
       .eternal(true)
-      .apply(this::supplyResilience)
+      .apply(UniversalResiliencePolicy::enable)
       .section(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
@@ -209,10 +253,9 @@ public class UniversalResiliencePolicyTest {
    */
   @Test
   public void eternal_duration30s_retry10s() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
+    cache = builder()
       .eternal(true)
-      .apply(this::supplyResilience)
-      .section(UniversalResilienceConfig.class, b -> b
+      .apply(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
         .retryInterval(10, TimeUnit.SECONDS)
       )
@@ -230,10 +273,9 @@ public class UniversalResiliencePolicyTest {
    */
   @Test
   public void eternal_retry10s() {
-    cache = new Cache2kBuilder<Integer, Integer>() { }
+    cache = builder()
       .eternal(true)
-      .apply(this::supplyResilience)
-      .section(UniversalResilienceConfig.class, b -> b
+      .apply(UniversalResiliencePolicy::enable, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -246,9 +288,8 @@ public class UniversalResiliencePolicyTest {
   @Test(expected = CustomizationException.class)
   public void noSuppress_duration10m() {
     Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(this::supplyResilience)
       .eternal(true)
-      .section(UniversalResilienceConfig.class, b -> b
+      .apply(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(10, TimeUnit.MINUTES)
         .suppressExceptions(false)
       )

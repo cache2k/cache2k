@@ -20,6 +20,7 @@ package org.cache2k.io;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.Customization;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -34,6 +35,31 @@ import org.cache2k.expiry.ExpiryTimeValues;
  * @since 2
  */
 public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<K, V> {
+
+  /**
+   * A policy always returning zero, thus disabling resilience features.
+   */
+  ResiliencePolicy<?, ?> DISABLED_POLICY = new ResiliencePolicy<Object, Object>() {
+    @Override
+    public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object> loadExceptionInfo,
+                                       CacheEntry<Object, Object> cachedContent) {
+      return 0;
+    }
+
+    @Override
+    public long retryLoadAfter(Object key, LoadExceptionInfo<Object> loadExceptionInfo) {
+      return 0;
+    }
+  };
+
+  @SuppressWarnings("unchecked")
+  static <K, V> ResiliencePolicy<K, V> disabledPolicy() {
+    return (ResiliencePolicy<K, V>) DISABLED_POLICY;
+  }
+
+  static <K, V> void disable(Cache2kBuilder<K, V> b) {
+    b.config().setResiliencePolicy(null);
+  }
 
   /**
    * Called after the loader threw an exception and a previous value is available.
@@ -61,13 +87,13 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<
    *         the exception will be suppressed for the ongoing operation.
    */
   long suppressExceptionUntil(K key,
-                              LoadExceptionInfo loadExceptionInfo,
+                              LoadExceptionInfo<K> loadExceptionInfo,
                               CacheEntry<K, V> cachedContent);
 
   /**
    * Called after the loader threw an exception and no previous value is available or
    * {@link #suppressExceptionUntil} returned zero.
    */
-  long retryLoadAfter(K key, LoadExceptionInfo loadExceptionInfo);
+  long retryLoadAfter(K key, LoadExceptionInfo<K> loadExceptionInfo);
 
 }

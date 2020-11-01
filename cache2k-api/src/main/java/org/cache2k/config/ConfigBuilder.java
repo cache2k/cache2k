@@ -23,7 +23,8 @@ package org.cache2k.config;
 /**
  * @author Jens Wilke
  */
-public interface ConfigBuilder<T> {
+public interface ConfigBuilder
+  <SELF extends ConfigBuilder<SELF, T>, T extends ConfigBean<T, SELF>> {
 
   T config();
 

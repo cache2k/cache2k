@@ -30,6 +30,8 @@ import java.io.Serializable;
  *
  * @author Jens Wilke
  */
-public interface ConfigBean extends Serializable {
+public interface ConfigBean
+  <SELF extends ConfigBean<SELF, B>, B extends ConfigBuilder<B, SELF>>
+  extends Serializable {
 
 }

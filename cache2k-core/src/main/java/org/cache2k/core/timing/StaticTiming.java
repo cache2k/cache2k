@@ -22,7 +22,6 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.config.Cache2kConfig;
-import org.cache2k.core.ZeroResiliencePolicy;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
@@ -54,10 +53,12 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   private Timer timer;
   private TimerEventListener<K, V> target;
 
-  StaticTiming(InternalCacheBuildContext<K, V> buildContext) {
+  StaticTiming(InternalCacheBuildContext<K, V> buildContext,
+               ResiliencePolicy<K, V> resiliencePolicy) {
     clock = buildContext.getClock();
     Cache2kConfig<K, V> c = buildContext.getConfiguration();
-    if (c.getExpireAfterWrite() == null || c.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION) {
+    if (c.getExpireAfterWrite() == null
+      || c.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION) {
       this.expiryMillis = ExpiryPolicy.ETERNAL;
     } else {
       this.expiryMillis = c.getExpireAfterWrite().toMillis();
@@ -70,15 +71,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       lagMillis = c.getTimerLag().toMillis();
     }
     timer = new DefaultTimer(clock, lagMillis);
-    resiliencePolicy = provideResiliencePolicy(buildContext);
-  }
-
-  @SuppressWarnings("unchecked")
-  ResiliencePolicy<K, V> provideResiliencePolicy(InternalCacheBuildContext<K, V> buildContext) {
-    ResiliencePolicy<K, V> policy =
-      buildContext.createCustomization(buildContext.getConfiguration().getResiliencePolicy(),
-        (ResiliencePolicy<K, V>) ZeroResiliencePolicy.INSTANCE);
-    return policy;
+    this.resiliencePolicy = resiliencePolicy;
   }
 
   @Override

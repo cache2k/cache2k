@@ -26,6 +26,8 @@ package org.cache2k.config;
  *
  * @author Jens Wilke
  */
-public interface SectionBuilder<T extends ConfigSection> extends ConfigBuilder<T> {
+public interface SectionBuilder
+  <SELF extends SectionBuilder<SELF, T>,
+    T extends ConfigSection<T, SELF>> extends ConfigBuilder<SELF, T> {
 
 }

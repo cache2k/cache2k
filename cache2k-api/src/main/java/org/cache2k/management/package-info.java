@@ -1,4 +1,9 @@
-package org.cache2k.config;
+/**
+ * Package for operational aspects of a cache.
+ *
+ * @author Jens Wilke
+ */
+package org.cache2k.management;
 
 /*
  * #%L
@@ -19,20 +24,3 @@ package org.cache2k.config;
  * limitations under the License.
  * #L%
  */
-
-import org.cache2k.Customization;
-
-/**
- * Supplier for a customization that has its own config section.
- *
- * @author Jens Wilke
- */
-public interface CustomizationSupplierWithConfig
-  <K, V, T extends Customization<K, V>,
-    CFG extends ConfigSection<CFG, B>,
-    B extends SectionBuilder<B, CFG>>
-  extends CustomizationSupplier<T> {
-
-  Class<CFG> getConfigClass();
-
-}

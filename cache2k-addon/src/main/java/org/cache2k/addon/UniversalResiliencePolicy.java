@@ -20,6 +20,7 @@ package org.cache2k.addon;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
@@ -41,10 +42,13 @@ import static org.cache2k.config.Cache2kConfig.UNSET_LONG;
  */
 public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
-  private static final Supplier SUPPLIER = new Supplier();
-  public static final <K, V> Supplier<K, V> supplier() {
-    return SUPPLIER;
+  public static final Supplier SUPPLIER = new Supplier();
+  public static final <K, V> Supplier<K, V> supplier() { return SUPPLIER; }
+  public static final <K, V> Supplier<K, V> enable(Cache2kBuilder<K, V> builder) {
+    builder.config().setResiliencePolicy(supplier());
+    return supplier();
   }
+
   private static final UniversalResilienceConfig EMPTY =
     new UniversalResilienceConfig();
 
@@ -69,19 +73,22 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
    * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
    */
   public UniversalResiliencePolicy(Cache2kConfig<K, V> cfgRoot) {
-    UniversalResilienceConfig cfg =
-      cfgRoot.getSections().getSection(UniversalResilienceConfig.class);
+    this(cfgRoot.getSections().getSection(UniversalResilienceConfig.class),
+      cfgRoot.getExpireAfterWrite());
+  }
+
+  public UniversalResiliencePolicy(UniversalResilienceConfig cfg, Duration expireAfterWrite) {
     if (cfg == null) { cfg = EMPTY; }
     suppressExceptions = cfg.isSuppressExceptions();
     resilienceDuration = toMillis(cfg.getResilienceDuration());
     maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
     retryInterval = toMillis(cfg.getRetryInterval());
     if (resilienceDuration == UNSET_LONG) {
-      if (cfgRoot.getExpireAfterWrite() == ETERNAL_DURATION) {
+      if (expireAfterWrite == ETERNAL_DURATION) {
         resilienceDuration = 0;
       } else {
-        if (cfgRoot.getExpireAfterWrite() != null) {
-          resilienceDuration = cfgRoot.getExpireAfterWrite().toMillis();
+        if (expireAfterWrite != null) {
+          resilienceDuration = expireAfterWrite.toMillis();
         } else {
           resilienceDuration = UNSET_LONG;
         }
@@ -146,7 +153,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   @Override
   public long suppressExceptionUntil(K key,
-                                     LoadExceptionInfo loadExceptionInfo,
+                                     LoadExceptionInfo<K> loadExceptionInfo,
                                      CacheEntry<K, V> cachedContent) {
     if (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) {
       return resilienceDuration;
@@ -164,7 +171,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
   }
 
   @Override
-  public long retryLoadAfter(K key, LoadExceptionInfo loadExceptionInfo) {
+  public long retryLoadAfter(K key, LoadExceptionInfo<K> loadExceptionInfo) {
     if (retryInterval == 0 || retryInterval == Long.MAX_VALUE) {
       return retryInterval;
     }
@@ -173,10 +180,15 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   public static class Supplier<K, V>
     implements CustomizationSupplierWithConfig
-      <K, V, UniversalResiliencePolicy<K, V>, UniversalResilienceConfig> {
+      <K, V, ResiliencePolicy<K, V>, UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
     @Override
-    public UniversalResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
-      return new UniversalResiliencePolicy<>(buildContext.getConfiguration());
+    public ResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
+      UniversalResiliencePolicy<K, V> policy =
+        new UniversalResiliencePolicy<>(buildContext.getConfiguration());
+      if (policy.getRetryInterval() == 0 && policy.getResilienceDuration() == 0) {
+        return ResiliencePolicy.disabledPolicy();
+      }
+      return policy;
     }
     @Override
     public Class<UniversalResilienceConfig> getConfigClass() {

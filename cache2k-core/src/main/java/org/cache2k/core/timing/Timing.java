@@ -75,15 +75,17 @@ public abstract class Timing<K, V>  {
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
+    ResiliencePolicy<K, V> resiliencePolicy = buildContext.createCustomization(
+      cfg.getResiliencePolicy(), ResiliencePolicy.disabledPolicy());
     if (cfg.getExpiryPolicy() != null
       || (cfg.getValueType() != null
         && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
-      || cfg.getResiliencePolicy() != null) {
-      DynamicTiming<K, V> h = new DynamicTiming<K, V>(buildContext);
+      || resiliencePolicy != ResiliencePolicy.DISABLED_POLICY) {
+      DynamicTiming<K, V> h = new DynamicTiming<K, V>(buildContext, resiliencePolicy);
       return h;
     }
     if (realDuration(cfg.getExpireAfterWrite())) {
-      StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext);
+      StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext, resiliencePolicy);
       return h;
     }
     if ((cfg.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION

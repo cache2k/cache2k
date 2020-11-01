@@ -985,12 +985,14 @@ public class EntryProcessorTest {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
           @Override
-          public long suppressExceptionUntil(Integer key, LoadExceptionInfo loadExceptionInfo, CacheEntry<Integer, Integer> cachedContent) {
+          public long suppressExceptionUntil(Integer key,
+                                             LoadExceptionInfo<Integer> loadExceptionInfo,
+                                             CacheEntry<Integer, Integer> cachedContent) {
             return Long.MAX_VALUE;
           }
 
           @Override
-          public long retryLoadAfter(Integer key, LoadExceptionInfo loadExceptionInfo) {
+          public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
             return Long.MAX_VALUE;
           }
         });
@@ -1017,13 +1019,14 @@ public class EntryProcessorTest {
     final AtomicLong retryLoadAfter = new AtomicLong();
     final ResiliencePolicy<Integer, Integer> policy = new ResiliencePolicy<Integer, Integer>() {
       @Override
-      public long suppressExceptionUntil(Integer key, LoadExceptionInfo exceptionInformation,
+      public long suppressExceptionUntil(Integer key,
+                                         LoadExceptionInfo<Integer> exceptionInformation,
                                          CacheEntry<Integer, Integer> cachedContent) {
         return 0;
       }
 
       @Override
-      public long retryLoadAfter(Integer key, LoadExceptionInfo exceptionInformation) {
+      public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> exceptionInformation) {
         retryLoadAfter.incrementAndGet();
         return ETERNAL;
       }

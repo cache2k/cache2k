@@ -50,7 +50,7 @@ public class CoreConfig
     return new Builder(this);
   }
 
-  public static class Builder implements SectionBuilder<CoreConfig> {
+  public static class Builder implements SectionBuilder<Builder, CoreConfig> {
 
     private final CoreConfig config;
 

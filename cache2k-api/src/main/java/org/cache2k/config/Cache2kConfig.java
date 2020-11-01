@@ -59,7 +59,8 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  */
 @SuppressWarnings("unused")
-public class Cache2kConfig<K, V> implements ConfigBean, ConfigWithSections {
+public class Cache2kConfig<K, V>
+  implements ConfigBean<Cache2kConfig<K, V>, Cache2kBuilder<K, V>>, ConfigWithSections {
 
   /**
    * The maximum duration after the duration is considered as eternal for the purposes
@@ -107,7 +108,8 @@ public class Cache2kConfig<K, V> implements ConfigBean, ConfigWithSections {
   private CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> advancedLoader;
   private CustomizationSupplier<? extends AsyncCacheLoader<K, V>> asyncLoader;
   private CustomizationSupplier<? extends ExceptionPropagator<K>> exceptionPropagator;
-  private CustomizationSupplier<? extends Weigher> weigher;
+  private CustomizationSupplier<? extends Weigher<K, V>> weigher;
+  private CustomizationSupplier<? extends ConfigAugmenter<K, V>> configAugmenter;
 
   private CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K, V>> asyncListeners;
@@ -663,14 +665,14 @@ public class Cache2kConfig<K, V> implements ConfigBean, ConfigWithSections {
     asyncListenerExecutor = v;
   }
 
-  public CustomizationSupplier<? extends Weigher> getWeigher() {
+  public CustomizationSupplier<? extends Weigher<K, V>> getWeigher() {
     return weigher;
   }
 
   /**
    * @see Cache2kBuilder#weigher(Weigher)
    */
-  public void setWeigher(CustomizationSupplier<? extends Weigher> v) {
+  public void setWeigher(CustomizationSupplier<? extends Weigher<K, V>> v) {
     if (entryCapacity >= 0) {
       throw new IllegalArgumentException(
         "entryCapacity already set, specifying a weigher is illegal");
@@ -709,6 +711,14 @@ public class Cache2kConfig<K, V> implements ConfigBean, ConfigWithSections {
    */
   public void setDisableMonitoring(boolean disableMonitoring) {
     this.disableMonitoring = disableMonitoring;
+  }
+
+  public CustomizationSupplier<? extends ConfigAugmenter<K, V>> getConfigAugmenter() {
+    return configAugmenter;
+  }
+
+  public void setConfigAugmenter(CustomizationSupplier<? extends ConfigAugmenter<K, V>> v) {
+    this.configAugmenter = v;
   }
 
   private Duration durationCeiling(Duration v) {

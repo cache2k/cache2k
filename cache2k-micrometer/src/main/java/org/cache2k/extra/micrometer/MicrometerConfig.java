@@ -54,7 +54,7 @@ public class MicrometerConfig
     return new Builder(this);
   }
 
-  public static final class Builder implements SectionBuilder<MicrometerConfig> {
+  public static final class Builder implements SectionBuilder<Builder, MicrometerConfig> {
 
     private final MicrometerConfig config;
 

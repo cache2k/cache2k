@@ -103,7 +103,7 @@ public class JCacheConfig
     return new Builder(this);
   }
 
-  public static class Builder implements SectionBuilder<JCacheConfig> {
+  public static class Builder implements SectionBuilder<Builder, JCacheConfig> {
 
     private final JCacheConfig config;
 
