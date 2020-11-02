@@ -25,6 +25,7 @@ import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.LoadExceptionInfo;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -370,6 +371,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
 
   public long getNextRefreshTime() {
     return nextRefreshTime;
+  }
+
+  @Override
+  public long getExpiryTime() {
+    return isDataAvailable() ? nextRefreshTime : ExpiryTimeValues.NEUTRAL;
   }
 
   public void setNextRefreshTime(long nextRefreshTime) {

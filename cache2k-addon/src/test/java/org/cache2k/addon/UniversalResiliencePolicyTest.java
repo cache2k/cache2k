@@ -20,6 +20,7 @@ package org.cache2k.addon;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.CustomizationSupplier;
@@ -29,6 +30,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.time.Clock;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -41,6 +43,14 @@ public class UniversalResiliencePolicyTest {
 
   Cache<Integer, Integer> cache;
   UniversalResiliencePolicy<?, ?> policy;
+  boolean nextLoadThrowsException;
+
+  int load(int k) {
+    if (nextLoadThrowsException) {
+      throw new ProbingException();
+    }
+    return k;
+  }
 
   @After
   public void tearDown() {
@@ -66,6 +76,61 @@ public class UniversalResiliencePolicyTest {
       });
   }
 
+  /* Set supplier and add config section in two commands */
+  @Test
+  public void configVariant_setSupplier() {
+    cache = builder()
+      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .section(UniversalResilienceConfig.class, builder -> builder
+        .resilienceDuration(0, TimeUnit.MILLISECONDS)
+      )
+      .build();
+  }
+
+  /* An exhausting set of alternatives to enable the policy and disable it. */
+  @Test
+  public void configVariant_enableDisable() {
+    cache = builder()
+      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .apply(b -> b.config().setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .apply(UniversalResiliencePolicy::enable)
+      .apply(ResiliencePolicy::disable)
+      .build();
+  }
+
+  /* enable and add config section in single command */
+  @Test
+  public void configVariant_singleApply() {
+    cache = builder()
+      .apply(UniversalResiliencePolicy::enable, b -> b
+        .resilienceDuration(4711, TimeUnit.MILLISECONDS)
+      )
+      .build();
+  }
+
+  /**
+   * Enable the resilience in a global section, set some defaults and
+   * overwrite the values again later.
+   */
+  @Test
+  public void configVariant_overwrites() {
+      cache = builder()
+        .apply(UniversalResiliencePolicy::enable, b -> b
+          .resilienceDuration(4711, TimeUnit.MILLISECONDS)
+          .retryInterval(1234, TimeUnit.MILLISECONDS)
+        )
+        /* Overwrite the default later ...  */
+        .section(UniversalResilienceConfig.class, builder -> builder
+          .resilienceDuration(123, TimeUnit.MILLISECONDS)
+        )
+        /* Results in combined section parameters */
+        .section(UniversalResilienceConfig.class, b -> {
+          assertEquals(1234, b.config().getRetryInterval().toMillis());
+          assertEquals(123, b.config().getResilienceDuration().toMillis());
+        })
+        .build();
+  }
+
   /**
    * If expiry is set to 0, everything expires immediately and nothing will be cached,
    * including exceptions. The resilience policy is not created, since it would have no effect.
@@ -78,42 +143,9 @@ public class UniversalResiliencePolicyTest {
       /* ... set loader ... */
       .build();
     assertNull(policy);
-  }
-
-  @Test
-  public void configVariants() {
-    cache = builder()
-      /* set supplier and add config section in two commands */
-      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
-      .section(UniversalResilienceConfig.class, builder -> builder
-        .resilienceDuration(0, TimeUnit.MILLISECONDS)
-      )
-      /* Exhausting set of alternatives to enable the policy. */
-      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
-      .apply(b -> b.config().setResiliencePolicy(UniversalResiliencePolicy.supplier()))
-      .apply(UniversalResiliencePolicy::enable)
-      /* Let's disable it again. */
-      .apply(ResiliencePolicy::disable)
-      /* enable and add config section in single command */
-      .apply(UniversalResiliencePolicy::enable, b -> b
-          .resilienceDuration(4711, TimeUnit.MILLISECONDS)
-       )
-      /* maybe we enable the resilience in a global section and set some defaults ... */
-      .apply(UniversalResiliencePolicy::enable, b -> b
-        .resilienceDuration(4711, TimeUnit.MILLISECONDS)
-        .retryInterval(1234, TimeUnit.MILLISECONDS)
-      )
-      /* ... and overwrite the default later ...  */
-      .section(UniversalResilienceConfig.class, builder -> builder
-        .resilienceDuration(123, TimeUnit.MILLISECONDS)
-      )
-      /* ... results in combined section parameters */
-      .section(UniversalResilienceConfig.class, b -> {
-        assertEquals(1234, b.config().getRetryInterval().toMillis());
-        assertEquals(123, b.config().getResilienceDuration().toMillis());
-      })
-      .build();
-    assertNotNull(policy);
+    cache.put(1, 123);
+    assertEquals(0, (long) cache.invoke(1, e -> e.getExpiryTime()));
+    assertFalse(cache.containsKey(1));
   }
 
   @Test
@@ -194,11 +226,37 @@ public class UniversalResiliencePolicyTest {
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      /* ... set loader ... */
+      .loader(this::load)
       .build();
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(3), policy.getRetryInterval());
+    long t0 = System.currentTimeMillis();
+    cache.get(1);
+    Assertions.assertThat((long) cache.invoke(1, e -> e.getExpiryTime()))
+      .isGreaterThanOrEqualTo(t0 + TimeUnit.MINUTES.toMillis(10));
+    Assertions.assertThat((long) cache.invoke(2, e ->
+      {
+        e.getValue();
+        return e.getExpiryTime();
+      }))
+      .isGreaterThanOrEqualTo(t0 + TimeUnit.MINUTES.toMillis(10));
+    nextLoadThrowsException = true;
+    Assertions.assertThat((long) cache.invoke(3, e ->
+      {
+        e.getException();
+        return e.getExpiryTime();
+      }))
+      .as("Retry")
+      .isGreaterThanOrEqualTo(t0 + TimeUnit.SECONDS.toMillis(3));
+    Assertions.assertThat((long) cache.invoke(2, e ->
+      {
+        e.load();
+        assertEquals(2, (int) e.getValue());
+        return e.getExpiryTime();
+      }))
+      .as("Suppress is doing retry as well")
+      .isGreaterThanOrEqualTo(t0 + TimeUnit.SECONDS.toMillis(3));
   }
 
   @Test
@@ -258,7 +316,7 @@ public class UniversalResiliencePolicyTest {
         .resilienceDuration(30, TimeUnit.SECONDS)
         .retryInterval(10, TimeUnit.SECONDS)
       )
-      /* ... set loader ... */
+      .loader(this::load)
       .build();
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
@@ -283,5 +341,7 @@ public class UniversalResiliencePolicyTest {
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
   }
+
+  public static class ProbingException extends RuntimeException { }
 
 }

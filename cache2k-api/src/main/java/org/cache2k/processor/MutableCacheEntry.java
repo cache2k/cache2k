@@ -207,6 +207,16 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   MutableCacheEntry<K, V> setExpiryTime(long t);
 
   /**
+   * Returns the effective expiry time of the current cache entry in case {@link #exists()}
+   * is false it returns{@link org.cache2k.expiry.ExpiryTimeValues#NOW}. If the entry
+   * was loaded, it returns the calculated expiry time from {@link org.cache2k.expiry.ExpiryPolicy}
+   * or {@link ResiliencePolicy}. A negative value means sharp expiry as described in the expiry
+   * policy.
+   * @see org.cache2k.expiry.ExpiryPolicy
+   */
+  long getExpiryTime();
+
+  /**
    * Timestamp of the last update of the cached value. This is the start time
    * (before the loader was called) of a successful load operation, or the time
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts

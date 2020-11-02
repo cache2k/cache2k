@@ -141,17 +141,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .recordModificationTime(pars.recordRefreshTime)
       .disableStatistics(pars.disableStatistics);
     if (pars.keepExceptions) {
-        b.resiliencePolicy(new ResiliencePolicy() {
-        @Override
-        public long suppressExceptionUntil(Object key, LoadExceptionInfo loadExceptionInfo, CacheEntry cachedEntry) {
-          return 0;
-        }
-
-        @Override
-        public long retryLoadAfter(Object key, LoadExceptionInfo loadExceptionInfo) {
-          return Long.MAX_VALUE;
-        }
-      });
+        b.resiliencePolicy(Constants.resilienceCacheExceptions());
     }
     if (pars.withExpiryAfterWrite) {
       b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);

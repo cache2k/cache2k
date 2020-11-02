@@ -24,6 +24,7 @@ import org.assertj.core.api.Assertions;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
+import org.cache2k.test.core.Constants;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.core.ResiliencePolicyException;
@@ -559,19 +560,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .expireAfterWrite(Long.MAX_VALUE / 10000, TimeUnit.MILLISECONDS)
-      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
-        @Override
-        public long suppressExceptionUntil(Integer key,
-                                           LoadExceptionInfo<Integer> loadExceptionInfo,
-                                           CacheEntry<Integer, Integer> cachedEntry) {
-          return 0;
-        }
-
-        @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
-          return Long.MAX_VALUE;
-        }
-      })
+      .resiliencePolicy(Constants.resilienceCacheExceptions())
       .build();
     assertEquals("no miss", 0, g.getLoaderCalledCount());
     c.get(1802);

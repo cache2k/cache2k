@@ -929,6 +929,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         return lastRefreshTime;
       }
 
+      @Override
+      public long getExpiryTime() {
+        return expiry;
+      }
     };
     examine();
   }

@@ -20,7 +20,9 @@ package org.cache2k.expiry;
  * #L%
  */
 
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.processor.MutableCacheEntry;
 
 /**
  * Expiry time values that have a special meaning. Used for expressive return values in the
@@ -40,8 +42,11 @@ public interface ExpiryTimeValues {
 
   /**
    * Don't change the expiry of the entry. This can be used for an update.
+   * This is also used for an undefined / not applicable expiry time value
+   * in {@link MutableCacheEntry#getExpiryTime()}. The value is {@value #NEUTRAL}, it is
+   * identical to {@link Cache2kConfig#UNSET_LONG}
    */
-  long NEUTRAL = -1;
+  long NEUTRAL = Cache2kConfig.UNSET_LONG;
 
   /**
    * @deprecated Will be removed in version 2.0. The naming is misleading when refreshing is

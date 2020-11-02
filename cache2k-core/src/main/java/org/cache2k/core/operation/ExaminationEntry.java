@@ -20,6 +20,8 @@ package org.cache2k.core.operation;
  * #L%
  */
 
+import org.cache2k.processor.MutableCacheEntry;
+
 /**
  * A entry on the heap cache, used for reading.
  * Only the relevant properties are defined to implement the cache
@@ -41,4 +43,8 @@ public interface ExaminationEntry<K, V> {
 
   long getModificationTime();
 
+  /**
+   * @see MutableCacheEntry#getExpiryTime()
+   */
+  long getExpiryTime();
 }

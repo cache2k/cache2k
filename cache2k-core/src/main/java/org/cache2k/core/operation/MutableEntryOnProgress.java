@@ -41,14 +41,14 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
    */
   private final ExaminationEntry<K, V> entry;
   private final Progress<K, V, ?> progress;
+  private final boolean mutationRequested;
+  private final boolean originalExists;
   private boolean mutate = false;
   private boolean remove = false;
   private V value = null;
   private boolean customExpiry = false;
   private long expiryTime = NEUTRAL;
   private long refreshTime = NEUTRAL;
-  private boolean mutationRequested;
-  private boolean originalExists = false;
   private V originalOrLoadedValue = null;
   private boolean dataRead = false;
 
@@ -63,7 +63,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     this.progress = progress;
     this.key = key;
     originalExists = entry != null && progress.isDataFreshOrMiss();
-    if (originalExists || progress.wasLoaded()) {
+    if (isEntryValid()) {
       originalOrLoadedValue = entry.getValueOrException();
     }
     this.mutationRequested = mutationRequested;
@@ -78,6 +78,11 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   public boolean exists() {
     triggerInstallationRead();
     return originalExists;
+  }
+
+  private void dataAccess() {
+    triggerInstallationRead();
+    dataRead = true;
   }
 
   @Override
@@ -95,9 +100,8 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     if (entry != null) { lock(); }
     mutate = true;
     remove = false;
-    value = (V) new ExceptionWrapper(key,
-      progress.getMutationStartTime(), ex,
-      progress.getExceptionPropagator());
+    value = (V) new ExceptionWrapper<K>(
+      key, progress.getMutationStartTime(), ex, progress.getExceptionPropagator());
     return this;
   }
 
@@ -132,8 +136,8 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public V getValue() {
-    dataRead = true;
     triggerLoadOrInstallationRead();
+    dataRead = true;
     checkAndThrowException(originalOrLoadedValue);
     return originalOrLoadedValue;
   }
@@ -193,6 +197,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     return info != null ? info.getException() : null;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public LoadExceptionInfo<K> getExceptionInfo() {
     triggerLoadOrInstallationRead();
@@ -204,10 +209,19 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @Override
+  public long getExpiryTime() {
+    dataAccess();
+    return isEntryValid() ? entry.getExpiryTime() : 0;
+  }
+
+  private boolean isEntryValid() {
+    return originalExists || progress.wasLoaded();
+  }
+
+  @Override
   public long getModificationTime() {
-    triggerInstallationRead();
-    dataRead = true;
-    return originalExists || progress.wasLoaded() ? entry.getModificationTime() : 0;
+    dataAccess();
+    return isEntryValid() ? entry.getModificationTime() : 0;
   }
 
   @Override

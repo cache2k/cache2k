@@ -460,19 +460,7 @@ public class BasicCacheTest extends TestingBase {
     OccasionalExceptionSource src = new OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
-      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
-        @Override
-        public long suppressExceptionUntil(Integer key,
-                                           LoadExceptionInfo<Integer> loadExceptionInfo,
-                                           CacheEntry<Integer, Integer> cachedEntry) {
-          return Long.MAX_VALUE;
-        }
-
-        @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
-          return Long.MAX_VALUE;
-        }
-      })
+      .resiliencePolicy(Constants.resilienceCacheAndSuppressExceptions())
       .recordModificationTime(true)
       .keepDataAfterExpired(true)
       .loader(src)
@@ -488,7 +476,8 @@ public class BasicCacheTest extends TestingBase {
       c.get(2);
       long refreshedBefore = millis();
       assertFalse("entry disappears since expiry=0", c.containsKey(2));
-      assertEquals("entry has no refreshed time since suppressed", 0, getRefreshedTimeViaEntryProcessor(c, 2));
+      assertEquals("entry has no modification time since suppressed", 0,
+        getRefreshedTimeViaEntryProcessor(c, 2));
       sleep(3);
       c.get(2);
       c.invoke(2, new EntryProcessor<Integer, Integer, Long>() {
@@ -496,7 +485,7 @@ public class BasicCacheTest extends TestingBase {
         public Long process(MutableCacheEntry<Integer, Integer> e) {
           assertNull("exception suppressed", e.getException());
           assertTrue("entry present", e.exists());
-          assertThat("refresh time of entry, not when exception happened",
+          assertThat("modification time of entry, not when exception happened",
             e.getModificationTime(),
             lessThanOrEqualTo(refreshedBefore));
           return null;
@@ -539,17 +528,7 @@ public class BasicCacheTest extends TestingBase {
     OccasionalExceptionSource src = new PatternExceptionSource(false, true, true);
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
-      .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
-        @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo, CacheEntry<Integer, Integer> cachedEntry) {
-          return Long.MAX_VALUE;
-        }
-
-        @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
-          return Long.MAX_VALUE;
-        }
-      })
+      .resiliencePolicy(Constants.resilienceCacheAndSuppressExceptions())
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
