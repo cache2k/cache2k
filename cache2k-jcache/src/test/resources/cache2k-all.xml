@@ -88,13 +88,28 @@
         <resilience>
           <resilienceDuration>123s</resilienceDuration>
         </resilience>
+        <section>
+          <type>org.cache2k.addon.UniversalResilienceConfig</type>
+          <parameters>
+            <test>213</test>
+          </parameters>
+        </section>
         <jcache>
           <include>templateJCache1</include>
+          <!-- FIXME: parameters would be more logic here! -->
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
           <enableManagement>true</enableManagement>
           <supportOnlineListenerAttachment>true</supportOnlineListenerAttachment>
           <enableStatistics>true</enableStatistics>
         </jcache>
+        <!-- what about this?
+        <section>
+          <type>jcache</type>
+          <parameters>
+
+          </parameters>
+        </section>
+        -->
       </sections>
     </cache>
   </defaults>

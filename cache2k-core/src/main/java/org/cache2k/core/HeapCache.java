@@ -270,7 +270,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   /** called from CacheBuilder */
   @SuppressWarnings("unchecked")
   public void setCacheConfig(InternalCacheBuildContext<K, V> buildContext) {
-    final Cache2kConfig<K, V> cfg = buildContext.getConfiguration();
+    final Cache2kConfig<K, V> cfg = buildContext.getConfig();
     valueType = cfg.getValueType();
     keyType = cfg.getKeyType();
     setName(cfg.getName());

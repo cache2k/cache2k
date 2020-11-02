@@ -23,7 +23,6 @@ package org.cache2k;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
-import org.cache2k.config.ConfigAugmenter;
 import org.cache2k.config.ConfigBuilder;
 import org.cache2k.config.CustomizationSupplierWithConfig;
 import org.cache2k.config.SectionBuilder;
@@ -877,14 +876,6 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K, V> v) {
     cfg().setWeigher(new CustomizationReferenceSupplier<Weigher<K, V>>(v));
-    return this;
-  }
-
-  /**
-   * Set an configuration augmenter.
-   */
-  public final Cache2kBuilder<K, V> configAugmenter(ConfigAugmenter<K, V> v) {
-    cfg().setConfigAugmenter(new CustomizationReferenceSupplier<ConfigAugmenter<K, V>>(v));
     return this;
   }
 

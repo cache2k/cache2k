@@ -39,7 +39,7 @@ public class MicrometerSupport implements CacheLifeCycleListener {
 
   @Override
   public <K, V> void cacheCreated(Cache<K, V> c, InternalCacheBuildContext<K, V> ctx) {
-    Cache2kConfig<K, V> cfg = ctx.getConfiguration();
+    Cache2kConfig<K, V> cfg = ctx.getConfig();
     if (cfg.isDisableMonitoring()) { return; }
     MicrometerConfig ourCfg = cfg.getSections().getSection(MicrometerConfig.class);
     if (ourCfg == null) { return; }

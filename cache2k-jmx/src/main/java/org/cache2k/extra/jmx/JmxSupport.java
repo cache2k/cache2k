@@ -58,7 +58,7 @@ public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycle
    */
   @Override
   public <K, V> void cacheCreated(Cache<K, V> c, InternalCacheBuildContext<K, V> ctx) {
-    Cache2kConfig cfg = ctx.getConfiguration();
+    Cache2kConfig cfg = ctx.getConfig();
     if (!cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
       return;
     }

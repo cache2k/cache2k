@@ -30,7 +30,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.time.Clock;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -61,11 +60,11 @@ public class UniversalResiliencePolicyTest {
 
   private Cache2kBuilder<Integer, Integer> builder() {
     return new Cache2kBuilder<Integer, Integer>() { }
-      .configAugmenter((context, config) -> {
+      .apply(b -> b.config().getFeatures().add(ctx -> {
         CustomizationSupplier<? extends ResiliencePolicy> configuredSupplier =
-          config.getResiliencePolicy();
+          ctx.getConfig().getResiliencePolicy();
         if (configuredSupplier != null) {
-          config.setResiliencePolicy(buildContext -> {
+          ctx.getConfig().setResiliencePolicy(buildContext -> {
             ResiliencePolicy policy = configuredSupplier.supply(buildContext);
             if (policy instanceof UniversalResiliencePolicy) {
               this.policy = (UniversalResiliencePolicy<?, ?>) policy;
@@ -73,7 +72,7 @@ public class UniversalResiliencePolicyTest {
             return policy;
           });
         }
-      });
+      }));
   }
 
   /* Set supplier and add config section in two commands */

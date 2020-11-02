@@ -169,7 +169,7 @@
     <xs:choice>
       <xs:sequence>
         <xs:element name="type" type="xs:string"/>
-        <xs:element name="include" type="xs:string"/>
+        <xs:element name="include" type="xs:string" minOccurs="0"/>
         <xs:element name="parameters">
           <xs:complexType>
             <xs:sequence>

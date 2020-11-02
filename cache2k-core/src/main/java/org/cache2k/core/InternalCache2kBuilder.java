@@ -23,13 +23,11 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
-import org.cache2k.config.ConfigAugmenter;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
-import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.api.InternalClock;
@@ -113,7 +111,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   @Override
-  public Cache2kConfig<K, V> getConfiguration() {
+  public Cache2kConfig<K, V> getConfig() {
     return config;
   }
 
@@ -210,14 +208,13 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     if (config.getKeyType() == null) {
       config.setKeyType((Class<K>) Object.class);
     }
-    ConfigAugmenter<K, V> augmenter = createCustomization(config.getConfigAugmenter());
-    if (augmenter != null) {
-      augmenter.augment(this, config);
-    }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());
+      config.setNameWasGenerated(true);
     }
-
+    if (config.hasFeatures()) {
+      config.getFeatures().stream().forEach(x -> x.enlist(this));
+    }
     checkConfiguration();
     InternalCache<K, V> cache;
     Class<?> keyType = config.getKeyType().getType();

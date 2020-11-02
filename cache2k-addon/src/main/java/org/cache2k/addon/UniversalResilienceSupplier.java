@@ -44,7 +44,7 @@ public class UniversalResilienceSupplier<K, V>
 
   @Override
   public ResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
-    Cache2kConfig<K, V> rootCfg = buildContext.getConfiguration();
+    Cache2kConfig<K, V> rootCfg = buildContext.getConfig();
     return supplyPolicy(rootCfg);
   }
 

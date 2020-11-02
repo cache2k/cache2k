@@ -71,7 +71,7 @@ public abstract class Timing<K, V>  {
   }
 
   public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> buildContext) {
-    Cache2kConfig<K, V> cfg = buildContext.getConfiguration();
+    Cache2kConfig<K, V> cfg = buildContext.getConfig();
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }

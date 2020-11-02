@@ -61,7 +61,7 @@ public class TimingUnitTest {
       }
 
       @Override
-      public Cache2kConfig<K, V> getConfiguration() {
+      public Cache2kConfig<K, V> getConfig() {
         return cfg;
       }
 

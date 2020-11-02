@@ -28,7 +28,7 @@ import org.cache2k.CacheManager;
  *
  * @author Jens Wilke
  */
-public interface CacheBuildContext {
+public interface CacheBuildContext<K, V> {
 
   /**
    * Assigned cache manager. This can be useful to retrieve resources
@@ -46,6 +46,6 @@ public interface CacheBuildContext {
    * Customizations must copy the relevant configuration parameters and not hold a
    * reference to the configuration object.
    */
-  <K, V> Cache2kConfig<K, V> getConfiguration();
+  Cache2kConfig<K, V> getConfig();
 
 }

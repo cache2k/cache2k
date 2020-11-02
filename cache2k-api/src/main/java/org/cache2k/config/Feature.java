@@ -20,24 +20,18 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
-import org.cache2k.Customization;
-
 /**
- * This is called when {@link Cache2kBuilder#build()} is called but before
- * the actual build is done. May inspect and modify configuration parameters.
+ * Features need to properly implement {@code equals()} and {@code hashCode()}
  *
  * @author Jens Wilke
  */
-public interface ConfigAugmenter<K, V> extends Customization<K, V> {
+public interface Feature<K, V> {
 
   /**
-   * Inspect and change the cache configuration.
-   *
-   * @param context The build context
-   * @param config The configuration, same as {@link CacheBuildContext#getConfiguration()}
-   *               but with generic type information
+   * The feature enables itself by augmenting the cache config.
+   * Called when {@link org.cache2k.Cache2kBuilder#build} is called
+   * before the actual cache creation.
    */
-  void augment(CacheBuildContext context, Cache2kConfig<K, V> config);
+  void enlist(CacheBuildContext<K, V> ctx);
 
 }

@@ -75,6 +75,7 @@ public class Cache2kConfig<K, V>
 
   private boolean storeByReference;
   private String name;
+  private boolean nameWasGenerated;
   private CacheType<K> keyType;
   private CacheType<V> valueType;
   private long entryCapacity = UNSET_LONG;
@@ -109,11 +110,11 @@ public class Cache2kConfig<K, V>
   private CustomizationSupplier<? extends AsyncCacheLoader<K, V>> asyncLoader;
   private CustomizationSupplier<? extends ExceptionPropagator<K>> exceptionPropagator;
   private CustomizationSupplier<? extends Weigher<K, V>> weigher;
-  private CustomizationSupplier<? extends ConfigAugmenter<K, V>> configAugmenter;
 
   private CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K, V>> asyncListeners;
   private CustomizationCollection<CacheClosedListener> closedListeners;
+  private FeatureCollection<K, V> features;
 
   private SectionContainer sections;
 
@@ -186,6 +187,17 @@ public class Cache2kConfig<K, V>
    */
   public void setName(String name) {
     this.name = name;
+  }
+
+  /**
+   * True if name is generated and not set by the cache client.
+   */
+  public boolean isNameWasGenerated() {
+    return nameWasGenerated;
+  }
+
+  public void setNameWasGenerated(boolean v) {
+    this.nameWasGenerated = v;
   }
 
   /**
@@ -566,6 +578,21 @@ public class Cache2kConfig<K, V>
     getCacheClosedListeners().addAll(c);
   }
 
+  public Collection<Feature<K, V>> getFeatures() {
+    if (features == null) {
+      features = new FeatureCollection<>();
+    }
+    return features;
+  }
+
+  public boolean hasFeatures() {
+    return features != null && !features.isEmpty();
+  }
+
+  public void setFeatures(Collection<Feature<K, V>> v) {
+    getFeatures().addAll(v);
+  }
+
   public CustomizationSupplier<? extends ResiliencePolicy<K, V>> getResiliencePolicy() {
     return resiliencePolicy;
   }
@@ -711,14 +738,6 @@ public class Cache2kConfig<K, V>
    */
   public void setDisableMonitoring(boolean disableMonitoring) {
     this.disableMonitoring = disableMonitoring;
-  }
-
-  public CustomizationSupplier<? extends ConfigAugmenter<K, V>> getConfigAugmenter() {
-    return configAugmenter;
-  }
-
-  public void setConfigAugmenter(CustomizationSupplier<? extends ConfigAugmenter<K, V>> v) {
-    this.configAugmenter = v;
   }
 
   private Duration durationCeiling(Duration v) {

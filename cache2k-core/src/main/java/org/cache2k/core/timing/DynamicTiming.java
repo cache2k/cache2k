@@ -47,7 +47,7 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
   @SuppressWarnings("unchecked")
   private static <K, V> ExpiryPolicy<K, V> constructPolicy(
     InternalCacheBuildContext<K, V> buildContext) {
-    Cache2kConfig<K, V> cfg = buildContext.getConfiguration();
+    Cache2kConfig<K, V> cfg = buildContext.getConfig();
     if (cfg.getValueType() != null &&
       ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) &&
       cfg.getExpiryPolicy() == null) {

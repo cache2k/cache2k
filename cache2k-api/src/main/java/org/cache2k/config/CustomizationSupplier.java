@@ -44,6 +44,6 @@ public interface CustomizationSupplier<T> {
    *
    * @return created customization, never {@code null}
    */
-  T supply(CacheBuildContext buildContext);
+  T supply(CacheBuildContext<?, ?> buildContext);
 
 }

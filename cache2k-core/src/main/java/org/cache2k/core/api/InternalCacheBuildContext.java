@@ -30,7 +30,7 @@ import org.cache2k.config.CustomizationSupplier;
  *
  * @author Jens Wilke
  */
-public interface InternalCacheBuildContext<K, V> extends CacheBuildContext {
+public interface InternalCacheBuildContext<K, V> extends CacheBuildContext<K, V> {
 
   /**
    * The time reference for the cache.
@@ -40,7 +40,7 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext {
   /**
    * Cache configuration.
    */
-  Cache2kConfig<K, V> getConfiguration();
+  Cache2kConfig<K, V> getConfig();
 
   /**
    * The cache manager.
