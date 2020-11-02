@@ -22,135 +22,67 @@ package org.cache2k.addon;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.config.Cache2kConfig;
-import org.cache2k.config.CacheBuildContext;
-import org.cache2k.config.CustomizationSupplierWithConfig;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
-
-import java.time.Duration;
-import java.util.Random;
-
-import static org.cache2k.config.Cache2kConfig.ETERNAL_DURATION;
-import static org.cache2k.config.Cache2kConfig.UNSET_LONG;
 
 /**
  * Resilience policy which implements a exponential back off and randomization
  * of the retry intervals.
  *
  * @author Jens Wilke
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">
+ *      cache2k user guide - Exceptions and Resilience</a>
  */
 public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
-  public static final Supplier SUPPLIER = new Supplier();
-  public static final <K, V> Supplier<K, V> supplier() { return SUPPLIER; }
-  public static final <K, V> Supplier<K, V> enable(Cache2kBuilder<K, V> builder) {
+  public static final UniversalResilienceSupplier SUPPLIER = new UniversalResilienceSupplier();
+  public static final <K, V> UniversalResilienceSupplier<K, V> supplier() { return SUPPLIER; }
+  public static final <K, V> UniversalResilienceSupplier<K, V> enable(Cache2kBuilder<K, V> builder) {
     builder.config().setResiliencePolicy(supplier());
     return supplier();
   }
 
-  private static final UniversalResilienceConfig EMPTY =
-    new UniversalResilienceConfig();
+  private final double multiplier;
+  private final long resilienceDuration;
+  private final long maxRetryInterval;
+  private final long retryInterval;
 
   /**
-   * We use a common random instance. Since this is only called for an exception
-   * we do not bother for contention.
+   * Construct universal resilience policy. Duration and interval values are in milliseconds.
+   *
+   * @param resilienceDuration maximum duration in which exceptions are suppressed if a previous
+   *                           load was successful
+   * @param retryInterval start value of retry interval
    */
-  static final Random SHARED_RANDOM = new Random();
-
-  static final int RETRY_PERCENT_OF_RESILIENCE_DURATION = 10;
-  static final int MIN_RETRY_INTERVAL = 0;
-
-  private double multiplier = 1.5;
-  private double randomization = 0.5;
-
-  private long resilienceDuration;
-  private long maxRetryInterval;
-  private long retryInterval;
-  private boolean suppressExceptions;
+  public UniversalResiliencePolicy(long resilienceDuration, long retryInterval) {
+    this(resilienceDuration, retryInterval, retryInterval, 1.0);
+  }
 
   /**
-   * Construct a resilience policy with multiplier 1.5 and randomization 0.5.
+   * Construct universal resilience policy. Duration and interval values are in milliseconds.
+   *
+   * @param resilienceDuration maximum duration in which exceptions are suppressed if a previous
+   *                           load was succesful
+   * @param maxRetryInterval maximum value for retryInterval
+   * @param retryInterval start value of retry interval
+   * @param multiplier multiplier for retry interval in case of consecutive load exceptions
    */
-  public UniversalResiliencePolicy(Cache2kConfig<K, V> cfgRoot) {
-    this(cfgRoot.getSections().getSection(UniversalResilienceConfig.class),
-      cfgRoot.getExpireAfterWrite());
-  }
-
-  public UniversalResiliencePolicy(UniversalResilienceConfig cfg, Duration expireAfterWrite) {
-    if (cfg == null) { cfg = EMPTY; }
-    suppressExceptions = cfg.isSuppressExceptions();
-    resilienceDuration = toMillis(cfg.getResilienceDuration());
-    maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
-    retryInterval = toMillis(cfg.getRetryInterval());
-    if (resilienceDuration == UNSET_LONG) {
-      if (expireAfterWrite == ETERNAL_DURATION) {
-        resilienceDuration = 0;
-      } else {
-        if (expireAfterWrite != null) {
-          resilienceDuration = expireAfterWrite.toMillis();
-        } else {
-          resilienceDuration = UNSET_LONG;
-        }
-      }
-    } else {
-      if (maxRetryInterval == UNSET_LONG) {
-        maxRetryInterval = resilienceDuration;
-      }
+  public UniversalResiliencePolicy(long resilienceDuration, long maxRetryInterval,
+                                   long retryInterval, double multiplier) {
+    if (multiplier < 1.0) {
+      throw new IllegalArgumentException("multiplier needs to be greater than 1.0");
     }
-    if (maxRetryInterval == UNSET_LONG && retryInterval == UNSET_LONG) {
-      maxRetryInterval = resilienceDuration;
-    }
-    if (retryInterval == UNSET_LONG) {
-      retryInterval = resilienceDuration * RETRY_PERCENT_OF_RESILIENCE_DURATION / 100;
-      retryInterval = Math.min(retryInterval, maxRetryInterval);
-      retryInterval = Math.max(MIN_RETRY_INTERVAL, retryInterval);
-    }
-    if (retryInterval > maxRetryInterval) {
-      maxRetryInterval = retryInterval;
-    }
-    if (maxRetryInterval > resilienceDuration && resilienceDuration != 0) {
-      resilienceDuration = maxRetryInterval;
-    }
-    if (resilienceDuration != UNSET_LONG && !suppressExceptions) {
-      throw new IllegalArgumentException(
-        "exception suppression disabled " +
-        "but resilience duration set");
-    }
-    if (!suppressExceptions) {
-      resilienceDuration = 0;
-    }
-  }
-
-  static long toMillis(Duration d) {
-    if (d == null) {
-      return Cache2kConfig.UNSET_LONG;
-    }
-    return d.toMillis();
-  }
-
-  public double getMultiplier() {
-    return multiplier;
-  }
-
-  public void setMultiplier(double multiplier) {
     this.multiplier = multiplier;
+    this.resilienceDuration = resilienceDuration;
+    this.maxRetryInterval = maxRetryInterval;
+    this.retryInterval = retryInterval;
   }
 
-  public double getRandomization() {
-    return randomization;
-  }
-
-  public void setRandomization(double randomization) {
-    this.randomization = randomization;
-  }
-
-  public long getResilienceDuration() { return resilienceDuration; }
-
-  public long getMaxRetryInterval() { return maxRetryInterval; }
-
-  public long getRetryInterval() { return retryInterval; }
-
+  /**
+   * Allows exceptions to be suppressed for a maximum of resilienceDuration starting from
+   * last successful load. Returns a shorter time based on the the retry configuration
+   * with exponential backoff.
+   */
   @Override
   public long suppressExceptionUntil(K key,
                                      LoadExceptionInfo<K> loadExceptionInfo,
@@ -163,13 +95,9 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
     return Math.min(loadExceptionInfo.getLoadTime() + deltaMs, maxSuppressUntil);
   }
 
-  private long calculateRetryDelta(LoadExceptionInfo loadExceptionInfo) {
-    long delta = (long)
-      (retryInterval * Math.pow(multiplier, loadExceptionInfo.getRetryCount()));
-    delta += SHARED_RANDOM.nextDouble() * randomization * delta;
-    return Math.min(delta, maxRetryInterval);
-  }
-
+  /**
+   * Retries after the load time based on the retry configuration with exponential backoff.
+   */
   @Override
   public long retryLoadAfter(K key, LoadExceptionInfo<K> loadExceptionInfo) {
     if (retryInterval == 0 || retryInterval == Long.MAX_VALUE) {
@@ -178,22 +106,20 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
     return loadExceptionInfo.getLoadTime() + calculateRetryDelta(loadExceptionInfo);
   }
 
-  public static class Supplier<K, V>
-    implements CustomizationSupplierWithConfig
-      <K, V, ResiliencePolicy<K, V>, UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
-    @Override
-    public ResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
-      UniversalResiliencePolicy<K, V> policy =
-        new UniversalResiliencePolicy<>(buildContext.getConfiguration());
-      if (policy.getRetryInterval() == 0 && policy.getResilienceDuration() == 0) {
-        return ResiliencePolicy.disabledPolicy();
-      }
-      return policy;
-    }
-    @Override
-    public Class<UniversalResilienceConfig> getConfigClass() {
-      return UniversalResilienceConfig.class;
-    }
+  private long calculateRetryDelta(LoadExceptionInfo loadExceptionInfo) {
+    long delta = (long)
+      (retryInterval * Math.pow(multiplier, loadExceptionInfo.getRetryCount()));
+    return Math.min(delta, maxRetryInterval);
   }
+
+  public double getMultiplier() {
+    return multiplier;
+  }
+
+  public long getResilienceDuration() { return resilienceDuration; }
+
+  public long getMaxRetryInterval() { return maxRetryInterval; }
+
+  public long getRetryInterval() { return retryInterval; }
 
 }

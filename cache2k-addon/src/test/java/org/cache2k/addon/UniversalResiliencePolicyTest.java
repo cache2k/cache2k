@@ -22,7 +22,6 @@ package org.cache2k.addon;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CustomizationException;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
@@ -283,18 +282,6 @@ public class UniversalResiliencePolicyTest {
     assertEquals(0, policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
-  }
-
-  @Test(expected = CustomizationException.class)
-  public void noSuppress_duration10m() {
-    Cache<Integer, Integer> c = new Cache2kBuilder<Integer, Integer>() { }
-      .eternal(true)
-      .apply(UniversalResiliencePolicy::enable, b -> b
-        .resilienceDuration(10, TimeUnit.MINUTES)
-        .suppressExceptions(false)
-      )
-      /* ... set loader ... */
-      .build();
   }
 
 }

@@ -33,42 +33,92 @@ import java.util.concurrent.TimeUnit;
 public class UniversalResilienceConfig
   implements ConfigSection<UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
 
-  private boolean suppressExceptions = true;
-
+  private int retryPercentOfResilienceDuration = 10;
+  private Duration minRetryInterval = Duration.ZERO;
   private Duration retryInterval = null;
   private Duration maxRetryInterval = null;
   private Duration resilienceDuration = null;
+  private double backoffMultiplier = 1.5;
 
-  public boolean isSuppressExceptions() {
-    return suppressExceptions;
-  }
-
-  public void setSuppressExceptions(boolean suppressExceptions) {
-    this.suppressExceptions = suppressExceptions;
-  }
-
+  /**
+   * @see Builder#retryInterval
+   */
   public Duration getRetryInterval() {
     return retryInterval;
   }
 
-  public void setRetryInterval(Duration retryInterval) {
-    this.retryInterval = retryInterval;
+  /**
+   * @see Builder#retryInterval
+   */
+  public void setRetryInterval(Duration v) {
+    this.retryInterval = v;
   }
 
+  /**
+   * @see Builder#maxRetryInterval
+   */
   public Duration getMaxRetryInterval() {
     return maxRetryInterval;
   }
 
-  public void setMaxRetryInterval(Duration maxRetryInterval) {
-    this.maxRetryInterval = maxRetryInterval;
+  /**
+   * @see Builder#maxRetryInterval
+   */
+  public void setMaxRetryInterval(Duration v) {
+    this.maxRetryInterval = v;
   }
 
+  /**
+   * @see Builder#resilienceDuration
+   */
   public Duration getResilienceDuration() {
     return resilienceDuration;
   }
 
-  public void setResilienceDuration(Duration resilienceDuration) {
-    this.resilienceDuration = resilienceDuration;
+  /**
+   * @see Builder#resilienceDuration
+   */
+  public void setResilienceDuration(Duration v) {
+    this.resilienceDuration = v;
+  }
+
+  /**
+   * @see Builder#backoffMultiplier
+   */
+  public double getBackoffMultiplier() {
+    return backoffMultiplier;
+  }
+
+  /**
+   * @see Builder#backoffMultiplier
+   */
+  public void setBackoffMultiplier(double backoffMultiplier) {
+    this.backoffMultiplier = backoffMultiplier;
+  }
+
+  /**
+   * @see Builder#retryPercentOfResilienceDuration
+   */
+  public int getRetryPercentOfResilienceDuration() {
+    return retryPercentOfResilienceDuration;
+  }
+
+  /**
+   * @see Builder#retryPercentOfResilienceDuration
+   */
+  public void setRetryPercentOfResilienceDuration(int retryPercentOfResilienceDuration) {
+    this.retryPercentOfResilienceDuration = retryPercentOfResilienceDuration;
+  }
+
+  /**
+   * @see Builder#
+   */
+  public Duration getMinRetryInterval() {
+    return minRetryInterval;
+  }
+
+  public void setMinRetryInterval(Duration minRetryInterval) {
+    this.minRetryInterval = minRetryInterval;
   }
 
   @Override
@@ -109,11 +159,7 @@ public class UniversalResilienceConfig
     /**
      * Time span the cache will suppress loader exceptions if a value is available from
      * a previous load. After the time span is passed the cache will start propagating
-     * loader exceptions. If {@link #suppressExceptions} is switched off, this setting
-     * has no effect.
-     *
-     * <p>Defaults to {@link Cache2kBuilder#expireAfterWrite}. If {@link #suppressExceptions}
-     * is switched off, this setting has no effect.
+     * loader exceptions.
      */
     public final Builder resilienceDuration(long v, TimeUnit u) {
       config.setResilienceDuration(toDuration(v, u));
@@ -121,25 +167,32 @@ public class UniversalResilienceConfig
     }
 
     /**
-     * Suppress an exception from the cache loader, if there is previous data.
-     * When a load was not successful, the operation is retried at shorter interval then
-     * the normal expiry, see {@link #retryInterval(long, TimeUnit)}.
-     *
-     * <p>Exception suppression is only active when entries expire (eternal is not true) or the
-     * explicit configuration of the timing parameters for resilience, e.g.
-     * {@link #resilienceDuration(long, TimeUnit)}. Check the user guide chapter for details.
-     *
-     * <p>Exception suppression is enabled by default. Setting this to {@code false}, will disable
-     * exceptions suppression (aka resilience).
-     *
-     * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">
-     *   cache2k user guide - Exceptions and Resilience</a>
+     * Multiplier for exponential backoff if multiple exceptions occur in sequence.
+     * Default is {@code 1.5}.
      */
-    public final Builder suppressExceptions(boolean v) {
-      config.setSuppressExceptions(v);
+    public final Builder backoffMultiplier(double v) {
+      config.setBackoffMultiplier(v);
       return this;
     }
 
+    /**
+     * A minimum value of retry interval if its not explicitly set and derived
+     * from resilience duration or expireAfterWrite.
+     */
+    public final Builder minRetryInterval(Duration v) {
+      config.setMinRetryInterval(v);
+      return this;
+    }
+
+    /**
+     * If retry values are not specified and a resilience duration
+     * available, calculates the retry interval time from the resilience
+     * duration. Default 10, meaning 10 percent.
+     */
+    public final Builder retryPercentOfResilienceDuration(int v) {
+      config.setRetryPercentOfResilienceDuration(v);
+      return this;
+    }
     @Override
     public UniversalResilienceConfig config() {
       return config;

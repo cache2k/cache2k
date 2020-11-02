@@ -43,16 +43,14 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, Customization<
     @Override
     public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object> loadExceptionInfo,
                                        CacheEntry<Object, Object> cachedEntry) {
-      return 0;
+      return NOW;
     }
 
     @Override
     public long retryLoadAfter(Object key, LoadExceptionInfo<Object> loadExceptionInfo) {
-      return 0;
+      return NOW;
     }
   };
-
-  @SuppressWarnings("unchecked")
   static <K, V> ResiliencePolicy<K, V> disabledPolicy() {
     return (ResiliencePolicy<K, V>) DISABLED_POLICY;
   }
