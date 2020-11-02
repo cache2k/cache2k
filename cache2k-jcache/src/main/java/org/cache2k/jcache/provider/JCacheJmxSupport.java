@@ -21,9 +21,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.api.InternalCacheBuildContext;
-import org.cache2k.core.api.InternalCacheCloseContext;
-import org.cache2k.core.spi.CacheLifeCycleListener;
+import org.cache2k.event.CacheClosedListener;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -34,21 +32,21 @@ import java.lang.management.ManagementFactory;
  * @author Jens Wilke
  */
 @SuppressWarnings("WeakerAccess")
-public class JCacheJmxSupport implements CacheLifeCycleListener {
+public class JCacheJmxSupport implements CacheClosedListener {
 
-  private final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+  private static final MBeanServer PLATFORM_SERVER = ManagementFactory.getPlatformMBeanServer();
+  public static final JCacheJmxSupport SINGLETON = new JCacheJmxSupport();
+
+  private JCacheJmxSupport() { }
 
   @Override
-  public <K, V> void cacheCreated(Cache<K, V> cache, InternalCacheBuildContext<K, V> ctx) { }
-
-  @Override
-  public <K, V> void cacheClosed(Cache<K, V> cache, InternalCacheCloseContext ctx) {
+  public void onCacheClosed(Cache cache) {
     disableStatistics(cache);
     disableJmx(cache);
   }
 
   public void enableStatistics(JCacheAdapter c) {
-    MBeanServer mbs = mBeanServer;
+    MBeanServer mbs = PLATFORM_SERVER;
     String name = createStatisticsObjectName(c.cache);
     try {
        mbs.registerMBean(
@@ -60,7 +58,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   }
 
   public void disableStatistics(Cache c) {
-    MBeanServer mbs = mBeanServer;
+    MBeanServer mbs = PLATFORM_SERVER;
     String name = createStatisticsObjectName(c);
     try {
       mbs.unregisterMBean(new ObjectName(name));
@@ -71,7 +69,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   }
 
   public void enableJmx(Cache c, javax.cache.Cache ca) {
-    MBeanServer mbs = mBeanServer;
+    MBeanServer mbs = PLATFORM_SERVER;
     String name = createJmxObjectName(c);
     try {
        mbs.registerMBean(new JCacheJmxCacheMXBean(ca), new ObjectName(name));
@@ -81,7 +79,7 @@ public class JCacheJmxSupport implements CacheLifeCycleListener {
   }
 
   public void disableJmx(Cache c) {
-    MBeanServer mbs = mBeanServer;
+    MBeanServer mbs = PLATFORM_SERVER;
     String name = createJmxObjectName(c);
     try {
       mbs.unregisterMBean(new ObjectName(name));

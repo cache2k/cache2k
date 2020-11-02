@@ -50,12 +50,7 @@ public class JCacheManagerAdapter implements CacheManager {
    * The JMX support is already created via the serviceloader
    */
   private static JCacheJmxSupport findJCacheJmxSupportInstance() {
-    for (CacheLifeCycleListener l : CacheManagerImpl.getCacheLifeCycleListeners()) {
-      if (l instanceof JCacheJmxSupport) {
-        return (JCacheJmxSupport) l;
-      }
-    }
-    throw new LinkageError("JCacheJmxSupport not loaded");
+    return JCacheJmxSupport.SINGLETON;
   }
 
   private final org.cache2k.CacheManager manager;

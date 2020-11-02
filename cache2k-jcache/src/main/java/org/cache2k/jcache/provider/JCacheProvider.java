@@ -22,7 +22,6 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.core.Cache2kCoreProviderImpl;
 import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.core.SingleProviderResolver;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
