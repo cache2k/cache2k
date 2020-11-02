@@ -116,7 +116,9 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Create a builder from the configuration.
+   * Create a builder from the configuration bean. The builder is not assigned
+   * to a cache manager and any default configurations, if present, will not be
+   * applied.
    */
   public static <K, V> Cache2kBuilder<K, V> of(Cache2kConfig<K, V> c) {
     Cache2kBuilder<K, V> cb = new Cache2kBuilder<K, V>(c);
