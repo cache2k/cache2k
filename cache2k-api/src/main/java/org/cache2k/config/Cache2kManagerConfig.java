@@ -91,4 +91,11 @@ public class Cache2kManagerConfig implements ConfigBean {
     ignoreAnonymousCache = f;
   }
 
+  /**
+   * Not supported, but will eventually get one.
+   */
+  @Override
+  public ConfigBuilder builder() {
+    throw new UnsupportedOperationException();
+  }
 }

@@ -25,6 +25,7 @@ package org.cache2k.config;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("rawtypes")
 public interface ValidatingConfigBean extends ConfigBean {
 
   /**

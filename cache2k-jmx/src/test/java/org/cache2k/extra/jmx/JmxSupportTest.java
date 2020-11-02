@@ -25,7 +25,6 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 
 import org.cache2k.Weigher;
-import org.cache2k.core.common.BaseCacheControl;
 import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;

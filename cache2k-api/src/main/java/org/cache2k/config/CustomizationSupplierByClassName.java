@@ -65,9 +65,14 @@ public final class CustomizationSupplierByClassName<T>
     }
   }
 
+  @Override
+  public ConfigBuilder builder() {
+    throw new UnsupportedOperationException();
+  }
+
   @SuppressWarnings("unchecked")
   @Override
-  public T supply(CacheBuildContext ctx) {
+  public T supply(CacheBuildContext<?, ?> ctx) {
     try {
       return (T) ctx.getCacheManager().getClassLoader()
         .loadClass(className).getConstructor().newInstance();

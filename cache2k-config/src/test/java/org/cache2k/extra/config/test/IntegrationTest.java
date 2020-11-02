@@ -271,6 +271,26 @@ public class IntegrationTest {
   }
 
   @Test
+  public void featureEnabled() {
+    Cache c =
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("withFeature")
+        .build();
+    assertTrue(InspectionFeature.wasEnabled(c));
+  }
+
+  @Test
+  public void featureDisabled() {
+    Cache c =
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("specialCases"))
+        .name("withFeatureDisabled")
+        .build();
+    assertFalse(InspectionFeature.wasEnabled(c));
+  }
+
+  @Test
   public void notSerializableSection() {
     try {
       new Cache2kBuilder<String, String>() { }

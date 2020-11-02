@@ -27,11 +27,9 @@ import org.cache2k.Customization;
  *
  * @author Jens Wilke
  */
-public interface CustomizationSupplierWithConfig
-  <K, V, T extends Customization<K, V>,
-    CFG extends ConfigSection<CFG, B>,
-    B extends SectionBuilder<B, CFG>>
-  extends CustomizationSupplier<T> {
+public interface WithConfigSection
+    <CFG extends ConfigSection<CFG, B>,
+    B extends SectionBuilder<B, CFG>> {
 
   Class<CFG> getConfigClass();
 

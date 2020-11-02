@@ -34,4 +34,6 @@ public interface ConfigBean
   <SELF extends ConfigBean<SELF, B>, B extends ConfigBuilder<B, SELF>>
   extends Serializable {
 
+  B builder();
+
 }

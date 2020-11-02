@@ -115,7 +115,7 @@ public class Cache2kConfig<K, V>
   private CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K, V>> asyncListeners;
   private Collection<CustomizationSupplier<CacheLifecycleListener>> lifecycleListeners;
-  private Set<CacheFeature> features;
+  private Set<Feature> features;
   private SectionContainer sections;
 
   /**
@@ -579,7 +579,7 @@ public class Cache2kConfig<K, V>
     getLifecycleListeners().addAll(c);
   }
 
-  public Set<CacheFeature> getFeatures() {
+  public Set<Feature> getFeatures() {
     if (features == null) {
       features = new HashSet<>();
     }
@@ -590,7 +590,7 @@ public class Cache2kConfig<K, V>
     return features != null && !features.isEmpty();
   }
 
-  public void setFeatures(Set<? extends CacheFeature> v) {
+  public void setFeatures(Set<? extends Feature> v) {
     getFeatures().addAll(v);
   }
 

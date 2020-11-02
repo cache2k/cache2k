@@ -31,20 +31,22 @@ import java.util.Iterator;
  *
  * @author Jens Wilke
  */
-public abstract class ToggleCacheFeature implements CacheFeature {
+public abstract class ToggleFeature implements Feature {
 
-  public static void enable(Cache2kBuilder<?, ?> builder,
-                            Class<? extends ToggleCacheFeature> featureType) {
+  public static ToggleFeature enable(Cache2kBuilder<?, ?> builder,
+                            Class<? extends ToggleFeature> featureType) {
     try {
-      builder.config().getFeatures().add(featureType.getConstructor().newInstance());
+      ToggleFeature feature = featureType.getConstructor().newInstance();
+      builder.config().getFeatures().add(feature);
+      return feature;
     } catch (Exception e) {
       throw new LinkageError("Instantiation failed", e);
     }
   }
 
   public static void disable(Cache2kBuilder<?, ?> builder,
-                            Class<? extends ToggleCacheFeature> featureType) {
-    Iterator<CacheFeature> it = builder.config().getFeatures().iterator();
+                            Class<? extends ToggleFeature> featureType) {
+    Iterator<Feature> it = builder.config().getFeatures().iterator();
     while (it.hasNext()) {
       if (it.next().getClass().equals(featureType)) {
         it.remove();
@@ -70,8 +72,15 @@ public abstract class ToggleCacheFeature implements CacheFeature {
     return enabled;
   }
 
-  public final void setEnabled(boolean enabled) {
-    this.enabled = enabled;
+  public final void setEnabled(boolean v) {
+    this.enabled = v;
+  }
+
+  /**
+   * Alternate setter for spelling flexibility in XML configuration.
+   */
+  public final void setEnable(boolean v) {
+    this.enabled = v;
   }
 
   /**

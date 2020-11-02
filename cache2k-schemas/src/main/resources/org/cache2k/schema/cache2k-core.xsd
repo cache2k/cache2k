@@ -218,6 +218,19 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="featureSet">
+    <xs:annotation>
+      <xs:documentation>
+        List of cache features.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="feature" type="t:typeIncludeParameters"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="sectionCollection">
     <xs:annotation>
       <xs:documentation>
@@ -226,8 +239,7 @@
     </xs:annotation>
     <xs:sequence>
       <xs:choice maxOccurs="unbounded">
-        <xs:element name="section" type="t:typeIncludeParameters">
-        </xs:element>
+        <xs:element name="section" type="t:typeIncludeParameters"/>
         <!-- TODO: actually jcache may appear only once. -->
         <xs:element name="jcache" type="t:sectionJCache"/>
         <xs:element name="resilience" type="t:sectionResilience"/>
@@ -485,6 +497,13 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
+      <xs:element name="features" type="t:featureSet" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Set of enabled features.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element name="asyncListeners" type="t:customizationCollection" minOccurs="0">
         <xs:annotation>
           <xs:documentation>
@@ -493,11 +512,10 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
-      <xs:element name="closedListeners" type="t:customizationCollection" minOccurs="0">
+      <xs:element name="lifecyclcleListeners" type="t:customizationCollection" minOccurs="0">
         <xs:annotation>
           <xs:documentation>
-            Listener for cache closing.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#addCacheClosedListener-org.cache2k.event.CacheClosedListener-org.cache2k.event.CacheClosedListener">Cache2kBuilder API Documentation</a>
+            Lifecycle listeners.
           </xs:documentation>
         </xs:annotation>
       </xs:element>

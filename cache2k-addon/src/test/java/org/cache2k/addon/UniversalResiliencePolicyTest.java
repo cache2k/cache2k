@@ -101,7 +101,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void configVariant_singleApply() {
     cache = builder()
-      .apply(UniversalResiliencePolicy::enable, b -> b
+      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(4711, TimeUnit.MILLISECONDS)
       )
       .build();
@@ -114,7 +114,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void configVariant_overwrites() {
       cache = builder()
-        .apply(UniversalResiliencePolicy::enable, b -> b
+        .setupWithSection(UniversalResiliencePolicy::enable, b -> b
           .resilienceDuration(4711, TimeUnit.MILLISECONDS)
           .retryInterval(1234, TimeUnit.MILLISECONDS)
         )
@@ -221,7 +221,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void expiry10m_duration30s() {
     cache = builder()
-      .apply(UniversalResiliencePolicy::enable, b -> b
+      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -262,7 +262,7 @@ public class UniversalResiliencePolicyTest {
   public void expiry10m_retry10s() {
     cache = builder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .apply(UniversalResiliencePolicy::enable, b -> b
+      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -311,7 +311,7 @@ public class UniversalResiliencePolicyTest {
   public void eternal_duration30s_retry10s() {
     cache = builder()
       .eternal(true)
-      .apply(UniversalResiliencePolicy::enable, b -> b
+      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
         .retryInterval(10, TimeUnit.SECONDS)
       )
@@ -331,7 +331,7 @@ public class UniversalResiliencePolicyTest {
   public void eternal_retry10s() {
     cache = builder()
       .eternal(true)
-      .apply(UniversalResiliencePolicy::enable, b -> b
+      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */

@@ -23,13 +23,14 @@ package org.cache2k;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
+import org.cache2k.config.ConfigBean;
 import org.cache2k.config.ConfigBuilder;
-import org.cache2k.config.CustomizationSupplierWithConfig;
+import org.cache2k.config.WithConfigSection;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.ConfigSection;
-import org.cache2k.config.ToggleCacheFeature;
+import org.cache2k.config.ToggleFeature;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -893,13 +894,13 @@ public class Cache2kBuilder<K, V>
   }
 
   /** Enable a feature */
-  public final Cache2kBuilder<K, V> enable(Class<? extends ToggleCacheFeature> feature) {
-    ToggleCacheFeature.enable(this, feature);
+  public final Cache2kBuilder<K, V> enable(Class<? extends ToggleFeature> feature) {
+    ToggleFeature.enable(this, feature);
     return this;
   }
 
-  public final Cache2kBuilder<K, V> disable(Class<? extends ToggleCacheFeature> feature) {
-    ToggleCacheFeature.disable(this, feature);
+  public final Cache2kBuilder<K, V> disable(Class<? extends ToggleFeature> feature) {
+    ToggleFeature.disable(this, feature);
     return this;
   }
 
@@ -939,21 +940,53 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Enable a customization that has an associated configuration section with
+   * Enable a feature or customization that has an associated configuration section with
    * an enabling function and configure it.
    *
-   * @param enabler function enabling the customization in the configuration
-   * @param builderAction function for coniguring the customization
+   * @param setupAction function modifying the configuration
+   * @param builderAction function for configuring the customization
    * @param <B> the builder for the customizations' configuration section
    * @param <CFG> the configuration section
    * @param <SUP> the supplier for the customization
    */
   public <B extends SectionBuilder<B, CFG>,
     CFG extends ConfigSection<CFG, B>,
-    SUP extends CustomizationSupplierWithConfig<K, V, ?, CFG, B>>  Cache2kBuilder<K, V> apply(
-    Function<Cache2kBuilder<K, V>, SUP> enabler,
+    SUP extends WithConfigSection<CFG, B>>  Cache2kBuilder<K, V> setupWithSection(
+    Function<Cache2kBuilder<K, V>, SUP> setupAction,
     Consumer<B> builderAction) {
-    section(enabler.apply(this).getConfigClass(), builderAction);
+    section(setupAction.apply(this).getConfigClass(), builderAction);
+    return this;
+  }
+
+  /**
+   * Enables a feature or customization which has additional parameters and configures it
+   * via its builder.
+   *
+   * @param builderAction function to configure the feature
+   */
+  public <B extends ConfigBuilder<B, CFG>,
+    CFG extends ConfigBean<CFG, B>>  Cache2kBuilder<K, V> setupWithParameters(
+    Function<Cache2kBuilder<K, V>, CFG> enabler,
+    Consumer<B> builderAction) {
+    builderAction.accept(enabler.apply(this).builder());
+    return this;
+  }
+
+  /**
+   * Enables a toggle feature which has additional parameters and configures it via its builder.
+   *
+   * @param featureType A class of type {@link ToggleFeature} and {@link ConfigBean}
+   * @param builderAction function to configure the feature
+   */
+  @SuppressWarnings("unchecked")
+  public <B extends ConfigBuilder<B, CFG>,
+    CFG extends ConfigBean<CFG, B>>  Cache2kBuilder<K, V> enableWithParameters(
+    Class<CFG> featureType,
+    Consumer<B> builderAction) {
+    ConfigBean<CFG, B> bean =
+      (ConfigBean<CFG, B>)
+        ToggleFeature.enable(this, (Class<ToggleFeature>) (Class) featureType);
+    builderAction.accept(bean.builder());
     return this;
   }
 

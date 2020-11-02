@@ -23,7 +23,7 @@ package org.cache2k.extra.jmx;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
-import org.cache2k.config.ToggleCacheFeature;
+import org.cache2k.config.ToggleFeature;
 
 /**
  * Adds optional support for JMX.
@@ -31,7 +31,7 @@ import org.cache2k.config.ToggleCacheFeature;
  * <p>Registering a name may fail because cache manager names may be identical in different
  * class loaders.
  */
-public final class JmxSupport extends ToggleCacheFeature {
+public final class JmxSupport extends ToggleFeature {
 
   /**
    * Enable JMX monitoring.

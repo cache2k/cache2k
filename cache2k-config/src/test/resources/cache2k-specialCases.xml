@@ -81,6 +81,27 @@
         </bean>
       </loader>
     </cache>
+    <cache>
+      <name>withFeature</name>
+      <features>
+        <feature>
+          <type>org.cache2k.extra.config.test.InspectionFeature</type>
+        </feature>
+      </features>
+    </cache>
+    <cache>
+      <name>withFeatureDisabled</name>
+      <features>
+        <feature>
+          <type>org.cache2k.extra.config.test.InspectionFeature</type>
+          <parameters>
+            <!-- Both spellings work -->
+            <enable>false</enable>
+            <enabled>false</enabled>
+          </parameters>
+        </feature>
+      </features>
+    </cache>
   </caches>
 
 </cache2k>

@@ -22,7 +22,8 @@ package org.cache2k.addon;
 
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
-import org.cache2k.config.CustomizationSupplierWithConfig;
+import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.config.WithConfigSection;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
@@ -36,9 +37,9 @@ import static org.cache2k.config.Cache2kConfig.UNSET_LONG;
  *
  * @author Jens Wilke
  */
-public class UniversalResilienceSupplier<K, V>
-  implements CustomizationSupplierWithConfig
-  <K, V, ResiliencePolicy<K, V>, UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
+public class UniversalResilienceSupplier<K, V> implements
+  CustomizationSupplier<ResiliencePolicy<K, V>>,
+  WithConfigSection<UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
 
   private static final UniversalResilienceConfig DEFAULT_CONFIG = new UniversalResilienceConfig();
 
