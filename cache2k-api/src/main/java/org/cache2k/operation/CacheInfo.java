@@ -44,7 +44,7 @@ public interface CacheInfo {
   /**
    * Request an instance for the given cache.
    */
-  static CacheInfo of(Cache<?, ?> cache) { return CacheControl.of(cache); }
+  static CacheInfo of(Cache<?, ?> cache) { return cache.requestInterface(CacheInfo.class); }
 
   String getName();
 

@@ -23,9 +23,8 @@ import org.cache2k.extra.jmx.JmxSupport;
  * @author Jens Wilke
  */
 module org.cache2k.jmx {
+  exports org.cache2k.extra.jmx;
   requires java.management;
   requires org.cache2k.api;
   requires org.cache2k.core;
-  provides org.cache2k.core.spi.CacheLifeCycleListener with JmxSupport;
-  provides org.cache2k.core.spi.CacheManagerLifeCycleListener with JmxSupport;
 }

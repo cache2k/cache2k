@@ -1,4 +1,4 @@
-package org.cache2k.config;
+package org.cache2k.event;
 
 /*
  * #%L
@@ -20,18 +20,10 @@ package org.cache2k.config;
  * #L%
  */
 
+import java.util.EventListener;
+
 /**
- * Features need to properly implement {@code equals()} and {@code hashCode()}
- *
  * @author Jens Wilke
  */
-public interface Feature {
-
-  /**
-   * The feature enables itself by augmenting the cache config.
-   * Called when {@link org.cache2k.Cache2kBuilder#build} is called
-   * before the actual cache creation.
-   */
-  void enlist(CacheBuildContext<?, ?> ctx);
-
+public interface CacheLifecycleListener extends EventListener {
 }

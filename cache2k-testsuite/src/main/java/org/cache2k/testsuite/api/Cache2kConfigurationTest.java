@@ -47,11 +47,11 @@ public class Cache2kConfigurationTest {
     assertEquals(1, cfg.getAsyncListeners().size());
     cfg.setListeners(Collections.singletonList(sup));
     assertEquals(1, cfg.getListeners().size());
-    cfg.setCacheClosedListeners(Collections.singletonList(sup));
-    assertEquals(1, cfg.getCacheClosedListeners().size());
-    assertTrue(cfg.getCacheClosedListeners().iterator().hasNext());
+    cfg.setLifecycleListeners(Collections.singletonList(sup));
+    assertEquals(1, cfg.getLifecycleListeners().size());
+    assertTrue(cfg.getLifecycleListeners().iterator().hasNext());
     assertThat(
-      cfg.getCacheClosedListeners().toString(),
+      cfg.getLifecycleListeners().toString(),
       CoreMatchers.containsString("DefaultCustomizationCollection"));
   }
 

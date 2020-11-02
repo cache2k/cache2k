@@ -40,6 +40,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -392,8 +393,9 @@ public class Cache2kBuilderTest {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
     _builder = _builder.addCacheClosedListener(new CacheClosedListener() {
       @Override
-      public void onCacheClosed(final Cache cache) {
+      public CompletableFuture<Void> onCacheClosed(final Cache cache) {
         _FIRED.set(true);
+        return null;
       }
     });
     if (_wiredCache) {

@@ -27,6 +27,7 @@ import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Jens Wilke
@@ -40,9 +41,10 @@ public class JCacheJmxSupport implements CacheClosedListener {
   private JCacheJmxSupport() { }
 
   @Override
-  public void onCacheClosed(Cache cache) {
+  public CompletableFuture<Void> onCacheClosed(Cache cache) {
     disableStatistics(cache);
     disableJmx(cache);
+    return null;
   }
 
   public void enableStatistics(JCacheAdapter c) {

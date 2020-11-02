@@ -23,6 +23,7 @@ package org.cache2k.event;
 import org.cache2k.Cache;
 
 import java.util.EventListener;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Listener called when cache is closed. This is intended for resource cleanup
@@ -30,14 +31,15 @@ import java.util.EventListener;
  *
  * @author Jens Wilke
  */
-public interface CacheClosedListener extends EventListener {
+public interface CacheClosedListener extends CacheLifecycleListener {
 
   /**
-   * Called when cache closes. This is intended for resource cleanup. No heavy operations
-   * are allowed, like flushing I/O.
+   * Called when cache is closed.
    *
-   * @param cache The cache that is closing. No cache operations on entries are allowed.
+   * @param cache The cache that is closed. The cache object can be used
+   *              to retrieve the name and the associated manager.
+   *              No operations are allowed.
    */
-  void onCacheClosed(Cache cache);
+  CompletableFuture<Void> onCacheClosed(Cache<?, ?> cache);
 
 }

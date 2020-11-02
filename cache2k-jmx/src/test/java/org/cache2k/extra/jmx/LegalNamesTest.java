@@ -67,25 +67,14 @@ public class LegalNamesTest {
     String name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
     Cache c = Cache2kBuilder.forUnknownTypes()
       .name(name)
-      .enableJmx(true)
+      .enable(JmxSupport.class)
       .build();
     assertEquals("default", c.getCacheManager().getName());
     assertTrue(c.getCacheManager().isDefaultManager());
     assertEquals(name, c.getName());
-    MBeanInfo inf = JmxSupportTest.getCacheManagerInfo(c.getCacheManager().getName());
-    assertNotNull(inf);
-    inf = JmxSupportTest.getCacheInfo(c.getName());
+    MBeanInfo inf = JmxSupportTest.getCacheInfo(c.getName());
     assertNotNull(inf);
     c.close();
-  }
-
-  @Test
-  public void testManager() throws Exception {
-    CacheManager cm = CacheManager.getInstance(LegalNamesTest.class.getName() + "-char-" + aChar);
-    MBeanInfo inf = JmxSupportTest.getCacheManagerInfo(cm.getName());
-    assertNotNull(inf);
-    Cache2kBuilder.forUnknownTypes().manager(cm).name("dummy").build();
-    cm.close();
   }
 
 }

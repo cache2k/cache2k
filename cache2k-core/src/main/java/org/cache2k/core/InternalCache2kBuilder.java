@@ -31,6 +31,8 @@ import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.DefaultClock;
 import org.cache2k.core.api.InternalClock;
+import org.cache2k.event.CacheClosedListener;
+import org.cache2k.event.CacheCreatedListener;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -42,10 +44,9 @@ import org.cache2k.config.Cache2kConfig;
 import org.cache2k.CacheManager;
 import org.cache2k.core.event.AsyncDispatcher;
 import org.cache2k.core.event.AsyncEvent;
+import org.cache2k.event.CacheLifecycleListener;
 import org.cache2k.io.AdvancedCacheLoader;
-import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoader;
-import org.cache2k.io.CacheWriter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -139,7 +140,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     if (config.getLoader() != null) {
       Object obj =  createCustomization(config.getLoader());
       if (obj instanceof CacheLoader) {
-        final CacheLoader<K, V> loader = (CacheLoader) obj;
+        CacheLoader<K, V> loader = (CacheLoader) obj;
         c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
           @Override
           public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
@@ -256,8 +257,8 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     bc.setName(name);
     if (wrap) {
       wc.loader = bc.loader;
-      wc.writer = (CacheWriter<K, V>) createCustomization(config.getWriter());
-      wc.asyncLoader = (AsyncCacheLoader<K, V>) createCustomization(config.getAsyncLoader());
+      wc.writer = createCustomization(config.getWriter());
+      wc.asyncLoader = createCustomization(config.getAsyncLoader());
       List<CacheEntryCreatedListener<K, V>> syncCreatedListeners =
         new ArrayList<CacheEntryCreatedListener<K, V>>();
       List<CacheEntryUpdatedListener<K, V>> syncUpdatedListeners =
@@ -271,7 +272,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el =
-            (CacheEntryOperationListener<K, V>) createCustomization(f);
+            createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             syncCreatedListeners.add((CacheEntryCreatedListener) el);
           }
@@ -308,7 +309,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f :
           config.getAsyncListeners()) {
           CacheEntryOperationListener<K, V> el =
-            (CacheEntryOperationListener<K, V>) createCustomization(f);
+            createCustomization(f);
           if (el instanceof CacheEntryCreatedListener) {
             cll.add((CacheEntryCreatedListener) el);
           }
@@ -374,6 +375,20 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         Runtime.getRuntime().availableProcessors());
       bc.init();
     }
+    if (config.hasLifecycleListeners()) {
+      List<CacheClosedListener> closedListeners = new ArrayList<CacheClosedListener>();
+      for (CustomizationSupplier<? extends CacheLifecycleListener> sup :
+        config.getLifecycleListeners()) {
+        CacheLifecycleListener l = createCustomization(sup);
+        if (l instanceof CacheClosedListener) {
+          closedListeners.add((CacheClosedListener) l);
+        }
+        if (l instanceof CacheCreatedListener) {
+          ((CacheCreatedListener) l).onCacheCreated(cache, this);
+        }
+      }
+      bc.cacheClosedListeners = closedListeners;
+    }
     manager.sendCreatedEvent(cache, this);
     return cache;
   }
@@ -398,7 +413,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     }
 
     @Override
-    public void onEntryCreated(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryCreated(Cache<K, V> c, CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -425,8 +440,8 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     }
 
     @Override
-    public void onEntryUpdated(final Cache<K, V> cache, final CacheEntry<K, V> currentEntry,
-                               final CacheEntry<K, V> entryWithNewData) {
+    public void onEntryUpdated(Cache<K, V> cache, CacheEntry<K, V> currentEntry,
+                               CacheEntry<K, V> entryWithNewData) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -453,7 +468,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     }
 
     @Override
-    public void onEntryRemoved(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryRemoved(Cache<K, V> c, CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -479,7 +494,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     }
 
     @Override
-    public void onEntryExpired(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryExpired(Cache<K, V> c, CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -505,7 +520,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     }
 
     @Override
-    public void onEntryEvicted(final Cache<K, V> c, final CacheEntry<K, V> e) {
+    public void onEntryEvicted(Cache<K, V> c, CacheEntry<K, V> e) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {

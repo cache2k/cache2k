@@ -132,7 +132,7 @@ public class JCacheBuilder<K, V> {
     setupCacheThrough();
     setupExpiryPolicy();
     setupEventHandling();
-    cache2kConfig.getCacheClosedListeners().add(
+    cache2kConfig.getLifecycleListeners().add(
       new CustomizationReferenceSupplier<CacheClosedListener>(JCacheJmxSupport.SINGLETON));
     buildAdapterCache();
     wrapForExpiryPolicy();
@@ -387,7 +387,7 @@ public class JCacheBuilder<K, V> {
       eventHandling.registerListener(cfg);
     }
     this.eventHandling = eventHandling;
-    cache2kConfig.getCacheClosedListeners().add(
+    cache2kConfig.getLifecycleListeners().add(
       new CustomizationReferenceSupplier<CacheClosedListener>(eventHandling));
   }
 

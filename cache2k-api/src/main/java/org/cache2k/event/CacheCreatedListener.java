@@ -1,8 +1,8 @@
-package org.cache2k.extra.jmx;
+package org.cache2k.event;
 
 /*
  * #%L
- * cache2k JMX support
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,27 +20,16 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.config.CacheBuildContext;
+
+import java.util.concurrent.CompletableFuture;
+
 /**
- * Bean representing a cache manager.
- *
  * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public interface CacheManagerMXBean {
+public interface CacheCreatedListener extends CacheLifecycleListener {
 
-  /**
-   * "ok" if no issues are to report, otherwise it starts with "WARNING:" or
-   * "FAILURE:" and a more descriptive text.
-   */
-  String getHealthStatus();
-
-  /**
-   * Clear all associated caches.
-   */
-  void clear();
-
-  String getVersion();
-
-  String getBuildNumber();
+  <K, V> CompletableFuture<Void> onCacheCreated(Cache<K, V> cache, CacheBuildContext<K, V> ctx);
 
 }

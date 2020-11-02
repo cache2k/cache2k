@@ -207,7 +207,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @SuppressWarnings("unchecked")
   protected ExceptionPropagator<K> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
-  private Collection<CacheClosedListener> cacheClosedListeners = Collections.emptyList();
+  Collection<CacheClosedListener> cacheClosedListeners = Collections.emptyList();
 
   private int featureBits = 0;
 
@@ -302,13 +302,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     refreshExecutor =
       buildContext.createCustomization(cfg.getRefreshExecutor(), new LazyRefreshExecutor());
     executor = buildContext.createCustomization(cfg.getExecutor(), SHARED_EXECUTOR);
-    if (cfg.hasCacheClosedListeners()) {
-      List<CacheClosedListener> listeners = new ArrayList<CacheClosedListener>();
-      for (CustomizationSupplier<CacheClosedListener> sup : cfg.getCacheClosedListeners()) {
-        listeners.add(buildContext.createCustomization(sup));
-      }
-      cacheClosedListeners = listeners;
-    }
   }
 
   /**

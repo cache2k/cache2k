@@ -25,10 +25,12 @@ import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.ConfigBuilder;
 import org.cache2k.config.CustomizationSupplierWithConfig;
+import org.cache2k.config.Feature;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.ConfigSection;
+import org.cache2k.config.ToggleFeature;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -43,9 +45,11 @@ import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.processor.MutableCacheEntry;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -611,7 +615,7 @@ public class Cache2kBuilder<K, V>
    * integration.
    */
   public final Cache2kBuilder<K, V> addCacheClosedListener(CacheClosedListener listener) {
-    cfg().getCacheClosedListeners().add(wrapCustomizationInstance(listener));
+    cfg().getLifecycleListeners().add(wrapCustomizationInstance(listener));
     return this;
   }
 
@@ -766,8 +770,8 @@ public class Cache2kBuilder<K, V>
 
   /**
    * By default statistic gathering is enabled. Switching this to {@code true} will disable all
-   * statistics that have significant overhead. Whether the values become accessible with JMX is
-   * controlled by {@link #enableJmx(boolean)}.
+   * statistics that have significant overhead. Whether the values become visible in monitoring
+   * can be controlled via {@link #disableMonitoring(boolean)}
    */
   public final Cache2kBuilder<K, V> disableStatistics(boolean flag) {
     cfg().setDisableStatistics(flag);
@@ -799,20 +803,8 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * When {@code true} expose statistics via JMX. Disabled by default. It is possible to enable
-   * JMX even there is no cache name specified with {@link #name(String)}, since a name will
-   * be generated internally, thus enabling JMX by default for all caches is feasible.
-   * As of version 2, JMX support moved to an optional module {@code cache2k-jmx}.
-   * If this is not included in the classpath/modulepath, this option has no effect.
-   */
-  public final Cache2kBuilder<K, V> enableJmx(boolean f) {
-    cfg().setEnableJmx(f);
-    return this;
-  }
-
-  /**
    * Disables reporting of cache metrics to monitoring systems or management.
-   * This should be enabled, e.g. if a cache is created dynamically and
+   * This should be set, e.g. if a cache is created dynamically and
    * intended to be short lived. All extensions for monitoring or management
    * respect this parameter.
    */
@@ -900,6 +892,17 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> apply(Consumer<Cache2kBuilder<K, V>> consumer) {
     consumer.accept(this);
+    return this;
+  }
+
+  /** Enable a feature */
+  public final Cache2kBuilder<K, V> enable(Class<? extends ToggleFeature> feature) {
+    ToggleFeature.enable(this, feature);
+    return this;
+  }
+
+  public final Cache2kBuilder<K, V> disable(Class<? extends ToggleFeature> feature) {
+    ToggleFeature.disable(this, feature);
     return this;
   }
 

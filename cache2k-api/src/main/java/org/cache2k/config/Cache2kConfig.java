@@ -22,8 +22,8 @@ package org.cache2k.config;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.Weigher;
-import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheEntryOperationListener;
+import org.cache2k.event.CacheLifecycleListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
@@ -34,6 +34,8 @@ import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -91,7 +93,6 @@ public class Cache2kConfig<K, V>
   private boolean permitNullValues = false;
   private boolean recordModificationTime = false;
   private boolean boostConcurrency = false;
-  private boolean enableJmx = false;
 
   private boolean disableStatistics = false;
   private boolean disableMonitoring = false;
@@ -113,8 +114,8 @@ public class Cache2kConfig<K, V>
 
   private CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
   private CustomizationCollection<CacheEntryOperationListener<K, V>> asyncListeners;
-  private CustomizationCollection<CacheClosedListener> closedListeners;
-  private FeatureCollection<K, V> features;
+  private Collection<CustomizationSupplier<CacheLifecycleListener>> lifecycleListeners;
+  private Set<Feature> features;
 
   private SectionContainer sections;
 
@@ -553,20 +554,20 @@ public class Cache2kConfig<K, V>
    * Duplicate (in terms of equal objects) listeners will be ignored.
    *
    * @return Mutable collection of listeners
-   * @since 1.0.2
    */
-  public CustomizationCollection<CacheClosedListener> getCacheClosedListeners() {
-    if (closedListeners == null) {
-      closedListeners = new DefaultCustomizationCollection<CacheClosedListener>();
+  public Collection<CustomizationSupplier<? extends CacheLifecycleListener>> getLifecycleListeners() {
+    if (lifecycleListeners == null) {
+      lifecycleListeners = new DefaultCustomizationCollection<CacheLifecycleListener>();
     }
-    return closedListeners;
+    return (Collection<CustomizationSupplier<? extends CacheLifecycleListener>>) (Object)
+      lifecycleListeners;
   }
 
   /**
    * @return True if listeners are added to this configuration.
    */
-  public boolean hasCacheClosedListeners() {
-    return closedListeners != null && !closedListeners.isEmpty();
+  public boolean hasLifecycleListeners() {
+    return lifecycleListeners != null && !lifecycleListeners.isEmpty();
   }
 
   /**
@@ -574,13 +575,14 @@ public class Cache2kConfig<K, V>
    * improve integration with bean configuration mechanisms that use the set method and
    * construct a set or list, like Springs' bean XML configuration.
    */
-  public void setCacheClosedListeners(Collection<CustomizationSupplier<CacheClosedListener>> c) {
-    getCacheClosedListeners().addAll(c);
+  public void setLifecycleListeners(
+    Collection<CustomizationSupplier<? extends CacheLifecycleListener>> c) {
+    getLifecycleListeners().addAll(c);
   }
 
-  public Collection<Feature<K, V>> getFeatures() {
+  public Set<Feature> getFeatures() {
     if (features == null) {
-      features = new FeatureCollection<>();
+      features = new HashSet<>();
     }
     return features;
   }
@@ -589,7 +591,7 @@ public class Cache2kConfig<K, V>
     return features != null && !features.isEmpty();
   }
 
-  public void setFeatures(Collection<Feature<K, V>> v) {
+  public void setFeatures(Set<? extends Feature> v) {
     getFeatures().addAll(v);
   }
 
@@ -716,17 +718,6 @@ public class Cache2kConfig<K, V>
    */
   public void setBoostConcurrency(boolean v) {
     boostConcurrency = v;
-  }
-
-  public boolean isEnableJmx() {
-    return enableJmx;
-  }
-
-  /**
-   * @see Cache2kBuilder#enableJmx(boolean)
-   */
-  public void setEnableJmx(boolean v) {
-    enableJmx = v;
   }
 
   public boolean isDisableMonitoring() {

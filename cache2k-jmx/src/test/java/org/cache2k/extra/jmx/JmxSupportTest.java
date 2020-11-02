@@ -62,30 +62,9 @@ public class JmxSupportTest {
 
   private ObjectName objectName;
 
-  @Test
-  public void testManagerPresent() throws Exception {
-    String name = getClass().getName() + ".testManagerPresent";
-    CacheManager m = CacheManager.getInstance(name);
-    MBeanInfo i = getCacheManagerInfo(name);
-    assertEquals(CacheManagerMXBeanImpl.class.getName(), i.getClassName());
-    m.close();
-  }
-
-  @Test
-  public void emptyCacheManager_healthOkay() throws Exception {
-    String name = getClass().getName() + ".emptyCacheManager_healthOkay";
-    CacheManager m = CacheManager.getInstance(name);
-    MBeanInfo i = getCacheManagerInfo(name);
-    assertEquals(CacheManagerMXBeanImpl.class.getName(), i.getClassName());
-    String health = (String) SERVER.getAttribute(getCacheManagerObjectName(name), "HealthStatus");
-    assertEquals("ok", health);
-    m.close();
-  }
-
   /**
    * Construct three caches with multiple issues and check the health string of the manager JMX.
    */
-  @Test
   public void multipleWarnings() throws Exception {
     final String managerName = getClass().getName() + ".multipleWarnings";
     final String cacheNameBadHashing = "cacheWithBadHashing";
@@ -161,41 +140,13 @@ public class JmxSupportTest {
     return name.contains(",");
   }
 
-  @Test(expected = InstanceNotFoundException.class)
-  public void testManagerDestroyed() throws Exception {
-    String name = getClass().getName() + ".testManagerDestroyed";
-    CacheManager m = CacheManager.getInstance(name);
-    MBeanInfo i = getCacheManagerInfo(name);
-    assertEquals(CacheManagerMXBeanImpl.class.getName(), i.getClassName());
-    m.close();
-    getCacheManagerInfo(name);
-  }
-
-  @Test
-  public void managerClear_noCache() throws Exception {
-    String name = getClass().getName() + ".managerClear_noCache";
-    CacheManager m = CacheManager.getInstance(name);
-    SERVER.invoke(getCacheManagerObjectName(name), "clear", new Object[0], new String[0]);
-    m.close();
-  }
-
-  @Test
-  public void managerAttributes() throws Exception {
-    String name = getClass().getName() + ".managerAttributes";
-    CacheManager m = CacheManager.getInstance(name);
-    objectName = getCacheManagerObjectName(name);
-    checkAttribute("Version", CacheManager.PROVIDER.getVersion());
-    checkAttribute("BuildNumber", "not used");
-    m.close();
-  }
-
   @Test
   public void testCacheCreated() throws Exception {
     String name = getClass().getName() + ".testCacheCreated";
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(name)
+      .apply(JmxSupport::enable)
       .eternal(true)
-      .enableJmx(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
     assertNotNull(i);
@@ -219,12 +170,12 @@ public class JmxSupportTest {
 
   @Test
   public void testInitialProperties() throws Exception {
-    Date beforeCreateion = new Date();
+    Date beforeCreation = new Date();
     String name = getClass().getName() + ".testInitialProperties";
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
       .eternal(true)
-      .enableJmx(true)
+      .apply(JmxSupport::enable)
       .build();
     objectName = constructCacheObjectName(name);
     checkAttribute("KeyType", "Long");
@@ -236,7 +187,7 @@ public class JmxSupportTest {
     checkAttribute("Implementation", "HeapCache");
     checkAttribute("ClearedTime", null);
     assertTrue("reasonable CreatedTime",
-      ((Date) retrieve("CreatedTime")).compareTo(beforeCreateion) >= 0);
+      ((Date) retrieve("CreatedTime")).compareTo(beforeCreation) >= 0);
     objectName = constructCacheStatisticsObjectName(name);
     checkAttribute("InsertCount", 0L);
     checkAttribute("MissCount", 0L);
@@ -264,7 +215,7 @@ public class JmxSupportTest {
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
       .disableStatistics(true)
-      .enableJmx(true)
+      .apply(JmxSupport::enable)
       .build();
     objectName = constructCacheObjectName(name);
     checkAttribute("KeyType", "Long");
@@ -279,7 +230,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".testDisabledMonitoring";
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
-      .enableJmx(true)
+      .apply(JmxSupport::enable)
       .disableMonitoring(true)
       .build();
     objectName = constructCacheObjectName(name);
@@ -298,7 +249,7 @@ public class JmxSupportTest {
       .name(name)
       .eternal(true)
       .disableStatistics(false)
-      .enableJmx(true)
+      .apply(JmxSupport::enable)
       .maximumWeight(123456789L)
       .weigher(new Weigher<Long, List<Collection<Long>>>() {
         @Override
@@ -370,9 +321,23 @@ public class JmxSupportTest {
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(name)
       .eternal(true)
+      .apply(JmxSupport::enable)
       .build();
     MBeanInfo i = getCacheInfo(name);
-    assertEquals(BaseCacheControl.class.getName(), i.getClassName());
+    c.close();
+    getCacheInfo(name);
+  }
+
+  @Test(expected = InstanceNotFoundException.class)
+  public void testEnableDisable() throws Exception {
+    String name = getClass().getName() + ".testEnableDisable";
+    Cache c = Cache2kBuilder.of(Object.class, Object.class)
+      .name(name)
+      .eternal(true)
+      .apply(JmxSupport::enable)
+      .apply(JmxSupport::disable)
+      .build();
+    MBeanInfo i = getCacheInfo(name);
     c.close();
     getCacheInfo(name);
   }

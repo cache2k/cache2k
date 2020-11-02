@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
@@ -134,7 +135,7 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
    * @param cache The cache that is closing. No cache operations on entries are allowed.
    */
   @Override
-  public void onCacheClosed(org.cache2k.Cache cache) {
+  public CompletableFuture<Void> onCacheClosed(org.cache2k.Cache cache) {
     Set<CacheEntryListener> ls = new HashSet<CacheEntryListener>();
     for (Listener l : getAllListeners()) {
       ls.add(l.entryListener);
@@ -148,6 +149,7 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
         }
       }
     }
+    return null;
   }
 
   @Override

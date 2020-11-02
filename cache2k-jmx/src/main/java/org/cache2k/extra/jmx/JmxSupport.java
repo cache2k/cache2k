@@ -20,23 +20,10 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.CacheException;
-import org.cache2k.CacheManager;
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
-import org.cache2k.core.api.InternalCacheCloseContext;
-import org.cache2k.core.api.InternalCache;
-import org.cache2k.core.api.InternalCacheBuildContext;
-import org.cache2k.core.spi.CacheLifeCycleListener;
-import org.cache2k.core.spi.CacheManagerLifeCycleListener;
-import org.cache2k.core.log.Log;
-import org.cache2k.operation.CacheControl;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
+import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.ToggleFeature;
 
 /**
  * Adds optional support for JMX.
@@ -44,135 +31,29 @@ import java.lang.management.ManagementFactory;
  * <p>Registering a name may fail because cache manager names may be identical in different
  * class loaders.
  */
-@SuppressWarnings("rawtypes")
-public class JmxSupport implements CacheLifeCycleListener, CacheManagerLifeCycleListener {
-
-  private static final String REGISTERED_FLAG = JmxSupport.class.getName() + ".registered";
-  private final Log log = Log.getLog(JmxSupport.class);
+public final class JmxSupport extends ToggleFeature {
 
   /**
-   * Register management bean for the cache.
-   * Bean is registered in case JMX is enabled. If statistics are disabled,
-   * via{@link Cache2kConfig#setDisableStatistics(boolean)} this is registered
-   * anyway since the cache size or the clear operation might be of interest.
+   * Enable JMX monitoring.
    */
-  @Override
-  public <K, V> void cacheCreated(Cache<K, V> c, InternalCacheBuildContext<K, V> ctx) {
-    Cache2kConfig cfg = ctx.getConfig();
-    if (!cfg.isEnableJmx() || cfg.isDisableMonitoring()) {
-      return;
-    }
-    MBeanServer mbs = getPlatformMBeanServer();
-    InternalCache internalCache = (InternalCache) c.requestInterface(InternalCache.class);
-    CacheControl management = new CacheControlMXBeanImpl(internalCache);
-    String name = createCacheControlName(c.getCacheManager(), c);
-    try {
-      mbs.registerMBean(management, new ObjectName(name));
-    } catch (InstanceAlreadyExistsException existing) {
-      log.debug("register failure, cache: " + c.getName(), existing);
-    } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + name, e);
-    }
-    if (!management.isStatisticsEnabled()) {
-      return;
-    }
-    name = createCacheStatisticsName(c.getCacheManager(), c);
-    try {
-      mbs.registerMBean(new CacheStatisticsMXBeanImpl(internalCache), new ObjectName(name));
-    } catch (InstanceAlreadyExistsException existing) {
-      log.debug("register failure, cache: " + c.getName(), existing);
-    } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + name, e);
-    }
-  }
-
-  @Override
-  public <K, V> void cacheClosed(Cache<K, V> c, InternalCacheCloseContext ctx) {
-    MBeanServer mbs = getPlatformMBeanServer();
-    String name = createCacheControlName(c.getCacheManager(), c);
-    try {
-      mbs.unregisterMBean(new ObjectName(name));
-    } catch (InstanceNotFoundException ignore) {
-    } catch (Exception e) {
-      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
-    }
-    name = createCacheStatisticsName(c.getCacheManager(), c);
-    try {
-      mbs.unregisterMBean(new ObjectName(name));
-    } catch (InstanceNotFoundException ignore) {
-    } catch (Exception e) {
-      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
-    }
-  }
-
-  @Override
-  public void managerCreated(CacheManager m) {
-    MBeanServer mbs = getPlatformMBeanServer();
-    CacheManagerMXBeanImpl mBean = new CacheManagerMXBeanImpl(m);
-    String name = managerName(m);
-    try {
-      mbs.registerMBean(mBean, new ObjectName(name));
-      m.getProperties().put(REGISTERED_FLAG, true);
-      log.debug("Manager created and registered as: " + name);
-    } catch (InstanceAlreadyExistsException existing) {
-      log.debug("register failure, manager: " + m.getName(), existing);
-    } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + name, e);
-    }
-  }
-
-  @Override
-  public void managerDestroyed(CacheManager m) {
-    if (!m.getProperties().containsKey(REGISTERED_FLAG)) {
-      return;
-    }
-    MBeanServer mbs = getPlatformMBeanServer();
-    String name = managerName(m);
-    try {
-        mbs.unregisterMBean(new ObjectName(name));
-    } catch (Exception e) {
-      throw new CacheException("Error unregister JMX bean, ObjectName: " + name, e);
-    }
-  }
-
-  private static MBeanServer getPlatformMBeanServer() {
-    return ManagementFactory.getPlatformMBeanServer();
-  }
-
-  private static String managerName(CacheManager cm) {
-    return
-      "org.cache2k" + ":" +
-        "type=CacheManager" +
-        ",name=" + sanitizeNameAsJmxValue(cm.getName());
-  }
-
-  private String createCacheControlName(CacheManager cm, Cache c) {
-    return
-      "org.cache2k" + ":" +
-        "type=Cache" +
-        ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
-        ",name=" + sanitizeNameAsJmxValue(c.getName());
-  }
-
-  private String createCacheStatisticsName(CacheManager cm, Cache c) {
-    return
-      "org.cache2k" + ":" +
-        "type=CacheStatistics" +
-        ",manager=" + sanitizeNameAsJmxValue(cm.getName()) +
-        ",name=" + sanitizeNameAsJmxValue(c.getName());
+  public static void enable(Cache2kBuilder<?, ?> builder) {
+    builder.enable(JmxSupport.class);
   }
 
   /**
-   * Names can be used as JMX values directly, but if containing a comma we need
-   * to do quoting.
-   *
-   * See {@code org.cache2k.core.CacheManagerImpl#checkName(String)}
+   * Disable JMX monitoring.
    */
-  private static String sanitizeNameAsJmxValue(String s) {
-    if (s.indexOf(',') >= 0) {
-      return '"' + s + '"';
+  public static void disable(Cache2kBuilder<?, ?> builder) {
+    builder.disable(JmxSupport.class);
+  }
+
+  @Override
+  public void doEnlist(CacheBuildContext<?, ?> ctx) {
+    Cache2kConfig<?, ?> cfg = ctx.getConfig();
+    if (cfg.isDisableMonitoring()) {
+      return;
     }
-    return s;
+    cfg.getLifecycleListeners().add(LifecycleListener.SUPPLIER);
   }
 
 }

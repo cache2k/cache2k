@@ -23,6 +23,8 @@ package org.cache2k.extra.jmx;
 import org.cache2k.operation.CacheStatistics;
 
 /**
+ * The JMX bean is identical to the {@link CacheStatistics} in the API.
+ *
  * @author Jens Wilke
  */
 public interface CacheStatisticsMXBean extends CacheStatistics {
