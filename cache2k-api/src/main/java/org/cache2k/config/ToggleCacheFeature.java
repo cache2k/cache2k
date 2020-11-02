@@ -31,10 +31,10 @@ import java.util.Iterator;
  *
  * @author Jens Wilke
  */
-public abstract class ToggleFeature implements Feature {
+public abstract class ToggleCacheFeature implements CacheFeature {
 
   public static void enable(Cache2kBuilder<?, ?> builder,
-                            Class<? extends ToggleFeature> featureType) {
+                            Class<? extends ToggleCacheFeature> featureType) {
     try {
       builder.config().getFeatures().add(featureType.getConstructor().newInstance());
     } catch (Exception e) {
@@ -43,8 +43,8 @@ public abstract class ToggleFeature implements Feature {
   }
 
   public static void disable(Cache2kBuilder<?, ?> builder,
-                            Class<? extends ToggleFeature> featureType) {
-    Iterator<Feature> it = builder.config().getFeatures().iterator();
+                            Class<? extends ToggleCacheFeature> featureType) {
+    Iterator<CacheFeature> it = builder.config().getFeatures().iterator();
     while (it.hasNext()) {
       if (it.next().getClass().equals(featureType)) {
         it.remove();

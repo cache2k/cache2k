@@ -25,12 +25,11 @@ import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.ConfigBuilder;
 import org.cache2k.config.CustomizationSupplierWithConfig;
-import org.cache2k.config.Feature;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.ConfigSection;
-import org.cache2k.config.ToggleFeature;
+import org.cache2k.config.ToggleCacheFeature;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -45,11 +44,9 @@ import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.processor.MutableCacheEntry;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -896,13 +893,13 @@ public class Cache2kBuilder<K, V>
   }
 
   /** Enable a feature */
-  public final Cache2kBuilder<K, V> enable(Class<? extends ToggleFeature> feature) {
-    ToggleFeature.enable(this, feature);
+  public final Cache2kBuilder<K, V> enable(Class<? extends ToggleCacheFeature> feature) {
+    ToggleCacheFeature.enable(this, feature);
     return this;
   }
 
-  public final Cache2kBuilder<K, V> disable(Class<? extends ToggleFeature> feature) {
-    ToggleFeature.disable(this, feature);
+  public final Cache2kBuilder<K, V> disable(Class<? extends ToggleCacheFeature> feature) {
+    ToggleCacheFeature.disable(this, feature);
     return this;
   }
 

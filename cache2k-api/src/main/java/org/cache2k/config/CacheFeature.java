@@ -25,7 +25,7 @@ package org.cache2k.config;
  *
  * @author Jens Wilke
  */
-public interface Feature {
+public interface CacheFeature {
 
   /**
    * The feature enables itself by augmenting the cache config.

@@ -23,7 +23,7 @@ package org.cache2k.extra.jmx;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
-import org.cache2k.config.ToggleFeature;
+import org.cache2k.config.ToggleCacheFeature;
 
 /**
  * Adds optional support for JMX.
@@ -31,7 +31,7 @@ import org.cache2k.config.ToggleFeature;
  * <p>Registering a name may fail because cache manager names may be identical in different
  * class loaders.
  */
-public final class JmxSupport extends ToggleFeature {
+public final class JmxSupport extends ToggleCacheFeature {
 
   /**
    * Enable JMX monitoring.
@@ -47,6 +47,10 @@ public final class JmxSupport extends ToggleFeature {
     builder.disable(JmxSupport.class);
   }
 
+  /**
+   * If enabled register lifecycle listeners so we get called as soon as the cache
+   * is build or closed.
+   */
   @Override
   public void doEnlist(CacheBuildContext<?, ?> ctx) {
     Cache2kConfig<?, ?> cfg = ctx.getConfig();
