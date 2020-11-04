@@ -36,7 +36,8 @@ import org.cache2k.config.ConfigSection;
 public class MicrometerConfig
   implements ConfigSection<MicrometerConfig, MicrometerConfig.Builder> {
 
-  private CustomizationSupplier<MeterRegistry> registry;
+  private CustomizationSupplier<MeterRegistry> registry =
+    GlobalRegistrySupplier.INSTANCE;
 
   /**
    * See {@link Builder#registry(MeterRegistry)}
