@@ -20,26 +20,19 @@ package org.cache2k.extra.config.generic;
  * #L%
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 
 /**
  * @author Jens Wilke
  */
-public class Util {
-  @SuppressWarnings("unchecked")
-  public static <T extends Serializable> T copyViaSerialization(T obj)
-    throws IOException, ClassNotFoundException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ObjectOutputStream oos = new ObjectOutputStream(bos);
-    oos.writeObject(obj);
-    oos.flush();
-    ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
-    return (T) new ObjectInputStream(bin).readObject();
-  }
+public interface TargetPropertyMutator {
+
+  Collection<String> getNames();
+
+  Class<?> getType(String propertyName);
+
+  void mutate(Object target, String propertyName, Object value)
+    throws IllegalAccessException, InvocationTargetException;
 
 }

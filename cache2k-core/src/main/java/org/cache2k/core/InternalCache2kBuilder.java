@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
+import org.cache2k.config.CacheType;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -204,10 +205,10 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   @SuppressWarnings({"unchecked"})
   public Cache<K, V> buildAsIs() {
     if (config.getValueType() == null) {
-      config.setValueType((Class<V>) Object.class);
+      config.setValueType((CacheType<V>) CacheType.of(Object.class));
     }
     if (config.getKeyType() == null) {
-      config.setKeyType((Class<K>) Object.class);
+      config.setKeyType((CacheType<K>) CacheType.of(Object.class));
     }
     if (config.getName() == null) {
       config.setName(deriveNameFromStackTrace());

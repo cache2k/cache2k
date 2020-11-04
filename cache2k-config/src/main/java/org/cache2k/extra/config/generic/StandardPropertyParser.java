@@ -111,7 +111,7 @@ public class StandardPropertyParser implements PropertyParser {
         if (!v.contains(".")) {
           v = "java.lang." + v;
         }
-        return CacheTypeCapture.of(Class.forName(v));
+        return CacheType.of(Class.forName(v));
       }
     });
   }

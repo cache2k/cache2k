@@ -20,8 +20,6 @@ package org.cache2k.config;
  * #L%
  */
 
-import java.io.Serializable;
-
 /**
  * Marker for cache configuration beans. The marker is not mandatory.
  *
@@ -32,7 +30,7 @@ import java.io.Serializable;
  */
 public interface ConfigBean
   <SELF extends ConfigBean<SELF, B>, B extends ConfigBuilder<B, SELF>>
-  extends Serializable {
+  extends BeanMarker {
 
   B builder();
 

@@ -651,7 +651,6 @@ public class SlowExpiryTest extends TestingBase {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
-      .eternal(true)
       .keepDataAfterExpired(keepData)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override

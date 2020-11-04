@@ -25,6 +25,7 @@
   <defaults>
     <cache>
       <entryCapacity>1234</entryCapacity>
+      <expireAfterWrite>12m</expireAfterWrite>
     </cache>
   </defaults>
 

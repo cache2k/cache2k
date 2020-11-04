@@ -21,7 +21,6 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 

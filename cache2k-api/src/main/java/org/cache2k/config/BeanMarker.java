@@ -21,10 +21,11 @@ package org.cache2k.config;
  */
 
 /**
+ * Marks the class as bean compatible, meaning, it has a public default constructor
+ * and getter and setters for all its properties. A class not be marked with this
+ * if its content cannot be deep copied, an example is {@link CustomizationReferenceSupplier}.
+ *
  * @author Jens Wilke
  */
-public interface FeatureWithSection
-  <CFG extends ConfigSection<CFG, B>, B extends SectionBuilder<B, CFG>>
-  extends Feature, WithSection<CFG, B> {
-
+public interface BeanMarker {
 }

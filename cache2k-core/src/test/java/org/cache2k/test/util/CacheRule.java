@@ -65,9 +65,9 @@ public class CacheRule<K, V> implements TestRule {
     Type[] types =
       ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments();
     keyType =
-      (CacheType<K>) CacheTypeCapture.of(types[0]).getBeanRepresentation();
+      (CacheType<K>) CacheType.of(types[0]);
     valueType =
-      (CacheType<V>) CacheTypeCapture.of(types[1]).getBeanRepresentation();
+      (CacheType<V>) CacheType.of(types[1]);
   }
 
   protected Cache2kBuilder<K, V> getInitialBuilder() {

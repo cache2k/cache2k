@@ -305,7 +305,7 @@ public class TimerTest {
     assertEquals("eternal / overflow", Long.MAX_VALUE,
       Cache2kBuilder.forUnknownTypes()
         .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).config().getTimerLag().toMillis());
-    assertSame("eternal / overflow", Cache2kConfig.ETERNAL_DURATION,
+    assertSame("eternal / overflow", Cache2kConfig.EXPIRY_ETERNAL,
       Cache2kBuilder.forUnknownTypes()
         .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).config().getTimerLag());
   }

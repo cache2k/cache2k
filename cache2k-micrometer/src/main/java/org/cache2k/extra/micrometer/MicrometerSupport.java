@@ -25,7 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.config.ToggleFeature;
-import org.cache2k.config.ToggleFeatureWithSection;
+import org.cache2k.config.WithSection;
 import org.cache2k.event.CacheCreatedListener;
 
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Jens Wilke
  */
 public class MicrometerSupport
-  extends ToggleFeatureWithSection<MicrometerConfig, MicrometerConfig.Builder> {
+  extends ToggleFeature implements WithSection<MicrometerConfig, MicrometerConfig.Builder> {
 
   public static MicrometerSupport enable(Cache2kBuilder<?, ?> b) {
     return ToggleFeature.enable(b, MicrometerSupport.class);

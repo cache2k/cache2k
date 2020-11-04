@@ -22,7 +22,6 @@ package org.cache2k.config;
 
 import org.cache2k.Cache2kBuilder;
 
-import java.io.Serializable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -48,43 +47,9 @@ public class CacheTypeCapture<T> implements CacheType<T> {
 
   @SuppressWarnings("unchecked")
   private final CacheType<T> descriptor =
-    of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+    CacheType.of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
 
   protected CacheTypeCapture() { }
-
-  @SuppressWarnings("unchecked")
-  public static <T> CacheType<T> of(Class<T> t) {
-    return of((Type) t);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static CacheType of(Type t) {
-    if (t instanceof ParameterizedType) {
-      ParameterizedType pt = (ParameterizedType) t;
-      Class c = (Class) pt.getRawType();
-      CacheType[] ta = new CacheType[pt.getActualTypeArguments().length];
-      for (int i = 0; i < ta.length; i++) {
-        ta[i] = of(pt.getActualTypeArguments()[i]);
-      }
-      return new OfGeneric(c, ta);
-    } else if (t instanceof GenericArrayType) {
-      GenericArrayType gat = (GenericArrayType) t;
-      return new OfArray(of(gat.getGenericComponentType()));
-    }
-    if (!(t instanceof Class)) {
-      throw new IllegalArgumentException("The run time type is not available, got: " + t);
-    }
-    Class c = (Class) t;
-    if (c.isArray()) {
-      return new OfArray(of(c.getComponentType()));
-    }
-    return new OfClass(c);
-  }
-
-  @Override
-  public CacheType<T> getBeanRepresentation() {
-    return descriptor;
-  }
 
   @Override
   public CacheType<?> getComponentType() {
@@ -127,7 +92,12 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     return descriptor.hashCode();
   }
 
-  private abstract static class BaseType implements CacheType, Serializable {
+  @Override
+  public String toString() {
+    return descriptor.toString();
+  }
+
+  private abstract static class BaseType implements CacheType {
 
     @Override
     public CacheType getComponentType() {
@@ -155,11 +125,6 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
 
     @Override
-    public CacheType getBeanRepresentation() {
-      return this;
-    }
-
-    @Override
     public final String toString() {
       return DESCRIPTOR_TO_STRING_PREFIX + getTypeName();
     }
@@ -171,12 +136,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
    */
   public static class OfClass extends BaseType {
 
-    Class<?> type;
-
-    /** Empty constructor for bean compliance. */
-    @SuppressWarnings("unused")
-    public OfClass() {
-    }
+    private Class<?> type;
 
     public OfClass(Class<?> type) {
       if (type.isArray()) {
@@ -188,11 +148,6 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     @Override
     public Class<?> getType() {
       return type;
-    }
-
-    /** Setter for bean compliance */
-    public void setType(Class<?> type) {
-      this.type = type;
     }
 
     static String shortenName(String s) {
@@ -232,12 +187,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
    */
   public static class OfArray extends BaseType {
 
-    CacheType componentType;
-
-    /** Empty constructor for bean compliance. */
-    @SuppressWarnings("unused")
-    public OfArray() {
-    }
+    private CacheType componentType;
 
     public OfArray(CacheType componentType) {
       this.componentType = componentType;
@@ -251,11 +201,6 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     @Override
     public CacheType getComponentType() {
       return componentType;
-    }
-
-    @SuppressWarnings("unused")
-    public void setComponentType(CacheType componentType) {
-      this.componentType = componentType;
     }
 
     static int countDimensions(CacheType td) {
@@ -308,13 +253,8 @@ public class CacheTypeCapture<T> implements CacheType<T> {
    */
   public static class OfGeneric extends BaseType {
 
-    CacheType[] typeArguments;
-    Class<?> type;
-
-    /** Empty constructor for bean compliance. */
-    @SuppressWarnings("unused")
-    public OfGeneric() {
-    }
+    private CacheType[] typeArguments;
+    private Class<?> type;
 
     public OfGeneric(Class<?> type, CacheType[] typeArguments) {
       this.typeArguments = typeArguments;
@@ -326,10 +266,6 @@ public class CacheTypeCapture<T> implements CacheType<T> {
       return type;
     }
 
-    public void setType(Class<?> type) {
-      this.type = type;
-    }
-
     @Override
     public boolean hasTypeArguments() {
       return true;
@@ -338,11 +274,6 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     @Override
     public CacheType[] getTypeArguments() {
       return typeArguments;
-    }
-
-    @SuppressWarnings("unused")
-    public void setTypeArguments(CacheType[] typeArguments) {
-      this.typeArguments = typeArguments;
     }
 
     @Override

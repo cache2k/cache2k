@@ -20,10 +20,14 @@ package org.cache2k.extra.config.provider;
  * #L%
  */
 
+import org.cache2k.config.BeanMarker;
 import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheType;
+import org.cache2k.config.ConfigBean;
 import org.cache2k.config.ConfigWithSections;
 import org.cache2k.config.ConfigSection;
 import org.cache2k.config.ValidatingConfigBean;
+import org.cache2k.extra.config.generic.BeanPropertyAccessor;
 import org.cache2k.extra.config.generic.BeanPropertyMutator;
 import org.cache2k.extra.config.generic.ConfigurationException;
 import org.cache2k.extra.config.generic.ConfigurationTokenizer;
@@ -31,20 +35,30 @@ import org.cache2k.extra.config.generic.ParsedConfiguration;
 import org.cache2k.extra.config.generic.PropertyParser;
 import org.cache2k.extra.config.generic.SourceLocation;
 import org.cache2k.extra.config.generic.StandardPropertyParser;
+import org.cache2k.extra.config.generic.TargetPropertyAccessor;
+import org.cache2k.extra.config.generic.TargetPropertyMutator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author Jens Wilke
  */
 public class ConfigurationProvider {
   private final PropertyParser propertyParser = new StandardPropertyParser();
-  private volatile Map<Class<?>, BeanPropertyMutator> type2mutator =
-    new HashMap<Class<?>, BeanPropertyMutator>();
+  private final ConcurrentMap<Class<?>, TargetPropertyMutator> type2mutator =
+    new ConcurrentHashMap<>();
+  private final ConcurrentMap<Class<?>, TargetPropertyAccessor> type2accessor =
+    new ConcurrentHashMap<>();
 
   private static String constructGetterName(String containerName) {
     return "get" + Character.toUpperCase(containerName.charAt(0)) + containerName.substring(1);
@@ -107,7 +121,7 @@ public class ConfigurationProvider {
     Object cfg,
     ParsedConfiguration parsedCfg) {
     String containerName = parsedCfg.getContainer();
-    BeanPropertyMutator m = provideMutator(cfg.getClass());
+    TargetPropertyMutator m = provideMutator(cfg.getClass());
     Class<?> targetType = m.getType(containerName);
     if (targetType == null) {
      return false;
@@ -219,7 +233,7 @@ public class ConfigurationProvider {
   }
 
   private void applyPropertyValues(ParsedConfiguration cfg, Object bean) {
-    BeanPropertyMutator m = provideMutator(bean.getClass());
+    TargetPropertyMutator m = provideMutator(bean.getClass());
     for (ConfigurationTokenizer.Property p : cfg.getPropertyMap().values()) {
       Class<?> propertyType = m.getType(p.getName());
       if (propertyType == null) {
@@ -248,7 +262,7 @@ public class ConfigurationProvider {
 
   private void mutateAndCatch(
     Object cfg,
-    BeanPropertyMutator m,
+    TargetPropertyMutator m,
     ConfigurationTokenizer.Property p,
     Object obj) {
     mutateAndCatch(cfg, m, p.getName(), p.getValue(), p, obj);
@@ -256,7 +270,7 @@ public class ConfigurationProvider {
 
   private void mutateAndCatch(
     Object cfg,
-    BeanPropertyMutator m,
+    TargetPropertyMutator m,
     String name,
     Object valueForExceptionText,
     SourceLocation loc,
@@ -275,17 +289,72 @@ public class ConfigurationProvider {
     }
   }
 
-  private BeanPropertyMutator provideMutator(Class<?> type) {
-    BeanPropertyMutator m = type2mutator.get(type);
-    if (m == null) {
-      synchronized (this) {
-        m = new BeanPropertyMutator(type);
-        Map<Class<?>, BeanPropertyMutator> m2 =
-          new HashMap<Class<?>, BeanPropertyMutator>(type2mutator);
-        m2.put(type, m);
-        type2mutator = m2;
+  private TargetPropertyMutator provideMutator(Class<?> type) {
+    return
+      type2mutator.computeIfAbsent(type, aClass -> new BeanPropertyMutator(aClass));
+  }
+
+  private TargetPropertyAccessor provideAccessor(Class<?> type) {
+    return
+      type2accessor.computeIfAbsent(type, aClass -> new BeanPropertyAccessor(aClass));
+  }
+
+  /**
+   * Make a deep copy of the configuration object. This is used for copying
+   * the default configuration.
+   */
+  @SuppressWarnings({"unchecked"})
+  protected Object copy(Object cfg) {
+    Class<?> targetType = cfg.getClass();
+    if (!isBean(cfg)) {
+      throw new UnsupportedOperationException("Cannot copy " + targetType.getName());
+    }
+    Object target;
+    try {
+      target = targetType.getConstructor().newInstance();
+    } catch (Exception e) {
+      throw new UnsupportedOperationException(
+        "Bean needs default constructor " + targetType.getName());
+    }
+    TargetPropertyAccessor accessor = provideAccessor(targetType);
+    TargetPropertyMutator mutator = provideMutator(targetType);
+    for (String property : accessor.getNames()) {
+      try {
+        Object obj = accessor.access(cfg, property);
+        if (obj == null || isImmutable(obj)) {
+          mutator.mutate(target, property, obj);
+        } else if (isCollection(obj)) {
+          Collection<Object> targetCollection =
+            (Collection<Object>) accessor.access(target, property);
+          for (Object value : ((Collection<Object>) obj)) {
+            targetCollection.add(copy(value));
+          }
+        } else {
+          mutator.mutate(target, property, copy(obj));
+        }
+      } catch (Exception ex) {
+        throw new RuntimeException(
+          "Problem copying " + targetType.getName() + ":" + property, ex);
       }
     }
-    return m;
+    return target;
   }
+
+  private boolean isBean(Object obj) {
+    return obj instanceof BeanMarker;
+  }
+
+  static final Set<Class> IMMUTABLE_TYPES = new HashSet<>(Arrays.asList(
+    Boolean.class, Character.class, Integer.class, Long.class, Float.class, Double.class,
+    String.class, Duration.class
+  ));
+
+  private boolean isImmutable(Object obj) {
+    return IMMUTABLE_TYPES.contains(obj.getClass()) || obj instanceof CacheType;
+  }
+
+  private boolean isCollection(Object obj) {
+    return obj instanceof Collection;
+  }
+
 }

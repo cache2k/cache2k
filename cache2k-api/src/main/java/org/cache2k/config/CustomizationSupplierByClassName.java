@@ -91,7 +91,10 @@ public final class CustomizationSupplierByClassName<T>
 
   @Override
   public int hashCode() {
-    return className.hashCode();
+    if (className != null) {
+      return className.hashCode();
+    }
+    return 0;
   }
 
 }

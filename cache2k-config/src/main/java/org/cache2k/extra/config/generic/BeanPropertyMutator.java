@@ -22,6 +22,7 @@ package org.cache2k.extra.config.generic;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ import java.util.Map;
  *
  * @author Jens Wilke
  */
-public class BeanPropertyMutator {
+public class BeanPropertyMutator implements TargetPropertyMutator {
 
   private static final String SETTER_PREFIX = "set";
 
@@ -40,6 +41,12 @@ public class BeanPropertyMutator {
     settersLookupMap = generateSetterLookupMap(clazz);
   }
 
+  @Override
+  public Collection<String> getNames() {
+    return settersLookupMap.keySet();
+  }
+
+  @Override
   public Class<?> getType(String propertyName) {
     Method m = settersLookupMap.get(propertyName);
     if (m == null) {
@@ -48,9 +55,13 @@ public class BeanPropertyMutator {
     return m.getParameterTypes()[0];
   }
 
+  @Override
   public void mutate(Object target, String propertyName, Object value)
     throws IllegalAccessException, InvocationTargetException {
     Method m = settersLookupMap.get(propertyName);
+    if (m == null) {
+      throw new ConfigurationException("Missing mutator for " + propertyName);
+    }
     m.invoke(target, value);
   }
 
@@ -68,7 +79,7 @@ public class BeanPropertyMutator {
     for (Method m : c.getMethods()) {
       if (m.getName().startsWith(SETTER_PREFIX) &&
         m.getReturnType() == Void.TYPE &&
-        (m.getParameterTypes().length == 1) &&
+        (m.getParameterCount() == 1) &&
         preferCacheTypeAndNotClass(m.getParameterTypes()[0])) {
         String propertyName = generatePropertyNameFromSetter(m.getName());
         Method m0 = map.put(propertyName, m);
