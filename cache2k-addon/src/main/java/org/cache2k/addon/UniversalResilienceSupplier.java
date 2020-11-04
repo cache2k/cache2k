@@ -55,6 +55,9 @@ public class UniversalResilienceSupplier<K, V> implements
     long resilienceDuration = toMillis(cfg.getResilienceDuration());
     long retryInterval = toMillis(cfg.getRetryInterval());
     Duration expireAfterWrite = rootCfg.getExpireAfterWrite();
+    if (expireAfterWrite == null && rootCfg.isEternal()) {
+      expireAfterWrite = EXPIRY_ETERNAL;
+    }
     long maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
     if (resilienceDuration == UNSET_LONG) {
       if (expireAfterWrite == EXPIRY_ETERNAL) {

@@ -36,7 +36,7 @@
     </dependency>
     <dependency>
       <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-schemas</artifactId>
+      <artifactId>cache2k-schema</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

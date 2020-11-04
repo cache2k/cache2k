@@ -323,7 +323,7 @@ public class UniversalResiliencePolicyTest {
   }
 
   /**
-   * No suppression, because eternal. The only way that a reload can be triggered
+   * No exception suppression, because eternal. The only way that a reload can be triggered
    * is with a reload operation. In this case we do not want suppression, unless
    * specified explicitly.
    */
