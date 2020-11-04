@@ -60,7 +60,7 @@ public class UniversalResiliencePolicyTest {
 
   private Cache2kBuilder<Integer, Integer> builder() {
     return new Cache2kBuilder<Integer, Integer>() { }
-      .apply(b -> b.config().getFeatures().add(ctx -> {
+      .setup(b -> b.config().getFeatures().add(ctx -> {
         CustomizationSupplier<? extends ResiliencePolicy> configuredSupplier =
           ctx.getConfig().getResiliencePolicy();
         if (configuredSupplier != null) {
@@ -80,7 +80,7 @@ public class UniversalResiliencePolicyTest {
   public void configVariant_setSupplier() {
     cache = builder()
       .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
-      .section(UniversalResilienceConfig.class, builder -> builder
+      .with(UniversalResilienceConfig.class, builder -> builder
         .resilienceDuration(0, TimeUnit.MILLISECONDS)
       )
       .build();
@@ -91,9 +91,9 @@ public class UniversalResiliencePolicyTest {
   public void configVariant_enableDisable() {
     cache = builder()
       .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
-      .apply(b -> b.config().setResiliencePolicy(UniversalResiliencePolicy.supplier()))
-      .apply(UniversalResiliencePolicy::enable)
-      .apply(ResiliencePolicy::disable)
+      .setup(b -> b.config().setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .setup(UniversalResiliencePolicy::enable)
+      .setup(ResiliencePolicy::disable)
       .build();
   }
 
@@ -101,7 +101,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void configVariant_singleApply() {
     cache = builder()
-      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
+      .setupWith(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(4711, TimeUnit.MILLISECONDS)
       )
       .build();
@@ -114,16 +114,16 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void configVariant_overwrites() {
       cache = builder()
-        .setupWithSection(UniversalResiliencePolicy::enable, b -> b
+        .setupWith(UniversalResiliencePolicy::enable, b -> b
           .resilienceDuration(4711, TimeUnit.MILLISECONDS)
           .retryInterval(1234, TimeUnit.MILLISECONDS)
         )
         /* Overwrite the default later ...  */
-        .section(UniversalResilienceConfig.class, builder -> builder
+        .with(UniversalResilienceConfig.class, builder -> builder
           .resilienceDuration(123, TimeUnit.MILLISECONDS)
         )
         /* Results in combined section parameters */
-        .section(UniversalResilienceConfig.class, b -> {
+        .with(UniversalResilienceConfig.class, b -> {
           assertEquals(1234, b.config().getRetryInterval().toMillis());
           assertEquals(123, b.config().getResilienceDuration().toMillis());
         })
@@ -137,7 +137,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void expiry0_any() {
     cache = new Cache2kBuilder<Integer, Integer>() { }
-      .apply(UniversalResiliencePolicy::enable)
+      .setup(UniversalResiliencePolicy::enable)
       .expireAfterWrite(0, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -150,8 +150,8 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void enableDisable() {
     cache = builder()
-      .apply(UniversalResiliencePolicy::enable)
-      .apply(ResiliencePolicy::disable)
+      .setup(UniversalResiliencePolicy::enable)
+      .setup(ResiliencePolicy::disable)
       .build();
     assertNull(policy);
   }
@@ -159,8 +159,8 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void enableDisableViaResilience0() {
     cache = builder()
-      .apply(UniversalResiliencePolicy::enable)
-      .section(UniversalResilienceConfig.class, builder -> builder
+      .setup(UniversalResiliencePolicy::enable)
+      .with(UniversalResilienceConfig.class, builder -> builder
         .resilienceDuration(0, TimeUnit.MILLISECONDS)
       )
       .build();
@@ -187,9 +187,9 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void expiryPolicy() {
     cache = builder()
-      .apply(UniversalResiliencePolicy::enable)
+      .setup(UniversalResiliencePolicy::enable)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
-      .section(UniversalResilienceConfig.class, b -> b
+      .with(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -209,7 +209,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void expiry10m() {
     cache = builder()
-      .apply(UniversalResiliencePolicy::enable)
+      .setup(UniversalResiliencePolicy::enable)
       .expireAfterWrite(10, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
@@ -221,7 +221,7 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void expiry10m_duration30s() {
     cache = builder()
-      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
+      .setupWith(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       .expireAfterWrite(10, TimeUnit.MINUTES)
@@ -262,7 +262,7 @@ public class UniversalResiliencePolicyTest {
   public void expiry10m_retry10s() {
     cache = builder()
       .expireAfterWrite(10, TimeUnit.MINUTES)
-      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
+      .setupWith(UniversalResiliencePolicy::enable, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -286,8 +286,8 @@ public class UniversalResiliencePolicyTest {
   public void eternal_duration30s() {
     cache = builder()
       .eternal(true)
-      .apply(UniversalResiliencePolicy::enable)
-      .section(UniversalResilienceConfig.class, b -> b
+      .setup(UniversalResiliencePolicy::enable)
+      .with(UniversalResilienceConfig.class, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
       )
       /* ... set loader ... */
@@ -311,7 +311,7 @@ public class UniversalResiliencePolicyTest {
   public void eternal_duration30s_retry10s() {
     cache = builder()
       .eternal(true)
-      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
+      .setupWith(UniversalResiliencePolicy::enable, b -> b
         .resilienceDuration(30, TimeUnit.SECONDS)
         .retryInterval(10, TimeUnit.SECONDS)
       )
@@ -331,7 +331,7 @@ public class UniversalResiliencePolicyTest {
   public void eternal_retry10s() {
     cache = builder()
       .eternal(true)
-      .setupWithSection(UniversalResiliencePolicy::enable, b -> b
+      .setupWith(UniversalResiliencePolicy::enable, b -> b
         .retryInterval(10, TimeUnit.SECONDS)
       )
       /* ... set loader ... */

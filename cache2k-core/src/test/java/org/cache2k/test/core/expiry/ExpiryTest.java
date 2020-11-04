@@ -338,7 +338,7 @@ public class ExpiryTest extends TestingBase {
           return key;
         }
       })
-      .apply(builderAction)
+      .setup(builderAction)
       .build();
     try {
       c.get(1);
@@ -378,7 +378,7 @@ public class ExpiryTest extends TestingBase {
           callback.onLoadSuccess(key);
         }
       })
-      .apply(builderAction)
+      .setup(builderAction)
       .build();
     try {
       c.get(1);

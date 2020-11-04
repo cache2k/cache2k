@@ -27,26 +27,29 @@ import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.ConfigSection;
 
 /**
+ * Configuration section for micrometer. This allows configuring the registry
+ * in a global configuration and then switch on and off micrometer reporting
+ * on a individual cache basis.
+ *
  * @author Jens Wilke
  */
 public class MicrometerConfig
-  implements ConfigSection
-  <MicrometerConfig, MicrometerConfig.Builder> {
+  implements ConfigSection<MicrometerConfig, MicrometerConfig.Builder> {
 
-  private CustomizationSupplier<MeterRegistry> meterRegistry;
+  private CustomizationSupplier<MeterRegistry> registry;
 
   /**
-   * See {@link Builder#meterRegistry(MeterRegistry)}
+   * See {@link Builder#registry(MeterRegistry)}
    */
-  public CustomizationSupplier<MeterRegistry> getMeterRegistry() {
-    return meterRegistry;
+  public CustomizationSupplier<MeterRegistry> getRegistry() {
+    return registry;
   }
 
   /**
-   * See {@link Builder#meterRegistry(MeterRegistry)}
+   * See {@link Builder#registry(MeterRegistry)}
    */
-  public void setMeterRegistry(CustomizationSupplier<MeterRegistry> meterRegistry) {
-    this.meterRegistry = meterRegistry;
+  public void setRegistry(CustomizationSupplier<MeterRegistry> meterRegistry) {
+    this.registry = meterRegistry;
   }
 
   @Override
@@ -65,8 +68,8 @@ public class MicrometerConfig
     /**
      * Set the meter registry to use for the cache instance.
      */
-    public Builder meterRegistry(MeterRegistry registry) {
-      config.setMeterRegistry(new CustomizationReferenceSupplier<>(registry));
+    public Builder registry(MeterRegistry registry) {
+      config.setRegistry(new CustomizationReferenceSupplier<>(registry));
       return this;
     }
 
@@ -74,7 +77,7 @@ public class MicrometerConfig
      * Bind this cache instance to the global meter registry.
      */
     public Builder useGlobalRegistry() {
-      config.setMeterRegistry(GlobalRegistrySupplier.INSTANCE);
+      config.setRegistry(GlobalRegistrySupplier.INSTANCE);
       return this;
     }
 

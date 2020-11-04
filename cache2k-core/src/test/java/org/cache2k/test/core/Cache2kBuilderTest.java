@@ -66,7 +66,7 @@ public class Cache2kBuilderTest {
   @Test
   public void forUnknownTypes_genericTyping() {
     Cache<Object, Object> cache = Cache2kBuilder.forUnknownTypes()
-      .section(CoreConfig.class, b -> b
+      .with(CoreConfig.class, b -> b
         .timerReference(new SimulatedClock())
       )
       .loader(key -> key)

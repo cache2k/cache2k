@@ -210,7 +210,7 @@ public class TestingBase {
     }
     this.cacheName = cacheName;
     Cache2kBuilder<K, T> b = Cache2kBuilder.of(k, t)
-      .section(CoreConfig.class, b2 -> b2
+      .with(CoreConfig.class, b2 -> b2
         .timerReference(getClock())
       )
       .name(cacheName)
@@ -236,7 +236,7 @@ public class TestingBase {
       Class<K> keyClass, Class<T> dataClass, CacheLoader g, long maxElements, int expiry) {
     Cache2kBuilder<K, T> b =
       builder(keyClass, dataClass)
-        .apply(x -> { if (g != null) x.loader(g); })
+        .setup(x -> { if (g != null) x.loader(g); })
         .refreshAhead(expiry >= 0 && g != null);
     if (expiry < 0) {
       b.eternal(true);

@@ -25,7 +25,9 @@ import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.ConfigBean;
 import org.cache2k.config.ConfigBuilder;
-import org.cache2k.config.WithConfigSection;
+import org.cache2k.config.ToggleFeatureBean;
+import org.cache2k.config.ToggleFeatureWithSection;
+import org.cache2k.config.WithSection;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.config.CustomizationSupplier;
@@ -888,7 +890,7 @@ public class Cache2kBuilder<K, V>
    * Call the consumer with this builder. This can be used to apply configuration
    * fragments within the fluent configuration scheme.
    */
-  public final Cache2kBuilder<K, V> apply(Consumer<Cache2kBuilder<K, V>> consumer) {
+  public final Cache2kBuilder<K, V> setup(Consumer<Cache2kBuilder<K, V>> consumer) {
     consumer.accept(this);
     return this;
   }
@@ -905,16 +907,17 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Adds a configuration section or alters an existing section.
+   * Configure a config section. If the section is not existing it a new
+   * section is created. If the section is existing the existing instance
+   * is modified.
    *
    * @param configSectionClass type of the config section that is created or altered
    * @param builderAction lambda that alters the config section via its builder
    * @param <B> type of the builder for the config section
    * @param <CFG> the type of the config section
-   * @return
    */
   public final <B extends SectionBuilder<B, CFG>, CFG extends ConfigSection<CFG, B>>
-    Cache2kBuilder<K, V> section(Class<CFG> configSectionClass, Consumer<B> builderAction) {
+    Cache2kBuilder<K, V> with(Class<CFG> configSectionClass, Consumer<B> builderAction) {
     CFG section =
       cfg().getSections().getSection(configSectionClass);
     if (section == null) {
@@ -951,10 +954,10 @@ public class Cache2kBuilder<K, V>
    */
   public <B extends SectionBuilder<B, CFG>,
     CFG extends ConfigSection<CFG, B>,
-    SUP extends WithConfigSection<CFG, B>>  Cache2kBuilder<K, V> setupWithSection(
+    SUP extends WithSection<CFG, B>>  Cache2kBuilder<K, V> setupWith(
     Function<Cache2kBuilder<K, V>, SUP> setupAction,
     Consumer<B> builderAction) {
-    section(setupAction.apply(this).getConfigClass(), builderAction);
+    with(setupAction.apply(this).getConfigClass(), builderAction);
     return this;
   }
 
@@ -965,7 +968,7 @@ public class Cache2kBuilder<K, V>
    * @param builderAction function to configure the feature
    */
   public <B extends ConfigBuilder<B, CFG>,
-    CFG extends ConfigBean<CFG, B>>  Cache2kBuilder<K, V> setupWithParameters(
+    CFG extends ConfigBean<CFG, B>>  Cache2kBuilder<K, V> setup(
     Function<Cache2kBuilder<K, V>, CFG> enabler,
     Consumer<B> builderAction) {
     builderAction.accept(enabler.apply(this).builder());
@@ -979,14 +982,23 @@ public class Cache2kBuilder<K, V>
    * @param builderAction function to configure the feature
    */
   @SuppressWarnings("unchecked")
-  public <B extends ConfigBuilder<B, CFG>,
-    CFG extends ConfigBean<CFG, B>>  Cache2kBuilder<K, V> enableWithParameters(
-    Class<CFG> featureType,
-    Consumer<B> builderAction) {
-    ConfigBean<CFG, B> bean =
-      (ConfigBean<CFG, B>)
-        ToggleFeature.enable(this, (Class<ToggleFeature>) (Class) featureType);
+  public <B extends ConfigBuilder<B, T>, T extends ToggleFeatureBean<T, B>>
+    Cache2kBuilder<K, V> enable(Class<T> featureType, Consumer<B> builderAction) {
+    T bean = ToggleFeature.enable(this, featureType);
     builderAction.accept(bean.builder());
+    return this;
+  }
+
+  /**
+   * Enables a feature and configures its associated configuration section via its builder.
+   * Be aware that a section might be existing and preconfigured already, the semantics
+   * are identical to {@link #with(Class, Consumer)}
+   */
+  public <B extends SectionBuilder<B, CFG>, T extends ToggleFeatureWithSection<CFG, B>,
+    CFG extends ConfigSection<CFG, B>>  Cache2kBuilder<K, V> enableWith(
+    Class<T> featureType, Consumer<B> builderAction) {
+    T bean = ToggleFeature.enable(this, featureType);
+    with(bean.getConfigClass(), builderAction);
     return this;
   }
 

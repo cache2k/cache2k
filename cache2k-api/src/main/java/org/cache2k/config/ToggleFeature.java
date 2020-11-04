@@ -25,18 +25,29 @@ import org.cache2k.Cache2kBuilder;
 import java.util.Iterator;
 
 /**
- * Base class for a cache feature that is enabled or not and appears only once in the feature list.
- * A feature can be disabled in two ways: Either by setting enabled to {@code false} or by removing
+ * Base class for a cache feature that can be enabled or disables and
+ * appears only once in the feature set. A feature can be disabled in
+ * two ways: Either by setting enabled to {@code false} or by removing
  * it from the feature set.
+ *
+ * <p>This allows enablement of features based on the users preference:
+ * A feature can be enabled by default and then disabled per individual
+ * cache or just enabled at the individual cache level.
  *
  * @author Jens Wilke
  */
-public abstract class ToggleFeature implements Feature {
+public abstract class ToggleFeature implements SingleFeature {
 
-  public static ToggleFeature enable(Cache2kBuilder<?, ?> builder,
-                            Class<? extends ToggleFeature> featureType) {
+  /**
+   * Enable the feature in the main configuration. If the feature is
+   * already existing it is replaced by a newly created one.
+   *
+   * @return the created feature to set additional parameters
+   */
+  public static <T extends ToggleFeature> T enable(Cache2kBuilder<?, ?> builder,
+                                                   Class<T> featureType) {
     try {
-      ToggleFeature feature = featureType.getConstructor().newInstance();
+      T feature = featureType.getConstructor().newInstance();
       builder.config().getFeatures().add(feature);
       return feature;
     } catch (Exception e) {
@@ -44,6 +55,9 @@ public abstract class ToggleFeature implements Feature {
     }
   }
 
+  /**
+   * Disable the feature by removing it from the configuration.
+   */
   public static void disable(Cache2kBuilder<?, ?> builder,
                             Class<? extends ToggleFeature> featureType) {
     Iterator<Feature> it = builder.config().getFeatures().iterator();
@@ -52,6 +66,33 @@ public abstract class ToggleFeature implements Feature {
         it.remove();
       }
     }
+  }
+
+  /**
+   * Returns the feature instance, if present.
+   */
+  @SuppressWarnings("unchecked")
+  public static <T extends ToggleFeature> T extract(Cache2kBuilder<?, ?> builder,
+                                                    Class<T> featureType) {
+    Iterator<Feature> it = builder.config().getFeatures().iterator();
+    while (it.hasNext()) {
+      Feature feature = it.next();
+      if (feature.getClass().equals(featureType)) {
+        return (T) feature;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns true if the feature is enabled. Meaning, the feature instance is present
+   * and enabled.
+   */
+  @SuppressWarnings("unchecked")
+  public static boolean isEnabled(Cache2kBuilder<?, ?> builder,
+                                  Class<? extends ToggleFeature> featureType) {
+    ToggleFeature f = extract(builder, featureType);
+    return f != null ? f.isEnabled() : false;
   }
 
   private boolean enabled = true;

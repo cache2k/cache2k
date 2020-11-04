@@ -124,7 +124,7 @@ public class CacheManagerTest {
       new Cache2kBuilder<Long, Double>() { }
         .entryCapacity(10000)
         .expireAfterWrite(5, TimeUnit.MINUTES)
-        .section(JCacheConfig.class, b -> b
+        .with(JCacheConfig.class, b -> b
           .copyAlwaysIfRequested(true)
         )
     ));

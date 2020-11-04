@@ -22,7 +22,7 @@ package org.cache2k.config;
 
 /**
  * Supports adding configuration sections via the builder pattern.
- * Sections are added via {@link org.cache2k.Cache2kBuilder#section}
+ * Sections are added via {@link org.cache2k.Cache2kBuilder#with}
  *
  * @author Jens Wilke
  */

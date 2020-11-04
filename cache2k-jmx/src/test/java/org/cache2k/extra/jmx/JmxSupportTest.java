@@ -144,7 +144,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".testCacheCreated";
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(name)
-      .apply(JmxSupport::enable)
+      .setup(JmxSupport::enable)
       .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
@@ -174,7 +174,7 @@ public class JmxSupportTest {
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
       .eternal(true)
-      .apply(JmxSupport::enable)
+      .setup(JmxSupport::enable)
       .build();
     objectName = constructCacheObjectName(name);
     checkAttribute("KeyType", "Long");
@@ -214,7 +214,7 @@ public class JmxSupportTest {
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
       .disableStatistics(true)
-      .apply(JmxSupport::enable)
+      .setup(JmxSupport::enable)
       .build();
     objectName = constructCacheObjectName(name);
     checkAttribute("KeyType", "Long");
@@ -229,7 +229,7 @@ public class JmxSupportTest {
     String name = getClass().getName() + ".testDisabledMonitoring";
     Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
       .name(name)
-      .apply(JmxSupport::enable)
+      .setup(JmxSupport::enable)
       .disableMonitoring(true)
       .build();
     objectName = constructCacheObjectName(name);
@@ -248,7 +248,7 @@ public class JmxSupportTest {
       .name(name)
       .eternal(true)
       .disableStatistics(false)
-      .apply(JmxSupport::enable)
+      .setup(JmxSupport::enable)
       .maximumWeight(123456789L)
       .weigher(new Weigher<Long, List<Collection<Long>>>() {
         @Override
@@ -320,7 +320,7 @@ public class JmxSupportTest {
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(name)
       .eternal(true)
-      .apply(JmxSupport::enable)
+      .setup(JmxSupport::enable)
       .build();
     MBeanInfo i = getCacheInfo(name);
     c.close();
@@ -333,8 +333,8 @@ public class JmxSupportTest {
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(name)
       .eternal(true)
-      .apply(JmxSupport::enable)
-      .apply(JmxSupport::disable)
+      .setup(JmxSupport::enable)
+      .setup(JmxSupport::disable)
       .build();
     MBeanInfo i = getCacheInfo(name);
     c.close();

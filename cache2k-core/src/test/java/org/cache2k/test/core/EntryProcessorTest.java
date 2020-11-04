@@ -727,7 +727,7 @@ public class EntryProcessorTest {
       target.cache(new CacheRule.Specialization<Integer, Integer>() {
         @Override
         public void extend(Cache2kBuilder<Integer, Integer> b) {
-          b .section(CoreConfig.class, b2 -> b2
+          b .with(CoreConfig.class, b2 -> b2
               .timerReference(new SimulatedClock())
             )
             .sharpExpiry(true)

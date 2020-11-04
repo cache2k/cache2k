@@ -694,7 +694,7 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.section(CoreConfig.class, b2 -> b2
+        b.with(CoreConfig.class, b2 -> b2
           .timerReference(clock)
         );
         b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
@@ -728,7 +728,7 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.section(CoreConfig.class, b2 -> b2
+        b.with(CoreConfig.class, b2 -> b2
           .timerReference(clock)
         );
         b.expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS);
@@ -764,7 +764,7 @@ public class ListenerTest {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> builder) {
         builder
-          .section(CoreConfig.class, b2 -> b2
+          .with(CoreConfig.class, b2 -> b2
             .timerReference(clock)
           )
           .expireAfterWrite(expireAfterWrite, TimeUnit.MILLISECONDS)
