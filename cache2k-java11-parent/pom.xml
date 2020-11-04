@@ -20,45 +20,93 @@
 
   <build>
     <plugins>
+      <!-- This is used for IDE -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <!-- disable default phase due to fixed id and position in lifecycle -->
-          <execution>
-            <id>default-compile</id>
-            <phase>none</phase>
-            <!-- specify source/target for IDE integration
-                 Needs to be Java 11 and not 8 to also edit the java11 source dir.
-            -->
-            <configuration>
-              <release>11</release>
-            </configuration>
-          </execution>
-          <!-- Compile sources with Java 8 first. -->
-          <execution>
-            <id>java-8-compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <release>8</release>
-            </configuration>
-          </execution>
-          <!-- Java 11 sources to generate and validate module-info.java -->
-          <execution>
-            <id>java-11-compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <release>11</release>
-              <compileSourceRoots>${project.basedir}/src/main/java11</compileSourceRoots>
-            </configuration>
-          </execution>
-          <!-- compile sources as Java 8 to overwrite Java 9 class files, except module-info.java -->
-        </executions>
+        <configuration>
+          <!-- we need to repeat source and target or override
+               otherwise we inherit source and target from parent.
+          -->
+          <source>11</source>
+          <target>11</target>
+          <release>8</release>
+        </configuration>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+
+    <profile>
+      <id>jdk11</id>
+      <activation>
+        <jdk>11</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+              <!-- disable default phase due to fixed id and position in lifecycle -->
+              <execution>
+                <id>default-compile</id>
+                <phase>none</phase>
+                <!-- specify source/target for IDE integration
+                     Needs to be Java 11 and not 8 to also edit the java11 source dir.
+                -->
+                <configuration>
+                  <release>11</release>
+                </configuration>
+              </execution>
+              <!-- Compile sources with Java 8 first. -->
+              <execution>
+                <id>java-8-compile</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <release>8</release>
+                </configuration>
+              </execution>
+              <!-- Java 11 sources to generate and validate module-info.java -->
+              <execution>
+                <id>java-11-compile</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <release>11</release>
+                  <compileSourceRoots>${project.basedir}/src/main/java11</compileSourceRoots>
+                </configuration>
+              </execution>
+              <!-- compile sources as Java 8 to overwrite Java 9 class files, except module-info.java -->
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>jdk8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration combine.self="override">
+              <source>8</source>
+              <target>8</target>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+  </profiles>
+
 </project>
