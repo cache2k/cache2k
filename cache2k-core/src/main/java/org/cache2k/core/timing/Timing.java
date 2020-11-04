@@ -55,7 +55,7 @@ public abstract class Timing<K, V>  {
     };
 
   static boolean realDuration(Duration d) {
-    return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfig.ETERNAL_DURATION;
+    return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfig.EXPIRY_ETERNAL;
   }
 
   static boolean realDuration(long t) {
@@ -70,29 +70,25 @@ public abstract class Timing<K, V>  {
     return t == 0 || t == -1;
   }
 
-  public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> buildContext) {
-    Cache2kConfig<K, V> cfg = buildContext.getConfig();
+  public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> ctx) {
+    Cache2kConfig<K, V> cfg = ctx.getConfig();
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
-    ResiliencePolicy<K, V> resiliencePolicy = buildContext.createCustomization(
-      cfg.getResiliencePolicy(), ResiliencePolicy.disabledPolicy());
+    ResiliencePolicy<K, V> resiliencePolicy =
+      ctx.createCustomization(cfg.getResiliencePolicy(), ResiliencePolicy.disabledPolicy());
     if (cfg.getExpiryPolicy() != null
       || (cfg.getValueType() != null
         && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
       || resiliencePolicy != ResiliencePolicy.DISABLED_POLICY) {
-      DynamicTiming<K, V> h = new DynamicTiming<K, V>(buildContext, resiliencePolicy);
+      DynamicTiming<K, V> h = new DynamicTiming<K, V>(ctx, resiliencePolicy);
       return h;
     }
     if (realDuration(cfg.getExpireAfterWrite())) {
-      StaticTiming<K, V> h = new StaticTiming<K, V>(buildContext, resiliencePolicy);
+      StaticTiming<K, V> h = new StaticTiming<K, V>(ctx, resiliencePolicy);
       return h;
     }
-    if ((cfg.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION
-      || cfg.getExpireAfterWrite() == null)) {
-      return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
-    }
-    throw new IllegalArgumentException("expiry time ambiguous");
+    return TimeAgnosticTiming.ETERNAL_IMMEDIATE;
   }
 
   /**

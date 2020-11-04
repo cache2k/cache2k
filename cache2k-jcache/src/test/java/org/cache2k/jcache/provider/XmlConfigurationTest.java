@@ -92,7 +92,7 @@ public class XmlConfigurationTest {
     ExtendedMutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setTypes(String.class, BigDecimal.class);
     javax.cache.Cache<String, BigDecimal> c = cm.createCache("unknownCache", mc);
-    assertTrue(mc.getCache2kConfiguration().isEternal());
+    assertFalse(mc.getCache2kConfiguration().isEternal());
     c.close();
   }
 

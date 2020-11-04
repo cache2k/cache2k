@@ -28,7 +28,7 @@ import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
 
-import static org.cache2k.config.Cache2kConfig.ETERNAL_DURATION;
+import static org.cache2k.config.Cache2kConfig.EXPIRY_ETERNAL;
 import static org.cache2k.config.Cache2kConfig.UNSET_LONG;
 
 /**
@@ -57,7 +57,7 @@ public class UniversalResilienceSupplier<K, V> implements
     Duration expireAfterWrite = rootCfg.getExpireAfterWrite();
     long maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
     if (resilienceDuration == UNSET_LONG) {
-      if (expireAfterWrite == ETERNAL_DURATION) {
+      if (expireAfterWrite == EXPIRY_ETERNAL) {
         resilienceDuration = 0;
       } else {
         if (expireAfterWrite != null) {

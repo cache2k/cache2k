@@ -75,10 +75,10 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <executions>
           <execution>
-            <id>bundle-manifest</id>
-            <phase>process-classes</phase>
+            <id>osgi-bundle</id>
+            <phase>package</phase>
             <goals>
-              <goal>manifest</goal>
+              <goal>bundle</goal>
             </goals>
           </execution>
         </executions>
@@ -89,28 +89,24 @@
               org.cache2k,
               org.cache2k.spi,
               org.cache2k.integration,
+              org.cache2k.io,
               org.cache2k.expiry,
               org.cache2k.event,
               org.cache2k.processor,
-              org.cache2k.configuration
+              org.cache2k.config
             </Export-Package>
-            <Import-Package>
-              javax.cache.configuration;resolution:=optional
-            </Import-Package>
             <Bundle-DocURL>https://cache2k.org</Bundle-DocURL>
             <Implementation-Build>${buildNumber}</Implementation-Build>
             <Implementation-Version>${project.version}</Implementation-Version>
             <Implementation-Title>${project.name}</Implementation-Title>
             <Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
             <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
-            <Require-Capability>osgi.extender; filter:="(osgi.extender=osgi.serviceloader.processor)"</Require-Capability>
-            <Require-Capability>osgi.serviceloader; filter:="(osgi.serviceloader=org.cache2k.spi.Cache2kCoreProvider)";cardinality:=multiple</Require-Capability>
+            <jpms-module-info>org.cache2k.api</jpms-module-info>
           </instructions>
           <niceManifest>true</niceManifest>
         </configuration>
       </plugin>
       -->
-
     </plugins>
   </build>
 

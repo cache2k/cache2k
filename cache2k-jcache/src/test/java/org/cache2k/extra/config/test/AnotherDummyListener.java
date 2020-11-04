@@ -20,18 +20,17 @@ package org.cache2k.extra.config.test;
  * #L%
  */
 
+import org.cache2k.config.BeanMarker;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
-
-import java.io.Serializable;
 
 /**
  * @author Jens Wilke
  */
 public class AnotherDummyListener<K, V> extends BaseDummyListener<K, V> {
 
-  public static  class Supplier
-    implements CustomizationSupplier<AnotherDummyListener>, Serializable {
+  public static class Supplier
+    implements BeanMarker, CustomizationSupplier<AnotherDummyListener> {
 
     @Override
     public AnotherDummyListener supply(CacheBuildContext buildContext) {
@@ -56,6 +55,7 @@ public class AnotherDummyListener<K, V> extends BaseDummyListener<K, V> {
     public void setValue1(String v) {
       value1 = v;
     }
+
   }
 
 }

@@ -32,17 +32,16 @@ import java.util.Map;
  */
 public class ParsedConfiguration implements SourceLocation {
 
-  private String source;
-  private int lineNumber;
+  private final String source;
+  private final int lineNumber;
   private String name;
   private String type;
   private String container;
   private String propertyContext;
-  private Map<String, ConfigurationTokenizer.Property> properties =
-    new HashMap<String, ConfigurationTokenizer.Property>();
-  private List<ParsedConfiguration> sections = new ArrayList<ParsedConfiguration>();
+  private final Map<String, ConfigurationTokenizer.Property> properties = new HashMap<>();
+  private final List<ParsedConfiguration> sections = new ArrayList<>();
 
-  public ParsedConfiguration(final String source, final int lineNumber) {
+  public ParsedConfiguration(String source, int lineNumber) {
     this.lineNumber = lineNumber;
     this.source = source;
   }
@@ -62,7 +61,7 @@ public class ParsedConfiguration implements SourceLocation {
     return container;
   }
 
-  public void setContainer(final String v) {
+  public void setContainer(String v) {
     this.container = v;
   }
 
@@ -70,7 +69,7 @@ public class ParsedConfiguration implements SourceLocation {
     return name;
   }
 
-  public void setName(final String v) {
+  public void setName(String v) {
     name = v;
   }
 
@@ -78,7 +77,7 @@ public class ParsedConfiguration implements SourceLocation {
     return type;
   }
 
-  public void setType(final String v) {
+  public void setType(String v) {
     type = v;
   }
 
@@ -86,7 +85,7 @@ public class ParsedConfiguration implements SourceLocation {
     return propertyContext;
   }
 
-  public void setPropertyContext(final String v) {
+  public void setPropertyContext(String v) {
     propertyContext = v;
   }
 
@@ -128,7 +127,7 @@ public class ParsedConfiguration implements SourceLocation {
     return p.getValue();
   }
 
-  public ConfigurationTokenizer.Property getPropertyByPath(final String s) {
+  public ConfigurationTokenizer.Property getPropertyByPath(String s) {
     int idx = 0;
     String[] components = s.split("\\.");
     ParsedConfiguration cfg = this;
@@ -139,9 +138,6 @@ public class ParsedConfiguration implements SourceLocation {
       }
     }
     ConfigurationTokenizer.Property p = cfg.getPropertyMap().get(components[idx]);
-    if (p == null) {
-      return null;
-    }
     return p;
   }
 

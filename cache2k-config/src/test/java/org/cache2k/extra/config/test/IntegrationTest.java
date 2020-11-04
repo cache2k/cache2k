@@ -110,6 +110,7 @@ public class IntegrationTest {
       new Cache2kBuilder<String, String>() { }
       .name("IntegrationTest-defaultAndIndividualIsApplied");
     Cache2kConfig<String, String> cfg = b.config();
+    System.err.println(cfg.hashCode());
     assertEquals(-1, cfg.getEntryCapacity());
     assertEquals(5, cfg.getLoaderThreadCount());
     assertNull(cfg.getExpireAfterWrite());
@@ -251,24 +252,6 @@ public class IntegrationTest {
     c.close();
   }
 
-  @Test
-  public void eternal_configExpire() {
-    try {
-      Cache c =
-        new Cache2kBuilder<String, String>() { }
-          .manager(CacheManager.getInstance("specialCases"))
-          .name("withExpiry")
-          .eternal(true)
-          .build();
-      c.close();
-      fail("expect exception");
-    } catch (ConfigurationException ex) {
-      assertThat(ex.getMessage(),
-        containsString(
-          "Value '2d' rejected: eternal enabled explicitly, " +
-            "refusing to enable expiry"));
-    }
-  }
 
   @Test
   public void featureEnabled() {
@@ -341,17 +324,13 @@ public class IntegrationTest {
 
   @Test
   public void onlyDefault() {
-    Cache c = new Cache2kBuilder<String, String>() { }
-      .manager(CacheManager.getInstance("onlyDefault"))
-      .name("anyCache")
-      .build();
-    c.close();
     Cache2kConfig<String, String> cfg =
       new Cache2kBuilder<String, String>() { }
       .manager(CacheManager.getInstance("onlyDefault"))
       .name("anyCache")
       .config();
     assertEquals(1234, cfg.getEntryCapacity());
+    assertEquals("PT12M", cfg.getExpireAfterWrite().toString());
     assertTrue(cfg.isExternalConfigurationPresent());
   }
 

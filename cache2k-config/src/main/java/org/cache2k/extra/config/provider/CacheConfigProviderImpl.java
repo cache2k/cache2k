@@ -32,7 +32,6 @@ import org.cache2k.extra.config.generic.FlexibleXmlTokenizerFactory;
 import org.cache2k.extra.config.generic.ParsedConfiguration;
 import org.cache2k.extra.config.generic.StandardVariableExpander;
 import org.cache2k.extra.config.generic.TokenizerFactory;
-import org.cache2k.extra.config.generic.Util;
 import org.cache2k.extra.config.generic.VariableExpander;
 
 import java.io.InputStream;
@@ -88,7 +87,7 @@ public class CacheConfigProviderImpl
   public Cache2kConfig getDefaultConfig(CacheManager mgr) {
     Cache2kConfig cfg = getManagerContext(mgr).getDefaultManagerConfiguration();
     try {
-      return Util.copyViaSerialization(cfg);
+      return (Cache2kConfig) copy(cfg);
     } catch (Exception ex) {
       throw new ConfigurationException(
         "Copying default cache configuration for manager '" + mgr.getName() + "'", ex);

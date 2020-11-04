@@ -22,14 +22,17 @@ package org.cache2k.addon;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.ConfigBean;
 import org.cache2k.config.ConfigBuilder;
-import org.cache2k.config.ToggleFeatureBean;
+import org.cache2k.config.ToggleFeature;
 
 /**
  * @author Jens Wilke
  */
 public class UniversalResilienceFeatureExperiment
-  extends ToggleFeatureBean<UniversalResilienceFeatureExperiment, UniversalResilienceFeatureExperiment.Builder> {
+  extends ToggleFeature
+  implements ConfigBean<UniversalResilienceFeatureExperiment,
+  UniversalResilienceFeatureExperiment.Builder> {
 
   static UniversalResilienceFeatureExperiment enable(Cache2kBuilder<?, ?> b) {
     return  null;

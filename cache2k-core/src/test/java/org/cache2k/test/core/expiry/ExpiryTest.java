@@ -79,12 +79,6 @@ public class ExpiryTest extends TestingBase {
 
   { enableFastClock(); }
 
-  /** Complains because no real expiry value was set. */
-  @Test(expected = IllegalArgumentException.class)
-  public void notEternal() {
-    builder().eternal(false).build();
-  }
-
   @Test
   public void notEternal_policy() {
     builder().eternal(false).expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
@@ -96,24 +90,9 @@ public class ExpiryTest extends TestingBase {
     }).build();
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void eternalTwice() {
-    builder().eternal(true).eternal(false);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void eternalTwice_reverse() {
-    builder().eternal(false).eternal(true);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void eternal_expireAfterWrite() {
-    builder().eternal(true).expireAfterWrite(123, TimeUnit.SECONDS);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void expireAfterWrite_eternal() {
-    builder().expireAfterWrite(123, TimeUnit.SECONDS).eternal(true);
+    builder().expireAfterWrite(123, TimeUnit.SECONDS).eternal(true).build();
   }
 
   @Test
@@ -946,7 +925,6 @@ public class ExpiryTest extends TestingBase {
     final AtomicInteger cacheRetryCount = new AtomicInteger(initial);
     final AtomicInteger suppressRetryCount = new AtomicInteger(initial);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .eternal(true)
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override

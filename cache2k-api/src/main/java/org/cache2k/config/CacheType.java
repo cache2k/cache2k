@@ -20,10 +20,14 @@ package org.cache2k.config;
  * #L%
  */
 
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 /**
  * A data structure to retain all known type information from the key and value types, including
  * generic parameters within the cache configuration. A caching application typically constructs a
- * type descriptor with the use of a {@link CacheTypeCapture}.
+ * type descriptor with the use of a {@link CacheTypeCapture} or {@link org.cache2k.Cache2kBuilder}
  *
  * <p>While the type descriptor contains implementation classes, interface consumers must not rely
  * on the implementation types.
@@ -39,6 +43,8 @@ package org.cache2k.config;
  * parameters by providing a {@link CacheTypeCapture} where the cache can extract the type
  * information.
  *
+ * <p>The cache type is immutable.
+ *
  * @see CacheTypeCapture
  * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">
  *   ReflectionExplained - Google Guava Documentation</a>
@@ -46,7 +52,35 @@ package org.cache2k.config;
 public interface CacheType<T> {
 
   /** The used prefix for the toString() output. */
-  String DESCRIPTOR_TO_STRING_PREFIX = "CacheTypeDescriptor#";
+  String DESCRIPTOR_TO_STRING_PREFIX = "CacheType:";
+
+  static <T> CacheType<T> of(Class<T> t) {
+    return of((Type) t);
+  }
+
+  @SuppressWarnings("unchecked")
+  static CacheType of(Type t) {
+    if (t instanceof ParameterizedType) {
+      ParameterizedType pt = (ParameterizedType) t;
+      Class c = (Class) pt.getRawType();
+      CacheType[] ta = new CacheType[pt.getActualTypeArguments().length];
+      for (int i = 0; i < ta.length; i++) {
+        ta[i] = of(pt.getActualTypeArguments()[i]);
+      }
+      return new CacheTypeCapture.OfGeneric(c, ta);
+    } else if (t instanceof GenericArrayType) {
+      GenericArrayType gat = (GenericArrayType) t;
+      return new CacheTypeCapture.OfArray(of(gat.getGenericComponentType()));
+    }
+    if (!(t instanceof Class)) {
+      throw new IllegalArgumentException("The run time type is not available, got: " + t);
+    }
+    Class c = (Class) t;
+    if (c.isArray()) {
+      return new CacheTypeCapture.OfArray(of(c.getComponentType()));
+    }
+    return new CacheTypeCapture.OfClass(c);
+  }
 
   /** Class type if not an array. */
   Class<T> getType();
@@ -73,10 +107,5 @@ public interface CacheType<T> {
 
   /** Java language compatible type name */
   String getTypeName();
-
-  /**
-   * Return a serializable version of this type descriptor.
-   */
-  CacheType<T> getBeanRepresentation();
 
 }

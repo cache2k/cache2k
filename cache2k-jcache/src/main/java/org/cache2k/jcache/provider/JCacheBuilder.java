@@ -156,16 +156,11 @@ public class JCacheBuilder<K, V> {
    * If there is a cache2k configuration, we take the types from there.
    */
   private void setupTypes() {
-    if (!cache2kConfigurationWasProvided) {
-      cache2kConfig.setKeyType(config.getKeyType());
-      cache2kConfig.setValueType(config.getValueType());
-    } else {
-      if (cache2kConfig.getKeyType() == null) {
-        cache2kConfig.setKeyType(config.getKeyType());
-      }
-      if (cache2kConfig.getValueType() == null) {
-        cache2kConfig.setValueType(config.getValueType());
-      }
+    if (!cache2kConfigurationWasProvided || cache2kConfig.getKeyType() == null) {
+      cache2kConfig.setKeyType(CacheType.of(config.getKeyType()));
+    }
+    if (!cache2kConfigurationWasProvided || cache2kConfig.getValueType() == null) {
+      cache2kConfig.setValueType(CacheType.of(config.getValueType()));
     }
     keyType = cache2kConfig.getKeyType();
     valueType = cache2kConfig.getValueType();
@@ -334,7 +329,7 @@ public class JCacheBuilder<K, V> {
       return;
     }
     if (expiryPolicy instanceof CreatedExpiryPolicy) {
-      cache2kConfig.setEternal(true);
+      cache2kConfig.setExpireAfterWrite(Cache2kConfig.EXPIRY_ETERNAL);
       Duration d = expiryPolicy.getExpiryForCreation();
       final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (millisDuration == 0) {

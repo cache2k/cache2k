@@ -1,8 +1,8 @@
-package org.cache2k.config;
+package org.cache2k.extra.config.generic;
 
 /*
  * #%L
- * cache2k API
+ * cache2k config file support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -20,13 +20,18 @@ package org.cache2k.config;
  * #L%
  */
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+
 /**
- * Feature with bean parameters
- *
  * @author Jens Wilke
  */
-public interface FeatureBean
-  <SELF extends ConfigBean<SELF, B>, B extends ConfigBuilder<B, SELF>>
-  extends Feature, ConfigBean<SELF, B> {
+public interface TargetPropertyAccessor {
+
+  Collection<String> getNames();
+
+  Class<?> getType(String propertyName);
+
+  Object access(Object target, String propertyName) throws InvocationTargetException, IllegalAccessException;
 
 }

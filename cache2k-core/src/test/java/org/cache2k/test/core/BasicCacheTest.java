@@ -345,7 +345,6 @@ public class BasicCacheTest extends TestingBase {
   public void testValueWithExpiryTime() {
     Cache<String, MyValueWithExpiryTime> c =
       builder(String.class, MyValueWithExpiryTime.class)
-        .eternal(true)
         .build();
     c.put("nocache", new MyValueWithExpiryTime(0));
     final long _DISTANT_FUTURE = 500 * 365 * 24 * 60 * 60 * 1000;

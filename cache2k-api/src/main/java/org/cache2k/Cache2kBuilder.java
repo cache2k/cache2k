@@ -21,12 +21,9 @@ package org.cache2k;
  */
 
 import org.cache2k.config.Cache2kConfig;
-import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.ConfigBean;
 import org.cache2k.config.ConfigBuilder;
-import org.cache2k.config.ToggleFeatureBean;
-import org.cache2k.config.ToggleFeatureWithSection;
 import org.cache2k.config.WithSection;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.CustomizationReferenceSupplier;
@@ -117,7 +114,7 @@ public class Cache2kBuilder<K, V>
    * @see #valueType(Class)
    */
   public static <K, V> Cache2kBuilder<K, V> of(Class<K> keyType, Class<V> valueType) {
-    return new Cache2kBuilder<K, V>(CacheTypeCapture.of(keyType), CacheTypeCapture.of(valueType));
+    return new Cache2kBuilder<K, V>(CacheType.of(keyType), CacheType.of(valueType));
   }
 
   /**
@@ -159,8 +156,8 @@ public class Cache2kBuilder<K, V>
       throw new IllegalArgumentException(MSG_NO_TYPES);
     }
     Type[] types = ((ParameterizedType) t).getActualTypeArguments();
-    keyType = (CacheType<K>) CacheTypeCapture.of(types[0]).getBeanRepresentation();
-    valueType = (CacheType<V>) CacheTypeCapture.of(types[1]).getBeanRepresentation();
+    keyType = (CacheType<K>) CacheType.of(types[0]);
+    valueType = (CacheType<V>) CacheType.of(types[1]);
     if (Object.class.equals(keyType.getType()) &&
       Object.class.equals(valueType.getType())) {
       throw new IllegalArgumentException(MSG_NO_TYPES);
@@ -223,7 +220,7 @@ public class Cache2kBuilder<K, V>
   @SuppressWarnings("unchecked")
   public final <K2> Cache2kBuilder<K2, V> keyType(Class<K2> t) {
     Cache2kBuilder<K2, V> me = (Cache2kBuilder<K2, V>) this;
-    me.cfg().setKeyType(t);
+    me.cfg().setKeyType(CacheType.of(t));
     return me;
   }
 
@@ -236,7 +233,7 @@ public class Cache2kBuilder<K, V>
   @SuppressWarnings("unchecked")
   public final <V2> Cache2kBuilder<K, V2> valueType(Class<V2> t) {
     Cache2kBuilder<K, V2> me = (Cache2kBuilder<K, V2>) this;
-    me.cfg().setValueType(t);
+    me.cfg().setValueType(CacheType.of(t));
     return me;
   }
 
@@ -405,8 +402,12 @@ public class Cache2kBuilder<K, V>
    * <p>If an {@link ExpiryPolicy} is specified in combination to this value,
    * the maximum expiry duration is capped to the value specified here.
    *
-   * <p>A value of {@code 0} means every entry should expire immediately. This can be useful
-   * to disable caching via configuration.
+   * <p>A value of {@code 0} or {@link org.cache2k.expiry.ExpiryTimeValues#NOW} means
+   * every entry should expire immediately. This can be useful to disable caching via
+   * configuration.
+   *
+   * <p>A value of {@code Long.MAX_VALUE} milliseconds or more is treated as
+   * eternal expiry.
    *
    * @throws IllegalArgumentException if {@link #eternal(boolean)} was set to true
    * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">
@@ -946,8 +947,8 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Enable a feature or customization that has an associated configuration section with
-   * an enabling function and configure it.
+   * Execute setup code for a feature or customization and configure
+   * its associated configuration section via its builder.
    *
    * @param setupAction function modifying the configuration
    * @param builderAction function for configuring the customization
@@ -957,7 +958,7 @@ public class Cache2kBuilder<K, V>
    */
   public <B extends SectionBuilder<B, CFG>,
     CFG extends ConfigSection<CFG, B>,
-    SUP extends WithSection<CFG, B>>  Cache2kBuilder<K, V> setupWith(
+    SUP extends WithSection<CFG, B> & CustomizationSupplier<?>>  Cache2kBuilder<K, V> setupWith(
     Function<Cache2kBuilder<K, V>, SUP> setupAction,
     Consumer<B> builderAction) {
     with(setupAction.apply(this).getConfigClass(), builderAction);
@@ -965,15 +966,15 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Enables a feature or customization which has additional parameters and configures it
-   * via its builder.
+   * Executes setup code for a feature or customization which has additional parameters
+   * and configures it via its builder.
    *
-   * @param builderAction function to configure the feature
+   * @param enabler setup function returning am associated configuration
+   * @param builderAction function to configure
    */
   public <B extends ConfigBuilder<B, CFG>,
-    CFG extends ConfigBean<CFG, B>>  Cache2kBuilder<K, V> setup(
-    Function<Cache2kBuilder<K, V>, CFG> enabler,
-    Consumer<B> builderAction) {
+          CFG extends ConfigBean<CFG, B>>
+  Cache2kBuilder<K, V> setup(Function<Cache2kBuilder<K, V>, CFG> enabler, Consumer<B> builderAction) {
     builderAction.accept(enabler.apply(this).builder());
     return this;
   }
@@ -981,11 +982,10 @@ public class Cache2kBuilder<K, V>
   /**
    * Enables a toggle feature which has additional parameters and configures it via its builder.
    *
-   * @param featureType A class of type {@link ToggleFeature} and {@link ConfigBean}
+   * @param featureType Type of feature which has additional bean properties
    * @param builderAction function to configure the feature
    */
-  @SuppressWarnings("unchecked")
-  public <B extends ConfigBuilder<B, T>, T extends ToggleFeatureBean<T, B>>
+  public <B extends ConfigBuilder<B, T>, T extends ToggleFeature & ConfigBean<T, B>>
     Cache2kBuilder<K, V> enable(Class<T> featureType, Consumer<B> builderAction) {
     T bean = ToggleFeature.enable(this, featureType);
     builderAction.accept(bean.builder());
@@ -997,7 +997,7 @@ public class Cache2kBuilder<K, V>
    * Be aware that a section might be existing and preconfigured already, the semantics
    * are identical to {@link #with(Class, Consumer)}
    */
-  public <B extends SectionBuilder<B, CFG>, T extends ToggleFeatureWithSection<CFG, B>,
+  public <B extends SectionBuilder<B, CFG>, T extends ToggleFeature & WithSection<CFG, B>,
     CFG extends ConfigSection<CFG, B>>  Cache2kBuilder<K, V> enableWith(
     Class<T> featureType, Consumer<B> builderAction) {
     T bean = ToggleFeature.enable(this, featureType);

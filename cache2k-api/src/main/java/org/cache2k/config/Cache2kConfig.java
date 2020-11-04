@@ -25,6 +25,7 @@ import org.cache2k.Weigher;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheLifecycleListener;
 import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoader;
@@ -65,14 +66,15 @@ public class Cache2kConfig<K, V>
   implements ConfigBean<Cache2kConfig<K, V>, Cache2kBuilder<K, V>>, ConfigWithSections {
 
   /**
-   * The maximum duration after the duration is considered as eternal for the purposes
-   * of caching.
+   * A marker duration used in {@link #setExpireAfterWrite(Duration)}, to request
+   * eternal expiry. The maximum duration after the duration is considered as eternal
+   * for our purposes.
    */
-  public static final Duration ETERNAL_DURATION = Duration.ofMillis(Long.MAX_VALUE);
+  public static final Duration EXPIRY_ETERNAL = Duration.ofMillis(ExpiryTimeValues.ETERNAL);
   /**
    * Marker duration that {@code setEternal(false)} was set.
    */
-  public static final Duration EXPIRY_NOT_ETERNAL = Duration.ofMillis(Long.MAX_VALUE - 1);
+  public static final Duration EXPIRY_NOT_ETERNAL = Duration.ofMillis(ExpiryTimeValues.ETERNAL - 1);
   public static final long UNSET_LONG = -1;
 
   private boolean storeByReference;
@@ -86,6 +88,7 @@ public class Cache2kConfig<K, V>
   private long maximumWeight = UNSET_LONG;
   private int loaderThreadCount;
 
+  private boolean eternal = false;
   private boolean keepDataAfterExpired = false;
   private boolean sharpExpiry = false;
   private boolean strictEviction = false;
@@ -127,36 +130,8 @@ public class Cache2kConfig<K, V>
    */
   public static <K, V> Cache2kConfig<K, V> of(Class<K> keyType, Class<V> valueType) {
     Cache2kConfig<K, V> c = new Cache2kConfig<K, V>();
-    c.setKeyType(keyType);
-    c.setValueType(valueType);
-    return c;
-  }
-
-  /**
-   * Construct a config instance setting the type parameters and returning a
-   * proper generic type.
-   *
-   * @see Cache2kBuilder#keyType(CacheType)
-   * @see Cache2kBuilder#valueType(CacheType)
-   */
-  public static <K, V> Cache2kConfig<K, V> of(Class<K> keyType, CacheType<V> valueType) {
-    Cache2kConfig<K, V> c = new Cache2kConfig<K, V>();
-    c.setKeyType(keyType);
-    c.setValueType(valueType);
-    return c;
-  }
-
-  /**
-   * Construct a config instance setting the type parameters and returning a
-   * proper generic type.
-   *
-   * @see Cache2kBuilder#keyType(Class)
-   * @see Cache2kBuilder#valueType(Class)
-   */
-  public static <K, V> Cache2kConfig<K, V> of(CacheType<K> keyType, Class<V> valueType) {
-    Cache2kConfig<K, V> c = new Cache2kConfig<K, V>();
-    c.setKeyType(keyType);
-    c.setValueType(valueType);
+    c.setKeyType(CacheType.of(keyType));
+    c.setValueType(CacheType.of(valueType));
     return c;
   }
 
@@ -240,24 +215,18 @@ public class Cache2kConfig<K, V>
   }
 
   /**
-   * @see Cache2kBuilder#keyType(Class)
-   * @see CacheType for a general discussion on types
-   */
-  public void setKeyType(Class<K> v) {
-    checkNull(v);
-    setKeyType(CacheTypeCapture.of(v));
-  }
-
-  /**
    * @see Cache2kBuilder#keyType(CacheType)
    * @see CacheType for a general discussion on types
    */
   public void setKeyType(CacheType<K> v) {
-    checkNull(v);
+    if (v == null) {
+      valueType = null;
+      return;
+    }
     if (v.isArray()) {
       throw new IllegalArgumentException("Arrays are not supported for keys");
     }
-    keyType = v.getBeanRepresentation();
+    keyType = v;
   }
 
   public CacheType<V> getValueType() {
@@ -265,39 +234,18 @@ public class Cache2kConfig<K, V>
   }
 
   /**
-   * @see Cache2kBuilder#valueType(Class)
-   * @see CacheType for a general discussion on types
-   */
-  public void setValueType(Class<V> v) {
-    checkNull(v);
-    setValueType(CacheTypeCapture.of(v));
-  }
-
-  /**
    * @see Cache2kBuilder#valueType(CacheType)
    * @see CacheType for a general discussion on types
    */
   public void setValueType(CacheType<V> v) {
-    checkNull(v);
+    if (v == null) {
+      valueType = null;
+      return;
+    }
     if (v.isArray()) {
       throw new IllegalArgumentException("Arrays are not supported for values");
     }
-    valueType = v.getBeanRepresentation();
-  }
-
-  public boolean isEternal() {
-    return expireAfterWrite == null || expireAfterWrite == ETERNAL_DURATION;
-  }
-
-  /**
-   * @see Cache2kBuilder#eternal(boolean)
-   */
-  public void setEternal(boolean v) {
-    if (v) {
-      setExpireAfterWrite(ETERNAL_DURATION);
-    } else {
-      setExpireAfterWrite(EXPIRY_NOT_ETERNAL);
-    }
+    valueType = v;
   }
 
   public Duration getExpireAfterWrite() {
@@ -305,26 +253,29 @@ public class Cache2kConfig<K, V>
   }
 
   /**
+   * Sets expire after write. The value is capped at {@link #EXPIRY_ETERNAL}, meaning
+   * an equal or higher duration is treated as eternal expiry.
+   *
    * @see Cache2kBuilder#expireAfterWrite
    */
   public void setExpireAfterWrite(Duration v) {
+    if (v == null) {
+      v = null;
+      return;
+    }
     v = durationCeiling(v);
     if (v.isNegative()) {
       throw new IllegalArgumentException("Duration must be positive");
     }
-    if (v == expireAfterWrite || v.equals(expireAfterWrite)) {
-      return;
-    }
-    if (expireAfterWrite != null) {
-      if (v == ETERNAL_DURATION) {
-        throw new IllegalArgumentException(
-          "eternal disabled or expiry was set, refusing to reset back to eternal");
-      }
-      if (expireAfterWrite == ETERNAL_DURATION) {
-        throw new IllegalArgumentException("eternal enabled explicitly, refusing to enable expiry");
-      }
-    }
     this.expireAfterWrite = v;
+  }
+
+  public boolean isEternal() {
+    return eternal;
+  }
+
+  public void setEternal(boolean v) {
+    this.eternal = v;
   }
 
   public Duration getTimerLag() {
@@ -704,10 +655,12 @@ public class Cache2kConfig<K, V>
    * @see Cache2kBuilder#weigher(Weigher)
    */
   public void setWeigher(CustomizationSupplier<? extends Weigher<K, V>> v) {
+    /*
     if (entryCapacity >= 0) {
       throw new IllegalArgumentException(
         "entryCapacity already set, specifying a weigher is illegal");
     }
+    */
     weigher = v;
   }
 
@@ -734,8 +687,8 @@ public class Cache2kConfig<K, V>
   }
 
   private Duration durationCeiling(Duration v) {
-    if (v != null && ETERNAL_DURATION.compareTo(v) <= 0) {
-      v = ETERNAL_DURATION;
+    if (v != null && EXPIRY_ETERNAL.compareTo(v) <= 0) {
+      v = EXPIRY_ETERNAL;
     }
     return v;
   }

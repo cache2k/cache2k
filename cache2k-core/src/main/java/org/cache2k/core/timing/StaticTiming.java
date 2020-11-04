@@ -58,7 +58,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     clock = buildContext.getClock();
     Cache2kConfig<K, V> c = buildContext.getConfig();
     if (c.getExpireAfterWrite() == null
-      || c.getExpireAfterWrite() == Cache2kConfig.ETERNAL_DURATION) {
+      || c.getExpireAfterWrite() == Cache2kConfig.EXPIRY_ETERNAL) {
       this.expiryMillis = ExpiryPolicy.ETERNAL;
     } else {
       this.expiryMillis = c.getExpireAfterWrite().toMillis();
