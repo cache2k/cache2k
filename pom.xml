@@ -44,13 +44,12 @@
   </developers>
 
   <modules>
-    <module>cache2k-base-bom</module>
     <module>cache2k-java11-parent</module>
     <module>cache2k-api</module>
     <module>cache2k-core</module>
     <module>cache2k-jmx</module>
     <module>cache2k-config</module>
-    <module>cache2k-schemas</module>
+    <module>cache2k-schema</module>
     <module>cache2k-addon</module>
     <!-- not deployed on OSS central -->
     <module>cache2k-testsuite</module>

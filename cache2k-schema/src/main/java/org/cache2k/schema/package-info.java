@@ -1,6 +1,6 @@
 /*
  * #%L
- * cache2k XSD schemas
+ * cache2k XSD schema
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%

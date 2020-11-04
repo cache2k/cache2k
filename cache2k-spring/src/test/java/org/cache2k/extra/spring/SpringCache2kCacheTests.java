@@ -2,7 +2,7 @@ package org.cache2k.extra.spring;
 
 /*
  * #%L
- * cache2k JCache provider
+ * cache2k Spring framework support
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
