@@ -56,6 +56,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.cache2k.config.Cache2kConfig.checkNull;
+
 /**
  * Builder to create a {@link Cache} instance. The usage is:
  *
@@ -434,6 +436,7 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> exceptionPropagator(
     final org.cache2k.integration.ExceptionPropagator<K> ep) {
+    checkNull(ep);
     ExceptionPropagator<K> newPropagator = new ExceptionPropagator<K>() {
       @Override
       public RuntimeException propagateException(LoadExceptionInfo<K> newInfo) {
@@ -487,13 +490,13 @@ public class Cache2kBuilder<K, V>
 
   /** Wraps to factory but passes on nulls. */
   private static <T> CustomizationReferenceSupplier<T> wrapCustomizationInstance(T obj) {
-    if (obj == null) { return null; }
     return new CustomizationReferenceSupplier<T>(obj);
   }
 
   @Deprecated
   public final Cache2kBuilder<K, V> loader(
     final org.cache2k.integration.AsyncCacheLoader<K, V> oldLoader) {
+    checkNull(oldLoader);
     AsyncCacheLoader<K, V> newLoader = new AsyncCacheLoader<K, V>() {
       @Override
       public void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {

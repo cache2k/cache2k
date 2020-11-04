@@ -36,9 +36,7 @@ public final class CustomizationReferenceSupplier<T> implements CustomizationSup
    * @param obj reference to a customization. Not null.
    */
   public CustomizationReferenceSupplier(T obj) {
-    if (obj == null) {
-      throw new NullPointerException("object reference missing");
-    }
+    Cache2kConfig.checkNull(obj);
     object = obj;
   }
 

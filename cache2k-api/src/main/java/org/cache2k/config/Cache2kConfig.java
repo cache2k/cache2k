@@ -230,9 +230,12 @@ public class Cache2kConfig<K, V>
     return keyType;
   }
 
-  private void checkNull(Object v) {
-    if (v == null) {
-      throw new NullPointerException("null value not allowed");
+  /**
+   * @throws NullPointerException if parameter is null
+   */
+  public static void checkNull(Object obj) {
+    if (obj == null) {
+      throw new NullPointerException("Null value not allowed");
     }
   }
 
