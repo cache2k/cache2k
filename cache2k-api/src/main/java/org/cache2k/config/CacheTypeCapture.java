@@ -22,9 +22,7 @@ package org.cache2k.config;
 
 import org.cache2k.Cache2kBuilder;
 
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 
 /**
@@ -47,7 +45,8 @@ public class CacheTypeCapture<T> implements CacheType<T> {
 
   @SuppressWarnings("unchecked")
   private final CacheType<T> descriptor =
-    CacheType.of(((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
+    (CacheType<T>) CacheType.of(
+      ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0]);
 
   protected CacheTypeCapture() { }
 
@@ -97,20 +96,20 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     return descriptor.toString();
   }
 
-  private abstract static class BaseType implements CacheType {
+  private abstract static class BaseType<T> implements CacheType<T> {
 
     @Override
-    public CacheType getComponentType() {
+    public CacheType<?> getComponentType() {
       return null;
     }
 
     @Override
-    public Class getType() {
+    public Class<T> getType() {
       return null;
     }
 
     @Override
-    public CacheType[] getTypeArguments() {
+    public CacheType<?>[] getTypeArguments() {
       return null;
     }
 
@@ -134,11 +133,11 @@ public class CacheTypeCapture<T> implements CacheType<T> {
   /**
    * CacheType representing a class.
    */
-  public static class OfClass extends BaseType {
+  public static class OfClass<T> extends BaseType<T> {
 
-    private Class<?> type;
+    private final Class<T> type;
 
-    public OfClass(Class<?> type) {
+    public OfClass(Class<T> type) {
       if (type.isArray()) {
         throw new IllegalArgumentException("array is not a regular class");
       }
@@ -146,7 +145,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
 
     @Override
-    public Class<?> getType() {
+    public Class<T> getType() {
       return type;
     }
 
@@ -171,7 +170,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      OfClass classType = (OfClass) o;
+      OfClass<?> classType = (OfClass<?>) o;
       return type.equals(classType.type);
     }
 
@@ -185,11 +184,11 @@ public class CacheTypeCapture<T> implements CacheType<T> {
   /**
    * CacheType representing an array.
    */
-  public static class OfArray extends BaseType {
+  public static class OfArray extends BaseType<Void> {
 
-    private CacheType componentType;
+    private final CacheType<?> componentType;
 
-    public OfArray(CacheType componentType) {
+    public OfArray(CacheType<?> componentType) {
       this.componentType = componentType;
     }
 
@@ -199,11 +198,11 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
 
     @Override
-    public CacheType getComponentType() {
+    public CacheType<?> getComponentType() {
       return componentType;
     }
 
-    static int countDimensions(CacheType td) {
+    static int countDimensions(CacheType<?> td) {
       int cnt = 0;
       while (td.isArray()) {
         td = td.getComponentType();
@@ -212,7 +211,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
       return cnt;
     }
 
-    static Class<?> finalPrimitiveType(CacheType td) {
+    static Class<?> finalPrimitiveType(CacheType<?> td) {
       while (td.isArray()) {
         td = td.getComponentType();
       }
@@ -251,18 +250,18 @@ public class CacheTypeCapture<T> implements CacheType<T> {
   /**
    * CacheType representing a generic type.
    */
-  public static class OfGeneric extends BaseType {
+  public static class OfGeneric<T> extends BaseType<T> {
 
-    private CacheType[] typeArguments;
-    private Class<?> type;
+    private final CacheType<?>[] typeArguments;
+    private final Class<T> type;
 
-    public OfGeneric(Class<?> type, CacheType[] typeArguments) {
+    public OfGeneric(Class<T> type, CacheType<?>[] typeArguments) {
       this.typeArguments = typeArguments;
       this.type = type;
     }
 
     @Override
-    public Class<?> getType() {
+    public Class<T> getType() {
       return type;
     }
 
@@ -272,7 +271,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     }
 
     @Override
-    public CacheType[] getTypeArguments() {
+    public CacheType<?>[] getTypeArguments() {
       return typeArguments;
     }
 
@@ -288,7 +287,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      OfGeneric that = (OfGeneric) o;
+      OfGeneric<?> that = (OfGeneric<?>) o;
       return Arrays.equals(typeArguments, that.typeArguments) && type.equals(that.type);
     }
 
@@ -301,7 +300,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
 
   }
 
-  static String arrayToString(CacheType[] a) {
+  static String arrayToString(CacheType<?>[] a) {
     if (a.length < 1) {
       throw new IllegalArgumentException();
     }

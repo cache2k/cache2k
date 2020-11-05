@@ -110,7 +110,6 @@ public class IntegrationTest {
       new Cache2kBuilder<String, String>() { }
       .name("IntegrationTest-defaultAndIndividualIsApplied");
     Cache2kConfig<String, String> cfg = b.config();
-    System.err.println(cfg.hashCode());
     assertEquals(-1, cfg.getEntryCapacity());
     assertEquals(5, cfg.getLoaderThreadCount());
     assertNull(cfg.getExpireAfterWrite());

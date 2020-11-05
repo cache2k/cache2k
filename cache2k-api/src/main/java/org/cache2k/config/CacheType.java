@@ -55,11 +55,11 @@ public interface CacheType<T> {
   String DESCRIPTOR_TO_STRING_PREFIX = "CacheType:";
 
   static <T> CacheType<T> of(Class<T> t) {
-    return of((Type) t);
+    return (CacheType<T>) of((Type) t);
   }
 
   @SuppressWarnings("unchecked")
-  static CacheType of(Type t) {
+  static CacheType<?> of(Type t) {
     if (t instanceof ParameterizedType) {
       ParameterizedType pt = (ParameterizedType) t;
       Class c = (Class) pt.getRawType();

@@ -26,7 +26,8 @@ package org.cache2k.config;
  *
  * @author Jens Wilke
  */
-public class Cache2kManagerConfig implements ConfigBean {
+public class Cache2kManagerConfig
+  implements ConfigBean<Cache2kManagerConfig, Cache2kManagerConfig.Builder> {
 
   private String version = null;
   private String defaultManagerName = null;
@@ -41,7 +42,7 @@ public class Cache2kManagerConfig implements ConfigBean {
   /**
    * Configure a cache with default parameters if configuration has no specific section for it.
    */
-  public void setIgnoreMissingCacheConfiguration(final boolean f) {
+  public void setIgnoreMissingCacheConfiguration(boolean f) {
     ignoreMissingCacheConfiguration = f;
   }
 
@@ -52,7 +53,7 @@ public class Cache2kManagerConfig implements ConfigBean {
   /**
    * Replace the default name of the default cache manager.
    */
-  public void setDefaultManagerName(final String v) {
+  public void setDefaultManagerName(String v) {
     defaultManagerName = v;
   }
 
@@ -64,7 +65,7 @@ public class Cache2kManagerConfig implements ConfigBean {
    * Version of the configuration. Mandatory in every cache configuration. The version affects
    * how the configuration XML file is interpreted.
    */
-  public void setVersion(final String v) {
+  public void setVersion(String v) {
     version = v;
   }
 
@@ -75,7 +76,7 @@ public class Cache2kManagerConfig implements ConfigBean {
   /**
    * The configuration for each cache is parsed and checked as soon as the cache manager is created.
    */
-  public void setSkipCheckOnStartup(final boolean f) {
+  public void setSkipCheckOnStartup(boolean f) {
     skipCheckOnStartup = f;
   }
 
@@ -87,7 +88,7 @@ public class Cache2kManagerConfig implements ConfigBean {
    * When a configuration is present, every cache needs a cache name so that the configuration
    * can be applied.
    */
-  public void setIgnoreAnonymousCache(final boolean f) {
+  public void setIgnoreAnonymousCache(boolean f) {
     ignoreAnonymousCache = f;
   }
 
@@ -95,7 +96,14 @@ public class Cache2kManagerConfig implements ConfigBean {
    * Not supported, but will eventually get one.
    */
   @Override
-  public ConfigBuilder builder() {
+  public Builder builder() {
     throw new UnsupportedOperationException();
+  }
+
+  public static class Builder implements ConfigBuilder<Builder, Cache2kManagerConfig> {
+    @Override
+    public Cache2kManagerConfig config() {
+      return null;
+    }
   }
 }
