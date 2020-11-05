@@ -24,7 +24,7 @@ package org.cache2k.core.timing;
  * Interface of the timer task data structure.
  *
  * <p>The interface allows different implementations for timer data structures, like
- * tree, heap oder timer wheels. The interface is not 100% anstracted, since
+ * tree, heap oder timer wheels. The interface is not 100% abstracted, since
  * the implementation makes use of TimerTask internals (prev and next pointers).
  *
  * <p>The timer data structure is not supposed to be thread safe, it is called with
@@ -46,12 +46,12 @@ public interface TimerStructure {
   /**
    * Cancel this timer task
    */
-  void cancel(TimerTask t);
+  void cancelAll(TimerTask t);
 
   /**
    * Cancel all tasks
    */
-  void cancel();
+  void cancelAll();
 
   /**
    * Return a task that is supposed to execute at the given time or earlier.

@@ -185,6 +185,7 @@ public class GetTest extends CacheTestSupport<Long, String> {
    * and will match. This test works because Identifier2 was correctly implemented
    * per the spec and transient fields are not used in equals or hashcode.
    */
+  /*
   public void testGetUsesEqualityNotequalsequals() {
 
     Cache identifier2Cache = getCacheManager().createCache("identifierCache",newMutableConfiguration().setStoreByValue(false));
@@ -196,5 +197,6 @@ public class GetTest extends CacheTestSupport<Long, String> {
     Assert.assertEquals(one.hashCode(), one_.hashCode());
     assertEquals("something", identifier2Cache.get(one_));
   }
+  */
 
 }

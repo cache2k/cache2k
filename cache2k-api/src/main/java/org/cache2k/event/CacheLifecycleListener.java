@@ -23,7 +23,8 @@ package org.cache2k.event;
 import java.util.EventListener;
 
 /**
+ * Listeners for lifecycle events of a cache.
+ *
  * @author Jens Wilke
  */
-public interface CacheLifecycleListener extends EventListener {
-}
+public interface CacheLifecycleListener extends EventListener { }

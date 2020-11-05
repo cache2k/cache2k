@@ -27,6 +27,7 @@
         <configuration>
           <!-- we need to repeat source and target or override
                otherwise we inherit source and target from parent.
+               This merges in the error prone setup from the parent.
           -->
           <source>11</source>
           <target>11</target>

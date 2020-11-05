@@ -119,25 +119,6 @@ public class EntryTest {
   }
 
   @Test
-  public void getValue() {
-    Entry e = new Entry();
-    synchronized (e) {
-      CacheEntry ce = (CacheEntry) e;
-      assertTrue(ce.getValue().toString().contains("InitialValue"));
-      e.setValueOrException(null);
-      assertNull(ce.getValue());
-      e.setValueOrException(this);
-      assertSame(this, ce.getValue());
-      e.setValueOrException(new ExceptionWrapper<Integer>(null, 4711, null, null));
-      try {
-        ce.getValue();
-        fail("Entry.getValue() assertion expected");
-      } catch (AssertionError expected) {
-      }
-    }
-  }
-
-  @Test
   public void num2processingState() {
     assertEquals("DONE", Entry.num2processingStateText(Entry.ProcessingState.DONE));
     assertEquals("READ", Entry.num2processingStateText(Entry.ProcessingState.READ));

@@ -293,7 +293,7 @@ public class TimerTest {
   @Test
   public void schedule100Years() {
     init(System.currentTimeMillis(), 2);
-    schedule(clock.millis() + 100 * 1000 * 60 * 60 * 24 * 365);
+    schedule(clock.millis() + 100L * 1000 * 60 * 60 * 24 * 365);
   }
 
   @Test

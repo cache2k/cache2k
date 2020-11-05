@@ -87,16 +87,6 @@ public class IntegrationTest {
     return cfg;
   }
 
-  /**
-   * The name of the default manager is set by the configuration.
-   * Not working, will be moved.
-   */
-  public void defaultManagerName() {
-    Cache c = Cache2kBuilder.forUnknownTypes().name("flowers").build();
-    assertTrue("default manager", c.getCacheManager().isDefaultManager());
-    assertEquals("myApp", c.getCacheManager().getName());
-    c.close();
-  }
 
   @Test
   public void defaultIsApplied() {

@@ -61,57 +61,6 @@ public class JmxSupportTest {
 
   private ObjectName objectName;
 
-  /**
-   * Construct three caches with multiple issues and check the health string of the manager JMX.
-   */
-  public void multipleWarnings() throws Exception {
-    final String managerName = getClass().getName() + ".multipleWarnings";
-    final String cacheNameBadHashing = "cacheWithBadHashing";
-    final String cacheNameKeyMutation = "cacheWithKeyMutation";
-    final String cacheNameMultipleIssues = "cacheWithMultipleIssues";
-    String suppress1 =  "org.cache2k.Cache/" + managerName + ":" + cacheNameKeyMutation;
-    String suppress2 =  "org.cache2k.Cache/" + managerName + ":" + cacheNameMultipleIssues;
-    Log.registerSuppression(suppress1, new Log.SuppressionCounter());
-    Log.registerSuppression(suppress2, new Log.SuppressionCounter());
-    CacheManager m = CacheManager.getInstance(managerName);
-    Cache cacheWithBadHashing = Cache2kBuilder.of(Object.class, Object.class)
-      .manager(m)
-      .name(cacheNameBadHashing)
-      .eternal(true)
-      .build();
-    Cache cacheWithKeyMutation = Cache2kBuilder.of(Object.class, Object.class)
-      .manager(m)
-      .name(cacheNameKeyMutation)
-      .eternal(true)
-      .entryCapacity(50)
-      .build();
-    Cache cacheWithMultipleIssues = Cache2kBuilder.of(Object.class, Object.class)
-      .manager(m)
-      .name(cacheNameMultipleIssues)
-      .entryCapacity(50)
-      .eternal(true)
-      .build();
-    for (int i = 0; i < 9; i++) {
-      cacheWithBadHashing.put(new KeyForMutation(), 1);
-    }
-    for (int i = 0; i < 100; i++) {
-      cacheWithMultipleIssues.put(new KeyForMutation(), 1);
-    }
-    for (int i = 0; i < 100; i++) {
-      KeyForMutation v = new KeyForMutation();
-      cacheWithKeyMutation.put(v, 1);
-      cacheWithMultipleIssues.put(v, 1);
-      v.value = 1;
-    }
-    String health =
-      (String) SERVER.getAttribute(getCacheManagerObjectName(managerName), "HealthStatus");
-    assertEquals(
-      "WARNING: [cacheWithKeyMutation] key mutation detected; " +
-      "WARNING: [cacheWithMultipleIssues] key mutation detected", health);
-    Log.deregisterSuppression(suppress1);
-    Log.deregisterSuppression(suppress2);
-    m.close();
-  }
 
   private static class KeyForMutation {
     int value = 0;

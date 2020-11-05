@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Standard timer implementation. Due timer tasks are executed via a scheduler
- * that runs approx. every second (lag time, configurable). There always only
+ * that runs at most every second (lag time, configurable). There always only
  * one pending scheduler job per timer.
  *
  * @author Jens Wilke
@@ -113,7 +113,7 @@ public class DefaultTimer implements Timer {
   public void cancel(TimerTask t) {
     lock.lock();
     try {
-      structure.cancel(t);
+      structure.cancelAll(t);
     } finally {
       lock.unlock();
     }
@@ -133,7 +133,7 @@ public class DefaultTimer implements Timer {
   public void cancelAll() {
     lock.lock();
     try {
-      structure.cancel();
+      structure.cancelAll();
     } finally {
       lock.unlock();
     }

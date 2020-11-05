@@ -26,8 +26,6 @@ package org.cache2k.core.timing;
  * level.
  *
  * <p>This implementation is rather simple and has opportunities to improve performance.
- * Probably the best results can be achieved for a pre allocated object structure for
- * known delta and slot counts.
  *
  * @author Jens Wilke
  */
@@ -44,11 +42,11 @@ public class TimerWheels implements TimerStructure {
     return wheel.schedule(task);
   }
 
-  public void cancel(TimerTask t) {
+  public void cancelAll(TimerTask t) {
     t.cancel();
   }
 
-  public void cancel() {
+  public void cancelAll() {
     wheel.cancel();
   }
 

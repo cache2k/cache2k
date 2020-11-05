@@ -39,6 +39,10 @@ public class ConcurrentMapTest {
 
   ConcurrentMap<Integer, String> map;
 
+    Map<?, ?> untypedMap() {
+    return (Map<?, ?>) map;
+  }
+
   @Before
   public void setUp() {
     map = new ConcurrentHashMap<Integer, String>();
@@ -73,7 +77,7 @@ public class ConcurrentMapTest {
   @Test
   public void testContainsKey_incompatible() {
     map.put(123, "abc");
-    assertFalse(map.containsKey("123"));
+    assertFalse(((Map<?, ?>) map).containsKey("123"));
   }
 
   @Test
@@ -89,7 +93,7 @@ public class ConcurrentMapTest {
 
   @Test(expected = NullPointerException.class)
   public void testContainsValue_null() {
-    map.containsValue(null);
+    boolean f = map.containsValue(null);
   }
 
   @Test
@@ -122,7 +126,7 @@ public class ConcurrentMapTest {
 
   @Test
   public void testRemove_Incompatible() {
-    map.remove("abc");
+    ((Map<?, ?>) map).remove("abc");
   }
 
   @Test
@@ -209,7 +213,7 @@ public class ConcurrentMapTest {
   @Test
   public void testGet_incompatible() {
     map.put(123, "abc");
-    assertNull(map.get("abc"));
+    assertNull(untypedMap().get("abc"));
   }
 
   @Test
@@ -247,9 +251,9 @@ public class ConcurrentMapTest {
 
   @Test
   public void keySet_contains() {
-    assertFalse(map.keySet().contains("abc"));
+    assertFalse(untypedMap().keySet().contains("abc"));
     map.put(123, "abc");
-    assertFalse(map.keySet().contains("abc"));
+    assertFalse(untypedMap().keySet().contains("abc"));
     assertTrue(map.keySet().contains(123));
   }
 
@@ -336,7 +340,7 @@ public class ConcurrentMapTest {
     value = map.computeIfPresent(123, (integer, s) -> null);
     assertNull(value);
     assertNull(map.get(123));
-    assertFalse(map.containsValue(123));
+    assertFalse(untypedMap().containsValue(123));
   }
 
   @Test
@@ -356,7 +360,7 @@ public class ConcurrentMapTest {
     });
     assertNull(value);
     assertNull(map.get(123));
-    assertFalse(map.containsValue(123));
+    assertFalse(untypedMap().containsValue(123));
   }
 
   @Test

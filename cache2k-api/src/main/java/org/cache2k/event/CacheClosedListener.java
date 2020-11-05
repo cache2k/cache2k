@@ -22,7 +22,6 @@ package org.cache2k.event;
 
 import org.cache2k.Cache;
 
-import java.util.EventListener;
 import java.util.concurrent.CompletableFuture;
 
 /**
