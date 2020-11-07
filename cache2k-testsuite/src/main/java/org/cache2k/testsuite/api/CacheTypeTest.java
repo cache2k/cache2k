@@ -20,7 +20,6 @@ package org.cache2k.testsuite.api;
  * #L%
  */
 
-import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
 import org.cache2k.testing.category.FastTests;
@@ -48,6 +47,7 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("NullAway")
 @Category(FastTests.class)
 public class CacheTypeTest {
 

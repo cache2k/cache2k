@@ -20,12 +20,15 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.annotation.NonNull;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.CacheWriterException;
+import org.cache2k.processor.EntryMutator;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
@@ -37,6 +40,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /* Credits
  *
@@ -108,7 +112,7 @@ import java.util.concurrent.TimeUnit;
  * @see <a href="https://cache2k.org>cache2k homepage</a>
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
-@SuppressWarnings("UnusedDeclaration")
+@SuppressWarnings({"UnusedDeclaration", "NullableProblems"})
 public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
 
   /**
@@ -143,7 +147,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @throws CacheLoaderException if the loading produced an exception .
    */
   @Override
-  V get(K key);
+  @Nullable V get(K key);
 
   /**
    * Returns an entry that contains the cache value associated with the given key.
@@ -171,7 +175,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @return An entry representing the cache mapping. Multiple calls for the same key may
    *          return different instances of the entry object.
    */
-  CacheEntry<K, V> getEntry(K key);
+  @Nullable CacheEntry<K, V> getEntry(K key);
 
   /**
    * Returns the value associated to the given key.
@@ -195,7 +199,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    *         prevents it from being stored in this cache
    * @throws CacheLoaderException if the loading produced an exception .
    */
-  V peek(K key);
+  @Nullable V peek(K key);
 
   /**
    * Returns an entry that contains the cache value associated with the given key.
@@ -218,7 +222,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @return An entry representing the cache mapping. Multiple calls for the same key may
    *          return different instances of the entry object.
    */
-  CacheEntry<K, V> peekEntry(K key);
+  @Nullable CacheEntry<K, V> peekEntry(K key);
 
   /**
    * Returns {@code true}, if there is a mapping for the specified key.
@@ -468,7 +472,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    *         the cache. This check is optional depending on the cache
    *         configuration.
    */
-  V peekAndRemove(K key);
+  @Nullable V peekAndRemove(K key);
 
   /**
    * Removes the mapping for a key from the cache and returns {@code true} if it
@@ -576,7 +580,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @throws IllegalArgumentException if some property of the specified key
    *         or value prevents it from being stored in this cache.
    */
-  V peekAndPut(K key, V value);
+  @Nullable V peekAndPut(K key, V value);
 
   /**
    * Updates an existing not expired mapping to expire at the given point in time.
@@ -695,7 +699,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * and {@link org.cache2k.processor.MutableCacheEntry}.
    *
    * @param key the key of the cache entry that should be processed
-   * @param entryProcessor processor instance to be invoked
+   * @param processor processor instance to be invoked
    * @param <R> type of the result
    * @throws EntryProcessingException if an exception happened inside
    *         {@link EntryProcessor#process(MutableCacheEntry)}
@@ -703,7 +707,26 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    */
-  <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor);
+  <R> @Nullable R invoke(K key, EntryProcessor<K, V, R> processor);
+
+  /**
+   * Invoke a user defined operation on a cache entry.
+   *
+   * For examples and further details consult the documentation of {@link EntryProcessor}
+   * and {@link org.cache2k.processor.MutableCacheEntry}.
+   *
+   * @param key the key of the cache entry that should be processed
+   * @param mutator processor instance to be invoked
+   * @throws EntryProcessingException if an exception happened inside
+   *         {@link EntryProcessor#process(MutableCacheEntry)}
+   * @return result provided by the entry processor
+   * @see EntryProcessor
+   * @see org.cache2k.processor.MutableCacheEntry
+   * @since 2.0
+   */
+  default void mutate(K key, EntryMutator<K, V> mutator) {
+    invoke(key, entry -> { mutator.mutate(entry); return this; });
+  }
 
   /**
    * Invoke a user defined function on multiple cache entries specified by the
@@ -722,8 +745,29 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    */
-  <R> Map<K, EntryProcessingResult<R>> invokeAll(
+  <R> Map<@NonNull K, @NonNull EntryProcessingResult<R>> invokeAll(
     Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor);
+
+  /**
+   * Invoke a user defined mutation operation on multiple cache entries specified by the
+   * {@code keys} parameter.
+   *
+   * <p>The order of the invocation is unspecified. To speed up processing the cache
+   * may invoke the entry processor in parallel.
+   *
+   * For examples and further details consult the documentation of {@link EntryProcessor}
+   * and {@link org.cache2k.processor.MutableCacheEntry}.
+   *
+   * @param keys the keys of the cache entries that should be processed
+   * @param mutator processor instance to be invoked
+   * @return map containing the invocation results for every cache key
+   * @see EntryProcessor
+   * @see org.cache2k.processor.MutableCacheEntry
+   * @since 2.0
+   */
+  default void mutateAll(Iterable<? extends K> keys, EntryMutator<K, V> mutator) {
+    invokeAll(keys, entry -> { mutator.mutate(entry); return this; });
+  }
 
   /**
    * Retrieve values from the cache associated with the provided keys. If the
@@ -778,8 +822,8 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @param valueMap Map of keys with associated values to be inserted in the cache
    * @throws NullPointerException if one of the specified keys is null
    */
-  @Override
-   void putAll(Map<? extends K, ? extends V> valueMap);
+    @Override
+    void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
    * Iterate all keys in the cache.
@@ -839,6 +883,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
    */
+  @Override
   void close();
 
   /**
@@ -857,10 +902,13 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * not throw the {@link IllegalStateException} in case the cache is closed, but return the
    * solely the cache name and no statistics.
    */
+  @Override
   String toString();
 
   /**
    * Request an alternative interface for this cache instance.
+   *
+   * @throws UnsupportedOperationException if interface is not available
    */
   <T> T requestInterface(Class<T> type);
 

@@ -22,6 +22,7 @@ package org.cache2k.jcache.provider.event;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.CustomizationReferenceSupplier;
@@ -133,9 +134,10 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
    * and show up in the all listeners list more then once
    *
    * @param cache The cache that is closing. No cache operations on entries are allowed.
+   * @return
    */
   @Override
-  public CompletableFuture<Void> onCacheClosed(org.cache2k.Cache cache) {
+  public @Nullable CompletableFuture<Void> onCacheClosed(Cache cache) {
     Set<CacheEntryListener> ls = new HashSet<CacheEntryListener>();
     for (Listener l : getAllListeners()) {
       ls.add(l.entryListener);

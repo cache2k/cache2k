@@ -22,6 +22,8 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.ForwardingCache;
+import org.cache2k.annotation.NonNullIsDefault;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
@@ -32,12 +34,13 @@ import org.cache2k.processor.MutableCacheEntry;
  *
  * @author Jens Wilke
  */
+@NonNullIsDefault
 public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
 
-  private Cache<K, V> cache;
+  private final Cache<K, V> cache;
 
-  public EntryProcessorCacheWrapper(Cache<K, V> _cache) {
-    this.cache = _cache;
+  public EntryProcessorCacheWrapper(Cache<K, V> cache) {
+    this.cache = cache;
   }
 
   @Override
@@ -57,30 +60,20 @@ public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
    * Not replaced by entry processor invocation.
    */
   @Override
-  public V peek(K key) {
-    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
-      @Override
-      public V process(MutableCacheEntry<K, V> e) throws Exception {
-        if (!e.exists()) {
-          return null;
-        }
-        return e.getValue();
+  public @Nullable V peek(K key) {
+    EntryProcessor<K, V, V> p = e -> {
+      if (!e.exists()) {
+        return null;
       }
+      return e.getValue();
     };
     return invoke(key, p);
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Override
   public boolean containsKey(K key) {
-    EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
-      @Override
-      public Boolean process(MutableCacheEntry<K, V> e) throws Exception {
-        if (!e.exists()) {
-          return false;
-        }
-        return true;
-      }
-    };
+    EntryProcessor<K, V, Boolean> p = MutableCacheEntry::exists;
     return invoke(key, p);
   }
 
@@ -88,58 +81,47 @@ public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
    * Not replaces by entry processor invocation.
    */
   @Override
-  public void put(K key, final V value) {
-    EntryProcessor<K, V, Void> p = new EntryProcessor<K, V, Void>() {
-      @Override
-      public Void process(MutableCacheEntry<K, V> e) throws Exception {
-        e.setValue(value);
-        return null;
-      }
+  public void put(K key, V value) {
+    EntryProcessor<K, V, Void> p = e -> {
+      e.setValue(value);
+      return null;
     };
     invoke(key, p);
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Override
-  public boolean replace(final K key, final V _newValue) {
-    EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
-      @Override
-      public Boolean process(MutableCacheEntry<K, V> e) throws Exception {
-        if (!e.exists()) {
-          return false;
-        }
-        e.setValue(_newValue);
-        return true;
+  public boolean replace(K key, V newValue) {
+    EntryProcessor<K, V, Boolean> p = e -> {
+      if (!e.exists()) {
+        return false;
       }
+      e.setValue(newValue);
+      return true;
     };
     return invoke(key, p);
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Override
-  public boolean replaceIfEquals(final K key, final V _oldValue, final V _newValue) {
-    EntryProcessor<K, V, Boolean> p = new EntryProcessor<K, V, Boolean>() {
-      @Override
-      public Boolean process(MutableCacheEntry<K, V> e) throws Exception {
-        if (!e.exists()) {
+  public boolean replaceIfEquals(K key, V oldValue, V newValue) {
+    EntryProcessor<K, V, Boolean> p = e -> {
+      if (!e.exists()) {
+        return false;
+      }
+      if (oldValue == null) {
+        if (null != e.getValue()) {
           return false;
         }
-        if (_oldValue == null) {
-          if (null != e.getValue()) {
-            return false;
-          }
-        } else {
-          if (!_oldValue.equals(e.getValue())) {
-            return false;
-          }
+      } else {
+        if (!oldValue.equals(e.getValue())) {
+          return false;
         }
-        e.setValue(_newValue);
-        return true;
       }
+      e.setValue(newValue);
+      return true;
     };
     return invoke(key, p);
-  }
-
-  public Cache<K, V> getWrappedCache() {
-    return cache;
   }
 
 }

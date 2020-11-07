@@ -22,14 +22,15 @@
 
   <dependencies>
 
-    <!--
-         Optional. For the extended JCache configuration
-    -->
+    <!-- https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305 -->
     <dependency>
-      <groupId>javax.cache</groupId>
-      <artifactId>cache-api</artifactId>
-      <version>${jcache.version}</version>
-      <optional>true</optional>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <scope>provided</scope>
+      <!--
+      <scope>compile</scope>
+      -->
     </dependency>
 
     <dependency>
@@ -109,5 +110,42 @@
       -->
     </plugins>
   </build>
+
+<profiles>
+  <profile>
+    <id>CheckerFramework</id>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <annotationProcessorPaths>
+              <!-- https://checkerframework.org/manual/#maven -->
+              <path>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker</artifactId>
+                <version>3.7.1</version>
+              </path>
+            </annotationProcessorPaths>
+            <annotationProcessors>
+              <!-- Add all the checkers you want to enable here -->
+              <annotationProcessor>org.checkerframework.checker.nullness.NullnessChecker</annotationProcessor>
+            </annotationProcessors>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+    <!-- Unfortunately, checker framework needs this dependency -->
+    <dependencies>
+      <dependency>
+        <groupId>org.checkerframework</groupId>
+        <artifactId>checker</artifactId>
+        <version>3.7.1</version>
+      </dependency>
+    </dependencies>
+  </profile>
+
+</profiles>
 
 </project>

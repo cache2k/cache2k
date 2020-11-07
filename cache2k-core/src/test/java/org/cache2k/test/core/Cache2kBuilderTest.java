@@ -30,7 +30,6 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.SimulatedClock;
-import org.cache2k.event.CacheClosedListener;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.testing.category.FastTests;
@@ -391,12 +390,9 @@ public class Cache2kBuilderTest {
   private void cacheClosedEventFired(boolean _wiredCache) {
     final AtomicBoolean _FIRED = new AtomicBoolean();
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder = _builder.addCacheClosedListener(new CacheClosedListener() {
-      @Override
-      public CompletableFuture<Void> onCacheClosed(final Cache cache) {
-        _FIRED.set(true);
-        return null;
-      }
+    _builder = _builder.addCacheClosedListener(cache -> {
+      _FIRED.set(true);
+      return null;
     });
     if (_wiredCache) {
      StaticUtil.enforceWiredCache(_builder);

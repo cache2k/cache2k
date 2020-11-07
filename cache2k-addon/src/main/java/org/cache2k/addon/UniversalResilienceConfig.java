@@ -21,6 +21,7 @@ package org.cache2k.addon;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.ConfigSection;
 
@@ -34,51 +35,51 @@ public class UniversalResilienceConfig
   implements ConfigSection<UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
 
   private int retryPercentOfResilienceDuration = 10;
-  private Duration minRetryInterval = Duration.ZERO;
-  private Duration retryInterval = null;
-  private Duration maxRetryInterval = null;
-  private Duration resilienceDuration = null;
+  private @Nullable Duration minRetryInterval = Duration.ZERO;
+  private @Nullable Duration retryInterval = null;
+  private @Nullable Duration maxRetryInterval = null;
+  private @Nullable Duration resilienceDuration = null;
   private double backoffMultiplier = 1.5;
 
   /**
    * @see Builder#retryInterval
    */
-  public Duration getRetryInterval() {
+  public @Nullable Duration getRetryInterval() {
     return retryInterval;
   }
 
   /**
    * @see Builder#retryInterval
    */
-  public void setRetryInterval(Duration v) {
+  public void setRetryInterval(@Nullable Duration v) {
     this.retryInterval = v;
   }
 
   /**
    * @see Builder#maxRetryInterval
    */
-  public Duration getMaxRetryInterval() {
+  public @Nullable Duration getMaxRetryInterval() {
     return maxRetryInterval;
   }
 
   /**
    * @see Builder#maxRetryInterval
    */
-  public void setMaxRetryInterval(Duration v) {
+  public void setMaxRetryInterval(@Nullable Duration v) {
     this.maxRetryInterval = v;
   }
 
   /**
    * @see Builder#resilienceDuration
    */
-  public Duration getResilienceDuration() {
+  public @Nullable Duration getResilienceDuration() {
     return resilienceDuration;
   }
 
   /**
    * @see Builder#resilienceDuration
    */
-  public void setResilienceDuration(Duration v) {
+  public void setResilienceDuration(@Nullable Duration v) {
     this.resilienceDuration = v;
   }
 
@@ -111,13 +112,13 @@ public class UniversalResilienceConfig
   }
 
   /**
-   * @see Builder#
+   * @see Builder#minRetryInterval
    */
-  public Duration getMinRetryInterval() {
+  public @Nullable Duration getMinRetryInterval() {
     return minRetryInterval;
   }
 
-  public void setMinRetryInterval(Duration minRetryInterval) {
+  public void setMinRetryInterval(@Nullable Duration minRetryInterval) {
     this.minRetryInterval = minRetryInterval;
   }
 

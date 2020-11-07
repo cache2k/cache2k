@@ -29,13 +29,14 @@ import org.cache2k.config.ToggleFeature;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings("NullAway")
 public class UniversalResilienceFeatureExperiment
   extends ToggleFeature
   implements ConfigBean<UniversalResilienceFeatureExperiment,
   UniversalResilienceFeatureExperiment.Builder> {
 
   static UniversalResilienceFeatureExperiment enable(Cache2kBuilder<?, ?> b) {
-    return  null;
+    return null;
   }
 
   static {

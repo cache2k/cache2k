@@ -21,6 +21,7 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
 
@@ -56,8 +57,12 @@ public class SpringCache2kCache implements Cache {
     return cache;
   }
 
+  /**
+   * Get value from the cache, may invoke the loader if one is specified.
+   * the get() method is used by Spring if the sync parameter is not set.
+   */
   @Override
-  public ValueWrapper get(Object key) {
+  public @Nullable ValueWrapper get(Object key) {
     CacheEntry<Object, Object> entry = cache.getEntry(key);
     if (entry == null) {
       return null;

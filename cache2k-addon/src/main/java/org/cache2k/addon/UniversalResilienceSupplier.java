@@ -20,6 +20,7 @@ package org.cache2k.addon;
  * #L%
  */
 
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
@@ -103,7 +104,7 @@ public class UniversalResilienceSupplier<K, V> implements
   /**
    * Convert duration to millis. Duration is capped to Long.MAX_VALUE by config.
    */
-  private static long toMillis(Duration d) {
+  private static long toMillis(@Nullable Duration d) {
     if (d == null) {
       return UNSET_LONG;
     }

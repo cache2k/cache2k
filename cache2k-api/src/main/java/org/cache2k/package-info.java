@@ -10,6 +10,7 @@
  * @see <a href="https://cache2k.org>cache2k homepage</a>
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
+@NonNullIsDefault
 package org.cache2k;
 
 /*
@@ -31,3 +32,5 @@ package org.cache2k;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.annotation.NonNullIsDefault;

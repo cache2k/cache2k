@@ -20,6 +20,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.annotation.Nullable;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;
@@ -72,7 +73,7 @@ public interface CacheEntry<K, V> {
    * happened or it was suppressed. If {@code null} then {@link #getValue}
    * returns a value and does not throw an exception.
    */
-  default Throwable getException() {
+  default @Nullable Throwable getException() {
     LoadExceptionInfo<K> info = getExceptionInfo();
     return info != null ? info.getException() : null;
   }
@@ -82,6 +83,6 @@ public interface CacheEntry<K, V> {
    * if no exception happened or it was suppressed. If {@code null}
    * then {@link #getValue} returns a value and does not throw an exception.
    */
-  LoadExceptionInfo<K> getExceptionInfo();
+  @Nullable LoadExceptionInfo<K> getExceptionInfo();
 
 }

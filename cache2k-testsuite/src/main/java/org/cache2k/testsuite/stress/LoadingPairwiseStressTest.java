@@ -63,6 +63,7 @@ public class LoadingPairwiseStressTest extends PairwiseTestingBase {
     return l;
   }
 
+  @SuppressWarnings("NullAway")
   static class GetAndLoad1 extends CacheKeyActorPair<Integer, Integer, Integer> {
     public void setup() { cache.remove(key); }
     public Integer actor1() { return cache.get(key); }

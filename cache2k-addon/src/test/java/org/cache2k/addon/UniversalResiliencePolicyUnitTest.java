@@ -21,6 +21,8 @@ package org.cache2k.addon;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
@@ -28,9 +30,11 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Unit test with out cache for default resilience policy.
@@ -41,6 +45,30 @@ import static org.junit.Assert.assertEquals;
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Category(FastTests.class)
 public class UniversalResiliencePolicyUnitTest {
+
+  static final CacheEntry DUMMY_ENTRY = new CacheEntry() {
+    @Override
+    public Object getKey() {
+      return this;
+    }
+
+    @Override
+    public Object getValue() {
+      return this;
+    }
+
+    @Override
+    public @Nullable LoadExceptionInfo getExceptionInfo() {
+      return null;
+    }
+  };
+
+  static final ExceptionPropagator DUMMY_PROPAGATOR = new ExceptionPropagator() {
+    @Override
+    public RuntimeException propagateException(LoadExceptionInfo loadExceptionInfo) {
+      return new RuntimeException();
+    }
+  };
 
   @Test
   public void testBackoffPower() {
@@ -61,6 +89,7 @@ public class UniversalResiliencePolicyUnitTest {
 
   private UniversalResiliencePolicy getDefaultResiliencePolicy10000() {
     UniversalResiliencePolicy p = policy(builder().expireAfterWrite(100000, TimeUnit.MILLISECONDS));
+    Objects.requireNonNull(p);
     return p;
   }
 
@@ -93,6 +122,7 @@ public class UniversalResiliencePolicyUnitTest {
         .resilienceDuration(30000, TimeUnit.MILLISECONDS)
       )
     );
+    assertNotNull(p);
     assertEquals(30000, p.getResilienceDuration());
     assertEquals(3000, p.getRetryInterval());
     assertEquals(30000, p.getMaxRetryInterval());
@@ -102,7 +132,7 @@ public class UniversalResiliencePolicyUnitTest {
     return Cache2kBuilder.forUnknownTypes();
   }
 
-  private static UniversalResiliencePolicy policy(Cache2kBuilder builder) {
+  private static @Nullable UniversalResiliencePolicy policy(Cache2kBuilder builder) {
     ResiliencePolicy policy = UniversalResilienceSupplier.supplyPolicy(builder.config());
     if (policy instanceof UniversalResiliencePolicy) {
       return (UniversalResiliencePolicy) policy;
@@ -122,6 +152,7 @@ public class UniversalResiliencePolicyUnitTest {
           .resilienceDuration(30, TimeUnit.SECONDS)
       )
     );
+    assertNotNull(p);
     assertEquals(30000, p.getResilienceDuration());
     assertEquals(3000, p.getRetryInterval());
     assertEquals(30000, p.getMaxRetryInterval());
@@ -138,6 +169,7 @@ public class UniversalResiliencePolicyUnitTest {
         .retryInterval(10000, TimeUnit.MILLISECONDS)
       )
     );
+    assertNotNull(p);
     assertEquals(240000, p.getResilienceDuration());
     assertEquals(10000, p.getRetryInterval());
     assertEquals(10000, p.getMaxRetryInterval());
@@ -154,6 +186,7 @@ public class UniversalResiliencePolicyUnitTest {
         .maxRetryInterval(10000, TimeUnit.MILLISECONDS)
       )
     );
+    assertNotNull(p);
     assertEquals(240000, p.getResilienceDuration());
     assertEquals(10000, p.getRetryInterval());
     assertEquals(10000, p.getMaxRetryInterval());
@@ -170,13 +203,14 @@ public class UniversalResiliencePolicyUnitTest {
         .backoffMultiplier(2)
       )
     );
+    assertNotNull(p);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
-    long t = p.suppressExceptionUntil("key", b, null);
+    long t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(100, t);
     b.incrementRetryCount();
-    t = p.suppressExceptionUntil("key", b, null);
+    t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(200, t);
   }
 
@@ -190,31 +224,32 @@ public class UniversalResiliencePolicyUnitTest {
         .resilienceDuration(5000, TimeUnit.MILLISECONDS)
       )
     );
+    assertNotNull(p);
     assertEquals(1.5, p.getMultiplier(), 0.1);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
-    long t = p.suppressExceptionUntil("key", b, null);
+    long t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(100, t);
     b.incrementRetryCount();
     b.setLoadTime(107);
-    t = p.suppressExceptionUntil("key", b, null);
+    t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(150, t - b.getLoadTime());
     b.incrementRetryCount();
     b.setLoadTime(300);
-    t = p.suppressExceptionUntil("key", b, null);
+    t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(225, t - b.getLoadTime());
     b.incrementRetryCount();
     b.setLoadTime(582);
-    t = p.suppressExceptionUntil("key", b, null);
+    t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(337, t - b.getLoadTime());
     b.incrementRetryCount();
     b.setLoadTime(934);
-    t = p.suppressExceptionUntil("key", b, null);
+    t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(500, t - b.getLoadTime());
     b.incrementRetryCount();
     b.setLoadTime(1534);
-    t = p.suppressExceptionUntil("key", b, null);
+    t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
     assertEquals(500, t - b.getLoadTime());
   }
 
@@ -228,6 +263,7 @@ public class UniversalResiliencePolicyUnitTest {
         .resilienceDuration(5000, TimeUnit.MILLISECONDS)
       )
     );
+    assertNotNull(p);
     assertEquals(1.5, p.getMultiplier(), 0.1);
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
@@ -250,17 +286,17 @@ public class UniversalResiliencePolicyUnitTest {
 
   static class InfoBean implements LoadExceptionInfo {
 
-    int retryCount;
-    Throwable exception;
-    long loadTime;
-    long sinceTime;
-    long until;
+    private int retryCount;
+    private Throwable exception = new Throwable();
+    private long loadTime;
+    private long sinceTime;
+    private long until;
 
     @Override
-    public Object getKey() { return null; }
+    public Object getKey() { return this; }
 
     @Override
-    public ExceptionPropagator getExceptionPropagator() { return null; }
+    public ExceptionPropagator getExceptionPropagator() { return DUMMY_PROPAGATOR; }
 
     public void incrementRetryCount() {
       retryCount++;

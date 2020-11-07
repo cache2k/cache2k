@@ -20,6 +20,8 @@ package org.cache2k.config;
  * #L%
  */
 
+import org.cache2k.annotation.Nullable;
+
 /**
  * Creates a new instance of the customization based on the class name and the class loader
  * in effect by the cache.
@@ -29,7 +31,7 @@ package org.cache2k.config;
 public final class CustomizationSupplierByClassName<T>
   implements CustomizationSupplier<T>, ValidatingConfigBean {
 
-  private String className;
+  private @Nullable String className;
 
   /**
    * Default constructor for beans.
@@ -50,7 +52,7 @@ public final class CustomizationSupplierByClassName<T>
     this.className = className;
   }
 
-  public String getClassName() {
+  public @Nullable String getClassName() {
     return className;
   }
 
@@ -86,6 +88,9 @@ public final class CustomizationSupplierByClassName<T>
     if (this == other) return true;
     if (!(other instanceof CustomizationSupplierByClassName)) return false;
     CustomizationSupplierByClassName<?> that = (CustomizationSupplierByClassName<?>) other;
+    if (className == null) {
+      return that.className == null;
+    }
     return className.equals(that.className);
   }
 

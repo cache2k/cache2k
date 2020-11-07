@@ -21,8 +21,6 @@ package org.cache2k.testsuite.stress;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.processor.EntryProcessor;
-import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.testing.category.SlowTests;
 import org.junit.experimental.categories.Category;
 
@@ -40,14 +38,7 @@ public class EntryProcessorPairwiseStressTest extends AtomicOperationsPairwiseSt
 
   private static void increment(Cache<Integer, Integer> cache, int key, int count) {
     for (int i = 0; i < count; i++) {
-      cache.invoke(key, new EntryProcessor<Integer, Integer, Object>() {
-        @Override
-        public Object process(MutableCacheEntry<Integer, Integer> e) throws Exception {
-          int val = e.getValue();
-          e.setValue(val + 1);
-          return null;
-        }
-      });
+      cache.mutate(key, entry -> entry.setValue(entry.getValue() + 1));
     }
   }
 

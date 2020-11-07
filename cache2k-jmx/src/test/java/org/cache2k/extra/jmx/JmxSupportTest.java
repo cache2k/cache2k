@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 
 import org.cache2k.Weigher;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -59,7 +60,7 @@ public class JmxSupportTest {
 
   private static final MBeanServerConnection SERVER =  ManagementFactory.getPlatformMBeanServer();
 
-  private ObjectName objectName;
+  private @Nullable ObjectName objectName;
 
 
   private static class KeyForMutation {
@@ -236,7 +237,7 @@ public class JmxSupportTest {
     c.close();
   }
 
-  private void checkAttribute(String name, Object expected) throws Exception {
+  private void checkAttribute(String name, @Nullable Object expected) throws Exception {
     Object v = retrieve(name);
     assertEquals("Value of attribute '" + name + "'", expected, v);
   }

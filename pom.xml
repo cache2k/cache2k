@@ -106,17 +106,6 @@
             <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>8</source>
             <target>8</target>
-            <compilerArgs>
-              <arg>-XDcompilePolicy=simple</arg>
-              <arg>-Xplugin:ErrorProne</arg>
-            </compilerArgs>
-            <annotationProcessorPaths>
-              <path>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_core</artifactId>
-                <version>2.4.0</version>
-              </path>
-            </annotationProcessorPaths>
           </configuration>
         </plugin>
         <plugin>
@@ -704,6 +693,40 @@
         <module>test-init-java11</module>
       </modules>
     </profile>
+    <profile>
+      <id>NullAway</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgs>
+                <arg>-XDcompilePolicy=simple</arg>
+                <arg>-Xplugin:ErrorProne -Xep:NullAway:ERROR
+                  -XepOpt:NullAway:AnnotatedPackages=org.cache2k
+                  -XepOpt:NullAway:UnannotatedSubPackages=org.cache2k.pinpoint,org.cache2k.core,org.cache2k.test,org.cache2k.jcache,org.cache2k.extra
+                </arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+                  <version>2.4.0</version>
+                </path>
+                <!-- https://github.com/uber/NullAway/wiki/Configuration#maven -->
+                <path>
+                  <groupId>com.uber.nullaway</groupId>
+                  <artifactId>nullaway</artifactId>
+                  <version>0.8.0</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 
 </project>

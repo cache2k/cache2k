@@ -21,6 +21,7 @@ package org.cache2k.processor;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.LoadExceptionInfo;
@@ -49,18 +50,10 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * <p>Returns the value to which the cache associated the key,
    * or {@code null} if the cache contains no mapping for this key.
-   * {@code null} is also returned if this entry contains an exception.
+   * If no mapping exists and a loader is specified, the cache loader
+   * is called.
    *
-   * <p>If the cache does permit {@code null} values, then a return value of
-   * {@code null} does not necessarily indicate that the cache
-   * contained no mapping for the key. It is also possible that the cache
-   * explicitly associated the key to the value {@code null}. Use {@link #exists()}
-   * to check whether an entry is existing instead of a null check.
-   *
-   * <p>If read through operation is enabled and the entry is not yet existing
-   * in the cache, the call to this method triggers a call to the cache loader.
-   *
-   * <p>In contrast to the main cache interface there is no no peekValue method,
+   * <p>In contrast to the main cache interface there is no peekValue method,
    * since the same effect can be achieved by the combination of {@link #exists()}
    * and {@link #getValue()}.
    *
@@ -68,10 +61,12 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * @throws RestartException If the information is not yet available and the cache
    *                          needs to do an operation to supply it. After completion,
    *                          the entry processor will be executed again.
+   * @return The cached value, the loaded value or {@code null} otherwise
    * @see CacheLoader
    */
   @Override
-  V getValue();
+  @SuppressWarnings("NullAway")
+  @Nullable V getValue();
 
   /**
    * {@inheritDoc}
@@ -84,7 +79,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *                          the entry processor will be executed again.
    */
   @Override
-  Throwable getException();
+  @Nullable Throwable getException();
 
   /**
    * {@inheritDoc}
@@ -97,7 +92,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *                          the entry processor will be executed again.
    */
   @Override
-  LoadExceptionInfo<K> getExceptionInfo();
+  @Nullable LoadExceptionInfo<K> getExceptionInfo();
 
   /**
    * {@code True} if a mapping exists in the cache, never invokes the loader.

@@ -22,6 +22,7 @@ package org.cache2k.expiry;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 
 import java.util.concurrent.TimeUnit;
 
@@ -108,10 +109,6 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */
-  long calculateExpiryTime(
-      K key,
-      V value,
-      long loadTime,
-      CacheEntry<K, V> currentEntry);
+  long calculateExpiryTime(K key, V value, long loadTime, @Nullable CacheEntry<K, V> currentEntry);
 
 }

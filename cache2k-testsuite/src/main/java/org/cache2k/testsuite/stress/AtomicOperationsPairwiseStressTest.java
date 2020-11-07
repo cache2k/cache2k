@@ -23,6 +23,7 @@ package org.cache2k.testsuite.stress;
 import org.cache2k.Cache2kBuilder;
 import static org.junit.Assert.*;
 
+import org.cache2k.annotation.Nullable;
 import org.cache2k.testing.category.SlowTests;
 import org.cache2k.testsuite.support.StaticUtil;
 import org.junit.experimental.categories.Category;
@@ -43,6 +44,7 @@ import static org.junit.runners.Parameterized.Parameters;
  */
 @RunWith(Parameterized.class)
 @Category(SlowTests.class)
+@SuppressWarnings("NullAway")
 public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
 
   public AtomicOperationsPairwiseStressTest(Object obj) {
@@ -136,7 +138,7 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
     public void setup() {
       cache.put(key, 10);
     }
-    public Integer actor1() {
+    public @Nullable Integer actor1() {
       return cache.peekAndRemove(key);
     }
     public Integer actor2() {

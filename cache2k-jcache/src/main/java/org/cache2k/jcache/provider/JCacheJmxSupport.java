@@ -21,6 +21,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.event.CacheClosedListener;
 
 import javax.management.InstanceNotFoundException;
@@ -41,7 +42,7 @@ public class JCacheJmxSupport implements CacheClosedListener {
   private JCacheJmxSupport() { }
 
   @Override
-  public CompletableFuture<Void> onCacheClosed(Cache cache) {
+  public @Nullable CompletableFuture<Void> onCacheClosed(Cache cache) {
     disableStatistics(cache);
     disableJmx(cache);
     return null;

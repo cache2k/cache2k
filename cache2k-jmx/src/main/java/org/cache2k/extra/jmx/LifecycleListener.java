@@ -54,7 +54,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
 
   @Override
   public <K, V> CompletableFuture<Void> onCacheCreated(Cache<K, V> cache,
-                                                       CacheBuildContext<K, V> ctx) {
+                                                                 CacheBuildContext<K, V> ctx) {
     MBeanServer mbs = getPlatformMBeanServer();
     InternalCache internalCache = cache.requestInterface(InternalCache.class);
     CacheControl management = new CacheControlMXBeanImpl(internalCache);
@@ -67,7 +67,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
       throw new CacheException("register JMX bean, ObjectName: " + name, e);
     }
     if (!management.isStatisticsEnabled()) {
-      return null;
+      return COMPLETE;
     }
     name = createCacheStatisticsName(cache.getCacheManager(), cache);
     try {
@@ -77,7 +77,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
     } catch (Exception e) {
       throw new CacheException("register JMX bean, ObjectName: " + name, e);
     }
-    return null;
+    return COMPLETE;
   }
 
   @Override
@@ -97,7 +97,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
     } catch (Exception e) {
       throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
     }
-    return null;
+    return COMPLETE;
   }
 
   private static MBeanServer getPlatformMBeanServer() {

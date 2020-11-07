@@ -28,6 +28,7 @@ import org.cache2k.pinpoint.stress.pairwise.ActorPair;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("NullAway")
 public abstract class CacheKeyActorPair<R, K, V> implements ActorPair<R>, Cloneable {
 
   protected Cache<K, V> cache;

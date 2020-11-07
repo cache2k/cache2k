@@ -32,8 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Test atomic operations on a {@link ConcurrentMap} concurrently.
@@ -41,6 +40,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("NullAway")
 public class ConcurrentMapStressTest {
 
   public static final Set<Class<? extends MyActorPair>> ACTOR_PAIRS = new HashSet<>();
@@ -85,6 +85,7 @@ public class ConcurrentMapStressTest {
     }
     public void check(Integer result1, Integer result2) {
       assertEquals("compute called once", 1, counter1.get());
+      assertNotNull(value());
       assertTrue(!(result2 == null) || (value() == 11 && result1 == 11));
       assertTrue(!(result1 == 1) || (value() == 1 && result2 == 1));
     }

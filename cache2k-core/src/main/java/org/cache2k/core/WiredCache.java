@@ -378,11 +378,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
+  public <R> R invoke(K key, EntryProcessor<K, V, R> processor) {
     if (key == null) {
       throw new NullPointerException();
     }
-    return execute(key, ops.invoke(key, entryProcessor));
+    return execute(key, ops.invoke(key, processor));
   }
 
   @SuppressWarnings("unchecked")

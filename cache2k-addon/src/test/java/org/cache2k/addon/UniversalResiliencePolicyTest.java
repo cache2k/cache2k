@@ -23,6 +23,7 @@ package org.cache2k.addon;
 import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
@@ -30,6 +31,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -40,8 +42,8 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class UniversalResiliencePolicyTest {
 
-  Cache<Integer, Integer> cache;
-  UniversalResiliencePolicy<?, ?> policy;
+  @Nullable Cache<Integer, Integer> cache;
+  @Nullable UniversalResiliencePolicy<?, ?> policy;
   boolean nextLoadThrowsException;
 
   int load(int k) {
@@ -124,8 +126,8 @@ public class UniversalResiliencePolicyTest {
         )
         /* Results in combined section parameters */
         .with(UniversalResilienceConfig.class, b -> {
-          assertEquals(1234, b.config().getRetryInterval().toMillis());
-          assertEquals(123, b.config().getResilienceDuration().toMillis());
+          assertEquals(Duration.ofMillis(1234), b.config().getRetryInterval());
+          assertEquals(Duration.ofMillis(123), b.config().getResilienceDuration());
         })
         .build();
   }
@@ -213,6 +215,7 @@ public class UniversalResiliencePolicyTest {
       .expireAfterWrite(10, TimeUnit.MINUTES)
       /* ... set loader ... */
       .build();
+    assertNotNull(policy);
     assertEquals(TimeUnit.MINUTES.toMillis(10), policy.getResilienceDuration());
     assertEquals(TimeUnit.MINUTES.toMillis(10), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.MINUTES.toMillis(1), policy.getRetryInterval());
@@ -227,6 +230,7 @@ public class UniversalResiliencePolicyTest {
       .expireAfterWrite(10, TimeUnit.MINUTES)
       .loader(this::load)
       .build();
+    assertNotNull(policy);
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(3), policy.getRetryInterval());
@@ -267,6 +271,7 @@ public class UniversalResiliencePolicyTest {
       )
       /* ... set loader ... */
       .build();
+    assertNotNull(policy);
     assertEquals(TimeUnit.MINUTES.toMillis(10), policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
@@ -292,6 +297,7 @@ public class UniversalResiliencePolicyTest {
       )
       /* ... set loader ... */
       .build();
+    assertNotNull(policy);
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(3), policy.getRetryInterval());
@@ -317,6 +323,7 @@ public class UniversalResiliencePolicyTest {
       )
       .loader(this::load)
       .build();
+    assertNotNull(policy);
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
@@ -336,6 +343,7 @@ public class UniversalResiliencePolicyTest {
       )
       /* ... set loader ... */
       .build();
+    assertNotNull(policy);
     assertEquals(0, policy.getResilienceDuration());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getMaxRetryInterval());
     assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());

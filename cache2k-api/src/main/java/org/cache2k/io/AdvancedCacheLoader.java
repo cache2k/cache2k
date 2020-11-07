@@ -23,6 +23,7 @@ package org.cache2k.io;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.Customization;
+import org.cache2k.annotation.Nullable;
 
 /**
  * Retrieves or generates a value to load into the cache. The advanced loader interface
@@ -55,6 +56,6 @@ public interface AdvancedCacheLoader<K, V> extends Customization<K, V> {
    * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
    *                   wrapped and rethrown via a {@link CacheLoaderException}
    */
-  V load(K key, long startTime, CacheEntry<K, V> currentEntry) throws Exception;
+  V load(K key, long startTime, @Nullable CacheEntry<K, V> currentEntry) throws Exception;
 
 }

@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.annotation.Nullable;
+import org.cache2k.processor.EntryMutator;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 
@@ -48,22 +50,22 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V get(K key) {
+  public @Nullable V get(K key) {
     return delegate().get(key);
   }
 
   @Override
-  public CacheEntry<K, V> getEntry(K key) {
+  public @Nullable CacheEntry<K, V> getEntry(K key) {
     return delegate().getEntry(key);
   }
 
   @Override
-  public V peek(K key) {
+  public @Nullable V peek(K key) {
     return delegate().peek(key);
   }
 
   @Override
-  public CacheEntry<K, V> peekEntry(K key) {
+  public @Nullable CacheEntry<K, V> peekEntry(K key) {
     return delegate().peekEntry(key);
   }
 
@@ -103,7 +105,7 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V peekAndRemove(K key) {
+  public @Nullable V peekAndRemove(K key) {
     return delegate().peekAndRemove(key);
   }
 
@@ -128,20 +130,23 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V peekAndPut(K key, V value) {
+  public @Nullable V peekAndPut(K key, V value) {
     return delegate().peekAndPut(key, value);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void expireAt(K key, long millis) {
     delegate().expireAt(key, millis);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     delegate().loadAll(keys, listener);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     delegate().reloadAll(keys, listener);
@@ -158,14 +163,24 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> entryProcessor) {
-    return delegate().invoke(key, entryProcessor);
+  public <R> R invoke(K key, EntryProcessor<K, V, R> processor) {
+    return delegate().invoke(key, processor);
+  }
+
+  @Override
+  public void mutate(K key, EntryMutator<K, V> mutator) {
+    delegate().mutate(key, mutator);
   }
 
   @Override
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(
     Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor) {
     return delegate().invokeAll(keys, entryProcessor);
+  }
+
+  @Override
+  public void mutateAll(Iterable<? extends K> keys, EntryMutator<K, V> mutator) {
+    delegate().mutateAll(keys, mutator);
   }
 
   @Override
@@ -218,14 +233,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
     return delegate().isClosed();
   }
 
-  /**
-   * Forwards to delegate but adds the simple class name to the output.
-   */
-  @Override
-  public String toString() {
-    return this.getClass().getSimpleName() + "!" + delegate().toString();
-  }
-
   @Override
   public <X> X requestInterface(Class<X> type) {
     return delegate().requestInterface(type);
@@ -234,6 +241,14 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   @Override
   public ConcurrentMap<K, V> asMap() {
     return delegate().asMap();
+  }
+
+  /**
+   * Forwards to delegate but adds the simple class name to the output.
+   */
+  @Override
+  public String toString() {
+    return this.getClass().getSimpleName() + "!" + delegate().toString();
   }
 
 }

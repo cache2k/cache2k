@@ -20,6 +20,8 @@ package org.cache2k.processor;
  * #L%
  */
 
+import org.cache2k.annotation.Nullable;
+
 /**
  * An invokable function to perform an atomic operation on a cache entry. The entry
  * processor is called via {@link org.cache2k.Cache#invoke} or
@@ -73,18 +75,14 @@ public interface EntryProcessor<K, V, R> {
    * Some methods of {@link MutableCacheEntry} throw exceptions that are consumed by the
    * cache to do asynchronous processing.
    *
-   * <p><b>Caveat about modification time and expiry:</b> The point in time of the last
-   * modification, in case the entry is modified, is after the method completes.
-   * It is possible to set an alternative time with {@link MutableCacheEntry#setModificationTime(long)}
-   *
    * <p>The cache is only modified, if the method completes without exception.
    *
    * @param entry the entry to examine or mutate. The reference is only valid within a method call
    * @return a user defined result, that will be passed through and returned
    * @throws Exception an arbitrary exception that will be wrapped into a
    *         {@link EntryProcessingException}.
-   *         If an exception happens no modifications the cache content will not be altered.
+   *         If an exception happens, the cache content will not be altered.
    */
-  R process(MutableCacheEntry<K, V> entry) throws Exception;
+  @Nullable R process(MutableCacheEntry<K, V> entry) throws Exception;
 
 }
