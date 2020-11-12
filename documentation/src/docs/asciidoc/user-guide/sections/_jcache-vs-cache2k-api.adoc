@@ -1,0 +1,104 @@
+[[jcache-vs-cache2k-api]]
+== JCache/JSR107 vs cache2k API
+
+FIXME, needs finalization
+
+This chapter compares JCache API with the cache2k API.
+
+=== Overview
+
+The cache2k API is a super set JCache API. The JCache API was used as a template
+for the cache2k API, however, everything that looked impractical or inconsistent
+in JCache was improved.
+
+=== Feature comparison
+
+
+Java 8
+
+=== JCache API corrections and improvements
+
+Let us have a look at the JCache API problems and pain points.
+
+==== interface Cache extends Iterable
+
+JCache definition:
+
+----
+public interface Cache<K, V> extends Iterable<Cache.Entry<K, V>>, Closeable {
+----
+
+Using the interface iterable on the main cache class is dangerous in terms of API design.
+`Iterable` may become new methods in the future that may clash with the definitions in the cache.
+It is not expressive. The fact that a cache "is a" iterable of entries may lead to the impression
+that this is a major functionality and possibly cheap. The iterator has no detailed
+specification, whether it will return all data, concurrency aspects and it also may
+return null values. Since its an iterator, efficient streaming cannot be made available.
+
+Cache2k definition:
+
+----
+interface Cache<K, V> {
+  Set<K> keys();
+  Set<CacheEntry<K, V>> entries();
+}
+----
+
+Rationale:
+- More expressive
+- Contracts can be defined on the method
+- `Set` allows iteration or streaming
+- Just producing a key set can usually implemented cheaper then returning entries with data
+
+=== Cache.getAll()
+
+JCache definition:
+
+----
+Map<K, V> getAll(Set<? extends K> keys)
+----
+
+Cache2k definition:
+
+----
+Map<K, V> getAll(Iterable<? extends K> keys);
+----
+
+Using a `Set` as parameter produces boilerplate code in the application, because most commonly
+the keys would not be held in a set but in a list or array.
+
+=== CacheEntryListener
+
+JCache example for updates:
+
+----
+public interface CacheEntryUpdatedListener<K, V> extends CacheEntryListener<K, V> {
+
+  void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> events)
+      throws CacheEntryListenerException;
+}
+----
+
+Using an iterable and a `CacheEntryEvent` makes the usage complex and typically produces
+boiler plate code. The upper bounds `? extends K` `? extends V` are not beneficial since
+a cache implementation would not use a limited CacheEntryEvent that holds subtypes of K and V.
+
+The declaration of `CacheEntryListenerException` is impractical and leads to boiler plate
+code. See discussion about this at the cache loader.
+
+Cache2k version:
+
+----
+public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationListener<K, V> {
+
+  void onEntryUpdated(Cache<K, V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> newEntry) throws Exception;
+
+}
+----
+
+=== Cache.invoke
+
+Java 8 and var args
+
+=== CacheLoader
+
