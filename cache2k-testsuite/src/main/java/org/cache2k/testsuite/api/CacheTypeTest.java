@@ -47,7 +47,7 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("NullAway")
+@SuppressWarnings({"NullAway","nullness"})
 @Category(FastTests.class)
 public class CacheTypeTest {
 

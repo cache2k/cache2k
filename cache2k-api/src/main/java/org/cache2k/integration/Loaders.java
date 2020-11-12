@@ -23,6 +23,7 @@ package org.cache2k.integration;
 import org.cache2k.CacheEntry;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheLoader;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * @author Jens Wilke
@@ -38,7 +39,7 @@ public class Loaders {
    * @see AdvancedCacheLoader#load(Object, long, CacheEntry)
    */
   @SuppressWarnings("unchecked")
-  public static <V> LoadDetail<V> wrapRefreshedTime(V value, long refreshedTimeInMillis) {
+  public static <@NonNull V> LoadDetail<V> wrapRefreshedTime(@NonNull V value, long refreshedTimeInMillis) {
     return new RefreshedTimeWrapper<V>(value, refreshedTimeInMillis);
   }
 

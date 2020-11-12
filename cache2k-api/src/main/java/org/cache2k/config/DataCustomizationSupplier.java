@@ -20,11 +20,11 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.cache2k.Customization;
+import org.cache2k.DataAwareCustomization;
 
 /**
  * @author Jens Wilke
  */
-public interface DataCustomizationSupplier<K, V, T extends Customization<K, V>>
+public interface DataCustomizationSupplier<K, V, T extends DataAwareCustomization<K, V>>
   extends CustomizationSupplier<T> {
 }

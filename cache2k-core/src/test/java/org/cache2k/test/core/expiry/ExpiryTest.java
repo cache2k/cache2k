@@ -458,13 +458,13 @@ public class ExpiryTest extends TestingBase {
     public EnableExceptionCaching() { this(Long.MAX_VALUE); }
 
     @Override
-    public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo,
+    public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo,
                                        CacheEntry<Integer, Integer> cachedEntry) {
       return 0;
     }
 
     @Override
-    public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
+    public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo) {
       if (retryMillis == Long.MAX_VALUE) {
         return retryMillis;
       }
@@ -658,13 +658,13 @@ public class ExpiryTest extends TestingBase {
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key,
-                                           LoadExceptionInfo<Integer> exceptionInformation,
+                                           LoadExceptionInfo<Integer, Integer> exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           fail("not reached");
           return 0;
         }
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation) {
           throw new NullPointerException("test");
         }
       })
@@ -693,7 +693,7 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           assertTrue(inf.getException() instanceof IllegalStateException);
           assertEquals(key, cachedEntry.getValue());
@@ -755,7 +755,7 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           assertTrue(inf.getException() instanceof IllegalStateException);
           assertEquals(key, cachedEntry.getValue());
@@ -816,14 +816,14 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           suppressRetryCount.set(inf.getRetryCount());
           return inf.getLoadTime() + 1;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> inf) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> inf) {
           cacheRetryCount.set(inf.getRetryCount());
           return 0;
         }
@@ -865,14 +865,14 @@ public class ExpiryTest extends TestingBase {
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key,
-                                           LoadExceptionInfo<Integer> exceptionInformation,
+                                           LoadExceptionInfo<Integer, Integer> exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           policyCalled.incrementAndGet();
           return 1000;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation) {
           policyCalled.incrementAndGet();
           return 0;
         }
@@ -900,14 +900,14 @@ public class ExpiryTest extends TestingBase {
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key,
-                                           LoadExceptionInfo<Integer> exceptionInformation,
+                                           LoadExceptionInfo<Integer, Integer> exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           policyCalled.incrementAndGet();
           return exceptionInformation.getLoadTime() + 1;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation) {
           policyCalled.incrementAndGet();
           return 0;
         }
@@ -935,14 +935,14 @@ public class ExpiryTest extends TestingBase {
       })
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> inf,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           suppressRetryCount.set(inf.getRetryCount());
           return ETERNAL;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> inf) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> inf) {
           cacheRetryCount.set(inf.getRetryCount());
           return NOW;
         }

@@ -21,7 +21,7 @@ package org.cache2k.config;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Iterator;
 
@@ -129,8 +129,9 @@ public abstract class ToggleFeature implements SingleFeature {
    * Identical if its the same implementation class.
    */
   @Override
-  public final boolean equals(Object o) {
-    return getClass().equals(o);
+  public final boolean equals(@Nullable Object o) {
+    if (o == null) { return false; }
+    return getClass().equals(o.getClass());
   }
 
   /**

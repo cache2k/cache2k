@@ -22,8 +22,8 @@ package org.cache2k.config;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.Weigher;
-import org.cache2k.annotation.NonNull;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.event.CacheLifecycleListener;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -63,8 +63,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("unused")
-public class Cache2kConfig<K, V>
+@SuppressWarnings({"unused", "nullness"})
+public class Cache2kConfig<@NonNull K, @NonNull V>
   implements ConfigBean<Cache2kConfig<K, V>, Cache2kBuilder<K, V>>, ConfigWithSections {
 
   /**
@@ -114,7 +114,7 @@ public class Cache2kConfig<K, V>
   private @Nullable CustomizationSupplier<? extends CacheWriter<K, V>> writer;
   private @Nullable CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> advancedLoader;
   private @Nullable CustomizationSupplier<? extends AsyncCacheLoader<K, V>> asyncLoader;
-  private @Nullable CustomizationSupplier<? extends ExceptionPropagator<K>> exceptionPropagator;
+  private @Nullable CustomizationSupplier<? extends ExceptionPropagator<K, V>> exceptionPropagator;
   private @Nullable CustomizationSupplier<? extends Weigher<K, V>> weigher;
 
   private @Nullable CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
@@ -418,14 +418,14 @@ public class Cache2kConfig<K, V>
     storeByReference = v;
   }
 
-  public @Nullable CustomizationSupplier<? extends ExceptionPropagator<K>> getExceptionPropagator() {
+  public @Nullable CustomizationSupplier<? extends ExceptionPropagator<K, V>> getExceptionPropagator() {
     return exceptionPropagator;
   }
 
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
    */
-  public void setExceptionPropagator(@Nullable CustomizationSupplier<? extends ExceptionPropagator<K>> v) {
+  public void setExceptionPropagator(@Nullable CustomizationSupplier<? extends ExceptionPropagator<K, V>> v) {
     exceptionPropagator = v;
   }
 

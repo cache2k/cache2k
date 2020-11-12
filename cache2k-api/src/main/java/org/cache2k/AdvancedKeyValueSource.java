@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Map;
 
 /**

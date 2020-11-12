@@ -195,14 +195,8 @@ public class JCacheBuilder<K, V> {
       return;
     }
     cache2kConfig.setExceptionPropagator(
-      new CustomizationReferenceSupplier<ExceptionPropagator<K>>(new ExceptionPropagator<K>() {
-      @Override
-      public RuntimeException propagateException(
-        LoadExceptionInfo loadExceptionInfo) {
-        return new CacheLoaderException(
-          "propagate previous loader exception", loadExceptionInfo.getException());
-      }
-    }));
+      new CustomizationReferenceSupplier<ExceptionPropagator<K, V>>(loadExceptionInfo -> new CacheLoaderException(
+        "propagate previous loader exception", loadExceptionInfo.getException())));
   }
 
   abstract class CloseableLoader implements AdvancedCacheLoader<K, V>, Closeable { }

@@ -29,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings({"NullAway", "nullness"})
 @Category(SlowTests.class)
 public class EntryProcessorPairwiseStressTest extends AtomicOperationsPairwiseStressTest {
 

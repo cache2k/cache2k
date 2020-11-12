@@ -20,8 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.annotation.NonNull;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoader;
@@ -40,7 +39,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /* Credits
  *
@@ -112,8 +110,7 @@ import java.util.function.Function;
  * @see <a href="https://cache2k.org>cache2k homepage</a>
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
-@SuppressWarnings({"UnusedDeclaration", "NullableProblems"})
-public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
+public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Closeable {
 
   /**
    * A configured or generated name of this cache instance. A cache in close state will still
@@ -378,7 +375,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @throws CacheLoaderException if the loading of the entry produced
    *         an exception, which was not suppressed and is not yet expired
    */
-  V peekAndReplace(K key, V value);
+  @Nullable V peekAndReplace(K key, V value);
 
   /**
    * Replaces the entry for a key only if currently mapped to some value.
@@ -707,7 +704,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    */
-  <R> @Nullable R invoke(K key, EntryProcessor<K, V, R> processor);
+  <@Nullable R> @Nullable R invoke(K key, EntryProcessor<K, V, R> processor);
 
   /**
    * Invoke a user defined operation on a cache entry.
@@ -725,7 +722,13 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @since 2.0
    */
   default void mutate(K key, EntryMutator<K, V> mutator) {
-    invoke(key, entry -> { mutator.mutate(entry); return this; });
+    invoke(key, new EntryProcessor<K, V, Void>() {
+      @Override
+      public @Nullable Void process(MutableCacheEntry<K, V> entry) throws Exception {
+        mutator.mutate(entry);
+        return null;
+      }
+    });
   }
 
   /**
@@ -745,7 +748,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    */
-  <R> Map<@NonNull K, @NonNull EntryProcessingResult<R>> invokeAll(
+  <@Nullable R> Map<K, EntryProcessingResult<R>> invokeAll(
     Iterable<? extends K> keys, EntryProcessor<K, V, R> entryProcessor);
 
   /**
@@ -765,8 +768,9 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, Closeable {
    * @see org.cache2k.processor.MutableCacheEntry
    * @since 2.0
    */
+  @SuppressWarnings("nullness")
   default void mutateAll(Iterable<? extends K> keys, EntryMutator<K, V> mutator) {
-    invokeAll(keys, entry -> { mutator.mutate(entry); return this; });
+    invokeAll(keys, entry -> { mutator.mutate(entry); return null; });
   }
 
   /**

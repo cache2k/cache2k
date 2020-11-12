@@ -21,6 +21,8 @@ package org.cache2k.io;
  */
 
 import org.cache2k.Customization;
+import org.cache2k.DataAwareCustomization;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * In read through mode exceptions are cached. Every time an entry is requested from the
@@ -45,7 +47,7 @@ import org.cache2k.Customization;
  * @since 2
  */
 @FunctionalInterface
-public interface ExceptionPropagator<K> extends Customization<K, Void> {
+public interface ExceptionPropagator<K, V> extends DataAwareCustomization<K, V> {
 
   /**
    * Called when an entry value with exception is accessed.
@@ -61,6 +63,6 @@ public interface ExceptionPropagator<K> extends Customization<K, Void> {
    * @param loadExceptionInfo information of original exception and
    *                             when the original exception occurred.
    */
-  RuntimeException propagateException(LoadExceptionInfo<K> loadExceptionInfo);
+  RuntimeException propagateException(LoadExceptionInfo<K, V> loadExceptionInfo);
 
 }

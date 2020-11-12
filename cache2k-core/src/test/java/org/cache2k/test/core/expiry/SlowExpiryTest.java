@@ -206,13 +206,13 @@ public class SlowExpiryTest extends TestingBase {
         .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
         .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
           @Override
-          public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo,
+          public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo,
                                              CacheEntry<Integer, Integer> cachedEntry) {
             return loadExceptionInfo.getLoadTime() + exceptionExpiryMillis;
           }
 
           @Override
-          public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
+          public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo) {
             return 0;
           }
         })
@@ -296,13 +296,13 @@ public class SlowExpiryTest extends TestingBase {
       .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           return Long.MAX_VALUE;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo) {
           return 0;
         }
       })
@@ -321,13 +321,13 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           return loadExceptionInfo.getLoadTime() + TestingParameters.MINIMAL_TICK_MILLIS;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo) {
           return loadExceptionInfo.getLoadTime() + TestingParameters.MINIMAL_TICK_MILLIS;
         }
       })
@@ -411,13 +411,13 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           return Long.MAX_VALUE;
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo) {
           return loadExceptionInfo.getLoadTime() + TestingParameters.MINIMAL_TICK_MILLIS;
         }
       })
@@ -456,13 +456,13 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
-        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer> exceptionInformation,
+        public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation,
                                            CacheEntry<Integer, Integer> cachedEntry) {
           return exceptionInformation.getLoadTime();
         }
 
         @Override
-        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> exceptionInformation) {
+        public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation) {
           return 0;
         }
       })

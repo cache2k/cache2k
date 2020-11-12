@@ -22,7 +22,7 @@ package org.cache2k.jcache.provider.event;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.CustomizationReferenceSupplier;
@@ -257,14 +257,14 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
 
     @Override
     public void onEntryUpdated(Cache<K, V> c, CacheEntry<K, V> currentEntry,
-                               CacheEntry<K, V> entryWithNewData) {
+                               CacheEntry<K, V> newEntry) {
       javax.cache.Cache<K, V> jCache = getCache(c);
-      if (entryWithNewData.getException() != null) {
+      if (newEntry.getException() != null) {
         if (currentEntry.getException() != null) {
           return;
         }
         EntryEvent<K, V> cee =
-          new EntryEvent<K, V>(jCache, EventType.REMOVED, entryWithNewData.getKey(),
+          new EntryEvent<K, V>(jCache, EventType.REMOVED, newEntry.getKey(),
             extractValue(currentEntry.getValue()));
         asyncDispatcher.deliverAsyncEvent(cee);
         for (Listener<K, V> t : removedListener) {
@@ -273,13 +273,13 @@ public class EventHandlingImpl<K, V> implements EventHandling<K, V>, CacheClosed
         return;
       }
       if (currentEntry.getException() != null) {
-        fireCreated(jCache, entryWithNewData);
+        fireCreated(jCache, newEntry);
         return;
       }
       V v0 = currentEntry.getValue();
-      V v1 = entryWithNewData.getValue();
+      V v1 = newEntry.getValue();
       EntryEvent<K, V> cee =
-        new EntryEventWithOldValue<K, V>(jCache, EventType.UPDATED, entryWithNewData.getKey(),
+        new EntryEventWithOldValue<K, V>(jCache, EventType.UPDATED, newEntry.getKey(),
           extractValue(v1), extractValue(v0));
       asyncDispatcher.deliverAsyncEvent(cee);
       for (Listener<K, V> t : updatedListener) {

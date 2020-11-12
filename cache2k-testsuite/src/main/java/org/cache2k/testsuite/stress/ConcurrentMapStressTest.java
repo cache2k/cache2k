@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("NullAway")
+@SuppressWarnings({"NullAway", "nullness"})
 public class ConcurrentMapStressTest {
 
   public static final Set<Class<? extends MyActorPair>> ACTOR_PAIRS = new HashSet<>();

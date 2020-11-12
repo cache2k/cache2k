@@ -56,6 +56,7 @@
     <module>test-parent</module>
     <module>cache2k-jcache-tests</module>
     <module>test-init</module>
+    <module>test-kotlin</module>
     <!-- only active with jdk11
     <module>test-init-java11</module>
     -->
@@ -86,6 +87,16 @@
     <h7e.recycle.test.coverage>jacoco-instrument</h7e.recycle.test.coverage>
     <android.plugin.version>4.5.0</android.plugin.version>
   </properties>
+
+  <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.checkerframework/checker-qual -->
+    <dependency>
+      <groupId>org.checkerframework</groupId>
+      <artifactId>checker-qual</artifactId>
+      <version>3.7.1</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <pluginManagement>
@@ -730,3 +741,4 @@
   </profiles>
 
 </project>
+

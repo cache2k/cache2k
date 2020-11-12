@@ -3,7 +3,7 @@
  *
  * @author Jens Wilke
  */
-@NonNullIsDefault
+@NonNullApi
 package org.cache2k.operation;
 
 /*
@@ -26,4 +26,4 @@ package org.cache2k.operation;
  * #L%
  */
 
-import org.cache2k.annotation.NonNullIsDefault;
+import org.cache2k.annotation.NonNullApi;

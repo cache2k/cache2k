@@ -20,7 +20,7 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -51,6 +51,7 @@ import java.lang.reflect.Type;
  * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">
  *   ReflectionExplained - Google Guava Documentation</a>
  */
+@SuppressWarnings("nullness")
 public interface CacheType<T> {
 
   /** The used prefix for the toString() output. */

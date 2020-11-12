@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;
@@ -45,7 +45,7 @@ import org.cache2k.processor.MutableCacheEntry;
  * @see Cache#getEntry(Object)
  * @see Cache#entries()
  */
-public interface CacheEntry<K, V> {
+public interface CacheEntry<K, V> extends DataAware<K, V> {
 
   /**
    * Key associated with this entry.
@@ -74,7 +74,7 @@ public interface CacheEntry<K, V> {
    * returns a value and does not throw an exception.
    */
   default @Nullable Throwable getException() {
-    LoadExceptionInfo<K> info = getExceptionInfo();
+    LoadExceptionInfo<K, V> info = getExceptionInfo();
     return info != null ? info.getException() : null;
   }
 
@@ -83,6 +83,6 @@ public interface CacheEntry<K, V> {
    * if no exception happened or it was suppressed. If {@code null}
    * then {@link #getValue} returns a value and does not throw an exception.
    */
-  @Nullable LoadExceptionInfo<K> getExceptionInfo();
+  @Nullable LoadExceptionInfo<K, V> getExceptionInfo();
 
 }

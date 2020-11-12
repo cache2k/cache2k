@@ -20,7 +20,7 @@ package org.cache2k.io;
  * #L%
  */
 
-import org.cache2k.Customization;
+import org.cache2k.DataAwareCustomization;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
@@ -65,7 +65,7 @@ import org.cache2k.Cache2kBuilder;
  * @since 2
  */
 @FunctionalInterface
-public interface CacheLoader<K, V> extends Customization<K, V> {
+public interface CacheLoader<K, V> extends DataAwareCustomization<K, V> {
 
   /**
    * Retrieves or generates data based on the key.

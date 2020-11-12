@@ -28,9 +28,18 @@
       <artifactId>jsr305</artifactId>
       <version>3.0.2</version>
       <scope>provided</scope>
-      <!--
-      <scope>compile</scope>
-      -->
+    </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-annotations-jvm</artifactId>
+      <version>1.4.10</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.checkerframework/checker-qual -->
+    <dependency>
+        <groupId>org.checkerframework</groupId>
+        <artifactId>checker-qual</artifactId>
+        <version>3.7.1</version>
+        <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -145,7 +154,6 @@
       </dependency>
     </dependencies>
   </profile>
-
 </profiles>
 
 </project>

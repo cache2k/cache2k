@@ -30,7 +30,7 @@ import org.cache2k.CustomizationException;
  */
 public class CacheWriterException extends CustomizationException {
 
-  public CacheWriterException(final Throwable cause) {
+  public CacheWriterException(Throwable cause) {
     super(cause);
   }
 

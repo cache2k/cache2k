@@ -21,7 +21,7 @@ package org.cache2k.config;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
@@ -42,6 +42,7 @@ import java.util.Arrays;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("nullness")
 public class CacheTypeCapture<T> implements CacheType<T> {
 
   @SuppressWarnings("unchecked")
@@ -97,7 +98,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
     return descriptor.toString();
   }
 
-  private abstract static class BaseType<T> implements CacheType<T> {
+  private abstract static class BaseType<@Nullable T> implements CacheType<T> {
 
     @Override
     public @Nullable CacheType<?> getComponentType() {

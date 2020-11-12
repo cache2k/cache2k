@@ -248,7 +248,7 @@ public class ListenerTest {
           @Override
           public void onEntryUpdated(Cache<Integer, Integer> cache,
                                      CacheEntry<Integer, Integer> currentEntry,
-                                     CacheEntry<Integer, Integer> entryWithNewData) {
+                                     CacheEntry<Integer, Integer> newEntry) {
             try {
               fire.await();
             } catch (InterruptedException ignore) {
@@ -448,8 +448,8 @@ public class ListenerTest {
           @Override
           public void onEntryUpdated(Cache<Integer, Integer> cache,
                                      CacheEntry<Integer, Integer> currentEntry,
-                                     CacheEntry<Integer, Integer> entryWithNewData) {
-            seenValues.put(entryWithNewData.getValue(), entryWithNewData.getValue());
+                                     CacheEntry<Integer, Integer> newEntry) {
+            seenValues.put(newEntry.getValue(), newEntry.getValue());
             callCount.incrementAndGet();
           }
         });
@@ -479,7 +479,7 @@ public class ListenerTest {
           @Override
           public void onEntryUpdated(Cache<Integer, Integer> cache,
                                      CacheEntry<Integer, Integer> currentEntry,
-                                     CacheEntry<Integer, Integer> entryWithNewData) {
+                                     CacheEntry<Integer, Integer> newEntry) {
             throw new RuntimeException("ouch");
           }
         });
@@ -508,7 +508,7 @@ public class ListenerTest {
             public void onEntryUpdated(
               Cache<Integer, Integer> cache,
               CacheEntry<Integer, Integer> currentEntry,
-              CacheEntry<Integer, Integer> entryWithNewData) {
+              CacheEntry<Integer, Integer> newEntry) {
               throw new RuntimeException("ouch");
             }
           });
@@ -817,7 +817,7 @@ public class ListenerTest {
           @Override
           public void onEntryUpdated(Cache<Integer, Integer> cache,
                                      CacheEntry<Integer, Integer> currentEntry,
-                                     CacheEntry<Integer, Integer> entryWithNewData) {
+                                     CacheEntry<Integer, Integer> newEntry) {
             updated.incrementAndGet();
           }
         })

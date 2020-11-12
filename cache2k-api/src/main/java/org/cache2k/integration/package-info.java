@@ -2,8 +2,8 @@
  * Loader and writer to integrate with external data sources.
  *
  * @author Jens Wilke
- * @deprecated the package will be removed completely
  */
+@NonNullApi @Deprecated
 package org.cache2k.integration;
 
 /*
@@ -25,3 +25,5 @@ package org.cache2k.integration;
  * limitations under the License.
  * #L%
  */
+
+import org.cache2k.annotation.NonNullApi;

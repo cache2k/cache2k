@@ -706,7 +706,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   private void onLoadFailureIntern(Throwable t) {
     newValueOrException =
-      (V) new ExceptionWrapper<K>(key, t, loadStartedTime, heapEntry, getExceptionPropagator());
+      (V) new ExceptionWrapper<K, V>(key, t, loadStartedTime, heapEntry, getExceptionPropagator());
     loadCompleted();
   }
 
@@ -790,7 +790,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (newValueOrException instanceof ExceptionWrapper) {
       try {
         expiry = 0;
-        ExceptionWrapper<K> ew = (ExceptionWrapper<K>) newValueOrException;
+        ExceptionWrapper<K, V> ew = (ExceptionWrapper<K, V>) newValueOrException;
         if (heapEntry.isValidOrExpiredAndNoException()) {
           expiry = timing().suppressExceptionUntil(heapEntry, ew);
         }
@@ -850,7 +850,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @SuppressWarnings("unchecked")
   private void decideForLoaderExceptionAfterExpiryCalculation(RuntimeException ouch) {
     newValueOrException = (V)
-      new ExceptionWrapper<K>(
+      new ExceptionWrapper<K, V>(
         key, ouch, loadStartedTime,
         heapEntry, getExceptionPropagator());
     expiry = 0;
@@ -865,7 +865,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @SuppressWarnings("unchecked")
   private void resiliencePolicyException(RuntimeException ouch) {
     newValueOrException = (V)
-      new ExceptionWrapper<K>(key, ouch, loadStartedTime, heapEntry, getExceptionPropagator());
+      new ExceptionWrapper<K, V>(key, ouch, loadStartedTime, heapEntry, getExceptionPropagator());
     expiry = 0;
     expiryCalculated();
   }
@@ -876,11 +876,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   private void setUntilInExceptionWrapper() {
     if (newValueOrException instanceof ExceptionWrapper) {
-      ExceptionWrapper<K> ew = (ExceptionWrapper<K>) newValueOrException;
+      ExceptionWrapper<K, V> ew = (ExceptionWrapper<K, V>) newValueOrException;
       if (expiry < 0) {
-        newValueOrException = (V) new ExceptionWrapper<K>(ew, -expiry);
+        newValueOrException = (V) new ExceptionWrapper<K, V>(ew, -expiry);
       } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
-        newValueOrException = (V) new ExceptionWrapper<K>(ew, expiry);
+        newValueOrException = (V) new ExceptionWrapper<K, V>(ew, expiry);
       }
     }
   }

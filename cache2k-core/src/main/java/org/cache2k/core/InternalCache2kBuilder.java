@@ -442,7 +442,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
 
     @Override
     public void onEntryUpdated(Cache<K, V> cache, CacheEntry<K, V> currentEntry,
-                               CacheEntry<K, V> entryWithNewData) {
+                               CacheEntry<K, V> newEntry) {
       dispatcher.queue(new AsyncEvent<K>() {
         @Override
         public K getKey() {
@@ -451,7 +451,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
 
         @Override
         public void execute() {
-          listener.onEntryUpdated(cache, currentEntry, entryWithNewData);
+          listener.onEntryUpdated(cache, currentEntry, newEntry);
         }
       });
     }

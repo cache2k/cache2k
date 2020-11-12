@@ -20,24 +20,24 @@ package org.cache2k.config;
  * #L%
  */
 
-import java.io.Serializable;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
- * Supplies a cache customizations like {@code ExpiryPolicy} or {@code CacheLoader}.
+ * Supplies cache customizations like {@code ExpiryPolicy} or {@code CacheLoader}.
  * An implementation must implement proper a {@code hashCode} and {@code equals} method.
  *
- * <p>Implementations of this class that should be usable within the XML configuration
- * need to implement {@link Serializable}. This is not done so in this interface since
- * there may be suppliers which are used within the program that are intentionally not
- * serializable, such as {@link CustomizationReferenceSupplier}.
+ * <p>Implementations of this class need to be bean compatible and should only define
+ * supported property types. This is needed if this supplier is used within
+ * a default configuration do a deep copy. If suppliers do not support this
+ * they must not have a default constructor, such as {@link CustomizationReferenceSupplier}.
  *
  * @param <T> the type for the customization. Typically extends
  *           {@link org.cache2k.Customization}, but can be
  *           {@link java.util.concurrent.Executor} as well
  * @author Jens Wilke
  */
-  @FunctionalInterface
-public interface CustomizationSupplier<T> {
+@FunctionalInterface
+public interface CustomizationSupplier<@NonNull T> {
 
   /**
    * Create or return an existing customization instance.

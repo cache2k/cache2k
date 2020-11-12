@@ -31,13 +31,13 @@ public interface Constants {
 
   ResiliencePolicy<?, ?> RESILIENCE_CACHE_AND_SUPPRESS_EXCEPTIONS = new ResiliencePolicy<Object, Object>() {
     @Override
-    public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object> loadExceptionInfo,
+    public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo,
                                        CacheEntry<Object, Object> cachedEntry) {
       return ETERNAL;
     }
 
     @Override
-    public long retryLoadAfter(Object key, LoadExceptionInfo<Object> loadExceptionInfo) {
+    public long retryLoadAfter(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo) {
       return ETERNAL;
     }
   };
@@ -48,13 +48,13 @@ public interface Constants {
 
   ResiliencePolicy<?, ?> RESILIENCE_CACHE_EXCEPTIONS = new ResiliencePolicy<Object, Object>() {
     @Override
-    public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object> loadExceptionInfo,
+    public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo,
                                        CacheEntry<Object, Object> cachedEntry) {
       return NOW;
     }
 
     @Override
-    public long retryLoadAfter(Object key, LoadExceptionInfo<Object> loadExceptionInfo) {
+    public long retryLoadAfter(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo) {
       return ETERNAL;
     }
   };

@@ -41,12 +41,12 @@ public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationList
    * @param currentEntry Entry containing the current data. It is only valid to access the object
    *                     during the call of this method. The object value may become invalid
    *                     afterwards.
-   * @param entryWithNewData entry containing the data after the update operation was applied.
+   * @param newEntry entry containing the data after the update operation was applied.
    *                         The data will be visible after all synchronous events are processed.
    *                         It is only valid to access the object during the
    *                     call of this method. The object value may become invalid afterwards.
    */
   void onEntryUpdated(
-    Cache<K, V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> entryWithNewData);
+    Cache<K, V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> newEntry);
 
 }

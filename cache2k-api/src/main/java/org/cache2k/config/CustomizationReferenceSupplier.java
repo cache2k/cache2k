@@ -20,23 +20,28 @@ package org.cache2k.config;
  * #L%
  */
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.util.Objects;
+
 /**
  * A reference to the customization to be used is set while building the cache.
  * The reference is returned. The class loader is ignored.
  *
  * @author Jens Wilke
  */
-public final class CustomizationReferenceSupplier<T> implements CustomizationSupplier<T> {
+public final class CustomizationReferenceSupplier<@NonNull T> implements CustomizationSupplier<T> {
 
-  private final T object;
+  private final @NonNull T object;
 
   /**
    * Construct a customization factory that returns always the same object instance.
    *
    * @param obj reference to a customization. Not null.
    */
-  public CustomizationReferenceSupplier(T obj) {
-    Cache2kConfig.checkNull(obj);
+  public CustomizationReferenceSupplier(@NonNull T obj) {
+    Objects.requireNonNull(obj);
     object = obj;
   }
 
@@ -46,7 +51,7 @@ public final class CustomizationReferenceSupplier<T> implements CustomizationSup
   }
 
   @Override
-  public boolean equals(Object other) {
+  public boolean equals(@Nullable Object other) {
     if (this == other) {
       return true;
     }

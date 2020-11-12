@@ -578,12 +578,12 @@ public class BasicCacheTest extends TestingBase {
     }
 
     @Override
-    public long retryLoadAfter(String key, LoadExceptionInfo<String> loadExceptionInfo) {
+    public long retryLoadAfter(String key, LoadExceptionInfo<String, String> loadExceptionInfo) {
       return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }
 
     @Override
-    public long suppressExceptionUntil(String key, LoadExceptionInfo<String> loadExceptionInfo,
+    public long suppressExceptionUntil(String key, LoadExceptionInfo<String,String> loadExceptionInfo,
                                        CacheEntry<String, String> cachedEntry) {
       return calculateExpiryTime(key, loadExceptionInfo.getException(), loadExceptionInfo.getLoadTime());
     }

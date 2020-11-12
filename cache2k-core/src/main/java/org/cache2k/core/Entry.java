@@ -21,7 +21,6 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.annotation.Nullable;
 import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -91,9 +90,9 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
   }
 
   @Override
-  public LoadExceptionInfo<K> getExceptionInfo() {
+  public LoadExceptionInfo<K, V> getExceptionInfo() {
     if (valueOrException instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper<K>) valueOrException);
+      return ((ExceptionWrapper<K, V>) valueOrException);
     }
     return null;
   }
@@ -638,7 +637,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return toString(null);
   }
 
-  public @Nullable TimerTask getTask() {
+  public TimerTask getTask() {
     if (misc instanceof TimerTask) {
       return (TimerTask) misc;
     }
@@ -649,7 +648,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return null;
   }
 
-  public <X> @Nullable X getPiggyBack(Class<X> type) {
+  public <X> X getPiggyBack(Class<X> type) {
     Object obj = misc;
     if (!(obj instanceof PiggyBack)) {
       return null;
@@ -682,7 +681,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     misc = action;
   }
 
-  public @Nullable EntryAction getEntryAction() {
+  public EntryAction getEntryAction() {
     if (!(misc instanceof PiggyBack)) {
       return null;
     }

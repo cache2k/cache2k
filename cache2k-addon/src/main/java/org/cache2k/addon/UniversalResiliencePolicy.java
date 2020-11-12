@@ -85,7 +85,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
    */
   @Override
   public long suppressExceptionUntil(K key,
-                                     LoadExceptionInfo<K> loadExceptionInfo,
+                                     LoadExceptionInfo<K, V> loadExceptionInfo,
                                      CacheEntry<K, V> cachedEntry) {
     if (resilienceDuration == 0 || resilienceDuration == Long.MAX_VALUE) {
       return resilienceDuration;
@@ -99,7 +99,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
    * Retries after the load time based on the retry configuration with exponential backoff.
    */
   @Override
-  public long retryLoadAfter(K key, LoadExceptionInfo<K> loadExceptionInfo) {
+  public long retryLoadAfter(K key, LoadExceptionInfo<K, V> loadExceptionInfo) {
     if (retryInterval == 0 || retryInterval == Long.MAX_VALUE) {
       return retryInterval;
     }

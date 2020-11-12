@@ -23,7 +23,7 @@ package org.cache2k.addon;
 import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;

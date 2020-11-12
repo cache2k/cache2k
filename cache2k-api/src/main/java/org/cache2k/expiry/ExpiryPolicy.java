@@ -22,7 +22,8 @@ package org.cache2k.expiry;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.annotation.Nullable;
+import org.cache2k.DataAware;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  * @see Cache2kBuilder#refreshAhead(boolean)
  * @see Cache2kBuilder#expireAfterWrite(long, TimeUnit)
  */
-public interface ExpiryPolicy<K, V> extends ExpiryTimeValues {
+public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
 
   /**
    * Returns the time of expiry in milliseconds since epoch.

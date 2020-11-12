@@ -986,13 +986,13 @@ public class EntryProcessorTest {
         b.resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
           @Override
           public long suppressExceptionUntil(Integer key,
-                                             LoadExceptionInfo<Integer> loadExceptionInfo,
+                                             LoadExceptionInfo<Integer, Integer> loadExceptionInfo,
                                              CacheEntry<Integer, Integer> cachedEntry) {
             return Long.MAX_VALUE;
           }
 
           @Override
-          public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> loadExceptionInfo) {
+          public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> loadExceptionInfo) {
             return Long.MAX_VALUE;
           }
         });
@@ -1020,13 +1020,13 @@ public class EntryProcessorTest {
     final ResiliencePolicy<Integer, Integer> policy = new ResiliencePolicy<Integer, Integer>() {
       @Override
       public long suppressExceptionUntil(Integer key,
-                                         LoadExceptionInfo<Integer> exceptionInformation,
+                                         LoadExceptionInfo<Integer, Integer> exceptionInformation,
                                          CacheEntry<Integer, Integer> cachedEntry) {
         return 0;
       }
 
       @Override
-      public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer> exceptionInformation) {
+      public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation) {
         retryLoadAfter.incrementAndGet();
         return ETERNAL;
       }
@@ -1141,7 +1141,7 @@ public class EntryProcessorTest {
   @Test
   public void getExceptionInfo() {
     CacheWithLoader cl = cacheWithLoader();
-    LoadExceptionInfo<Integer> info =
+    LoadExceptionInfo<Integer, Integer> info =
     cl.cache.invoke(IdentCountingLoader.KEY_YIELDING_PERMANENT_EXCEPTION,
       entry -> {
         entry.load();

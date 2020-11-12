@@ -26,7 +26,6 @@ import org.cache2k.CacheManager;
 import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheType;
-import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
@@ -55,13 +54,11 @@ import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.processor.EntryProcessor;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -205,7 +202,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected CacheType valueType;
 
   @SuppressWarnings("unchecked")
-  protected ExceptionPropagator<K> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
+  protected ExceptionPropagator<K, V> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
 
   Collection<CacheClosedListener> cacheClosedListeners = Collections.emptyList();
 
@@ -270,7 +267,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   /** called from CacheBuilder */
   @SuppressWarnings("unchecked")
   public void setCacheConfig(InternalCacheBuildContext<K, V> buildContext) {
-    final Cache2kConfig<K, V> cfg = buildContext.getConfig();
+    Cache2kConfig<K, V> cfg = buildContext.getConfig();
     valueType = cfg.getValueType();
     keyType = cfg.getKeyType();
     setName(cfg.getName());
@@ -450,7 +447,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     closePart2(this);
   }
 
-  public void closePart2(final InternalCache userCache) {
+  public void closePart2(InternalCache userCache) {
     executeWithGlobalLock(new Job<Void>() {
       @Override
       public Void call() {
@@ -600,9 +597,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
 
   @SuppressWarnings("unchecked")
-  public CacheEntry<K, V> returnCacheEntry(final K key, final V valueOrException) {
+  public CacheEntry<K, V> returnCacheEntry(K key, V valueOrException) {
     if (valueOrException instanceof ExceptionWrapper) {
-      return (ExceptionWrapper) valueOrException;
+      return (ExceptionWrapper<K, V>) valueOrException;
     }
     return new BaseCacheEntry<K, V>() {
       @Override public K getKey() {
@@ -1039,10 +1036,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @Override
   public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keysToLoad = checkAllPresent(keys);
     if (keysToLoad.isEmpty()) { listener.onCompleted(); return; }
-    final OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
+    OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
     for (K k : keysToLoad) {
       executeLoader(completion, k, () -> extractException(getEntryInternal(k)));
     }
@@ -1051,9 +1048,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @Override
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
-    final CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
+    CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keysToLoad = generateKeySet(keys);
-    final OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
+    OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
     for (K k : keysToLoad) {
       executeLoader(completion, k, () -> extractException(loadAndReplace(k)));
     }
@@ -1068,7 +1065,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     Runnable r = () -> {
       Throwable exception;
       try {
-        exception = action.call();;
+        exception = action.call();
       } catch (Throwable internalException) {
         internalExceptionCnt++;
         exception = internalException;
@@ -1189,7 +1186,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @SuppressWarnings("unchecked")
   protected V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
-      throw ((ExceptionWrapper<K>) v).generateExceptionToPropagate();
+      throw ((ExceptionWrapper<K, V>) v).generateExceptionToPropagate();
     }
     return v;
   }
@@ -1198,7 +1195,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected V returnValue(Entry<K, V> e) {
     V v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
-      throw ((ExceptionWrapper<K>) v).generateExceptionToPropagate();
+      throw ((ExceptionWrapper<K, V>) v).generateExceptionToPropagate();
     }
     return v;
   }
@@ -1353,7 +1350,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   @SuppressWarnings("unchecked")
   private void loadGotException(Entry<K, V> e, long t0, long t, Throwable wrappedException) {
-    ExceptionWrapper<K> value =
+    ExceptionWrapper<K, V> value =
       new ExceptionWrapper(extractKeyObj(e), wrappedException, t0, e, exceptionPropagator);
     long nextRefreshTime = 0;
     boolean suppressException = false;
@@ -1370,7 +1367,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex));
       return;
     }
-    value = new ExceptionWrapper<K>(value, Math.abs(nextRefreshTime));
+    value = new ExceptionWrapper<K, V>(value, Math.abs(nextRefreshTime));
     synchronized (e) {
       insertUpdateStats(e, (V) value, t0, t, INSERT_STAT_LOAD, nextRefreshTime, suppressException);
       if (suppressException) {
@@ -1392,7 +1389,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    */
   @SuppressWarnings("unchecked")
   private void resiliencePolicyException(Entry<K, V> e, long t0, long t, Throwable exception) {
-    ExceptionWrapper<K> value =
+    ExceptionWrapper<K, V> value =
       new ExceptionWrapper(extractKeyObj(e), exception, t0, e, exceptionPropagator);
     insert(e, (V) value, t0, t, t0, INSERT_STAT_LOAD, 0);
   }
@@ -1810,7 +1807,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return generateInfo(userCache, clock.millis());
   }
 
-  private CacheBaseInfo generateInfo(final InternalCache userCache, final long t) {
+  private CacheBaseInfo generateInfo(InternalCache userCache, long t) {
     return executeWithGlobalLock(new Job<CacheBaseInfo>() {
       @Override
       public CacheBaseInfo call() {
@@ -1857,7 +1854,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    *
    * @param checkClosed variant, this method is needed once without check during the close itself
    */
-  private <T> T executeWithGlobalLock(final Job<T> job, final boolean checkClosed) {
+  private <T> T executeWithGlobalLock(Job<T> job, boolean checkClosed) {
     synchronized (lock) {
       if (checkClosed) { checkClosed(); }
       eviction.stop();

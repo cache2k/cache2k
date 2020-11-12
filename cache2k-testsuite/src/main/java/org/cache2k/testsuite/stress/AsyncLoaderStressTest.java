@@ -58,7 +58,8 @@ public class AsyncLoaderStressTest {
     tst.addExceptionalTask(() -> {
       Object obj = c.peek(1802);
       c.reloadAll(asList(1802, 4, 5)).get();
-      assertNotSame(obj, c.peek(1802));
+      Object obj2 = c.peek(1802);
+      assertTrue(obj != obj2);
     });
     tst.setDoNotInterrupt(true);
     tst.run();

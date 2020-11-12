@@ -35,20 +35,20 @@ package org.cache2k.core;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
+public class ExceptionWrapper<K, V> implements LoadExceptionInfo<K, V> {
 
   private final Throwable exception;
   private final long loadTime;
   private final int count;
   private final long since;
   private final K key;
-  private final ExceptionPropagator<K> propagator;
+  private final ExceptionPropagator<K, V> propagator;
   private final long until;
 
   /**
    * Copy constructor to set until.
    */
-  public ExceptionWrapper(ExceptionWrapper<K> w, long until) {
+  public ExceptionWrapper(ExceptionWrapper<K, V> w, long until) {
     this.exception = w.exception;
     this.loadTime = w.loadTime;
     this.count = w.count;
@@ -58,7 +58,7 @@ public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
     this.until = until;
   }
 
-  public ExceptionWrapper(K key, long now, Throwable ex, ExceptionPropagator<K> p) {
+  public ExceptionWrapper(K key, long now, Throwable ex, ExceptionPropagator<K, V> p) {
     this.key = key;
     loadTime = since = now;
     exception = ex;
@@ -73,7 +73,7 @@ public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
    */
   public ExceptionWrapper(K key, Throwable exception,
                           long loadTime, Entry e,
-                          ExceptionPropagator<K> p) {
+                          ExceptionPropagator<K, V> p) {
     this(key, exception, loadTime,
       (e.getValueOrException() instanceof ExceptionWrapper) ?
         (LoadExceptionInfo) e.getValueOrException() :
@@ -83,7 +83,7 @@ public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
 
   public ExceptionWrapper(K key, Throwable exception,
                           long loadTime, LoadExceptionInfo w,
-                          ExceptionPropagator<K> p) {
+                          ExceptionPropagator<K, V> p) {
     propagator = p;
     this.exception = exception;
     this.key = key;
@@ -103,7 +103,7 @@ public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
   }
 
   @Override
-  public ExceptionPropagator getExceptionPropagator() { return propagator; }
+  public ExceptionPropagator<K, V> getExceptionPropagator() { return propagator; }
 
   @Override
   public Throwable getException() {
@@ -111,7 +111,7 @@ public class ExceptionWrapper<K> implements LoadExceptionInfo<K> {
   }
 
   @Override
-  public LoadExceptionInfo getExceptionInfo() {
+  public LoadExceptionInfo<K, V> getExceptionInfo() {
     return this;
   }
 

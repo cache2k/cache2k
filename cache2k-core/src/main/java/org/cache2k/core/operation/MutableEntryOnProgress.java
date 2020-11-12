@@ -100,7 +100,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     if (entry != null) { lock(); }
     mutate = true;
     remove = false;
-    value = (V) new ExceptionWrapper<K>(
+    value = (V) new ExceptionWrapper<K, V>(
       key, progress.getMutationStartTime(), ex, progress.getExceptionPropagator());
     return this;
   }
@@ -187,23 +187,23 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   @SuppressWarnings("unchecked")
   private void checkAndThrowException(V value) {
     if (value instanceof ExceptionWrapper) {
-      throw ((ExceptionWrapper<K>) value).generateExceptionToPropagate();
+      throw ((ExceptionWrapper<K, V>) value).generateExceptionToPropagate();
     }
   }
 
   @Override
   public Throwable getException() {
-    LoadExceptionInfo<K> info = getExceptionInfo();
+    LoadExceptionInfo<K, V> info = getExceptionInfo();
     return info != null ? info.getException() : null;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public LoadExceptionInfo<K> getExceptionInfo() {
+  public LoadExceptionInfo<K, V> getExceptionInfo() {
     triggerLoadOrInstallationRead();
     dataRead = true;
     if (originalOrLoadedValue instanceof ExceptionWrapper) {
-      return (ExceptionWrapper<K>) originalOrLoadedValue;
+      return (ExceptionWrapper<K, V>) originalOrLoadedValue;
     }
     return null;
   }

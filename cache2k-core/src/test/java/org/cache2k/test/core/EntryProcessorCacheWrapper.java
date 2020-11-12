@@ -22,8 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.ForwardingCache;
-import org.cache2k.annotation.NonNullIsDefault;
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
@@ -34,7 +33,6 @@ import org.cache2k.processor.MutableCacheEntry;
  *
  * @author Jens Wilke
  */
-@NonNullIsDefault
 public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
 
   private final Cache<K, V> cache;

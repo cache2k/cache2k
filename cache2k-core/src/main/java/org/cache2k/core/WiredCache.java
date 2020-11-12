@@ -285,7 +285,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return action.exceptionToPropagate;
     }
     if (action.result instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper<?>) action.result).getException();
+      return ((ExceptionWrapper<?, ?>) action.result).getException();
     }
     return null;
   }

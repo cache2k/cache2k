@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Reduced interface to return a value selected by a key object. Cache users
@@ -29,7 +29,7 @@ import org.cache2k.annotation.Nullable;
  *
  * @author Jens Wilke
  */
-public interface KeyValueSource<K, V> {
+public interface KeyValueSource<K, V> extends DataAware<K, V> {
 
   /**
    * Returns a value associated with this key.
