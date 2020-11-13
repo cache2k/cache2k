@@ -29,7 +29,9 @@ import java.util.Map;
  *
  * @author Jens Wilke
  * @since 1.0
+ * @deprecate to be removed in version 2.2
  */
+@Deprecated
 public interface AdvancedKeyValueSource<K, V> extends KeyValueSource<K, V> {
 
   /**

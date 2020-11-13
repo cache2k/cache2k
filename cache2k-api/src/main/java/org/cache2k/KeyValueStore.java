@@ -34,7 +34,9 @@ import java.util.Map;
  * has transparent semantics in cache through operation.
  *
  * @author Jens Wilke
+ * @deprecate to be removed in version 2.2
  */
+@Deprecated
 public interface KeyValueStore<K, V>
   extends AdvancedKeyValueSource<K, V> {
 

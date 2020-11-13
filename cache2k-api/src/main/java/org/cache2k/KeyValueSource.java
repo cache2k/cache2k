@@ -28,7 +28,9 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * only, rather to use the full blown cache interface.
  *
  * @author Jens Wilke
+ * @deprecated To be removed in version 2.2
  */
+@Deprecated
 public interface KeyValueSource<K, V> extends DataAware<K, V> {
 
   /**
