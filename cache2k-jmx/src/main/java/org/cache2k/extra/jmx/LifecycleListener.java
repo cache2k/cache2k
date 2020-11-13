@@ -26,6 +26,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.core.api.InternalCache;
+import org.cache2k.core.common.BaseCacheControl;
 import org.cache2k.core.log.Log;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheCreatedListener;
@@ -57,7 +58,8 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
                                                                  CacheBuildContext<K, V> ctx) {
     MBeanServer mbs = getPlatformMBeanServer();
     InternalCache internalCache = cache.requestInterface(InternalCache.class);
-    CacheControl management = new CacheControlMXBeanImpl(internalCache);
+    CacheControlMXBean management =
+      new CacheControlMXBeanImpl(new BaseCacheControl(internalCache));
     String name = createCacheControlName(cache.getCacheManager(), cache);
     try {
       mbs.registerMBean(management, new ObjectName(name));
@@ -67,7 +69,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
       throw new CacheException("register JMX bean, ObjectName: " + name, e);
     }
     if (!management.isStatisticsEnabled()) {
-      return COMPLETE;
+      return CompletableFuture.completedFuture(null);
     }
     name = createCacheStatisticsName(cache.getCacheManager(), cache);
     try {
@@ -77,7 +79,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
     } catch (Exception e) {
       throw new CacheException("register JMX bean, ObjectName: " + name, e);
     }
-    return COMPLETE;
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -97,7 +99,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
     } catch (Exception e) {
       throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
     }
-    return COMPLETE;
+    return CompletableFuture.completedFuture(null);
   }
 
   private static MBeanServer getPlatformMBeanServer() {

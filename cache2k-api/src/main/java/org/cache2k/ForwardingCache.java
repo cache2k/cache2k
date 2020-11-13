@@ -20,13 +20,13 @@ package org.cache2k;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.processor.EntryMutator;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
@@ -200,12 +200,12 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public Iterable<K> keys() {
+  public Set<K> keys() {
     return delegate().keys();
   }
 
   @Override
-  public Iterable<CacheEntry<K, V>> entries() {
+  public Set<CacheEntry<K, V>> entries() {
     return delegate().entries();
   }
 

@@ -1508,7 +1508,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   public void requestInterface() {
-    assertNull(cache.requestInterface(Integer.class));
+    assertThatCode(() -> cache.requestInterface(Integer.class))
+      .isInstanceOf(UnsupportedOperationException.class);
     assertTrue(cache.requestInterface(Map.class) instanceof Map);
   }
 

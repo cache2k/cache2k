@@ -599,7 +599,12 @@ public class TestingBase {
 
   public boolean isWiredCache() {
     provideCache();
-    return cache.requestInterface(WiredCache.class) != null;
+    try {
+      cache.requestInterface(WiredCache.class);
+      return true;
+    } catch (UnsupportedOperationException ex) {
+      return false;
+    }
   }
 
   /**

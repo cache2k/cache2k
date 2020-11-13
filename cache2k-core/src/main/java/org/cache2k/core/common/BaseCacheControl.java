@@ -20,13 +20,16 @@ package org.cache2k.core.common;
  * #L%
  */
 
+import org.cache2k.config.CacheType;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.CacheStatistics;
 
+import java.time.Instant;
 import java.util.Date;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Provide cache control on top of internal cache.
@@ -43,13 +46,13 @@ public class BaseCacheControl implements CacheControl {
   }
 
   @Override
-  public String getKeyType() {
-    return cache.getKeyType().getTypeName();
+  public CacheType getKeyType() {
+    return cache.getKeyType();
   }
 
   @Override
-  public String getValueType() {
-    return cache.getValueType().getTypeName();
+  public CacheType getValueType() {
+    return cache.getValueType();
   }
 
   @Override
@@ -90,18 +93,18 @@ public class BaseCacheControl implements CacheControl {
   }
 
   @Override
-  public Date getCreatedTime() {
-    return new Date(getInfo().getStartedTime());
+  public Instant getCreatedTime() {
+    return Instant.ofEpochMilli(getInfo().getStartedTime());
   }
 
   @Override
-  public Date getClearedTime() {
-    return optionalDate(getInfo().getClearedTime());
+  public Instant getClearedTime() {
+    return instantOrNull(getInfo().getClearedTime());
   }
 
 
-  Date optionalDate(long millis) {
-    return millis == 0 ? null : new Date(millis);
+  Instant instantOrNull(long millis) {
+    return millis == 0 ? null : Instant.ofEpochMilli(millis);
   }
 
   @Override
@@ -109,13 +112,20 @@ public class BaseCacheControl implements CacheControl {
     return getInfo().getImplementation();
   }
 
-  public void clear() {
+  public CompletableFuture<Void> clear() {
     cache.clear();
+    return CompletableFuture.completedFuture(null);
+  }
+
+  public CompletableFuture<Void> removeAll() {
+    cache.removeAll();
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public void changeCapacity(long entryCountOrWeight) {
+  public CompletableFuture<Void> changeCapacity(long entryCountOrWeight) {
     cache.getEviction().changeCapacity(entryCountOrWeight);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -148,13 +158,15 @@ public class BaseCacheControl implements CacheControl {
   }
 
   @Override
-  public void close() {
+  public CompletableFuture<Void> close() {
     cache.close();
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public void destroy() {
+  public CompletableFuture<Void> destroy() {
     cache.close();
+    return CompletableFuture.completedFuture(null);
   }
 
 }

@@ -21,24 +21,10 @@ package org.cache2k.event;
  */
 
 import java.util.EventListener;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Listeners for lifecycle events of a cache.
  *
  * @author Jens Wilke
  */
-public interface CacheLifecycleListener extends EventListener {
-
-  /**
-   * Single instance of completed future.
-   */
-  CompletableFuture<Void> COMPLETE = new CompletableFuture<Void>() {
-    public CompletableFuture<Void> newIncompleteFuture() {
-      return this;
-    }
-    public void obtrudeValue(Void value) { throw new UnsupportedOperationException(); }
-    public void obtrudeException(Throwable ex) { throw new UnsupportedOperationException(); }
-  };
-
-}
+public interface CacheLifecycleListener extends EventListener { }

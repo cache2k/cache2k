@@ -80,7 +80,7 @@ public class Cache2kBuilderTest {
   public void fromConfigBean() {
     Cache<Integer, Integer> cache =
       new Cache2kConfig<Integer, Integer>().builder().build();
-    assertEquals("Object", CacheControl.of(cache).getKeyType());
+    assertEquals("Object", CacheControl.of(cache).getKeyType().getTypeName());
     cache.close();
   }
 
@@ -392,7 +392,7 @@ public class Cache2kBuilderTest {
     Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
     _builder = _builder.addCacheClosedListener(cache -> {
       _FIRED.set(true);
-      return null;
+      return CompletableFuture.completedFuture(null);
     });
     if (_wiredCache) {
      StaticUtil.enforceWiredCache(_builder);

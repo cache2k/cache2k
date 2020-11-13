@@ -21,12 +21,12 @@ package org.cache2k;
  */
 
 import org.cache2k.processor.EntryMutator;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author Jens Wilke
  */
-public class AbstractCache<@NonNull K, @NonNull V> implements Cache<K, V> {
+public class AbstractCache<K, V> implements Cache<K, V> {
 
   @Override
   public String getName() {
@@ -194,12 +194,12 @@ public class AbstractCache<@NonNull K, @NonNull V> implements Cache<K, V> {
   }
 
   @Override
-  public Iterable<K> keys() {
+  public Set<K> keys() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public Iterable<CacheEntry<K, V>> entries() {
+  public Set<CacheEntry<K, V>> entries() {
     throw new UnsupportedOperationException();
   }
 

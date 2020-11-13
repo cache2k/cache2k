@@ -20,6 +20,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.operation.CacheOperation;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -35,6 +36,7 @@ import org.cache2k.processor.MutableCacheEntry;
 
 import java.io.Closeable;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
@@ -744,7 +746,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
    * @param keys the keys of the cache entries that should be processed
    * @param entryProcessor processor instance to be invoked
    * @param <R> type of the result
-   * @return map containing the invocation results for every cache key
+   * @return An immutable map containing the invocation results for every cache key
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    */
@@ -790,6 +792,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
    *
    * <p>The operation is not performed atomically.
    *
+   * @returns an immutable map with the requested values
    * @throws NullPointerException if one of the specified keys is null
    * @throws CacheLoaderException in case the loader has permanent failures.
    *            Otherwise the exception is thrown when the key is requested.
@@ -830,14 +833,14 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
     void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
-   * Iterate all keys in the cache.
+   * A set view of all keys in the cache. The set is not stable but reflecting
    *
-   * <p>Contract: The iteration is usable while concurrent operations happen on the cache.
+   *
+   * <p>Contract: An iteration or stream is usable while concurrent operations happen on the cache.
    * All entry keys will be iterated when present in the cache at the moment
-   * of the call to {@link Iterable#iterator()}. An expiration or mutation
-   * happening during the iteration, may or may not be reflected. Separate calls to
-   * {@link Iterable#iterator()} to the identical {@code Iterable} instance start
-   * a separate iteration. It is ensured that every key is only iterated once.
+   * of the call to {@link Set#iterator()}. An expiration or mutation happening
+   * during the iteration, may or may not be reflected. It is ensured that every key is only
+   * iterated once.
    *
    * <p>The iterator itself is not thread safe. Calls to one iterator instance from
    * different threads are illegal or need proper synchronization.
@@ -845,13 +848,15 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
    * <p><b>Statistics:</b> Iteration is neutral to the cache statistics.
    *
    * <p><b>Efficiency:</b> Iterating keys is faster as iterating complete entries.
+   *
+   *
    */
-  Iterable<K> keys();
+  Set<K> keys();
 
   /**
-   * Iterate all entries in the cache.
+   * All entries in the cache.
    *
-   * <p>See {@link #keys()} for the general iterator contract.
+   * <p>See {@link #keys()} for the general contract.
    *
    * <p><b>Efficiency:</b> Iterating entries is less efficient then just iterating keys. The cache
    * needs to create a new entry object and employ some sort of synchronisation to supply a
@@ -859,17 +864,22 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
    *
    * @see #keys()
    */
-  Iterable<CacheEntry<K, V>> entries();
+  Set<CacheEntry<K, V>> entries();
 
   /**
    * Removes all cache contents. This has the same semantics of calling
    * remove to every key, except that the cache is trying to optimize the
    * bulk operation. Same as {@code clear} but listeners will be called.
+   *
+   * An alternative version for improved parallel processing is available at
+   * {@link CacheOperation#removeAll()}
    */
   void removeAll();
 
   /**
    * Clear the cache in a fast way, causing minimal disruption. Not calling the listeners.
+   * An alternative version for improved parallel processing is available at
+   * {@link CacheOperation#clear()}
    */
   void clear();
 
@@ -886,6 +896,9 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
    * A subsequent call to close will not throw an exception.
    *
    * <p>If all caches need to be closed it is more effective to use {@link CacheManager#close()}
+   *
+   * <p>An alternative version for improved parallel processing is available at
+   * {@link CacheOperation#close()}
    */
   @Override
   void close();

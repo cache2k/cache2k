@@ -22,17 +22,15 @@ package org.cache2k.operation;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.config.CacheType;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Information of a cache for introspection at runtime, for
  * generic monitoring and management proposes. Additional information
  * is available via {@link CacheStatistics} if statistics are enabled.
- *
- * <p>This interface is exposed as JMX bean if JMX support is enabled or can be
- * requested via {@link #of}. Alternatively use the combined interface
- * {@link CacheControl}.
  *
  * <p>It is intentionally that there is no way to retrieve the original
  * configuration after creation.
@@ -53,12 +51,12 @@ public interface CacheInfo {
   /**
    * Type of the cache key.
    */
-  String getKeyType();
+  CacheType getKeyType();
 
   /**
    * Type of the cache value.
    */
-  String getValueType();
+  CacheType getValueType();
 
   /**
    * The current number of entries within the cache, starting with 0. This value is an
@@ -128,11 +126,11 @@ public interface CacheInfo {
    * <p>We use the old type {@code Date} and not {@code Instant} here in order to make this interface
    * usable for JMX directly, which does not support {@code Instant}.
    */
-  Date getCreatedTime();
+  Instant getCreatedTime();
 
   /**
    * Time of the most recent {@link org.cache2k.Cache#clear} operation.
    */
-  Date getClearedTime();
+  @Nullable Instant getClearedTime();
 
 }

@@ -37,9 +37,12 @@ import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
 
 import java.io.Closeable;
+import java.util.AbstractSet;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -102,37 +105,21 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
    * Key iteration on top of normal iterator.
    */
   @Override
-  public Iterable<K> keys() {
-    return new Iterable<K>() {
-      @Override
-      public Iterator<K> iterator() {
-        final Iterator<CacheEntry<K, V>> it = BaseCache.this.iterator();
-        return new Iterator<K>() {
-          @Override
-          public boolean hasNext() {
-            return it.hasNext();
-          }
-
-          @Override
-          public K next() {
-            return it.next().getKey();
-          }
-
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-        };
-      }
-    };
+  public Set<K> keys() {
+    return asMap().keySet();
   }
 
   @Override
-  public Iterable<CacheEntry<K, V>> entries() {
-    return new Iterable<CacheEntry<K, V>>() {
+  public Set<CacheEntry<K, V>> entries() {
+    return new AbstractSet<CacheEntry<K, V>>() {
       @Override
       public Iterator<CacheEntry<K, V>> iterator() {
         return BaseCache.this.iterator();
+      }
+
+      @Override
+      public int size() {
+        return getTotalEntryCount();
       }
     };
   }
@@ -164,7 +151,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     if (type.isAssignableFrom(this.getClass())) {
       return (X) this;
     }
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -208,7 +195,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
         });
       }
     }
-    return m;
+    return Collections.unmodifiableMap(m);
   }
 
   @SuppressWarnings("unchecked")
