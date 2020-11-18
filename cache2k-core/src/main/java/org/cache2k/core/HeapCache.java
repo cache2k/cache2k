@@ -70,6 +70,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.Function;
 
 import static org.cache2k.core.util.Util.*;
 
@@ -864,7 +865,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * Code duplicates with {@link Cache#get(Object)}
    */
   @Override
-  public V computeIfAbsent(K key, Callable<V> callable) {
+  public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
     Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key);
@@ -890,10 +891,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     V value;
     try {
       if (!isUpdateTimeNeeded()) {
-        value = callable.call();
+        value = function.apply(key);
       } else {
         t0 = clock.millis();
-        value = callable.call();
+        value = function.apply(key);
         if (!metrics.isDisabled()) {
           t = clock.millis();
         }
@@ -903,11 +904,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         e.processingDone();
       }
       finished = true;
-
-    } catch (RuntimeException ex) {
-      throw ex;
-    } catch (Exception ex) {
-      throw new CacheLoaderException(ex);
     } finally {
       e.ensureAbort(finished);
     }

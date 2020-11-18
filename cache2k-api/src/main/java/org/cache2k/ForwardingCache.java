@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * Wrapper class that forwards all method calls to a delegate. Can be used to implement extensions
@@ -83,6 +84,11 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   @Override
   public V computeIfAbsent(K key, Callable<V> callable) {
     return delegate().computeIfAbsent(key, callable);
+  }
+
+  @Override
+  public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
+    return delegate().computeIfAbsent(key, function);
   }
 
   @Override

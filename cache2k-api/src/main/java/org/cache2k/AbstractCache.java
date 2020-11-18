@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * Base class for implementations of the cache interface. By default every methods throws
@@ -76,6 +77,11 @@ public class AbstractCache<K, V> implements Cache<K, V> {
 
   @Override
   public V computeIfAbsent(K key, Callable<V> callable) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
     throw new UnsupportedOperationException();
   }
 

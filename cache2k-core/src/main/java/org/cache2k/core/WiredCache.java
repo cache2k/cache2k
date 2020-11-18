@@ -52,6 +52,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Function;
 
 /**
  * A cache implementation that builds on a heap cache and coordinates with additional
@@ -120,8 +121,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public V computeIfAbsent(K key, Callable<V> callable) {
-    return returnValue(execute(key, ops.computeIfAbsent(key, callable)));
+  public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
+    return returnValue(execute(key, ops.computeIfAbsent(key, function)));
   }
 
   @Override

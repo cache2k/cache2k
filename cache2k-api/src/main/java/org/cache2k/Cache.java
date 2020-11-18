@@ -41,6 +41,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /* Credits
  *
@@ -307,8 +308,53 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
    *         value is {@code null} and the cache does not permit {@code null} values
    * @throws IllegalArgumentException if some property of the specified key
    *         or value prevents it from being stored in this cache
+   * @deprecated will be removed in version 2.2, replaced by {@link #computeIfAbsent(Object, Function)}
    */
-  V computeIfAbsent(K key, Callable<V> callable);
+  @Deprecated
+  default V computeIfAbsent(K key, Callable<V> callable) {
+    return computeIfAbsent(key, k -> {
+      try {
+        return callable.call();
+      } catch (Exception exception) {
+        throw new CacheLoaderException(exception);
+      }
+    });
+  }
+
+  /**
+   * If the specified key is not already associated with a value (or exception),
+   * call the provided task and associate it with the returned value. This is equivalent to
+   *
+   *  <pre> {@code
+   * if (!cache.containsKey(key)) {
+   *   V value = function.apply(key);
+   *   cache.put(key, value);
+   *   return value;
+   * } else {
+   *   return cache.peek(key);
+   * }}</pre>
+   *
+   * except that the action is performed atomically.
+   *
+   * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
+   * expiry calculation.
+   *
+   * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
+   * is missing, a miss and put is counted.
+   *
+   * <p>Exceptions: If call throws an exception the cache contents will
+   * not be modified and the exception is propagated. The exception propagator
+   * or resilience policy is not used for this method.
+   *
+   * @param key key with which the specified value is to be associated
+   * @param function task that computes the value
+   * @return the cached value or the result of the compute operation if no mapping is present
+   * @throws RuntimeException in case function yields a runtime exception,
+   *         this is thrown directly
+   * @throws NullPointerException if the specified key is {@code null} or the
+   *         value is {@code null} and the cache does not permit {@code null} values
+   */
+  V computeIfAbsent(K key, Function<? super K, ? extends V> function);
 
   /**
    * If the specified key is not already associated

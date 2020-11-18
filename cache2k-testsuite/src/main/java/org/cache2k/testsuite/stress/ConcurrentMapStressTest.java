@@ -53,7 +53,8 @@ public class ConcurrentMapStressTest {
     if (useMap) {
       map = new ConcurrentHashMap<>();
     } else {
-      map = Cache2kBuilder.of(Integer.class, Integer.class).build().asMap();
+      map = Cache2kBuilder.of(Integer.class, Integer.class)
+        .build().asMap();
     }
     ActorPairSuite suite = new ActorPairSuite();
     suite.maxParallel(5);
@@ -115,6 +116,33 @@ public class ConcurrentMapStressTest {
     }
   }
   static { ACTOR_PAIRS.add(ComputeIfPresent1.class); }
+
+  public static class ComputeIfAbsent1 extends MyActorPair {
+    AtomicInteger counter1 = new AtomicInteger();
+    public ComputeIfAbsent1(Target target) { super(target); }
+    public void setup() {
+      counter1.set(0);
+      remove();
+    }
+    public Integer actor1() {
+      return map.computeIfAbsent(key, (k) -> {
+        counter1.getAndIncrement();
+        return 10;
+      });
+    }
+    public Integer actor2() {
+      return map.putIfAbsent(key, 20);
+    }
+    public void check(Integer result1, Integer result2) {
+      assertThat(counter1.get()).isLessThanOrEqualTo(1);
+      int v = value();
+      assertTrue(result1 == 20 || (result1 == 10 && v == 10 && counter1.get() == 1));
+      assertTrue(result1 == 10 || (result1 == 20 && v == 20 && counter1.get() == 0));
+      assertTrue(result2 == null || v == 10);
+      assertTrue(result2 != null || v == 20);
+    }
+  }
+  static { ACTOR_PAIRS.add(ComputeIfAbsent1.class); }
 
   public abstract static class MyActorPair extends AbstractActorPair<Integer, Target> {
     public final ConcurrentMap<Integer, Integer> map;

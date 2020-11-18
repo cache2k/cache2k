@@ -27,6 +27,7 @@ import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.RestartException;
 
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 /**
  * Semantics of all cache operations on entries.
@@ -246,7 +247,7 @@ public class Operations<K, V> {
     };
   }
 
-  public Semantic<K, V, V> computeIfAbsent(K key, Callable<V> function) {
+  public Semantic<K, V, V> computeIfAbsent(K key, Function<? super K, ? extends V> function) {
     return new Semantic.MightUpdate<K, V, V>() {
 
       @Override
@@ -262,7 +263,7 @@ public class Operations<K, V> {
       @Override
       public void mutate(Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         try {
-          V value = function.call();
+          V value = function.apply(e.getKey());
           c.result(value);
           c.put(value);
         } catch (RuntimeException ex) {

@@ -308,19 +308,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
 
   @Override
   public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-    return cache.invoke(key, entry -> {
-      V value = null;
-      if (!entry.exists()) {
-        entry.lock();
-        value = mappingFunction.apply(key);
-        if (value != null) {
-          entry.setValue(value);
-        }
-      } else {
-        return entry.getValue();
-      }
-      return value;
-    });
+    return cache.computeIfAbsent(key, mappingFunction);
   }
 
   @Override
