@@ -315,6 +315,8 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Close
     return computeIfAbsent(key, k -> {
       try {
         return callable.call();
+      } catch (RuntimeException ex) {
+        throw ex;
       } catch (Exception exception) {
         throw new CacheLoaderException(exception);
       }
