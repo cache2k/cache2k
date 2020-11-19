@@ -75,7 +75,7 @@ public abstract class Timing<K, V>  {
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {
       return TimeAgnosticTiming.IMMEDIATE;
     }
-    ResiliencePolicy<K, V> resiliencePolicy =
+    ResiliencePolicy<K, V> resiliencePolicy = (ResiliencePolicy<K, V>)
       ctx.createCustomization(cfg.getResiliencePolicy(), ResiliencePolicy.disabledPolicy());
     if (cfg.getExpiryPolicy() != null
       || (cfg.getValueType() != null

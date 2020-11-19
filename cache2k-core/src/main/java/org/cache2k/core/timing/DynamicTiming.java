@@ -53,7 +53,7 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
       cfg.getExpiryPolicy() == null) {
       return (ExpiryPolicy<K, V>) ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
     }
-    return buildContext.createCustomization(cfg.getExpiryPolicy());
+    return (ExpiryPolicy<K, V>) buildContext.createCustomization(cfg.getExpiryPolicy());
   }
 
   long calcNextRefreshTime(K key, V newObject, long now, CacheEntry<K, V> entry) {

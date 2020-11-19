@@ -108,13 +108,16 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
   private @Nullable CustomizationSupplier<? extends Executor> refreshExecutor;
   private @Nullable CustomizationSupplier<? extends Executor> asyncListenerExecutor;
   private @Nullable CustomizationSupplier<? extends Executor> executor;
-  private @Nullable CustomizationSupplier<? extends ExpiryPolicy<K, V>> expiryPolicy;
-  private @Nullable CustomizationSupplier<? extends ResiliencePolicy<K, V>> resiliencePolicy;
+  private @Nullable
+    CustomizationSupplier<? extends ExpiryPolicy<? super K, ? super V>> expiryPolicy;
+  private @Nullable
+    CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> resiliencePolicy;
   private @Nullable CustomizationSupplier<? extends CacheLoader<K, V>> loader;
   private @Nullable CustomizationSupplier<? extends CacheWriter<K, V>> writer;
   private @Nullable CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> advancedLoader;
   private @Nullable CustomizationSupplier<? extends AsyncCacheLoader<K, V>> asyncLoader;
-  private @Nullable CustomizationSupplier<? extends ExceptionPropagator<K, V>> exceptionPropagator;
+  private @Nullable
+    CustomizationSupplier<? extends ExceptionPropagator<? super K, ? super V>> exceptionPropagator;
   private @Nullable CustomizationSupplier<? extends Weigher<K, V>> weigher;
 
   private @Nullable CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
@@ -365,7 +368,8 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
   /**
    * @see Cache2kBuilder#loader(AdvancedCacheLoader)
    */
-  public void setAdvancedLoader(@Nullable CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> v) {
+  public void setAdvancedLoader(
+    @Nullable CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> v) {
     advancedLoader = v;
   }
 
@@ -388,11 +392,13 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
     loaderThreadCount = v;
   }
 
-  public @Nullable CustomizationSupplier<? extends ExpiryPolicy<K, V>> getExpiryPolicy() {
+  public @Nullable
+    CustomizationSupplier<? extends ExpiryPolicy<? super K, ? super V>> getExpiryPolicy() {
     return expiryPolicy;
   }
 
-  public void setExpiryPolicy(@Nullable CustomizationSupplier<? extends ExpiryPolicy<K, V>> v) {
+  public void setExpiryPolicy(
+    @Nullable CustomizationSupplier<? extends ExpiryPolicy<? super K, ? super V>> v) {
     expiryPolicy = v;
   }
 
@@ -418,14 +424,16 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
     storeByReference = v;
   }
 
-  public @Nullable CustomizationSupplier<? extends ExceptionPropagator<K, V>> getExceptionPropagator() {
+  public @Nullable CustomizationSupplier<? extends ExceptionPropagator<? super K, ? super V>>
+    getExceptionPropagator() {
     return exceptionPropagator;
   }
 
   /**
    * @see Cache2kBuilder#exceptionPropagator(ExceptionPropagator)
    */
-  public void setExceptionPropagator(@Nullable CustomizationSupplier<? extends ExceptionPropagator<K, V>> v) {
+  public void setExceptionPropagator(
+    @Nullable CustomizationSupplier<? extends ExceptionPropagator<? super K, ? super V>> v) {
     exceptionPropagator = v;
   }
 
@@ -523,7 +531,8 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
    * improve integration with bean configuration mechanisms that use the set method and
    * construct a set or list, like Springs' bean XML configuration.
    */
-  public void setLifecycleListeners(@NonNull Collection<CustomizationSupplier<? extends CacheLifecycleListener>> c) {
+  public void setLifecycleListeners(
+    @NonNull Collection<CustomizationSupplier<? extends CacheLifecycleListener>> c) {
     getLifecycleListeners().addAll(c);
   }
 
@@ -543,14 +552,16 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
     getFeatures().addAll(v);
   }
 
-  public @Nullable CustomizationSupplier<? extends ResiliencePolicy<K, V>> getResiliencePolicy() {
+  public @Nullable CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>>
+    getResiliencePolicy() {
     return resiliencePolicy;
   }
 
   /**
    * @see Cache2kBuilder#resiliencePolicy
    */
-  public void setResiliencePolicy(@Nullable CustomizationSupplier<? extends ResiliencePolicy<K, V>> v) {
+  public void setResiliencePolicy(
+    @Nullable CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> v) {
     resiliencePolicy = v;
   }
 

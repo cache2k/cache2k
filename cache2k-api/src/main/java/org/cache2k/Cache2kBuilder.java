@@ -20,7 +20,6 @@ package org.cache2k;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheType;
@@ -484,7 +483,8 @@ public class Cache2kBuilder<K, V>
    * Sets customization for propagating loader exceptions. By default loader exceptions
    * are wrapped into a {@link CacheLoaderException}.
    */
-  public final Cache2kBuilder<K, V> exceptionPropagator(ExceptionPropagator<K, V> ep) {
+  public final Cache2kBuilder<K, V> exceptionPropagator(
+    ExceptionPropagator<? super K, ? super V> ep) {
     cfg().setExceptionPropagator(wrapCustomizationInstance(ep));
     return this;
   }
@@ -655,7 +655,7 @@ public class Cache2kBuilder<K, V>
    * {@link #expireAfterWrite}. If {@link #expireAfterWrite(long, java.util.concurrent.TimeUnit)}
    * is set to 0 then expiry calculation is not used, all entries expire immediately.
    */
-  public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<K, V> c) {
+  public final Cache2kBuilder<K, V> expiryPolicy(ExpiryPolicy<? super K, ? super V> c) {
     cfg().setExpiryPolicy(wrapCustomizationInstance(c));
     return this;
   }
@@ -734,13 +734,13 @@ public class Cache2kBuilder<K, V>
    * of exceptions from the loader. A specified policy will be ignored if
    * {@link #expireAfterWrite} is set to 0.
    */
-  public final Cache2kBuilder<K, V> resiliencePolicy(ResiliencePolicy<K, V> v) {
+  public final Cache2kBuilder<K, V> resiliencePolicy(ResiliencePolicy<? super K, ? super V> v) {
     cfg().setResiliencePolicy(wrapCustomizationInstance(v));
     return this;
   }
 
   public final Cache2kBuilder<K, V> resiliencePolicy(
-    CustomizationSupplier<? extends ResiliencePolicy<K, V>> v) {
+    CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> v) {
     cfg().setResiliencePolicy(v);
     return this;
   }
