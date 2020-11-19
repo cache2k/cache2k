@@ -51,7 +51,6 @@ import java.lang.reflect.Type;
  * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">
  *   ReflectionExplained - Google Guava Documentation</a>
  */
-@SuppressWarnings("nullness")
 public interface CacheType<T> {
 
   /** The used prefix for the toString() output. */

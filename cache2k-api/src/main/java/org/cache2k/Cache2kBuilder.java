@@ -48,13 +48,12 @@ import org.cache2k.processor.MutableCacheEntry;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static org.cache2k.config.Cache2kConfig.checkNull;
 
 /**
  * Builder to create a {@link Cache} instance. The usage is:
@@ -436,7 +435,7 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> exceptionPropagator(
     final org.cache2k.integration.ExceptionPropagator<K> ep) {
-    checkNull(ep);
+    Objects.requireNonNull(ep);
     ExceptionPropagator<K, V> newPropagator = new ExceptionPropagator<K, V>() {
       @Override
       public RuntimeException propagateException(LoadExceptionInfo<K, V> newInfo) {
@@ -497,7 +496,7 @@ public class Cache2kBuilder<K, V>
   @Deprecated
   public final Cache2kBuilder<K, V> loader(
     final org.cache2k.integration.AsyncCacheLoader<K, V> oldLoader) {
-    checkNull(oldLoader);
+    Objects.requireNonNull(oldLoader);
     AsyncCacheLoader<K, V> newLoader = new AsyncCacheLoader<K, V>() {
       @Override
       public void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
@@ -868,7 +867,8 @@ public class Cache2kBuilder<K, V>
   /**
    * Set the weigher to be used to calculate the entry weight. The parameter
    * {@link #maximumWeight(long)} needs to be specified as well. Using a weigher has a slightly
-   * performance impact on the update of existing entries.
+   * performance impact on the update of existing entries. When a weigher is set the
+   * {@link #entryCapacity(long)} parameter is ignored.
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K, V> v) {
     cfg().setWeigher(new CustomizationReferenceSupplier<Weigher<K, V>>(v));

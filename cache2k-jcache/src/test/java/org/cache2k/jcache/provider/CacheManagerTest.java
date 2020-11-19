@@ -112,7 +112,11 @@ public class CacheManagerTest {
         .expireAfterWrite(5, TimeUnit.MINUTES)
     ));
     assertFalse(cache instanceof CopyCacheProxy);
-    assertNull(cache.unwrap(org.cache2k.Cache.class).requestInterface(WiredCache.class));
+    org.cache2k.Cache c2kcache = cache.unwrap(org.cache2k.Cache.class);
+    try {
+      c2kcache.requestInterface(WiredCache.class);
+      fail("exception");
+    } catch (UnsupportedOperationException expected) { }
     cache.close();
   }
 

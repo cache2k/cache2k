@@ -21,6 +21,7 @@ package org.cache2k.config;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.DataAware;
 import org.cache2k.Weigher;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -63,9 +64,9 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings({"unused", "nullness"})
-public class Cache2kConfig<@NonNull K, @NonNull V>
-  implements ConfigBean<Cache2kConfig<K, V>, Cache2kBuilder<K, V>>, ConfigWithSections {
+@SuppressWarnings({"unused"})
+public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cache2kBuilder<K, V>>,
+                                            DataAware<K, V>, ConfigWithSections {
 
   /**
    * A marker duration used in {@link #setExpireAfterWrite(Duration)}, to request
@@ -209,15 +210,6 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
   }
 
   /**
-   * @throws NullPointerException if parameter is null
-   */
-  public static void checkNull(Object obj) {
-    if (obj == null) {
-      throw new NullPointerException("Null value not allowed");
-    }
-  }
-
-  /**
    * @see Cache2kBuilder#keyType(CacheType)
    * @see CacheType for a general discussion on types
    */
@@ -296,10 +288,6 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
    * @see Cache2kBuilder#maximumWeight
    */
   public void setMaximumWeight(long v) {
-    if (entryCapacity >= 0) {
-      throw new IllegalArgumentException(
-        "entryCapacity already set, setting maximumWeight is illegal");
-    }
     maximumWeight = v;
   }
 
@@ -661,12 +649,6 @@ public class Cache2kConfig<@NonNull K, @NonNull V>
    * @see Cache2kBuilder#weigher(Weigher)
    */
   public void setWeigher(@Nullable CustomizationSupplier<? extends Weigher<K, V>> v) {
-    /*
-    if (entryCapacity >= 0) {
-      throw new IllegalArgumentException(
-        "entryCapacity already set, specifying a weigher is illegal");
-    }
-    */
     weigher = v;
   }
 

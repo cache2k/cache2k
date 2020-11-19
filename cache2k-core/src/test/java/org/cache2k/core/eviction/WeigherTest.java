@@ -58,6 +58,24 @@ public class WeigherTest extends TestingBase {
       .build();
   }
 
+  /**
+   * When capacity and weigher are specified, weigher takes precedence
+   */
+  @Test
+  public void illegalConfigOkay() {
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .entryCapacity(123)
+      .weigher(new Weigher<Integer, Integer>() {
+        @Override
+        public int weigh(Integer key, Integer value) {
+          return 1;
+        }
+      })
+      .maximumWeight(123)
+      .build();
+  }
+
   @Test
   public void removeOnEmptyCache() {
     Cache<Integer, Integer> c = provideCache(100);

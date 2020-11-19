@@ -63,7 +63,6 @@ public class NullnessTest {
     cache.put(125, "abc");
   }
 
-
   @Test
   public void iteration_GetAll() {
     cache.put(125, "abc");
