@@ -37,6 +37,7 @@ import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.ResiliencePolicy;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -121,8 +122,9 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     CustomizationSupplier<? extends ExceptionPropagator<? super K, ? super V>> exceptionPropagator;
   private @Nullable CustomizationSupplier<? extends Weigher<K, V>> weigher;
 
-  private @Nullable CustomizationCollection<CacheEntryOperationListener<K, V>> listeners;
-  private @Nullable CustomizationCollection<CacheEntryOperationListener<K, V>> asyncListeners;
+  private @Nullable Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> listeners;
+  private @Nullable
+    Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> asyncListeners;
   private @Nullable Collection<CustomizationSupplier<CacheLifecycleListener>> lifecycleListeners;
   private @Nullable Set<Feature> features;
   private @Nullable SectionContainer sections;
@@ -429,7 +431,6 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * A set of listeners. Listeners added in this collection will be
    * executed in a synchronous mode, meaning, further processing for
    * an entry will stall until a registered listener is executed.
-   * The expiry will be always executed asynchronously.
    *
    * <p>A listener can be added by adding it to the collection.
    * Duplicate (in terms of equal objects) listeners will be ignored.
@@ -437,9 +438,9 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * @return Mutable collection of listeners
    */
   public @NonNull
-  CustomizationCollection<CacheEntryOperationListener<K, V>> getListeners() {
+  Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> getListeners() {
     if (listeners == null) {
-      listeners = new DefaultCustomizationCollection<CacheEntryOperationListener<K, V>>();
+      listeners = new ArrayList<>();
     }
     return listeners;
   }
@@ -468,9 +469,9 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * @return Mutable collection of listeners
    */
   public @NonNull
-  CustomizationCollection<CacheEntryOperationListener<K, V>> getAsyncListeners() {
+  Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> getAsyncListeners() {
     if (asyncListeners == null) {
-      asyncListeners = new DefaultCustomizationCollection<CacheEntryOperationListener<K, V>>();
+      asyncListeners = new ArrayList<>();
     }
     return asyncListeners;
   }
@@ -501,7 +502,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   public @NonNull
   Collection<CustomizationSupplier<? extends CacheLifecycleListener>> getLifecycleListeners() {
     if (lifecycleListeners == null) {
-      lifecycleListeners = new DefaultCustomizationCollection<CacheLifecycleListener>();
+      lifecycleListeners = new ArrayList<>();
     }
     return (Collection<CustomizationSupplier<? extends CacheLifecycleListener>>) (Object)
       lifecycleListeners;

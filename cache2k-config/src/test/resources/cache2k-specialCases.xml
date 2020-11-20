@@ -65,11 +65,11 @@
       <listeners>
         <listener>
           <type>org.cache2k.config.CustomizationSupplierByClassName</type>
-          <className>a.b.c</className>
+          <className>org.cache2k.extra.config.test.UpdateListener</className>
         </listener>
         <listener>
           <type>org.cache2k.config.CustomizationSupplierByClassName</type>
-          <className>a.b.c</className>
+          <className>org.cache2k.extra.config.test.UpdateListener</className>
         </listener>
       </listeners>
     </cache>

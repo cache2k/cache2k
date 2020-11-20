@@ -30,6 +30,7 @@ import org.cache2k.extra.config.provider.CacheConfigProviderImpl;
 import org.cache2k.extra.config.generic.ConfigurationException;
 import org.cache2k.testing.category.FastTests;
 import org.hamcrest.CoreMatchers;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -221,14 +222,17 @@ public class IntegrationTest {
     c.close();
   }
 
-  @Test(expected = ConfigurationException.class)
+  /**
+   * As of version 2.0 we allow duplicate listeners to simplify the configuration
+   */
+  @Test @Ignore
   public void duplicateListener() {
-    Cache c =
+    Cache2kBuilder<String, String> builder =
       new Cache2kBuilder<String, String>() { }
         .manager(CacheManager.getInstance("specialCases"))
-        .name("duplicateListener")
-        .build();
-    c.close();
+        .name("duplicateListener");
+    Cache<String, String> cache = builder.build();
+    assertEquals(2, builder.config().getListeners().size());
   }
 
   @Test(expected = ConfigurationException.class)

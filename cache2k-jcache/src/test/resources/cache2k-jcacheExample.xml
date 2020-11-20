@@ -37,6 +37,7 @@
          -->
         <section>
           <type>org.cache2k.jcache.JCacheConfig</type>
+          <!-- FIXME: parameters?! -->
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </section>
       </sections>
@@ -70,16 +71,16 @@
     </cache>
     <cache>
       <name>withCache2kLoaderWithReadThrough</name>
-      <sections>
-        <jcache>
-          <enableReadThrough>true</enableReadThrough>
-        </jcache>
-      </sections>
       <loader>
         <byClassName>
           <className>org.cache2k.jcache.provider.ToStringLoader</className>
         </byClassName>
       </loader>
+      <sections>
+        <jcache>
+          <enableReadThrough>true</enableReadThrough>
+        </jcache>
+      </sections>
     </cache>
   </caches>
 

@@ -20,16 +20,18 @@ package org.cache2k.testsuite.api;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.CustomizationSupplierByClassName;
+import org.cache2k.config.ToggleFeature;
 import org.cache2k.event.CacheEntryOperationListener;
 import org.cache2k.testing.category.FastTests;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -41,7 +43,8 @@ public class Cache2kConfigurationTest {
 
   @Test
   public void checkListenerSetters() {
-    CustomizationSupplier sup = new CustomizationSupplierByClassName<CacheEntryOperationListener>("xy");
+    CustomizationSupplier sup =
+      new CustomizationSupplierByClassName<CacheEntryOperationListener>("xy");
     Cache2kConfig cfg = new Cache2kConfig();
     cfg.setAsyncListeners(Collections.singletonList(sup));
     assertEquals(1, cfg.getAsyncListeners().size());
@@ -50,9 +53,29 @@ public class Cache2kConfigurationTest {
     cfg.setLifecycleListeners(Collections.singletonList(sup));
     assertEquals(1, cfg.getLifecycleListeners().size());
     assertTrue(cfg.getLifecycleListeners().iterator().hasNext());
-    assertThat(
-      cfg.getLifecycleListeners().toString(),
-      CoreMatchers.containsString("DefaultCustomizationCollection"));
+  }
+
+  @Test
+  public void toggleFeature() {
+    Cache2kBuilder<Integer, Integer> b =
+      Cache2kBuilder.of(Integer.class, Integer.class);
+    ToggleFeature.enable(b, DummyToggleFeature.class);
+    assertTrue(ToggleFeature.isEnabled(b, DummyToggleFeature.class));
+    ToggleFeature.extract(b, DummyToggleFeature.class).setEnabled(false);
+    assertFalse(ToggleFeature.isEnabled(b, DummyToggleFeature.class));
+    ToggleFeature.enable(b, DummyToggleFeature.class);
+    assertTrue(ToggleFeature.isEnabled(b, DummyToggleFeature.class));
+    DummyToggleFeature other = new DummyToggleFeature();
+    b.config().getFeatures().add(other);
+    assertNotSame(other, ToggleFeature.extract(b, DummyToggleFeature.class));
+  }
+
+  @Test
+  public void testEternalConfig() {
+    assertTrue("max val means eternal",
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .expireAfterWrite(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        .config().getExpireAfterWrite().equals(Cache2kConfig.EXPIRY_ETERNAL));
   }
 
 }

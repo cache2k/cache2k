@@ -24,6 +24,7 @@ import org.cache2k.Cache2kBuilder;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Base class for a cache feature that can be enabled or disables and
@@ -49,7 +50,9 @@ public abstract class ToggleFeature implements SingleFeature {
                                                    Class<T> featureType) {
     try {
       T feature = featureType.getConstructor().newInstance();
-      builder.config().getFeatures().add(feature);
+      Set<Feature> features = builder.config().getFeatures();
+      features.remove(feature);
+      features.add(feature);
       return feature;
     } catch (Exception e) {
       throw new LinkageError("Instantiation failed", e);
@@ -96,10 +99,15 @@ public abstract class ToggleFeature implements SingleFeature {
     return f != null ? f.isEnabled() : false;
   }
 
+  /**
+   * Feature is enabled by default. We the enabled field is intended for
+   * usage with an external configuration, to disable a feature
+   * which was enabled globally e.g. {@code <enabled>false</enabled>}
+   */
   private boolean enabled = true;
 
   /**
-   * Check whether enabled and call implementations' doEnlist method.
+   * Checks whether enabled and call implementations doEnlist method.
    */
   @Override
   public final void enlist(CacheBuildContext<?, ?> ctx) {
@@ -126,7 +134,8 @@ public abstract class ToggleFeature implements SingleFeature {
   }
 
   /**
-   * Identical if its the same implementation class.
+   * Identical if its the same implementation class. Relevant for
+   * keeping only one feature within the configuration.
    */
   @Override
   public final boolean equals(@Nullable Object o) {
