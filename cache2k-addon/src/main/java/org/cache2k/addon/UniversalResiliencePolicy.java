@@ -26,8 +26,7 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
 /**
- * Resilience policy which implements a exponential back off and randomization
- * of the retry intervals.
+ * Resilience policy which implements an exponential back off of the retry intervals.
  *
  * @author Jens Wilke
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">
@@ -35,9 +34,10 @@ import org.cache2k.io.ResiliencePolicy;
  */
 public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
+  @SuppressWarnings("rawtypes")
   public static final UniversalResilienceSupplier SUPPLIER = new UniversalResilienceSupplier();
-  public static final <K, V> UniversalResilienceSupplier<K, V> supplier() { return SUPPLIER; }
-  public static final <K, V> UniversalResilienceSupplier<K, V> enable(Cache2kBuilder<K, V> builder) {
+  public static <K, V> UniversalResilienceSupplier<K, V> supplier() { return SUPPLIER; }
+  public static <K, V> UniversalResilienceSupplier<K, V> enable(Cache2kBuilder<K, V> builder) {
     builder.config().setResiliencePolicy(supplier());
     return supplier();
   }
@@ -62,7 +62,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
    * Construct universal resilience policy. Duration and interval values are in milliseconds.
    *
    * @param resilienceDuration maximum duration in which exceptions are suppressed if a previous
-   *                           load was succesful
+   *                           load was successful
    * @param maxRetryInterval maximum value for retryInterval
    * @param retryInterval start value of retry interval
    * @param multiplier multiplier for retry interval in case of consecutive load exceptions

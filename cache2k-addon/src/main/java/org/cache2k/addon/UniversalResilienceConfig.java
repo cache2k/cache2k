@@ -20,7 +20,6 @@ package org.cache2k.addon;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.ConfigSection;
@@ -29,7 +28,10 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Configuration parameters for the universal resilience policy.
+ *
  * @author Jens Wilke
+ * @see UniversalResiliencePolicy
  */
 public class UniversalResilienceConfig
   implements ConfigSection<UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
