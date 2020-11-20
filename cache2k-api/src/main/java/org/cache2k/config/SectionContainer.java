@@ -22,7 +22,6 @@ package org.cache2k.config;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,7 +36,7 @@ import java.util.Map;
  * @see ConfigWithSections
  */
 public class SectionContainer extends AbstractCollection<ConfigSection>
-  implements Collection<ConfigSection>, Serializable {
+  implements Collection<ConfigSection> {
 
   private final Map<Class<? extends ConfigSection>, ConfigSection> class2section = new HashMap<>();
 

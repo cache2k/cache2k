@@ -78,7 +78,7 @@ public class CacheManagerImpl extends CacheManager {
           .warn("Error loading service '" + service + "'", ex);
       }
     }
-    final S[] a = (S[]) Array.newInstance(service, li.size());
+    S[] a = (S[]) Array.newInstance(service, li.size());
     li.toArray(a);
     return new Iterable<S>() {
       public Iterator<S> iterator() {
@@ -99,13 +99,13 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   private final Object lock = new Object();
-  private Log log;
-  private String name;
-  private Map<String, InternalCache> cacheNames = new HashMap<String, InternalCache>();
+  private final Log log;
+  private final String name;
+  private Map<String, Cache<?, ?>> cacheNames = new HashMap<>();
   private final Properties properties = new Properties();
   private final ClassLoader classLoader;
-  private boolean defaultManager;
-  private Cache2kCoreProviderImpl provider;
+  private final boolean defaultManager;
+  private final Cache2kCoreProviderImpl provider;
   private boolean closing;
 
   public CacheManagerImpl(Cache2kCoreProviderImpl provider, ClassLoader cl, String name,
@@ -171,7 +171,7 @@ public class CacheManagerImpl extends CacheManager {
    * @throws IllegalStateException if cache manager was closed or is closing
    * @throws IllegalStateException if cache already created
    */
-  public String newCache(InternalCache c, String requestedName) {
+  public String newCache(Cache<?, ?> c, String requestedName) {
     synchronized (lock) {
       checkClosed();
       String name = requestedName;
@@ -185,7 +185,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   /** Called from the cache during close() */
-  public void cacheClosed(Cache c) {
+  public void cacheClosed(Cache<?, ?> c) {
     synchronized (lock) {
       cacheNames.remove(c.getName());
     }
@@ -249,7 +249,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public <K, V> Cache<K, V> createCache(final Cache2kConfig<K, V> cfg) {
+  public <K, V> Cache<K, V> createCache(Cache2kConfig<K, V> cfg) {
     return Cache2kBuilder.of(cfg).manager(this).build();
   }
 

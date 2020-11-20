@@ -128,6 +128,8 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   private @Nullable Collection<CustomizationSupplier<CacheLifecycleListener>> lifecycleListeners;
   private @Nullable Set<Feature> features;
   private @Nullable SectionContainer sections;
+  private @Nullable CacheWrapper traceCacheWrapper;
+  private @Nullable CacheWrapper cacheWrapper;
 
   /**
    * Construct a config instance setting the type parameters and returning a
@@ -673,6 +675,29 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    */
   public void setDisableMonitoring(boolean disableMonitoring) {
     this.disableMonitoring = disableMonitoring;
+  }
+
+  public @Nullable CacheWrapper getTraceCacheWrapper() {
+    return traceCacheWrapper;
+  }
+
+  /**
+   * @see CacheWrapper
+   */
+  public void setTraceCacheWrapper(@Nullable CacheWrapper traceCacheWrapper) {
+    this.traceCacheWrapper = traceCacheWrapper;
+  }
+
+  @Nullable
+  public CacheWrapper getCacheWrapper() {
+    return cacheWrapper;
+  }
+
+  /**
+   * @see CacheWrapper
+   */
+  public void setCacheWrapper(@Nullable CacheWrapper cacheWrapper) {
+    this.cacheWrapper = cacheWrapper;
   }
 
   private @Nullable Duration durationCheckAndSanitize(@Nullable Duration v) {

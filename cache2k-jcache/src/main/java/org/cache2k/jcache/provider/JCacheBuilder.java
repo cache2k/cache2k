@@ -31,7 +31,6 @@ import org.cache2k.event.CacheClosedListener;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.ExceptionPropagator;
-import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.jcache.ExtendedConfiguration;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfig;
@@ -385,7 +384,7 @@ public class JCacheBuilder<K, V> {
       new JCacheAdapter<K, V>(
         manager,
         new InternalCache2kBuilder<K, V>(
-          cache2kConfig, manager.getCache2kManager()).buildAsIs(),
+          cache2kConfig, manager.getCache2kManager()).buildWithoutExternalConfig(),
         keyType.getType(), valueType.getType(),
         config.isStoreByValue(),
         config.isReadThrough() || extraConfiguration.isEnableReadThrough(),

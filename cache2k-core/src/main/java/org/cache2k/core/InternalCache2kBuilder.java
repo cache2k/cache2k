@@ -196,14 +196,14 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
 
   public Cache<K, V> build() {
     Cache2kCoreProviderImpl.CACHE_CONFIGURATION_PROVIDER.augmentConfig(manager, config);
-    return buildAsIs();
+    return buildWithoutExternalConfig();
   }
 
   /**
    * Build without applying external configuration. Needed for JCache.
    */
   @SuppressWarnings({"unchecked"})
-  public Cache<K, V> buildAsIs() {
+  public Cache<K, V> buildWithoutExternalConfig() {
     if (config.getValueType() == null) {
       config.setValueType((CacheType<V>) CacheType.of(Object.class));
     }
@@ -218,7 +218,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       config.getFeatures().stream().forEach(x -> x.enlist(this));
     }
     checkConfiguration();
-    InternalCache<K, V> cache;
+    Cache<K, V> cache;
     Class<?> keyType = config.getKeyType().getType();
     if (keyType == Integer.class) {
       cache = (InternalCache<K, V>) new IntHeapCache<V>();
@@ -240,7 +240,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       throw new IllegalArgumentException("refresh ahead enabled, but no loader defined");
     }
 
-    boolean wrap =
+    boolean wiredCache =
       config.getWeigher() != null ||
       config.hasListeners() ||
       config.hasAsyncListeners() ||
@@ -248,15 +248,20 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       config.getAsyncLoader() != null;
 
     WiredCache<K, V> wc = null;
-    if (wrap) {
+    if (wiredCache) {
       wc = new WiredCache<K, V>();
       wc.heapCache = bc;
       cache = wc;
     }
-
+    if (config.getTraceCacheWrapper() != null) {
+      cache = config.getTraceCacheWrapper().wrap(this, cache);
+    }
+    if (config.getCacheWrapper() != null) {
+      cache = config.getCacheWrapper().wrap(this, cache);
+    }
     String name = manager.newCache(cache, bc.getName());
     bc.setName(name);
-    if (wrap) {
+    if (wiredCache) {
       wc.loader = bc.loader;
       wc.writer = createCustomization(config.getWriter());
       wc.asyncLoader = createCustomization(config.getAsyncLoader());
