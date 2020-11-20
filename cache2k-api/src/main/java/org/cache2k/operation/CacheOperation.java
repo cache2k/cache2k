@@ -25,7 +25,7 @@ import org.cache2k.Cache;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Commands to influence the cache operation.
+ * Commands to influence the cache operation in general.
  *
  * <p>All commands return a {@link CompletableFuture}. A cache client may choose
  * to wait for the operation to complete or not. As of version 2.0 all operations
