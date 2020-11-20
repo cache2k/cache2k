@@ -51,13 +51,13 @@ public class CacheConfigProviderImpl
   extends ConfigurationProvider implements CacheConfigProvider {
 
   private static final String DEFAULT_CONFIGURATION_FILE = "cache2k.xml";
-  private static final Map<String, String> VERSION_1_2_SECTION_TYPES = new HashMap<String, String>() {
-    {
+
+  private static final Map<String, String> VERSION_1_2_SECTION_TYPES =
+    new HashMap<String, String>() {{
       put("jcache", "org.cache2k.jcache.JCacheConfig");
       put("byClassName", CustomizationSupplierByClassName.class.getName());
       put("resilience", "org.cache2k.addon.UniversalResilienceConfig");
-    }
-  };
+    }};
 
   private final TokenizerFactory tokenizerFactory = new FlexibleXmlTokenizerFactory();
   private volatile Map<CacheManager, ConfigurationContext> manager2defaultConfig =
