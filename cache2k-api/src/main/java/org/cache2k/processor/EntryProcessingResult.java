@@ -36,12 +36,12 @@ public interface EntryProcessingResult<@Nullable R> {
    *
    * @throws EntryProcessingException if an exception occurred during processing.
    */
-  R getResult();
+  @Nullable R getResult();
 
   /**
    * Original exception of entry processing or {@code null} if no exception occurred.
    * If this is {@code null}, {@link #getResult} will throw no exception.
    */
-  Throwable getException();
+  @Nullable Throwable getException();
 
 }
