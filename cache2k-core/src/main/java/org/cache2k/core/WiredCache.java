@@ -48,7 +48,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -543,7 +542,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     CacheEntry<K, V> currentEntry = heapCache.returnCacheEntry(e);
     if (syncEntryEvictedListeners != null) {
       for (CacheEntryEvictedListener<K, V> l : syncEntryEvictedListeners) {
-        l.onEntryEvicted(this, currentEntry);
+        try {
+          l.onEntryEvicted(this, currentEntry);
+        } catch (Throwable t) {
+          getLog().warn("Exception from eviction listener", t);
+        }
       }
     }
   }

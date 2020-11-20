@@ -38,6 +38,6 @@ public interface CacheEntryEvictedListener<K, V> extends CacheEntryOperationList
    * @param cache The cache that generated the event
    * @param entry Entry containing the recent data
    */
-  void onEntryEvicted(Cache<K, V> cache, CacheEntry<K, V> entry);
+  void onEntryEvicted(Cache<K, V> cache, CacheEntry<K, V> entry) throws Exception;
 
 }

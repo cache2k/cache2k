@@ -47,6 +47,6 @@ public interface CacheEntryUpdatedListener<K, V> extends CacheEntryOperationList
    *                     call of this method. The object value may become invalid afterwards.
    */
   void onEntryUpdated(
-    Cache<K, V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> newEntry);
+    Cache<K, V> cache, CacheEntry<K, V> currentEntry, CacheEntry<K, V> newEntry) throws Exception;
 
 }

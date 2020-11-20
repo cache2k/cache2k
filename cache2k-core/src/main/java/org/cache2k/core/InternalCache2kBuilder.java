@@ -422,7 +422,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         }
 
         @Override
-        public void execute() {
+        public void execute() throws Exception {
           listener.onEntryCreated(c, e);
         }
       });
@@ -450,7 +450,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         }
 
         @Override
-        public void execute() {
+        public void execute() throws Exception {
           listener.onEntryUpdated(cache, currentEntry, newEntry);
         }
       });
@@ -477,7 +477,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         }
 
         @Override
-        public void execute() {
+        public void execute() throws Exception {
           listener.onEntryRemoved(c, e);
         }
       });
@@ -503,7 +503,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         }
 
         @Override
-        public void execute() {
+        public void execute() throws Exception {
           listener.onEntryExpired(c, e);
         }
       });
@@ -529,7 +529,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         }
 
         @Override
-        public void execute() {
+        public void execute() throws Exception {
           listener.onEntryEvicted(c, e);
         }
       });

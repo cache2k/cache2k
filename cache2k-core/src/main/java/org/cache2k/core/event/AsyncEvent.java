@@ -27,6 +27,6 @@ public abstract class AsyncEvent<K> {
 
   public abstract K getKey();
 
-  public abstract void execute();
+  public abstract void execute() throws Exception;
 
 }
