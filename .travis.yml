@@ -8,3 +8,4 @@ cache:
 
 script:
   - ./build.sh
+

@@ -5,7 +5,7 @@ set -ex
 
 java -version
 mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-( sleep $(( 60 * 1 )); kill -3 `jps -q` ) &
+( sleep $(( 60 * 9 )); kill -3 `jps -q` ) &
 threadDumpPid=$!
 mvn test -B &
 testPid=$!
