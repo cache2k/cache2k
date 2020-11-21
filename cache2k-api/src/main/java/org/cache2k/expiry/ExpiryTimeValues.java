@@ -49,25 +49,16 @@ public interface ExpiryTimeValues {
   long NEUTRAL = Cache2kConfig.UNSET_LONG;
 
   /**
-   * @deprecated Will be removed in version 2.0. The naming is misleading when refreshing is
-   * turned on. A value of 0 should only mean that the current entry value is expired.
-   * Use {@link #NOW}
-   */
-  @Deprecated
-  long NO_CACHE = 0;
-
-  /**
-   * The value expires immediately.
+   * The value expires immediately.  An immediate load is triggered if
+   * {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
    */
   long NOW = 0;
 
   /**
-   * The value expires immediately. An immediate load is triggered if
-   * {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
-   *
-   * <p>Will be removed in version 2.0. Maybe we add an explicit Cache.refresh + Cache.refreshAll
+   * The value expires immediately. In contrast to {@link #NOW} no refresh is triggered.
+   * This can be used in case of caching should be switched off completely.
    */
-  long REFRESH = 1;
+  long NO_CACHE = -2;
 
   /**
    * Return value signalling to keep the value forever in the cache, switching off expiry.

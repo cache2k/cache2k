@@ -985,7 +985,7 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
+          return NO_CACHE;
         }
       })
       .loader(countingLoader)
@@ -1020,7 +1020,7 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
+          return NO_CACHE;
         }
       })
       .loader(countingLoader)
@@ -1056,7 +1056,7 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long calculateExpiryTime(Integer key, Integer value, long loadTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
+          return NO_CACHE;
         }
       })
       .loader(countingLoader)
@@ -1209,12 +1209,12 @@ public class ExpiryTest extends TestingBase {
    * Refreshing cache, expire with no cache => item not visible any more, loader not called
    */
   @Test
-  public void manualExpire_refresh_now_gone() {
+  public void manualExpire_refresh_NO_CACHE_gone() {
     new ManualExpireFixture() {
       @Override
       void test() {
         cache.put(1, 2);
-        cache.expireAt(1, ExpiryTimeValues.NOW);
+        cache.expireAt(1, ExpiryTimeValues.NO_CACHE);
         assertFalse(cache.containsKey(1));
         assertEquals(0, count.get());
         assertEquals(0, getInfo().getSize());
@@ -1245,13 +1245,13 @@ public class ExpiryTest extends TestingBase {
    * After load is complete it is invisible but stays in the cache.
    */
   @Test
-  public void manualExpire_refresh_refreshImmediately() throws Exception {
+  public void manualExpire_NOW_refreshImmediately() throws Exception {
     new ManualExpireFixture() {
       @Override
       void test() throws Exception {
         cache.put(1, 2);
         sem.acquire();
-        cache.expireAt(1, ExpiryTimeValues.REFRESH);
+        cache.mutate(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
         likeRefreshImmediately();
       }
     }.test();
@@ -1262,7 +1262,7 @@ public class ExpiryTest extends TestingBase {
    * needed to execute in parallel.
    */
   @Test
-  public void manualExpire_refresh_refreshImmediately_async() throws Exception {
+  public void manualExpire_NOW_refreshImmediately_async() throws Exception {
     new ManualExpireFixture() {
       @Override
       protected void addLoader(Cache2kBuilder<Integer, Integer> b) {
@@ -1289,7 +1289,7 @@ public class ExpiryTest extends TestingBase {
       void test() throws Exception {
         cache.put(1, 2);
         sem.acquire();
-        cache.expireAt(1, ExpiryTimeValues.REFRESH);
+        cache.expireAt(1, ExpiryTimeValues.NOW);
         likeRefreshImmediately();
       }
     }.test();
@@ -1352,7 +1352,7 @@ public class ExpiryTest extends TestingBase {
   }
 
   @Test
-  public void manualExpire_refreshAhead_sharp_expireAt0_gone() {
+  public void manualExpire_refreshAhead_expireAt_NO_CACHE_gone() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
@@ -1383,7 +1383,7 @@ public class ExpiryTest extends TestingBase {
         assertEquals("in cache if within delta time", 1, getInfo().getSize());
       }
     });
-    c.expireAt(1, ExpiryTimeValues.NOW);
+    c.expireAt(1, ExpiryTimeValues.NO_CACHE);
     assertEquals("empty after expired immediately", 0, getInfo().getSize());
   }
 
@@ -1425,7 +1425,7 @@ public class ExpiryTest extends TestingBase {
           assertFalse("Keeps invisible, when expiry extended", c.containsKey(1));
           assertEquals(1, getInfo().getSize());
           assertEquals(1, getInfo().getRefreshCount());
-          c.expireAt(1, ExpiryTimeValues.REFRESH);
+          c.expireAt(1, ExpiryTimeValues.NOW);
           assertEquals(1, getInfo().getSize());
         }
       }).concludesMaybe(new Runnable() {

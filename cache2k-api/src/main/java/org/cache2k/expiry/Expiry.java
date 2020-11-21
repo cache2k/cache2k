@@ -23,7 +23,7 @@ package org.cache2k.expiry;
 import org.cache2k.io.ResiliencePolicy;
 
 /**
- * Utility methods and constants to use inside expire policy and friends.
+ * Utility methods and constants to use inside expire policy or resilience policy.
  *
  * @author Jens Wilke
  * @see ExpiryPolicy
@@ -53,7 +53,7 @@ public class Expiry implements ExpiryTimeValues {
   /**
    * Helper to calculate the next expiry out of two expiry times that
    * may be up next. Return the time value that is closest or equal to
-   * the current time. Time values in the past are ignored. If all times
+   * the load time. Time values in the past are ignored. If all times
    * are in the past, returns {@link #ETERNAL}.
    *
    * @param loadTime the current time in millis since epoch

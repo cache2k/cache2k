@@ -26,7 +26,6 @@ import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.RestartException;
 
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 /**
@@ -485,13 +484,12 @@ public class Operations<K, V> {
 
   public static class NeedsLockRestartException extends RestartException { }
 
-  public Semantic<K, V, Void> expire(K key, long t) {
+  public Semantic<K, V, Void> expire(K key, long time) {
     return new Semantic.MightUpdate<K, V, Void>() {
 
       @Override
       public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-        if (t == ExpiryTimeValues.NOW ||
-          t == ExpiryTimeValues.REFRESH) {
+        if (time == ExpiryTimeValues.NOW || time == ExpiryTimeValues.NO_CACHE) {
           c.isDataFreshOrRefreshing();
           c.wantMutation();
         } else if (c.isDataFresh()) {
@@ -503,7 +501,7 @@ public class Operations<K, V> {
 
       @Override
       public void mutate(Progress c, ExaminationEntry e) {
-        c.expire(t);
+        c.expire(time);
       }
     };
   }
@@ -523,7 +521,7 @@ public class Operations<K, V> {
 
     @Override
     public void mutate(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-      c.expire(ExpiryTimeValues.NOW);
+      c.expire(ExpiryTimeValues.NO_CACHE);
     }
   }
 

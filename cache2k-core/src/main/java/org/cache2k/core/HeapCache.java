@@ -225,7 +225,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   public final boolean isNullValuePermitted() { return !isRejectNullValues(); }
 
-  protected final boolean isRefreshAhead() { return (featureBits & BACKGROUND_REFRESH) > 0; }
+  public final boolean isRefreshAhead() { return (featureBits & BACKGROUND_REFRESH) > 0; }
 
   /**
    * No need to update the entry last modification time.

@@ -923,7 +923,7 @@ public class SlowExpiryTest extends TestingBase {
           if (currentEntry != null) {
             return ETERNAL;
           }
-          return REFRESH;
+          return NOW;
         }
       })
       .loader(loader)
@@ -1135,13 +1135,13 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void expireAt_now_doesRefresh() {
+  public void expireAt_NOW_doesRefresh() {
     expireAt_x_doesRefresh(millis());
   }
 
   @Test
-  public void expireAt_refresh_doesRefresh() {
-    expireAt_x_doesRefresh(ExpiryTimeValues.REFRESH);
+  public void expireAt_NOW0_doesRefresh() {
+    expireAt_x_doesRefresh(ExpiryTimeValues.NOW);
   }
 
   @Test
@@ -1177,7 +1177,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void manualExpire_now_doesNotRefresh() {
+  public void manualExpire_NO_CACHE_doesNotRefresh() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
@@ -1189,12 +1189,31 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 2);
-    c.expireAt(1, 0);
+    c.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NO_CACHE));
     sleep(0);
     sleep(0);
     sleep(0);
-    assertNull("no refresh (v1.6)", c.peek(1));
-    assertEquals("no refresh (v1.6)", 0, getInfo().getRefreshCount());
+    assertNull("no refresh (v2.0)", c.peek(1));
+    assertEquals("no refresh (v2.0)", 0, getInfo().getRefreshCount());
+  }
+
+  @Test
+  public void manualExpire_NOW_doesRefresh() {
+    AtomicInteger counter = new AtomicInteger();
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
+      .refreshAhead(true)
+      .loader(new CacheLoader<Integer, Integer>() {
+        @Override
+        public Integer load(Integer key) throws Exception {
+          counter.incrementAndGet();
+          return 4711;
+        }
+      })
+      .build();
+    c.put(1, 2);
+    c.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
+    await(() -> counter.get() > 0);
   }
 
   /**
