@@ -20,6 +20,8 @@ package org.cache2k.jcache.tests;
  * #L%
  */
 
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.jsr107.tck.testutil.ExcludeListExcluder;
 import static org.junit.Assert.*;
 import org.junit.Rule;
@@ -35,9 +37,6 @@ import javax.cache.expiry.Duration;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
-import javax.cache.processor.EntryProcessor;
-import javax.cache.processor.EntryProcessorException;
-import javax.cache.processor.MutableEntry;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -58,25 +57,32 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
 
   @Override
   protected MutableConfiguration<Integer, String> newMutableConfiguration() {
+    boolean useCache2kConfigurationToSetLoaderThreads = true;
+    if (useCache2kConfigurationToSetLoaderThreads) {
+      ExtendedMutableConfiguration<Integer, String> cfg = new ExtendedMutableConfiguration<>();
+      cfg.setCache2kConfiguration(new Cache2kConfig<Integer, String>());
+      cfg.setTypes(Integer.class, String.class);
+      return cfg;
+    }
     return new MutableConfiguration<Integer, String>().setTypes(Integer.class, String.class);
   }
 
-  private CountDownLatch loaderCalled = new CountDownLatch(1);
-  private CountDownLatch releaseLoader = new CountDownLatch(1);
-  private AtomicInteger expireListenerCalled = new AtomicInteger();
-  private AtomicInteger createdListenerCalled = new AtomicInteger();
+  private final CountDownLatch loaderCalled = new CountDownLatch(1);
+  private final CountDownLatch releaseLoader = new CountDownLatch(1);
+  private final AtomicInteger expireListenerCalled = new AtomicInteger();
+  private final AtomicInteger createdListenerCalled = new AtomicInteger();
   /**
    * Entry might expire before the entry operation load or invoke gets started.
    */
-  private AtomicInteger listenerCallBeforeOp = new AtomicInteger();
+  private final AtomicInteger listenerCallBeforeOp = new AtomicInteger();
 
   int deltaListenerCall() {
     return expireListenerCalled.get() - listenerCallBeforeOp.get();
   }
 
-  private CacheLoader<Integer, String> loader = new CacheLoader<Integer, String>() {
+  private final CacheLoader<Integer, String> loader = new CacheLoader<Integer, String>() {
     @Override
-    public String load(final Integer key) throws CacheLoaderException {
+    public String load(Integer key) throws CacheLoaderException {
       listenerCallBeforeOp.set(expireListenerCalled.get());
       loaderCalled.countDown();
       try {
@@ -88,7 +94,7 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
     }
 
     @Override
-    public Map<Integer, String> loadAll(final Iterable<? extends Integer> keys) throws CacheLoaderException {
+    public Map<Integer, String> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
       throw new UnsupportedOperationException();
     }
   };
@@ -99,16 +105,23 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
     cfg.expiry(ModifiedExpiryPolicy.factoryOf(new Duration(TimeUnit.MILLISECONDS, expireAfterWrite)));
     cfg.syncListener(new CacheEntryExpiredListener<Integer, String>() {
       @Override
-      public void onExpired(final Iterable<CacheEntryEvent<? extends Integer, ? extends String>> events) throws CacheEntryListenerException {
+      public void onExpired(Iterable<CacheEntryEvent<? extends Integer, ? extends String>> events) throws CacheEntryListenerException {
         expireListenerCalled.incrementAndGet();
       }
     });
     cfg.syncListener(new CacheEntryCreatedListener<Integer, String>() {
       @Override
-      public void onCreated(final Iterable<CacheEntryEvent<? extends Integer, ? extends String>> cacheEntryEvents) throws CacheEntryListenerException {
+      public void onCreated(Iterable<CacheEntryEvent<? extends Integer, ? extends String>> cacheEntryEvents) throws CacheEntryListenerException {
         createdListenerCalled.incrementAndGet();
       }
     });
+    // sharp expiry off by default when cache2k configuration is present,
+    // but on with pure JCache mode. Switch back on for the tests here.
+    cfg.cache2kBuilder(b -> b
+      .timerLag(expireAfterWrite * 2, TimeUnit.MILLISECONDS)
+      .sharpExpiry(true)
+      .loaderThreadCount(10)
+    );
   }
 
   /**
@@ -119,7 +132,7 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
     cache.loadAll(keys(1), false, null);
     loaderCalled.await();
     releaseLoader.countDown();
-    while(expireListenerCalled.get() == 0) {}
+    while (expireListenerCalled.get() == 0) { }
   }
 
   /**
@@ -127,6 +140,8 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
    * At least a second load triggered by a load request, even if the
    * loader is currently started. Corner case: Since replaceExistingValues is false
    * the cache might decide not to issue another load on the same key.
+   *
+   * <p>If not enough loader threads are available this deadlocks.
    */
   @Test
   public void testLoaderCalledNotBlocking() throws Exception {
@@ -144,8 +159,8 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
   @Test
   public void testExpireListenerCalled() {
     cache.put(1, "hello");
-    while(cache.containsKey(1)) {}
-    while(expireListenerCalled.get() == 0) {}
+    while (cache.containsKey(1)) { }
+    while (expireListenerCalled.get() == 0) { }
   }
 
   /**
@@ -170,44 +185,57 @@ public class ConcurrentExpiryTest extends AdditionalTestSupport<Integer, String>
   @Test
   public void testExpireAnywayWhileReadInvoke() throws Exception {
     cache.put(1, "hello");
-    cache.invoke(1, new EntryProcessor<Integer, String, Object>() {
-      @Override
-      public Object process(final MutableEntry<Integer, String> entry, final Object... arguments)
-        throws EntryProcessorException {
-        entry.getValue();
-        while(expireListenerCalled.get() > 0);
-        return null;
-      }
+    cache.invoke(1, (entry, arguments) -> {
+      entry.getValue();
+      while (expireListenerCalled.get() > 0);
+      return null;
     });
   }
 
   /**
-   * cache2k: Entry expires during invoke, because the EntryProcessor
-   * is invoked during the examine phase and not the mutate phase of
-   * the entry processing. This may change. Move this to cache2k tests.
+   * cache2k: Entry expires during invoke, because the processing in invoke takes
+   * longer than the expiry time. invoke finishes with removing the entry and
+   * sending the expiry events. In other words, the expiry processing is done
+   * during the cache operation and not later by a timer.
    */
   @Test
-  public void testExpireWhileInvoke() throws Exception {
+  public void expireWhileInvoke() {
     cache.put(1, "hello");
-    cache.invoke(1, new EntryProcessor<Integer, String, Object>() {
-      @Override
-      public Object process(final MutableEntry<Integer, String> entry, final Object... arguments)
-        throws EntryProcessorException {
-        entry.setValue(entry.getValue());
-        // entry is locked now. current semantics of cache2k
-        // run through this twice
-        listenerCallBeforeOp.set(expireListenerCalled.get());
-        try {
-          Thread.sleep(expireAfterWrite * 3);
-        } catch (InterruptedException ex) {
-          throw new EntryProcessorException(ex);
-        }
-        entry.setValue("xy");
-        assertTrue("no expiry called yet", deltaListenerCall() == 0);
-        return null;
-      }
+    cache.invoke(1, (entry, arguments) -> {
+      listenerCallBeforeOp.set(expireListenerCalled.get());
+      // entry.setValue(entry.getValue());
+      entry.exists();
+      entry.setValue("foo");
+      // entry is locked now.
+      sleep(expireAfterWrite + 1);
+      assertTrue("no expiry called yet", deltaListenerCall() == 0);
+      return null;
     });
     assertEquals("Expired while invoke", 1, deltaListenerCall());
+  }
+
+  @Test
+  public void expireBeforeInvoke() {
+    cache.put(1, "hello");
+    sleep(expireAfterWrite + 1);
+    // we may or may not get notified about expiry
+    cache.invoke(1, (entry, arguments) -> {
+      // entry.setValue(entry.getValue());
+      entry.exists();
+      entry.setValue("foo");
+      // entry is locked now.
+      assertEquals("Expired before entry mutation", 1, deltaListenerCall());
+      return null;
+    });
+  }
+
+  public void sleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(ex);
+    }
   }
 
 }

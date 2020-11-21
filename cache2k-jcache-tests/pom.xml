@@ -83,7 +83,8 @@
           <threadCount>1</threadCount>
         </configuration>
       </plugin>
-      <!-- The original TCK code is only compatible to Java 7 -->
+      <!-- The original TCK code is only compatible to Java 7
+           keep 1.7 and separate new stuff?
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -92,6 +93,7 @@
           <target>1.7</target>
         </configuration>
       </plugin>
+      -->
     </plugins>
   </build>
 

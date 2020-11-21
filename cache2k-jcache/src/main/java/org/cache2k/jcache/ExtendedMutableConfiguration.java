@@ -60,7 +60,7 @@ public final class ExtendedMutableConfiguration<K, V>
     return cache2kConfiguration;
   }
 
-  public void setCache2kConfiguration(final Cache2kConfig<K, V> cache2kConfiguration) {
+  public void setCache2kConfiguration(Cache2kConfig<K, V> cache2kConfiguration) {
     this.cache2kConfiguration = cache2kConfiguration;
   }
 

@@ -20,6 +20,8 @@ package org.cache2k.jcache.tests;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.jsr107.tck.event.CacheEntryListenerClient;
 import org.jsr107.tck.event.CacheEntryListenerServer;
 import org.jsr107.tck.integration.CacheLoaderClient;
@@ -36,6 +38,7 @@ import javax.cache.integration.CacheLoader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author Jens Wilke
@@ -124,6 +127,10 @@ public class ConfigurationBuilder<K, V> implements AutoCloseable {
     });
     closable.add(server);
     return server;
+  }
+
+  public void cache2kBuilder(Consumer<Cache2kBuilder<K, V>> func) {
+    func.accept(((ExtendedMutableConfiguration) config).getCache2kConfiguration().builder());
   }
 
   @Override
