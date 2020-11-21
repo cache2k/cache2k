@@ -1,6 +1,6 @@
 #!/bin/bash
 
-trap 'kill $(jobs -rp) 2>/dev/null' EXIT
+trap 'kill $(jobs -rp) || true 2>/dev/null' EXIT
 set -ex
 
 printThreadDumps() {
@@ -23,8 +23,8 @@ mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   echo "TIMEOUT"
   exit 1;
 ) &
-threadDumpPid=$!
 mvn test -B &
 testPid=$!
 wait $testPid
-kill $threadDumpPid
+# exit with the exit status of the maven job
+# killed via trap: kill $threadDumpPid || true
