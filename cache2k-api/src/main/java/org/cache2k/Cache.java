@@ -113,7 +113,8 @@ import java.util.function.Function;
  * @see <a href="https://cache2k.org>cache2k homepage</a>
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
-public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>, Closeable {
+public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
+  KeyValueSource<K, V>, Closeable {
 
   /**
    * A configured or generated name of this cache instance. A cache in close state will still
