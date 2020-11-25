@@ -907,13 +907,15 @@ public class SlowExpiryTest extends TestingBase {
       });
   }
 
+  /**
+   * Refresh is started immediately if loaded value expired immediately.
+   */
   @Test
   public void refresh_immediate() {
     final int key = 1;
     CountingLoader loader = new CountingLoader();
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
-      .sharpExpiry(true)
       .eternal(true)
       .keepDataAfterExpired(false)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
@@ -923,7 +925,7 @@ public class SlowExpiryTest extends TestingBase {
           if (currentEntry != null) {
             return ETERNAL;
           }
-          return NOW;
+          return 1234;
         }
       })
       .loader(loader)
@@ -932,15 +934,9 @@ public class SlowExpiryTest extends TestingBase {
     if (isWiredCache()) {
       assertEquals("loaded value always returned in WiredCache", 0, v);
     }
-    await("Refresh is done", new Condition() {
-      @Override
-      public boolean check() {
-        return c.peek(key) == 1;
-      }
-    });
+    await("Refresh is done", () -> loader.getCount() == 2);
   }
 
-  /** Entry does not go into probation if eternal */
   @Test
   public void refresh_sharp_noKeep_eternalAfterRefresh() throws Exception {
     final int key = 1;
@@ -950,86 +946,28 @@ public class SlowExpiryTest extends TestingBase {
       .sharpExpiry(true)
       .eternal(true)
       .keepDataAfterExpired(false)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          if (currentEntry != null) {
-            return ETERNAL;
-          }
-          return loadTime + TestingParameters.MINIMAL_TICK_MILLIS;
+      .expiryPolicy((key1, value, loadTime, currentEntry) -> {
+        if (currentEntry != null) {
+          return ExpiryTimeValues.ETERNAL;
         }
+        return loadTime + TestingParameters.MINIMAL_TICK_MILLIS;
       })
       .loader(loader)
       .build();
     final AtomicInteger v = new AtomicInteger();
     within(TestingParameters.MINIMAL_TICK_MILLIS)
-      .perform(new Runnable() {
-        @Override
-        public void run() {
-         v.set(c.get(key));
-        }
-      }).expectMaybe(new Runnable() {
-      @Override
-      public void run() {
-        assertEquals("loaded value expected when within time range", 0, v.get());
-      }
-    });
+      .perform(() ->
+        v.set(c.get(key)))
+      .expectMaybe(() ->
+        assertEquals("loaded value expected when within time range", 0, v.get()));
     if (isWiredCache()) {
       assertEquals("loaded value always returned in WiredCache", 0, v.get());
     }
-    await("Refresh is done", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getRefreshCount() > 0;
-      }
-    });
-    await("Entry stays", new Condition() {
-      @Override
-      public boolean check() {
-        return c.containsKey(key);
-      }
-    });
-  }
-
-  /** Entry does not go into probation if eternal */
-  @Test
-  public void refresh_sharp_keep_eternalAfterRefresh() throws Exception {
-    final int key = 1;
-    CountingLoader loader = new CountingLoader();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .refreshAhead(true)
-      .sharpExpiry(true)
-      .eternal(true)
-      .keepDataAfterExpired(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          if (currentEntry != null) {
-            return ETERNAL;
-          }
-          return loadTime + TestingParameters.MINIMAL_TICK_MILLIS;
-        }
-      })
-      .loader(loader)
-      .build();
-    int v = c.get(key);
-    if (isWiredCache()) {
-      assertEquals(0, v);
-    }
-    await("Refresh is done", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getRefreshCount() > 0;
-      }
-    });
-    await("Entry visible since eternal", new Condition() {
-      @Override
-      public boolean check() {
-        return c.containsKey(key);
-      }
-    });
+    await("Refresh is done", () -> loader.getCount() == 2);
+    assertFalse("Entry disappears", c.containsKey(key));
+    assertEquals(1, (int) c.get(key));
+    assertEquals(2, loader.getCount());
+    assertTrue("Entry appears", c.containsKey(key));
   }
 
   /**

@@ -176,13 +176,12 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     return expiryTime;
   }
 
+  /**
+   * @return true, if entry is finally expired.
+   */
   @Override
   public boolean startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
     cancelExpiryTimer(e);
-    if (nextRefreshTime == ExpiryTimeValues.ETERNAL) {
-      e.setNextRefreshTime(nextRefreshTime);
-      return false;
-    }
     if (nextRefreshTime > 0 && nextRefreshTime < Entry.EXPIRY_TIME_MIN) {
       e.setNextRefreshTime(Entry.EXPIRED);
       return true;
@@ -190,8 +189,10 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     long absTime = Math.abs(nextRefreshTime);
     e.setRefreshProbationNextRefreshTime(absTime);
     e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
-    e.setTask(new Tasks.RefreshExpireTimerTask<K, V>().to(target, e));
-    scheduleTask(absTime, e);
+    if (nextRefreshTime != ExpiryTimeValues.ETERNAL) {
+      e.setTask(new Tasks.RefreshExpireTimerTask<K, V>().to(target, e));
+      scheduleTask(absTime, e);
+    }
     return false;
   }
 

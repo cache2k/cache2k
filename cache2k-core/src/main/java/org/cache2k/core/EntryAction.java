@@ -368,6 +368,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     try {
       start();
     } catch (CacheClosedException ignore) {
+    } catch (Throwable t) {
+      heapCache.internalExceptionCnt++;
+      throw t;
     }
   }
 
