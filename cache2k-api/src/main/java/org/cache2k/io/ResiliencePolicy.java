@@ -26,6 +26,8 @@ import org.cache2k.DataAwareCustomization;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Controls how to deal with loader exceptions in a read through configuration.
  * An exception can be cached and propagated or the cache can fallback to the
@@ -61,12 +63,15 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
 
   /**
    * Called after the loader threw an exception and a previous value is available.
-   * Determines from the given parameters whether the exception should be suppressed and
-   * the cache should return the last cached content.
+   * Returns a point in time determining how long the exceptions should be suppressed, or
+   * in other words, until when the previous loaded value should be returned by the cache.
    *
    * <p>The returned value is a point in time. If the currently cached
    * content is expired, returning a future time will effectively extend the entry
    * expiry.
+   *
+   * <p>If {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} is specified, the
+   * maximum duration will be capped with the specified value.
    *
    * <p>Returning 0 or a past time means the exception should not be suppressed.
    * The cache will call immediately {@link #retryLoadAfter} to determine how long the
@@ -91,7 +96,16 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
 
   /**
    * Called after the loader threw an exception and no previous value is available or
-   * {@link #suppressExceptionUntil} returned zero.
+   * {@link #suppressExceptionUntil} returned zero. Returns a point in time until then
+   * an exception will be cached.
+   *
+   *  <p>If {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} is specified, the
+   *  maximum duration will be capped with the specified value.
+   *
+   * @return Time in epoch millis in the future when the exception should expire. A zero or
+   *         a time before the current time means the exception will not be cached and
+   *         a new load is triggered by the next {@code get()}. A {@link ExpiryPolicy#ETERNAL}
+   *         means the exception will be  cached forever.
    */
   long retryLoadAfter(K key, LoadExceptionInfo<K, V> loadExceptionInfo);
 

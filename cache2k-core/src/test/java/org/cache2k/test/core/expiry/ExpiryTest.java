@@ -21,6 +21,7 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.assertj.core.api.Assertions;
+import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
@@ -537,7 +538,6 @@ public class ExpiryTest extends TestingBase {
     };
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .expireAfterWrite(Long.MAX_VALUE / 10000, TimeUnit.MILLISECONDS)
       .resiliencePolicy(Constants.resilienceCacheExceptions())
       .build();
     assertEquals("no miss", 0, g.getLoaderCalledCount());
@@ -550,6 +550,62 @@ public class ExpiryTest extends TestingBase {
     assertEquals(RuntimeException.class, e.getException().getClass());
     assertEquals("two miss", 2, g.getLoaderCalledCount());
     assertTrue(((InternalCache) c).getEntryState(99).contains("nextRefreshTime=ETERNAL"));
+  }
+
+  /**
+   * Exceptions are cached no longer than the specified expireAfterWrite duration, even
+   * if the resilience policy returns a later time.
+   */
+  @Test
+  public void cacheExceptionTimeCapped() {
+    IntCountingCacheSource g = new IntCountingCacheSource() {
+      @Override
+      public Integer load(Integer o) {
+        incrementLoadCalledCount();
+        if (o == 99) {
+          throw new RuntimeException("ouch");
+        }
+        return o;
+      }
+    };
+    long expiryMillis = Long.MAX_VALUE / 10000;
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(g)
+      .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(Constants.resilienceCacheExceptions())
+      .build();
+    CacheEntry<Integer, Integer> e = c.getEntry(99);
+    LoadExceptionInfo<Integer, Integer> info = e.getExceptionInfo();
+    assertEquals(info.getLoadTime() + expiryMillis, info.getUntil());
+  }
+
+  /**
+   * Exceptions are suppressed no longer than the specified expireAfterWrite duration, even
+   * if the resilience policy returns a later time.
+   */
+  @Test
+  public void suppressExceptionTimeCapped() {
+    IntCountingCacheSource g = new IntCountingCacheSource() {
+      @Override
+      public Integer load(Integer o) {
+        incrementLoadCalledCount();
+        if (getLoaderCalledCount() == 2) {
+          throw new RuntimeException("ouch");
+        }
+        return o;
+      }
+    };
+    long expiryMillis = Long.MAX_VALUE / 10000;
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(g)
+      .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS)
+      .resiliencePolicy(Constants.resilienceCacheAndSuppressExceptions())
+      .build();
+    c.get(1);
+    long loadTime = c.invoke(1, entry -> { entry.load(); return entry.getStartTime(); });
+    long expiryTime = c.invoke(1, entry -> entry.getExpiryTime());
+    assertEquals("two loads", 2, g.getLoaderCalledCount());
+    assertEquals(loadTime + expiryMillis, expiryTime);
   }
 
   private static void entryHasException(CacheEntry<Integer, Integer> e) {

@@ -104,12 +104,14 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
-    return resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
+    long pointInTime = resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
+    return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryMillis, pointInTime);
   }
 
   @Override
   public long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
-    return resiliencePolicy.retryLoadAfter(e.getKey(), inf);
+    long pointInTime = resiliencePolicy.retryLoadAfter(e.getKey(), inf);
+    return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryMillis, pointInTime);
   }
 
   /**
