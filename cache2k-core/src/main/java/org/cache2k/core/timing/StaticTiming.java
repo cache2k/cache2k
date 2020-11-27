@@ -179,10 +179,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   @Override
   public boolean startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
     cancelExpiryTimer(e);
-    if (nextRefreshTime > 0 && nextRefreshTime < Entry.EXPIRY_TIME_MIN) {
-      e.setNextRefreshTime(Entry.EXPIRED);
-      return true;
-    }
     long absTime = Math.abs(nextRefreshTime);
     e.setRefreshProbationNextRefreshTime(absTime);
     e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
