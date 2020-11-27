@@ -55,10 +55,12 @@ public interface ExpiryTimeValues {
   long NOW = 0;
 
   /**
-   * The value expires immediately. In contrast to {@link #NOW} no refresh is triggered.
-   * This can be used in case of caching should be switched off completely.
+   * Starts a refresh. The current value is visible until the refresh is complete.
+   * With a negative value get requests will block until the refreshed value is available.
+   * <p>Rationale: Any value in the past does and between the current time, does the same
+   * as if the time is reached just now.
    */
-  long NO_CACHE = -2;
+  long REFRESH = 1234;
 
   /**
    * Return value signalling to keep the value forever in the cache, switching off expiry.

@@ -822,7 +822,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       try {
         expiry = timing().calculateNextRefreshTime(heapEntry, newValueOrException, lastRefreshTime);
         if (newValueOrException == null && heapCache.isRejectNullValues() &&
-          expiry != ExpiryTimeValues.NOW && expiry != ExpiryTimeValues.NO_CACHE) {
+          expiry != ExpiryTimeValues.NOW) {
           RuntimeException ouch = heapCache.returnNullValueDetectedException();
           if (valueDefinitelyLoaded) {
             decideForLoaderExceptionAfterExpiryCalculation(new CacheLoaderException(ouch));
@@ -1007,9 +1007,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void checkKeepOrRemove() {
     boolean hasKeepAfterExpired = heapCache.isKeepAfterExpired();
-    boolean expired =
-      (expiry == ExpiryTimeValues.NO_CACHE) ||
-      (expiry == ExpiryTimeValues.NOW && !heapCache.isRefreshAhead());
+    boolean expired = expiry == ExpiryTimeValues.NOW;
     if (!expired || remove) {
       mutationUpdateHeap();
       return;

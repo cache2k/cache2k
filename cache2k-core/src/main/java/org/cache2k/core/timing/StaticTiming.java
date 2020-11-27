@@ -141,7 +141,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   @Override
   public long stopStartTimer(long expiryTime, Entry<K, V> e) {
     cancelExpiryTimer(e);
-    if (expiryTime == ExpiryTimeValues.NO_CACHE) {
+    if (expiryTime == ExpiryTimeValues.NOW) {
       return Entry.EXPIRED;
     }
     if (expiryTime == ExpiryTimeValues.NEUTRAL) {
@@ -153,9 +153,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     }
     if (expiryTime == ExpiryTimeValues.ETERNAL) {
       return expiryTime;
-    }
-    if (expiryTime == ExpiryTimeValues.NOW) {
-      return expiredEventuallyStartBackgroundRefresh(e, false);
     }
     long now = clock.millis();
     if (Math.abs(expiryTime) <= now) {

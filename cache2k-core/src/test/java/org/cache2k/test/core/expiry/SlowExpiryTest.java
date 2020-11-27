@@ -925,7 +925,7 @@ public class SlowExpiryTest extends TestingBase {
           if (currentEntry != null) {
             return ETERNAL;
           }
-          return 1234;
+          return REFRESH;
         }
       })
       .loader(loader)
@@ -1078,11 +1078,6 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void expireAt_NOW0_doesRefresh() {
-    expireAt_x_doesRefresh(ExpiryTimeValues.NOW);
-  }
-
-  @Test
   public void expireAt_1234_doesRefresh() {
     expireAt_x_doesRefresh(1234);
   }
@@ -1115,7 +1110,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void manualExpire_NO_CACHE_doesNotRefresh() {
+  public void manualExpire_NOW_doesNotRefresh() {
     final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
@@ -1127,7 +1122,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 2);
-    c.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NO_CACHE));
+    c.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
     sleep(0);
     sleep(0);
     sleep(0);
@@ -1136,7 +1131,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void manualExpire_NOW_doesRefresh() {
+  public void manualExpire_REFRESH_doesRefresh() {
     AtomicInteger counter = new AtomicInteger();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
@@ -1150,7 +1145,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 2);
-    c.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
+    c.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.REFRESH));
     await(() -> counter.get() > 0);
   }
 
