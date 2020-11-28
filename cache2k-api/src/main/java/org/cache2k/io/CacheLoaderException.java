@@ -40,7 +40,7 @@ import org.cache2k.CustomizationException;
  * @author Jens Wilke
  * @since 2
  */
-public class CacheLoaderException extends CustomizationException {
+public class CacheLoaderException extends org.cache2k.integration.CacheLoaderException {
 
   public CacheLoaderException(String message) {
     super(message);

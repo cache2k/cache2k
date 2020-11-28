@@ -20,13 +20,15 @@ package org.cache2k.integration;
  * #L%
  */
 
+import org.cache2k.CustomizationException;
+
 /**
  * @author Jens Wilke
  * @deprecated Replaced with {@link org.cache2k.io.CacheLoaderException},
  *   to be removed in version 2.2
  */
 @Deprecated
-public class CacheLoaderException extends org.cache2k.io.CacheLoaderException {
+public class CacheLoaderException extends CustomizationException {
 
   public CacheLoaderException(String message) {
     super(message);
