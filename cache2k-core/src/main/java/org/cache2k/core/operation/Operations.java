@@ -488,7 +488,14 @@ public class Operations<K, V> {
     return new Semantic.MightUpdate<K, V, Void>() {
 
       /**
-       * Currently makes a refreshed entry visible without a hit.
+       * Update expiry time and/or start a refresh if entry is fresh.
+       *
+       * <p>TODO: makes refreshed entry visible without hit, add refresh hit?
+       *
+       * <p>If the entry is expired and the parameter is NOW or REFRESH nothing happens at
+       * the moment. An option might be that NOW removes the entry from the cache and
+       * REFRESH starts a refresh. Keep it simple for now until we see client code that
+       * would benefit from that.
        */
       @Override
       public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
