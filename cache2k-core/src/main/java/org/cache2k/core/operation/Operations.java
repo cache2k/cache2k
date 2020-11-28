@@ -487,6 +487,9 @@ public class Operations<K, V> {
   public Semantic<K, V, Void> expire(K key, long time) {
     return new Semantic.MightUpdate<K, V, Void>() {
 
+      /**
+       * Currently makes a refreshed entry visible without a hit.
+       */
       @Override
       public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
         if (c.isDataFresh() || c.isDataRefreshing()) {

@@ -25,10 +25,11 @@ import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegerTo16BitFloatingPoint;
-import org.cache2k.core.concurrency.Job;
 import org.cache2k.Weigher;
 
-/**
+import java.util.function.Supplier;
+
+ /**
  * Base class for different eviction algorithms, implementing statistics counting and
  * chunking.
  *
@@ -461,9 +462,9 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   public void close() { }
 
   @Override
-  public <T> T runLocked(Job<T> j) {
+  public <T> T runLocked(Supplier<T> j) {
     synchronized (lock) {
-      return j.call();
+      return j.get();
     }
   }
 

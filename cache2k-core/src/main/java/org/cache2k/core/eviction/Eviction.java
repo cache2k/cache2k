@@ -22,7 +22,8 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.core.Entry;
 import org.cache2k.core.IntegrityState;
-import org.cache2k.core.concurrency.Job;
+
+import java.util.function.Supplier;
 
 /**
  * Interface to the eviction data structure (replacement list).
@@ -105,7 +106,7 @@ public interface Eviction {
   /**
    * Runs job making sure concurrent evictions operations pause.
    */
-  <T> T runLocked(Job<T> j);
+  <T> T runLocked(Supplier<T> j);
 
   void checkIntegrity(IntegrityState integrityState);
 

@@ -21,10 +21,10 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.concurrency.Job;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.Supplier;
 
 /**
  * Simple concurrent hash table implementation using optimistic locking
@@ -362,10 +362,10 @@ public class Hash2<K, V> {
   /**
    * Lock all segments and run the job.
    */
-  public <T> T runTotalLocked(Job<T> j) {
+  public <T> T runTotalLocked(Supplier<T> j) {
     long[] stamps = lockAll();
     try {
-      return j.call();
+      return j.get();
     } finally {
       unlockAll(stamps);
     }

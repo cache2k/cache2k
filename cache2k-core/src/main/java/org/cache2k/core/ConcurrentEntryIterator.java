@@ -20,8 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.concurrency.Job;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -168,12 +166,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
     if (Thread.holdsLock(cache.lock)) {
       return switchCheckAndAbortLocked();
     }
-    return cache.executeWithGlobalLock(new Job<Boolean>() {
-      @Override
-      public Boolean call() {
-        return switchCheckAndAbortLocked();
-      }
-    });
+    return cache.executeWithGlobalLock(() -> switchCheckAndAbortLocked());
   }
 
   /**

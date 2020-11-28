@@ -20,10 +20,11 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.EvictionMetrics;
+
+import java.util.function.Supplier;
 
 /**
  * Forwards eviction operations to segments based on the hash code.
@@ -119,20 +120,15 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public <T> T runLocked(Job<T> j) {
+  public <T> T runLocked(Supplier<T> j) {
     return runLocked(0, j);
   }
 
-  private <T> T runLocked(final int idx, final Job<T> j) {
+  private <T> T runLocked(int idx, Supplier<T> j) {
     if (idx == segments.length) {
-      return j.call();
+      return j.get();
     }
-    return segments[idx].runLocked(new Job<T>() {
-      @Override
-      public T call() {
-        return runLocked(idx + 1, j);
-      }
-    });
+    return segments[idx].runLocked(() -> runLocked(idx + 1, j));
   }
 
   @Override

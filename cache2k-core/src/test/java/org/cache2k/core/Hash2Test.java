@@ -22,7 +22,6 @@ package org.cache2k.core;
 
 import static org.junit.Assert.*;
 
-import org.cache2k.core.concurrency.Job;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,12 +42,9 @@ public class Hash2Test {
   public void testExpansion() {
     final Hash2 ht = new Hash2(null);
     for (int i = 0; i < 20; i++) {
-      ht.runTotalLocked(new Job() {
-        @Override
-        public Object call() {
-          ht.rehash();
-          return null;
-        }
+      ht.runTotalLocked(() -> {
+        ht.rehash();
+        return null;
       });
       assertTrue(ht.getSegmentMaxFill() >= 0);
     }

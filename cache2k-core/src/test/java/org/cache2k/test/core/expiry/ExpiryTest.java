@@ -21,7 +21,6 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.assertj.core.api.Assertions;
-import org.cache2k.integration.ExceptionInformation;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
@@ -253,7 +252,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void loadExceptionEntryNullInExpiryPolicy() {
-    final AtomicBoolean success = new AtomicBoolean();
+    AtomicBoolean success = new AtomicBoolean();
     IntCountingCacheSource g = new IntCountingCacheSource() {
       @Override
       public Integer load(Integer o) {
@@ -302,7 +301,7 @@ public class ExpiryTest extends TestingBase {
 
   public void dontCallAdvancedLoaderWithExceptionEntry(
     Consumer<Cache2kBuilder<Integer, Integer>> builderAction) {
-    final AtomicBoolean success = new AtomicBoolean();
+    AtomicBoolean success = new AtomicBoolean();
     AtomicInteger loadCount = new AtomicInteger();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new AdvancedCacheLoader<Integer, Integer>() {
@@ -343,7 +342,7 @@ public class ExpiryTest extends TestingBase {
 
   public void dontCallAsyncLoaderWithExceptionEntry(
     Consumer<Cache2kBuilder<Integer, Integer>> builderAction) {
-    final AtomicBoolean success = new AtomicBoolean();
+    AtomicBoolean success = new AtomicBoolean();
     AtomicInteger loadCount = new AtomicInteger();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new AsyncCacheLoader<Integer, Integer>() {
@@ -412,7 +411,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testEternalExceptionsExpire() {
-    final IntCountingCacheSource g = new IntCountingCacheSource() {
+    IntCountingCacheSource g = new IntCountingCacheSource() {
       @Override
       public Integer load(Integer o) {
         incrementLoadCalledCount();
@@ -422,7 +421,7 @@ public class ExpiryTest extends TestingBase {
         return o;
       }
     };
-    final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .eternal(true)
       .resiliencePolicy(new EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
@@ -450,7 +449,7 @@ public class ExpiryTest extends TestingBase {
 
   public static class EnableExceptionCaching implements ResiliencePolicy<Integer, Integer> {
 
-    private long retryMillis;
+    private final long retryMillis;
 
     public EnableExceptionCaching(long retryMillis) {
       this.retryMillis = retryMillis;
@@ -489,7 +488,7 @@ public class ExpiryTest extends TestingBase {
         return o;
       }
     };
-    final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .eternal(true)
       .resiliencePolicy(new EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
@@ -733,10 +732,10 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testResiliencePolicyLoadExceptionInformationContent_keep() {
-    final long t0 = millis();
+    long t0 = millis();
     final int initial = -4711;
-    final AtomicInteger cacheRetryCount = new AtomicInteger(initial);
-    final AtomicInteger suppressRetryCount = new AtomicInteger(initial);
+    AtomicInteger cacheRetryCount = new AtomicInteger(initial);
+    AtomicInteger suppressRetryCount = new AtomicInteger(initial);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .eternal(true)
       .keepDataAfterExpired(true)
@@ -795,10 +794,10 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testResiliencePolicyLoadExceptionInformationContent_noKeep() {
-    final long t0 = millis();
+    long t0 = millis();
     final int initial = -4711;
-    final AtomicInteger cacheRetryCount = new AtomicInteger(initial);
-    final AtomicInteger suppressRetryCount = new AtomicInteger(initial);
+    AtomicInteger cacheRetryCount = new AtomicInteger(initial);
+    AtomicInteger suppressRetryCount = new AtomicInteger(initial);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .keepDataAfterExpired(false)
       .eternal(true)
@@ -858,9 +857,9 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void testResiliencePolicyLoadExceptionCountWhenSuppressed() {
     final int initial = -4711;
-    final AtomicInteger cacheRetryCount = new AtomicInteger(initial);
-    final AtomicInteger suppressRetryCount = new AtomicInteger(initial);
-    final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+    AtomicInteger cacheRetryCount = new AtomicInteger(initial);
+    AtomicInteger suppressRetryCount = new AtomicInteger(initial);
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .eternal(true)
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
@@ -913,7 +912,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testPolicyNotCalledIfExpire0() {
-    final AtomicLong policyCalled = new AtomicLong();
+    AtomicLong policyCalled = new AtomicLong();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new BasicCacheTest.AlwaysExceptionSource())
       .expireAfterWrite(0, TimeUnit.SECONDS)
@@ -942,7 +941,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testImmediateExpireButKeepDataDoesSuppress() {
-    final AtomicLong policyCalled = new AtomicLong();
+    AtomicLong policyCalled = new AtomicLong();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new BasicCacheTest.AlwaysExceptionSource())
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
@@ -978,8 +977,8 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void testResiliencePolicyLoadExceptionInformationCounterReset_keep() {
     final int initial = -4711;
-    final AtomicInteger cacheRetryCount = new AtomicInteger(initial);
-    final AtomicInteger suppressRetryCount = new AtomicInteger(initial);
+    AtomicInteger cacheRetryCount = new AtomicInteger(initial);
+    AtomicInteger suppressRetryCount = new AtomicInteger(initial);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
@@ -1325,7 +1324,7 @@ public class ExpiryTest extends TestingBase {
         b.loader(new AsyncCacheLoader<Integer, Integer>() {
           @Override
           public void load(Integer key, Context<Integer, Integer> context,
-                           final Callback<Integer> callback) {
+                           Callback<Integer> callback) {
             Executor executor = context.getLoaderExecutor();
               executor.execute(new Runnable() {
               @Override
@@ -1399,7 +1398,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void manualExpire_refreshAhead_expireAt_NOW_gone() {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .keepDataAfterExpired(false)
@@ -1435,16 +1434,12 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void manualExpire_refreshAhead_sharp_refresh() {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    AtomicInteger loadCounter = new AtomicInteger();
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .keepDataAfterExpired(false)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return 4711;
-        }
-      })
+      .loader(key -> 4711 + loadCounter.getAndIncrement())
       .build();
     c.put(1, 2);
     within(LONG_DELTA)
@@ -1455,34 +1450,27 @@ public class ExpiryTest extends TestingBase {
           assertFalse(
             "entry not visible after expireAt, during refresh and after refresh",
             c.containsKey(1));
-          await(new Condition() {
-            @Override
-            public boolean check() {
-              return getInfo().getRefreshCount() == 1;
-            }
-          });
+          await(() -> getInfo().getRefreshCount() == 1);
         }
       }).expectMaybe(new Runnable() {
         @Override
         public void run() {
           assertEquals(1, getInfo().getSize());
           assertFalse("Still invisible", c.containsKey(1));
+          c.expireAt(1, ExpiryTimeValues.ETERNAL);
+          assertTrue("Visible, when expiry extended", c.containsKey(1));
+          assertEquals(4711, (int) c.peek(1));
           assertEquals(1, getInfo().getSize());
           assertEquals(1, getInfo().getRefreshCount());
           c.expireAt(1, ExpiryTimeValues.REFRESH);
           assertEquals(1, getInfo().getSize());
         }
-      }).concludesMaybe(new Runnable() {
-      @Override
-      public void run() {
-        await(new Condition() {
-          @Override
-          public boolean check() {
-            return getInfo().getRefreshCount() == 2;
-          }
-        });
-      }
-    });
+      }).concludesMaybe(() -> {
+        await(() -> getInfo().getRefreshCount() == 2);
+        assertFalse("Invisible", c.containsKey(1));
+        assertEquals(4712, (int) c.get(1));
+      });
+
   }
 
   @Test
@@ -1548,7 +1536,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void expiryEventLags() {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .timerLag(TestingParameters.MINIMAL_TICK_MILLIS * 2, TimeUnit.MILLISECONDS)
       .build();

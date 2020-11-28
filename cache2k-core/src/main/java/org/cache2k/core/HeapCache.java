@@ -37,7 +37,6 @@ import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
 import org.cache2k.core.concurrency.DefaultThreadFactoryProvider;
-import org.cache2k.core.concurrency.Job;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
@@ -48,7 +47,6 @@ import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.io.AdvancedCacheLoader;
-import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.io.LoadExceptionInfo;
@@ -71,6 +69,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.cache2k.core.util.Util.*;
 
@@ -390,9 +389,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public final void clear() {
-    executeWithGlobalLock(new Job<Void>() {
+    executeWithGlobalLock(new Supplier<Void>() {
       @Override
-      public Void call() {
+      public Void get() {
         clearLocalCache();
         return null;
       }
@@ -427,12 +426,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * @throws CacheClosedException if cache is closed or closing is initiated by another thread.
    */
   public void closePart1() throws CacheClosedException {
-    executeWithGlobalLock(new Job<Void>() {
-      @Override
-      public Void call() {
-        closing = true;
-        return null;
-      }
+    executeWithGlobalLock((Supplier<Void>) () -> {
+      closing = true;
+      return null;
     });
     closeCustomization(loaderExecutor, "loaderExecutor");
     cancelTimerJobs();
@@ -449,20 +445,17 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public void closePart2(InternalCache userCache) {
-    executeWithGlobalLock(new Job<Void>() {
-      @Override
-      public Void call() {
-        eviction.close();
-        timing.close(HeapCache.this);
-        hash.close();
-        closeCustomization(loader, "loader");
-        for (CacheClosedListener s : cacheClosedListeners) {
-          s.onCacheClosed(userCache);
-        }
-        manager.sendClosedEvent(userCache, userCache);
-        manager.cacheClosed(userCache);
-        return null;
+    executeWithGlobalLock((Supplier<Void>) () -> {
+      eviction.close();
+      timing.close(HeapCache.this);
+      hash.close();
+      closeCustomization(loader, "loader");
+      for (CacheClosedListener s : cacheClosedListeners) {
+        s.onCacheClosed(userCache);
       }
+      manager.sendClosedEvent(userCache, userCache);
+      manager.cacheClosed(userCache);
+      return null;
     }, false);
   }
 
@@ -1726,12 +1719,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public final int getTotalEntryCount() {
-    return executeWithGlobalLock(new Job<Integer>() {
-      @Override
-      public Integer call() {
-        return (int) getLocalSize();
-      }
-    });
+    return executeWithGlobalLock(() -> (int) getLocalSize());
   }
 
   protected IntegrityState getIntegrityState() {
@@ -1760,18 +1748,15 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * testing
    */
   public final void checkIntegrity() {
-    executeWithGlobalLock(new Job<Void>() {
-      @Override
-      public Void call() {
-        IntegrityState is = getIntegrityState();
-        if (is.getStateFlags() > 0) {
-          throw new Error(
-            "cache2k integrity error: " +
-            is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
-              generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
-        }
-        return null;
+    executeWithGlobalLock((Supplier<Void>) () -> {
+      IntegrityState is = getIntegrityState();
+      if (is.getStateFlags() > 0) {
+        throw new Error(
+          "cache2k integrity error: " +
+          is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
+            generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
       }
+      return null;
     });
   }
 
@@ -1804,12 +1789,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   private CacheBaseInfo generateInfo(InternalCache userCache, long t) {
-    return executeWithGlobalLock(new Job<CacheBaseInfo>() {
-      @Override
-      public CacheBaseInfo call() {
-        return generateInfoUnderLock(userCache, t);
-      }
-    });
+    return executeWithGlobalLock(() -> generateInfoUnderLock(userCache, t));
   }
 
   private CacheBaseInfo generateInfoUnderLock(InternalCache userCache, long t) {
@@ -1835,7 +1815,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * lifting the lock with do eviction and lock again. This ensures that all
    * queued entries are processed up to the point when the method was called.
    */
-  public <T> T executeWithGlobalLock(Job<T> job) {
+  public <T> T executeWithGlobalLock(Supplier<T> job) {
     return executeWithGlobalLock(job, true);
   }
 
@@ -1850,42 +1830,25 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    *
    * @param checkClosed variant, this method is needed once without check during the close itself
    */
-  private <T> T executeWithGlobalLock(Job<T> job, boolean checkClosed) {
+  private <T> T executeWithGlobalLock(Supplier<T> job, boolean checkClosed) {
     synchronized (lock) {
       if (checkClosed) { checkClosed(); }
       eviction.stop();
       try {
-        T result = hash.runTotalLocked(new Job<T>() {
-          @SuppressWarnings("unchecked")
-          @Override
-          public T call() {
-            if (checkClosed) { checkClosed(); }
-            boolean f = eviction.drain();
-            if (f) {
-              return (T) RESTART_AFTER_EVICTION;
-            }
-            return eviction.runLocked(new Job<T>() {
-              @Override
-              public T call() {
-                return job.call();
-              }
-            });
+        T result = hash.runTotalLocked(() -> {
+          if (checkClosed) { checkClosed(); }
+          boolean f = eviction.drain();
+          if (f) {
+            return (T) RESTART_AFTER_EVICTION;
           }
+          return eviction.runLocked(() -> job.get());
         });
         if (result == RESTART_AFTER_EVICTION) {
           eviction.evictEventuallyBeforeInsert();
-          result = hash.runTotalLocked(new Job<T>() {
-            @Override
-            public T call() {
-              if (checkClosed) { checkClosed(); }
-              eviction.drain();
-              return eviction.runLocked(new Job<T>() {
-                @Override
-                public T call() {
-                  return job.call();
-                }
-              });
-            }
+          result = hash.runTotalLocked(() -> {
+            if (checkClosed) { checkClosed(); }
+            eviction.drain();
+            return eviction.runLocked(() -> job.get());
           });
         }
         return result;
