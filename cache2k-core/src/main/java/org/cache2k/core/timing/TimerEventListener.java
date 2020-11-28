@@ -33,6 +33,11 @@ import org.cache2k.core.api.InternalCache;
 public interface TimerEventListener<K, V> {
 
   /**
+   * Designation of target for logging and exceptions.
+   */
+  String getName();
+
+  /**
    * Called by the timer when an entry is expired or before actual expiry
    * when the entry needs to switch into sharp expiry mode. The actual action
    * to be performed is detected by checking the {@link Entry#getNextRefreshTime()}

@@ -27,6 +27,7 @@ import org.cache2k.core.Entry;
  * @author Jens Wilke
  */
 abstract class Tasks<K, V> extends TimerTask {
+
   private Entry<K, V> entry;
   private TimerEventListener<K, V> target;
 
@@ -62,7 +63,11 @@ abstract class Tasks<K, V> extends TimerTask {
   protected final void action() {
     try {
       fire();
-    } catch (CacheClosedException ignore) { }
+    } catch (CacheClosedException ignore) {
+    } catch (Throwable t) {
+      throw new RuntimeException("Exception in event processing," +
+        " for cache: " + getTarget().getName(), t);
+    }
   }
 
   static class RefreshTimerTask<K, V> extends Tasks<K, V> {
