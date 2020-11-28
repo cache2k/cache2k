@@ -63,12 +63,9 @@ public interface Progress<K, V, R> {
   boolean isExpiryTimeReachedOrInRefreshProbation();
 
   /**
-   * Same as {@link #isDataFresh()} but also true if the entry is refreshing
-   * or refreshed and in refresh probation. We need to take into account
-   * refreshed entries for deciding whether we need to mutate for removal
-   * or not.
+   * True if the entry is refreshing or refreshed and in refresh probation.
    */
-  boolean isDataFreshOrRefreshing();
+  boolean isDataRefreshing();
 
   /**
    * Entry has valid data in the cache and is not expired. Counts a miss, if no entry is

@@ -92,7 +92,7 @@ public class Operations<K, V> {
      */
     @Override
     public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-      if (c.isDataFreshOrRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
+      if (c.isDataRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
         c.wantMutation();
       } else {
         c.noMutation();
@@ -489,7 +489,7 @@ public class Operations<K, V> {
 
       @Override
       public void examine(Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-        if (c.isDataFreshOrRefreshing()) {
+        if (c.isDataFresh() || c.isDataRefreshing()) {
           c.wantMutation();
         } else {
           c.noMutation();

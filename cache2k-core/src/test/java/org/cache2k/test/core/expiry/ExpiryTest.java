@@ -1373,22 +1373,12 @@ public class ExpiryTest extends TestingBase {
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .keepDataAfterExpired(false)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return 4711;
-        }
-      })
+      .loader(key -> 4711)
       .build();
     c.put(1, 2);
     c.expireAt(1, -millis());
     assertFalse(c.containsKey(1));
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getRefreshCount() > 0;
-      }
-    });
+    await(() -> getInfo().getRefreshCount() > 0);
   }
 
   @Test

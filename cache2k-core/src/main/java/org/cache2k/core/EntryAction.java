@@ -348,12 +348,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
-  public boolean isDataFreshOrRefreshing() {
+  public boolean isDataRefreshing() {
     doNotCountAccess = true;
     long nrt = heapEntry.getNextRefreshTime();
     return
       nrt == Entry.EXPIRED_REFRESHED ||
-      nrt == Entry.EXPIRED_REFRESH_PENDING || hasFreshData();
+        nrt == Entry.EXPIRED_REFRESH_PENDING;
   }
 
   @Override

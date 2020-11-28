@@ -26,7 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
- * Alternative version with lambdas.
+ * Experimental. Alternative version with lambdas.
  *
  * @author Jens Wilke
  */
