@@ -82,7 +82,6 @@
                   <compileSourceRoots>${project.basedir}/src/main/java11</compileSourceRoots>
                 </configuration>
               </execution>
-              <!-- compile sources as Java 8 to overwrite Java 9 class files, except module-info.java -->
             </executions>
           </plugin>
         </plugins>
