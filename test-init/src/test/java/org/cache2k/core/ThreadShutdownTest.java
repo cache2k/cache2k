@@ -54,12 +54,15 @@ public class ThreadShutdownTest {
   }
 
   @Test
-  public void testWithExpiry() {
+  public void testWithExpiry() throws InterruptedException {
     Cache cache = Cache2kBuilder.forUnknownTypes().expireAfterWrite(5, TimeUnit.MINUTES).build();
     cache.put(1, 3);
     assertTrue(countThreads() > 0);
     cache.close();
-    assertEquals("all threads terminate", 0, countThreads());
+    if (countThreads() > 0) {
+      Thread.sleep(5000);
+      assertEquals("all threads terminate", 0, countThreads());
+    }
   }
 
 }
