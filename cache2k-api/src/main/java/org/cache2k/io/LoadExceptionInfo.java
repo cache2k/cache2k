@@ -89,8 +89,7 @@ public interface LoadExceptionInfo<K, V> extends CacheEntry<K, V> {
    * Number of retry attempts to load the value for the requested key.
    * The value is starting 0 for the first load attempt that yields an
    * exception. The counter is incremented for each consecutive
-   * loader exception. After a successful attempt to load the value the
-   * counter is reset.
+   * loader exception. After a successful attempt to load the value is reset.
    *
    * @return counter starting at 0 for the first load attempt that
    *         yields an exception.

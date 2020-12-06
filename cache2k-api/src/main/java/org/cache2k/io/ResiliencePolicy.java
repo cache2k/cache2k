@@ -39,7 +39,8 @@ import java.util.concurrent.TimeUnit;
 public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCustomization<K, V> {
 
   /**
-   * A policy always returning zero, thus disabling resilience features.
+   * A policy always returning zero, thus disabling resilience features. This is also used
+   * as default when no resilience policy is set.
    */
   ResiliencePolicy<?, ?> DISABLED_POLICY = new ResiliencePolicy<Object, Object>() {
     @Override
@@ -53,6 +54,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
       return NOW;
     }
   };
+
   static <K, V> ResiliencePolicy<K, V> disabledPolicy() {
     return (ResiliencePolicy<K, V>) DISABLED_POLICY;
   }
