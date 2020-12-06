@@ -1,8 +1,8 @@
-package org.cache2k.core.api;
+package org.cache2k.operation;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -28,9 +28,11 @@ import org.cache2k.processor.MutableCacheEntry;
  * {@link System#currentTimeMillis()}. Another time reference can be specified
  * if the application uses a different time source or when a simulated clock should be used.
  *
+ *  <p>An instance may implement {@link AutoCloseable} if resources need to be cleaned up.
+ *
  * @author Jens Wilke
  */
-public interface InternalClock {
+public interface TimeReference {
 
   /**
    * Returns the milliseconds since epoch. In the simulated clock a call to this method

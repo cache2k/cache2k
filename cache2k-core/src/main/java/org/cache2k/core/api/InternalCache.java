@@ -29,6 +29,7 @@ import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.TimerEventListener;
 import org.cache2k.core.log.Log;
+import org.cache2k.operation.TimeReference;
 
 /**
  * Interface to extended cache functions for the internal components.
@@ -78,7 +79,7 @@ public interface InternalCache<K, V>
   /**
    * Time reference for the cache.
    */
-  InternalClock getClock();
+  TimeReference getClock();
 
   CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K, V> e);
 

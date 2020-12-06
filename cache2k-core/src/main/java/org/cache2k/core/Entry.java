@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.operation.ExaminationEntry;
@@ -495,7 +495,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
    *
    * @see EntryAction#hasFreshData()
    */
-  public final boolean hasFreshData(InternalClock t) {
+  public final boolean hasFreshData(TimeReference t) {
     long nrt = nextRefreshTime;
     if (nrt >= DATA_VALID) {
       return true;
@@ -510,7 +510,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * The entry expired, still in the cache and subject to removal from the cache
    * if {@link HeapCache#isKeepAfterExpired()} is false. {@code true} means that
    * the expiry was detected by the cache. To find out whether the entry is valid
-   * and not expired {@link #hasFreshData(InternalClock)} needs to be used.
+   * and not expired {@link #hasFreshData(TimeReference)} needs to be used.
    */
   public boolean isExpiredState() {
     return nextRefreshTime == EXPIRED;

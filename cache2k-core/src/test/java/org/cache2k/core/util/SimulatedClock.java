@@ -20,8 +20,8 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.core.api.InternalClock;
-import org.cache2k.core.api.Scheduler;
+import org.cache2k.operation.TimeReference;
+import org.cache2k.operation.Scheduler;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -44,7 +44,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Jens Wilke
  */
-public class SimulatedClock implements InternalClock, Scheduler {
+public class SimulatedClock implements TimeReference, Scheduler {
 
   static final ThreadLocal<Boolean> EXECUTOR_CONTEXT = new ThreadLocal<Boolean>() {
     @Override

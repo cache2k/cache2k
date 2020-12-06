@@ -23,7 +23,6 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.Expiry;
@@ -727,9 +726,7 @@ public class EntryProcessorTest {
       target.cache(new CacheRule.Specialization<Integer, Integer>() {
         @Override
         public void extend(Cache2kBuilder<Integer, Integer> b) {
-          b .with(CoreConfig.class, b2 -> b2
-              .timerReference(new SimulatedClock())
-            )
+          b .timeReference(new SimulatedClock())
             .sharpExpiry(true)
             .expiryPolicy((key, value, loadTime, oldEntry) -> loadTime + expireAfterWriteMillis)
             .addListener((CacheEntryExpiredListener<Integer, Integer>) (cache, entry) -> {

@@ -41,7 +41,7 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
@@ -109,7 +109,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected String name;
   public CacheManagerImpl manager;
   protected AdvancedCacheLoader<K, V> loader;
-  protected InternalClock clock;
+  protected TimeReference clock;
   @SuppressWarnings("unchecked")
   protected Timing<K, V> timing = TimeAgnosticTiming.ETERNAL;
 
@@ -334,7 +334,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
   }
 
-  public void setClock(InternalClock clock) {
+  public void setClock(TimeReference clock) {
     this.clock = clock;
   }
 
@@ -1859,7 +1859,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   @Override
-  public final InternalClock getClock() {
+  public final TimeReference getClock() {
     return clock;
   }
 

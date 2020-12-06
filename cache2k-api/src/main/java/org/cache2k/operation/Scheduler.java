@@ -1,8 +1,8 @@
-package org.cache2k.core.api;
+package org.cache2k.operation;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2020 headissue GmbH, Munich
  * %%
@@ -21,10 +21,19 @@ package org.cache2k.core.api;
  */
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Simple interface the cache uses to schedule tasks for timer
- * jobs that are handling expiry or triggering a refresh.
+ * Scheduler to run timer tasks, e.g for expiry and refresh.
+ * A cache with expiry typically inserts one task in the scheduler
+ * to execute pending expiry or refresh jobs. A task is usually not
+ * executed more often then one second per cache
+ * {@link org.cache2k.Cache2kBuilder#timerLag(long, TimeUnit)} ). Per task execution all
+ * pending actions per cache are processed. The execution of tasks should run
+ * on a different executor to improve scalability when a lot caches with expiry run
+ * in one runtime.
+ *
+ * <p>An instance may implement {@link AutoCloseable} if resources need to be cleaned up.
  *
  * @author Jens Wilke
  */
@@ -38,9 +47,8 @@ public interface Scheduler extends Executor {
   /**
    * Run a task immediately, usually via the common ForkJoinPool.
    * This is used for tasks that are due in the past and should
-   * executed as soon as possible. Since this is intended to run on the
-   * same executor then the scheduled tasks this method is provided
-   * here.
+   * executed as soon as possible. This is intended to run on the
+   * same executor then the scheduled tasks.
    */
   @Override
   void execute(Runnable command);

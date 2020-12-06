@@ -24,6 +24,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.operation.TimeReference;
 
 /**
  * Context information when a cache is build.
@@ -35,7 +36,7 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext<K, V>
   /**
    * The time reference for the cache.
    */
-  InternalClock getClock();
+  TimeReference getClock();
 
   /**
    * Cache configuration.

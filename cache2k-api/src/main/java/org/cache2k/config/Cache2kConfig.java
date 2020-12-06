@@ -23,6 +23,8 @@ package org.cache2k.config;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.DataAware;
 import org.cache2k.Weigher;
+import org.cache2k.operation.Scheduler;
+import org.cache2k.operation.TimeReference;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.event.CacheEntryOperationListener;
@@ -112,6 +114,8 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   private @Nullable CustomizationSupplier<? extends Executor> executor;
   private @Nullable
     CustomizationSupplier<? extends ExpiryPolicy<? super K, ? super V>> expiryPolicy;
+  private @Nullable CustomizationSupplier<? extends TimeReference> timeReference;
+  private @Nullable CustomizationSupplier<? extends Scheduler> scheduler;
   private @Nullable
     CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> resiliencePolicy;
   private @Nullable CustomizationSupplier<? extends CacheLoader<K, V>> loader;
@@ -653,6 +657,22 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    */
   public void setWeigher(@Nullable CustomizationSupplier<? extends Weigher<K, V>> v) {
     weigher = v;
+  }
+
+  public CustomizationSupplier<? extends Scheduler> getScheduler() {
+    return scheduler;
+  }
+
+  public void setScheduler(CustomizationSupplier<? extends Scheduler> scheduler) {
+    this.scheduler = scheduler;
+  }
+
+  public CustomizationSupplier<? extends TimeReference> getTimeReference() {
+    return timeReference;
+  }
+
+  public void setTimeReference(CustomizationSupplier<? extends TimeReference> timeReference) {
+    this.timeReference = timeReference;
   }
 
   public boolean isBoostConcurrency() {

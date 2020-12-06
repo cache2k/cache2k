@@ -22,7 +22,6 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -34,6 +33,13 @@ import static org.junit.Assert.assertTrue;
  * @author Jens Wilke
  */
 public class ThreadShutdownTest {
+
+  /*
+   * This needs to be first for the other test
+   */
+  static {
+    CacheManagerInitTest.initCacheManager();
+  }
 
   int countThreads() {
     int cache2kThreadCount = 0;
@@ -48,7 +54,7 @@ public class ThreadShutdownTest {
   }
 
   @Test
-  public void test() {
+  public void testWithExpiry() {
     Cache cache = Cache2kBuilder.forUnknownTypes().expireAfterWrite(5, TimeUnit.MINUTES).build();
     cache.put(1, 3);
     assertTrue(countThreads() > 0);

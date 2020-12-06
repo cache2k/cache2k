@@ -23,8 +23,8 @@ package org.cache2k.core.timing;
 import org.assertj.core.api.Condition;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
-import org.cache2k.core.api.InternalClock;
-import org.cache2k.core.api.Scheduler;
+import org.cache2k.operation.TimeReference;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -340,7 +340,7 @@ public class TimerTest {
     }
   }
 
-  static class MyClock implements InternalClock, Scheduler {
+  static class MyClock implements TimeReference, Scheduler {
 
     long time;
     Runnable scheduled;

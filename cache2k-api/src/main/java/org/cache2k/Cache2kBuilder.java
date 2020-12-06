@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.operation.Scheduler;
+import org.cache2k.operation.TimeReference;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheType;
@@ -850,6 +852,22 @@ public class Cache2kBuilder<K, V>
    */
   public final Cache2kBuilder<K, V> executor(Executor v) {
     cfg().setExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    return this;
+  }
+
+  /**
+   * Use a different scheduler to run timer tasks for.
+   */
+  public final Cache2kBuilder<K, V> scheduler(Scheduler v) {
+    cfg().setScheduler(new CustomizationReferenceSupplier<Scheduler>(v));
+    return this;
+  }
+
+  /**
+   * Use a different time reference.
+   */
+  public final Cache2kBuilder<K, V> timeReference(TimeReference v) {
+    cfg().setTimeReference(new CustomizationReferenceSupplier<TimeReference>(v));
     return this;
   }
 

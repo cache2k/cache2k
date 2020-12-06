@@ -27,8 +27,8 @@ import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.api.InternalClock;
-import org.cache2k.core.api.Scheduler;
+import org.cache2k.operation.TimeReference;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -45,7 +45,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
 
   protected final ResiliencePolicy<K, V> resiliencePolicy;
-  protected final InternalClock clock;
+  protected final TimeReference clock;
   protected final boolean sharpExpiry;
   protected final boolean refreshAhead;
   protected final long expiryMillis;
@@ -57,25 +57,29 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   StaticTiming(InternalCacheBuildContext<K, V> buildContext,
                ResiliencePolicy<K, V> resiliencePolicy) {
     clock = buildContext.getClock();
-    Cache2kConfig<K, V> c = buildContext.getConfig();
-    if (c.getExpireAfterWrite() == null
-      || c.getExpireAfterWrite() == Cache2kConfig.EXPIRY_ETERNAL) {
+    Cache2kConfig<K, V> cfg = buildContext.getConfig();
+    if (cfg.getExpireAfterWrite() == null
+      || cfg.getExpireAfterWrite() == Cache2kConfig.EXPIRY_ETERNAL) {
       this.expiryMillis = ExpiryPolicy.ETERNAL;
     } else {
-      this.expiryMillis = c.getExpireAfterWrite().toMillis();
+      this.expiryMillis = cfg.getExpireAfterWrite().toMillis();
     }
-    refreshAhead = c.isRefreshAhead();
-    sharpExpiry = c.isSharpExpiry();
-    if (c.getTimerLag() == null) {
+    refreshAhead = cfg.isRefreshAhead();
+    sharpExpiry = cfg.isSharpExpiry();
+    if (cfg.getTimerLag() == null) {
       lagMillis = HeapCache.TUNABLE.timerLagMillis;
     } else {
-      lagMillis = c.getTimerLag().toMillis();
+      lagMillis = cfg.getTimerLag().toMillis();
     }
     Scheduler scheduler;
-    if (clock instanceof Scheduler) {
-      scheduler = (Scheduler) clock;
+    if (cfg.getScheduler() != null) {
+      scheduler = buildContext.createCustomization(cfg.getScheduler());
     } else {
-      scheduler = DefaultSchedulerProvider.INSTANCE.supply(buildContext);
+      if (clock instanceof Scheduler)  {
+        scheduler = (Scheduler) clock;
+      } else {
+        scheduler = buildContext.createCustomization(DefaultSchedulerProvider.INSTANCE);
+      }
     }
     timer = new DefaultTimer(clock, scheduler, lagMillis);
     this.resiliencePolicy = resiliencePolicy;

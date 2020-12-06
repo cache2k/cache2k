@@ -24,7 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -318,7 +318,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   /**
-   * Same as {@link Entry#hasFreshData(InternalClock)} but keep time identically
+   * Same as {@link Entry#hasFreshData(TimeReference)} but keep time identically
    * once checked to ensure timing based decisions do not change during the
    * the processing.
    */

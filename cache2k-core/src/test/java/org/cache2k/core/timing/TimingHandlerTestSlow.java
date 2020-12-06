@@ -21,7 +21,7 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.testing.category.SlowTests;
 import org.junit.experimental.categories.Category;
 
@@ -31,7 +31,7 @@ import org.junit.experimental.categories.Category;
 @Category(SlowTests.class)
 public class TimingHandlerTestSlow {
 
-  private static final InternalClock CLOCK = DefaultClock.INSTANCE;
+  private static final TimeReference CLOCK = DefaultClock.INSTANCE;
 
 
 }

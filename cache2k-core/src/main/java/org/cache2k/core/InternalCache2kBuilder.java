@@ -25,13 +25,12 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.CustomizationSupplier;
-import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheCreatedListener;
 import org.cache2k.event.CacheEntryCreatedListener;
@@ -67,7 +66,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
 
   private final CacheManagerImpl manager;
   private final Cache2kConfig<K, V> config;
-  private InternalClock clock;
+  private TimeReference clock;
 
   public InternalCache2kBuilder(Cache2kConfig<K, V> config,
                                 CacheManager manager) {
@@ -106,7 +105,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   @Override
-  public InternalClock getClock() {
+  public TimeReference getClock() {
     return clock;
   }
 
@@ -223,9 +222,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     } else {
       cache = new HeapCache<K, V>();
     }
-    CoreConfig coreConfig =
-      config.getSections().getSection(CoreConfig.class, CoreConfig.DEFAULT);
-    clock = createCustomization(coreConfig.getTimeReference(), DefaultClock.INSTANCE);
+    clock = createCustomization(config.getTimeReference(), DefaultClock.INSTANCE);
     HeapCache bc = (HeapCache) cache;
     bc.setCacheManager(manager);
     configureViaSettersDirect(bc);

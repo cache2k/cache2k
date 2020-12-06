@@ -25,10 +25,13 @@ import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.operation.Scheduler;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.test.util.TestingBase;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -58,46 +61,68 @@ public class CustomizationClosedTest extends TestingBase {
     );
   }
 
+  @Test
+  public void scheduler() {
+    check(builder()
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .scheduler(new MyScheduler()));
+  }
+
+  @Test
+  public void timeReference() {
+    check(builder()
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .timeReference(new MyTimeReference()));
+  }
+
   void check(Cache2kBuilder b) {
     b.build().close();
     assertEquals("all closed", 0, unclosed.get());
   }
 
-  class MyResiliencePolicy implements ResiliencePolicy, AutoCloseable {
-
+  class Common implements AutoCloseable {
     { unclosed.getAndIncrement(); }
-
     @Override
     public void close() {
       unclosed.decrementAndGet();
     }
+  }
 
+  class MyResiliencePolicy extends Common implements ResiliencePolicy {
     @Override
     public long suppressExceptionUntil(Object key, LoadExceptionInfo loadExceptionInfo,
                                        CacheEntry cachedEntry) {
       return 0;
     }
-
     @Override
     public long retryLoadAfter(Object key, LoadExceptionInfo loadExceptionInfo) {
       return 0;
     }
   }
 
-  class MyExpiryPolicy implements ExpiryPolicy, AutoCloseable {
-
-    { unclosed.getAndIncrement(); }
-
-    @Override
-    public void close() {
-      unclosed.decrementAndGet();
-    }
-
+  class MyExpiryPolicy extends Common implements ExpiryPolicy {
     @Override
     public long calculateExpiryTime(Object key, Object value, long loadTime,
                                     @Nullable CacheEntry currentEntry) {
       return 0;
     }
+  }
+
+  class MyTimeReference extends Common implements TimeReference {
+    @Override
+    public long millis() {
+      return 0;
+    }
+    @Override
+    public void sleep(long millis) { }
+  }
+
+  class MyScheduler extends Common implements Scheduler {
+    @Override
+    public void schedule(Runnable runnable, long millis) { }
+
+    @Override
+    public void execute(Runnable command) { }
   }
 
 }

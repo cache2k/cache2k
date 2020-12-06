@@ -26,12 +26,11 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.core.CanCheckIntegrity;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.io.CacheLoader;
@@ -109,7 +108,7 @@ public class TestingBase {
 
   private static final TimeStepper TIME_STEPPER = new TimeStepper(DefaultClock.INSTANCE);
   private TimeStepper stepper = TIME_STEPPER;
-  private InternalClock clock;
+  private TimeReference clock;
   private Statistics statistics;
 
   @Rule
@@ -162,7 +161,7 @@ public class TestingBase {
   protected Cache cache;
 
 
-  public void setClock(InternalClock c) {
+  public void setClock(TimeReference c) {
     if (clock != null) {
       throw new IllegalArgumentException("clock already set");
     }
@@ -210,9 +209,7 @@ public class TestingBase {
     }
     this.cacheName = cacheName;
     Cache2kBuilder<K, T> b = Cache2kBuilder.of(k, t)
-      .with(CoreConfig.class, b2 -> b2
-        .timerReference(getClock())
-      )
+      .timeReference(getClock())
       .name(cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
       .timerLag(TestingParameters.MINIMAL_TICK_MILLIS / 2, TimeUnit.MILLISECONDS)
@@ -416,7 +413,7 @@ public class TestingBase {
     return t.sharpExpirySafetyGapMillis;
   }
 
-  public InternalClock getClock() {
+  public TimeReference getClock() {
     if (clock == null) {
       setClock(DefaultClock.INSTANCE);
     }

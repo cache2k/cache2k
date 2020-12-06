@@ -20,7 +20,7 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 
 /**
  * Default clock implementation just using {@link System#currentTimeMillis()} as
@@ -28,7 +28,7 @@ import org.cache2k.core.api.InternalClock;
  *
  * @author Jens Wilke
  */
-public final class DefaultClock implements InternalClock {
+public final class DefaultClock implements TimeReference {
 
   public static final DefaultClock INSTANCE = new DefaultClock();
 

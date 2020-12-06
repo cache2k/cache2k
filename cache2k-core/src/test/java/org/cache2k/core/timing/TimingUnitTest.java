@@ -29,7 +29,7 @@ import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -50,13 +50,13 @@ public class TimingUnitTest {
 
   private static final Entry ENTRY = new Entry();
   private static final long NOW = 10000000;
-  private static final InternalClock CLOCK = DefaultClock.INSTANCE;
+  private static final TimeReference CLOCK = DefaultClock.INSTANCE;
 
-  private <K, V> Timing<K, V> create(final InternalClock clock,
+  private <K, V> Timing<K, V> create(final TimeReference clock,
                                      final Cache2kConfig<K, V> cfg) {
     return Timing.of(new InternalCacheBuildContext<K, V>() {
       @Override
-      public InternalClock getClock() {
+      public TimeReference getClock() {
         return clock;
       }
 

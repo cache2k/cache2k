@@ -25,7 +25,6 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheTypeCapture;
-import org.cache2k.core.api.CoreConfig;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.log.Log;
@@ -65,9 +64,7 @@ public class Cache2kBuilderTest {
   @Test
   public void forUnknownTypes_genericTyping() {
     Cache<Object, Object> cache = Cache2kBuilder.forUnknownTypes()
-      .with(CoreConfig.class, b -> b
-        .timerReference(new SimulatedClock())
-      )
+      .timeReference(new SimulatedClock())
       .loader(key -> key)
       .build();
     cache.put(123, 555);

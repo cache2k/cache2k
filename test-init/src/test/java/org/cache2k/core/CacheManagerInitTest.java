@@ -42,6 +42,12 @@ public class CacheManagerInitTest {
     CacheManager.setDefaultName(OTHER_DEFAULT_CACHE_MANAGER_NAME);
   }
 
+  public static CacheManager initCacheManager() {
+    CacheManager mgm = CacheManager.getInstance();
+    assertEquals(OTHER_DEFAULT_CACHE_MANAGER_NAME, mgm.getName());
+    return mgm;
+  }
+
   @Test
   public void differentCacheManagerName() {
     assertEquals(CacheManager.getInstance().getName(), OTHER_DEFAULT_CACHE_MANAGER_NAME);

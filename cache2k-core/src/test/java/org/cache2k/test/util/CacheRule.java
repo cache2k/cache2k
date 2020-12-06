@@ -22,11 +22,10 @@ package org.cache2k.test.util;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.config.CacheType;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.test.core.StaticUtil;
 import org.cache2k.test.core.Statistics;
@@ -254,7 +253,7 @@ public class CacheRule<K, V> implements TestRule {
     cache = b.build();
   }
 
-  public InternalClock getClock() {
+  public TimeReference getClock() {
     return cache.requestInterface(InternalCache.class).getClock();
   }
 

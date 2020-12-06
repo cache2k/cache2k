@@ -21,8 +21,8 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.core.api.InternalCacheCloseContext;
-import org.cache2k.core.api.InternalClock;
-import org.cache2k.core.api.Scheduler;
+import org.cache2k.operation.TimeReference;
+import org.cache2k.operation.Scheduler;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DefaultTimer implements Timer {
 
   private final Lock lock = new ReentrantLock();
-  private final InternalClock clock;
+  private final TimeReference clock;
   private final Scheduler scheduler;
   private final TimerStructure structure;
   private long nextScheduled = Long.MAX_VALUE;
@@ -54,11 +54,11 @@ public class DefaultTimer implements Timer {
     }
   };
 
-  public DefaultTimer(InternalClock c, Scheduler scheduler, long lagMillis) {
-    this(c, scheduler, lagMillis, 876);
+  public DefaultTimer(TimeReference clock, Scheduler scheduler, long lagMillis) {
+    this(clock, scheduler, lagMillis, 876);
   }
 
-  public DefaultTimer(InternalClock c, Scheduler scheduler, long lagMillis, int steps) {
+  public DefaultTimer(TimeReference c, Scheduler scheduler, long lagMillis, int steps) {
     structure = new TimerWheels(c.millis() + 1, lagMillis + 1, steps);
     this.lagMillis = lagMillis;
     this.clock = c;
@@ -139,6 +139,7 @@ public class DefaultTimer implements Timer {
   @Override
   public void close(InternalCacheCloseContext closeContext) {
     cancelAll();
+    closeContext.closeCustomization(clock, "timeReference");
     closeContext.closeCustomization(scheduler, "scheduler");
   }
 

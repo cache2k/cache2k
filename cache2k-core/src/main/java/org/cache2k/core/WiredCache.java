@@ -25,7 +25,7 @@ import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.io.AdvancedCacheLoader;
@@ -90,7 +90,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public InternalClock getClock() {
+  public TimeReference getClock() {
     return heapCache.getClock();
   }
 

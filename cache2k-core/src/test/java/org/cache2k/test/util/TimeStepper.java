@@ -20,7 +20,7 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.test.core.TestingParameters;
 
 /**
@@ -28,9 +28,9 @@ import org.cache2k.test.core.TestingParameters;
  */
 public class TimeStepper {
 
-  private final InternalClock clock;
+  private final TimeReference clock;
 
-  public TimeStepper(InternalClock clock) {
+  public TimeStepper(TimeReference clock) {
     this.clock = clock;
   }
 

@@ -21,7 +21,7 @@ package org.cache2k.test.util;
  */
 
 import org.cache2k.core.util.DefaultClock;
-import org.cache2k.core.api.InternalClock;
+import org.cache2k.operation.TimeReference;
 
 import java.sql.Timestamp;
 
@@ -33,7 +33,7 @@ import java.sql.Timestamp;
  */
 public class TimeBox {
 
-  private final InternalClock clock;
+  private final TimeReference clock;
   private long startTime;
   private final long timeBox;
   private boolean outcomeUndefined = false;
@@ -47,7 +47,7 @@ public class TimeBox {
     return millis(t * 1000);
   }
 
-  public TimeBox(InternalClock _clock, long _timeBox) {
+  public TimeBox(TimeReference _clock, long _timeBox) {
     clock = _clock;
     startTime = _clock.millis();
     timeBox = _timeBox;
