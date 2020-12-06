@@ -21,7 +21,7 @@ package org.cache2k;
  */
 
 import org.cache2k.operation.CacheOperation;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoader;

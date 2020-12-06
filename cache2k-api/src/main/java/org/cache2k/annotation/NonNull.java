@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.annotation;
 
 /*
  * #%L
@@ -20,22 +20,25 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.annotation.Nullable;
+import javax.annotation.meta.TypeQualifierNickname;
+import javax.annotation.meta.When;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Reduced interface to return a value selected by a key object. Cache users
- * of a read-through cache may choose this simple interface for requesting data
- * only, rather to use the full blown cache interface.
+ * Non null is the default. This annotation is rarely used.
  *
  * @author Jens Wilke
+ * @see Nullable
  */
-public interface KeyValueSource<K, V> extends DataAware<K, V> {
-
-  /**
-   * Returns a value associated with this key.
-   *
-   * @see Cache#get(Object)
-   */
-  @Nullable V get(K key);
-
+@Documented
+@Target(value = {ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD,
+  ElementType.TYPE_USE})
+@TypeQualifierNickname
+@javax.annotation.Nonnull(when = When.UNKNOWN)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface NonNull {
 }

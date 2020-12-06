@@ -20,7 +20,7 @@ package org.cache2k.processor;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 /**
  * Result tuple for {@code Cache.invokeAll()}.

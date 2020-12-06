@@ -23,7 +23,7 @@ package org.cache2k.operation;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.CacheType;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 import java.time.Instant;
 

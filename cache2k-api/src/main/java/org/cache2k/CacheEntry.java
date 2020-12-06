@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;

@@ -23,7 +23,7 @@ package org.cache2k.testsuite.stress;
 import org.cache2k.Cache2kBuilder;
 import static org.junit.Assert.*;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.testing.category.SlowTests;
 import org.cache2k.testsuite.support.StaticUtil;
 import org.junit.experimental.categories.Category;

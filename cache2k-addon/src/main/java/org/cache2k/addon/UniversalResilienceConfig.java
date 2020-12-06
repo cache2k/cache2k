@@ -20,7 +20,7 @@ package org.cache2k.addon;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.SectionBuilder;
 import org.cache2k.config.ConfigSection;
 

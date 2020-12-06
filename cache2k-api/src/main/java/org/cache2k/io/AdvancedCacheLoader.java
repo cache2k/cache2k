@@ -23,7 +23,7 @@ package org.cache2k.io;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.DataAwareCustomization;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 /**
  * Retrieves or generates a value to load into the cache. The advanced loader interface

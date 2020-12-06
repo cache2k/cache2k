@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.processor.EntryMutator;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;

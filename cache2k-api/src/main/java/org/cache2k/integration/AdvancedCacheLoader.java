@@ -22,7 +22,7 @@ package org.cache2k.integration;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 /**
  * @deprecated Replaced with {@link org.cache2k.io.AdvancedCacheLoader},

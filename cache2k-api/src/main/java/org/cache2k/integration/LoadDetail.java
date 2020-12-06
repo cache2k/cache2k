@@ -20,7 +20,7 @@ package org.cache2k.integration;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 /**
  * @author Jens Wilke

@@ -22,7 +22,7 @@ package org.cache2k.jcache.provider.event;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.CustomizationReferenceSupplier;

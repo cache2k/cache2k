@@ -20,8 +20,8 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.NonNull;
+import org.cache2k.annotation.Nullable;
 
 import java.util.Objects;
 

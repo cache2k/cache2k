@@ -20,7 +20,7 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 /**
  * Creates a new instance of the customization based on the class name and the class loader

@@ -24,8 +24,8 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.processor.EntryProcessor;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.NonNull;
+import org.cache2k.annotation.Nullable;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;

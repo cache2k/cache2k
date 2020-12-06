@@ -22,7 +22,7 @@ package org.cache2k;
 
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.ConfigBean;

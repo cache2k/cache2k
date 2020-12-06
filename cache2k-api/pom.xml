@@ -35,14 +35,6 @@
       <version>1.4.10</version>
       <scope>provided</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.checkerframework/checker-qual -->
-    <dependency>
-        <groupId>org.checkerframework</groupId>
-        <artifactId>checker-qual</artifactId>
-        <version>3.7.1</version>
-        <scope>provided</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.cache2k</groupId>
       <artifactId>cache2k-testing</artifactId>

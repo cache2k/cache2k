@@ -28,7 +28,7 @@ import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.test.util.TestingBase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;

@@ -22,7 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.ForwardingCache;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 

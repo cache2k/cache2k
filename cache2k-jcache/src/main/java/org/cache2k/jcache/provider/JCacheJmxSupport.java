@@ -21,7 +21,7 @@ package org.cache2k.jcache.provider;
  */
 
 import org.cache2k.Cache;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.event.CacheClosedListener;
 
 import javax.management.InstanceNotFoundException;

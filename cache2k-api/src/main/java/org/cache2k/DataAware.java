@@ -20,7 +20,7 @@ package org.cache2k;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.cache2k.annotation.NonNull;
 
 /**
  * Parent for all interfaces dealing with cached data.

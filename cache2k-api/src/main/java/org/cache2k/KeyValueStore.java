@@ -22,7 +22,7 @@ package org.cache2k;
 
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.cache2k.annotation.NonNull;
 
 import java.util.Map;
 

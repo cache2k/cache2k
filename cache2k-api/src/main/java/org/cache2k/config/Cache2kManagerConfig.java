@@ -20,7 +20,7 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 /**
  * Configuration options for a cache manager. The options can only be changed if a

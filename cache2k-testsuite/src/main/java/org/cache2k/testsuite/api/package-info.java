@@ -27,6 +27,6 @@ package org.cache2k.testsuite.api;
  */
 
 import org.cache2k.annotation.NonNullApi;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.cache2k.annotation.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.checkerframework.framework.qual.TypeUseLocation;

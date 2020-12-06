@@ -21,7 +21,7 @@ package org.cache2k.testsuite.support;
  */
 
 import org.cache2k.io.CacheLoader;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.cache2k.annotation.NonNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

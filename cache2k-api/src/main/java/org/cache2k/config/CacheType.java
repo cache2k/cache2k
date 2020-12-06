@@ -20,7 +20,7 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;

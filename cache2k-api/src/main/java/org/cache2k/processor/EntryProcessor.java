@@ -21,8 +21,8 @@ package org.cache2k.processor;
  */
 
 import org.cache2k.DataAware;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.NonNull;
+import org.cache2k.annotation.Nullable;
 
 /**
  * An invokable function to perform an atomic operation on a cache entry. The entry

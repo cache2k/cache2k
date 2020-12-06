@@ -21,7 +21,7 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.CacheEntry;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cache2k.annotation.Nullable;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
 
