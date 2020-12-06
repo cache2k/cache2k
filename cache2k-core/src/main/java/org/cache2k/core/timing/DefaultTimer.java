@@ -185,7 +185,7 @@ public class DefaultTimer implements Timer {
     if (time != Long.MAX_VALUE) {
       long earliestTime = now + lagMillis;
       nextScheduled = Math.max(earliestTime, time);
-      scheduler.schedule(timerAction, nextScheduled);
+      scheduler.schedule(timerAction, clock.toMillis(nextScheduled));
     } else {
       nextScheduled = Long.MAX_VALUE;
     }
