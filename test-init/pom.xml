@@ -64,5 +64,24 @@
     </dependency>
 
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+          <runOrder>random</runOrder>
+          <!-- some tests are waiting for timer events, more threads per core is useful -->
+          <parallel>classes</parallel>
+          <threadCount>1</threadCount>
+          <perCoreThreadCount>false</perCoreThreadCount>
+          <systemPropertyVariables>
+            <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>7654</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

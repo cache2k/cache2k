@@ -37,10 +37,12 @@ import org.cache2k.Cache;
  */
 public class CacheClosedException extends IllegalStateException {
 
+  public CacheClosedException() { }
+
   /**
    * Included manager and cache name in the detail message, preferred.
    */
-  public CacheClosedException(final Cache cache) {
+  public CacheClosedException(Cache cache) {
     super(BaseCache.nameQualifier(cache));
   }
 

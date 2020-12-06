@@ -22,10 +22,12 @@ package org.cache2k.core.timing;
 
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.core.CacheClosedException;
 import org.cache2k.core.HeapCache;
 import org.cache2k.operation.Scheduler;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -50,11 +52,14 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
   private ScheduledExecutorService scheduledExecutor = null;
   private int usageCounter = 0;
 
-  private DefaultSchedulerProvider() { }
+  /**
+   * Singleton, non private scope for testing only.
+   */
+  DefaultSchedulerProvider() { }
 
   @Override
   public synchronized Scheduler supply(CacheBuildContext<?, ?> buildContext) {
-    if (scheduledExecutor == null) {
+    if (usageCounter == 0) {
       scheduledExecutor = new ScheduledThreadPoolExecutor(
         2, new DaemonThreadFactory());
     }
@@ -71,8 +76,9 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
       scheduledExecutor.shutdownNow();
       try {
         scheduledExecutor.awaitTermination(1, TimeUnit.DAYS);
-      } catch (InterruptedException ignore) { }
-      scheduledExecutor = null;
+      } catch (InterruptedException ignore) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
@@ -80,12 +86,24 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
 
     private boolean closed;
 
+    /**
+     * Wrap task to be executed in separate executor to not black the common
+     * scheduler. Scheduling may race with closing of the cache. When shut down
+     * the ScheduledExcecutorService is throwing a RejectedExecutionException.
+     * Rethrow as CacheClosedException. When this exception happens internally, it
+     * is masked, if its propagated to the client its the "correct" exception since
+     * the client was issuing a close in parallel.
+     */
     @Override
     public void schedule(Runnable task, long millis) {
       Runnable wrap = () -> pooledExecutor.execute(task);
       long delay = millis - System.currentTimeMillis();
       delay = Math.max(0, delay);
-      scheduledExecutor.schedule(wrap, delay, TimeUnit.MILLISECONDS);
+      try {
+        scheduledExecutor.schedule(wrap, delay, TimeUnit.MILLISECONDS);
+      } catch (RejectedExecutionException ex) {
+        throw new CacheClosedException();
+      }
     }
 
     @Override
