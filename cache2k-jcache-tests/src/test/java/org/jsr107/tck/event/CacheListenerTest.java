@@ -439,7 +439,7 @@ public void testFilteredListener() throws InterruptedException {
   //iterating should cause read events on non-expired entries
   for (Cache.Entry<Long, String> entry : cache) {
     String value = entry.getValue();
-    System.out.println(value);
+    // System.out.println(value);
   }
   assertEquals(2, filteredListener.getCreated());
   assertEquals(2, filteredListener.getUpdated());

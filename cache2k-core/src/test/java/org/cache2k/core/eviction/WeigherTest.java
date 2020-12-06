@@ -166,8 +166,7 @@ public class WeigherTest extends TestingBase {
     c.put(2, 1);
     assertEquals(6, countEntriesViaIteration());
     c.put(2, size * 2);
-    assertEquals(1, countEntriesViaIteration());
-    assertTrue("the entry that is updated is never removed", c.containsKey(2));
+    assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
     c.put(1, 1);
     assertEquals(1, countEntriesViaIteration());
     assertFalse("the other entry is removed", c.containsKey(2));
@@ -195,8 +194,7 @@ public class WeigherTest extends TestingBase {
     c.put(14, 1);
     assertEquals(5, countEntriesViaIteration());
     c.put(2, size * 2);
-    assertEquals(1, countEntriesViaIteration());
-    assertTrue("the entry that is updated is never removed", c.containsKey(2));
+    assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
     c.put(1, 1);
     assertEquals(1, countEntriesViaIteration());
     assertFalse("the other entry is removed", c.containsKey(2));
@@ -293,8 +291,7 @@ public class WeigherTest extends TestingBase {
     c.get(2);
     assertEquals(2, countEntriesViaIteration());
     reload(2); // 100
-    assertEquals(1, countEntriesViaIteration());
-    assertTrue("the entry that is updated is never removed", c.containsKey(2));
+    assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
     reload(1);
     assertEquals(1, countEntriesViaIteration());
     assertFalse("the other entry is removed", c.containsKey(2));

@@ -80,7 +80,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   volatile Entry<K, V> heapEntry;
   ExaminationEntry<K, V> heapOrLoadedEntry;
   V newValueOrException;
-  V oldValueOrException;
   R result;
 
   /**
@@ -476,8 +475,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Check whether we are executed on an expired entry before the
    * timer event for the expiry was received. In case expiry listeners
    * are present, we want to make sure that an expiry is sent before
-   * a mutation happens, which was eventually triggered the fact that the
-   * entry expired.
+   * a mutation happens, which was eventually triggered by the fact that the
+   * entry expired. For example, a get() will trigger a load if the entry
+   * expired.
    */
   public void checkExpiryBeforeMutation() {
     if (entryExpiredListeners() == null) {
@@ -494,8 +494,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       boolean justExpired = false;
       synchronized (heapEntry) {
         justExpired = true;
-        heapEntry.setNextRefreshTime(Entry.EXPIRED);
-        timing().stopStartTimer(0, heapEntry);
+        heapEntry.setNextRefreshTime(timing().stopStartTimer(ExpiryTimeValues.NOW, heapEntry));
         heapDataValid = false;
       }
       if (justExpired) {
@@ -1009,7 +1008,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     boolean hasKeepAfterExpired = heapCache.isKeepAfterExpired();
     boolean expired = expiry == ExpiryTimeValues.NOW;
     if (!expired || remove) {
-      mutationUpdateHeap();
+      mutationMayStore();
       return;
     }
     if (hasKeepAfterExpired) {
@@ -1023,43 +1022,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void expiredImmediatelyKeepData() {
     expiredImmediately = true;
-    mutationUpdateHeap();
+    mutationMayStore();
   }
 
   public void expiredImmediatelyAndRemove() {
     remove = true;
     expiredImmediately = true;
-    mutationUpdateHeap();
-  }
-
-  /**
-   * The final write in the entry is at {@link #mutationReleaseLockAndStartTimer()}
-   */
-  public void mutationUpdateHeap() {
-    synchronized (heapEntry) {
-      if (heapCache.isRecordRefreshTime()) {
-        heapEntry.setRefreshTime(lastRefreshTime);
-      }
-      if (remove) {
-        if (expiredImmediately) {
-          heapEntry.setNextRefreshTime(Entry.EXPIRED);
-          heapEntry.setValueOrException(newValueOrException);
-        } else {
-          if (!heapEntry.isVirgin()) {
-            heapEntry.setNextRefreshTime(Entry.REMOVE_PENDING);
-          }
-        }
-      } else {
-        oldValueOrException = heapEntry.getValueOrException();
-        heapEntry.setValueOrException(newValueOrException);
-      }
-    }
-    if (!remove) {
-      boolean evictionHint = heapCache.eviction.updateWeight(heapEntry);
-      if (evictionHint) {
-        heapCache.eviction.evictEventually();
-      }
-    }
     mutationMayStore();
   }
 
@@ -1079,22 +1047,26 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(heapEntry);
-    if (expiredImmediately) {
-      sendExpiryEventsWhenExpiredDuringOperation(entryCopy);
-    } else if (remove) {
-      if (heapDataValid) {
-        if (entryRemovedListeners() != null) {
-          for (CacheEntryRemovedListener<K, V> l : entryRemovedListeners()) {
-            try {
-              l.onEntryRemoved(userCache, entryCopy);
-            } catch (Throwable t) {
-              exceptionToPropagate = new ListenerException(t);
+    V oldValueOrException = heapEntry.getValueOrException();
+    if (expiredImmediately || remove) {
+      CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(getKey(), oldValueOrException);
+      if (expiredImmediately) {
+        sendExpiryEventsWhenExpiredDuringOperation(entryCopy);
+      } else if (remove) {
+        if (heapDataValid) {
+          if (entryRemovedListeners() != null) {
+            for (CacheEntryRemovedListener<K, V> l : entryRemovedListeners()) {
+              try {
+                l.onEntryRemoved(userCache, entryCopy);
+              } catch (Throwable t) {
+                exceptionToPropagate = new ListenerException(t);
+              }
             }
           }
         }
       }
     } else {
+      CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(getKey(), newValueOrException);
       if (heapDataValid) {
         if (entryUpdatedListeners() != null) {
           CacheEntry<K, V> previousEntry =
@@ -1156,14 +1128,26 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Entry mutation and start of expiry has to be done atomically to avoid races.
    */
   public void mutationReleaseLockAndStartTimer() {
-    if (valueLoadedOrRevived) {
-      if (!remove ||
-        !(heapEntry.getValueOrException() == null && heapCache.isRejectNullValues())) {
-        operation.loaded(this, heapEntry);
-      }
-    }
     boolean justExpired = false;
+    boolean evictionHint = false;
     synchronized (heapEntry) {
+
+      if (heapCache.isRecordRefreshTime()) {
+        heapEntry.setRefreshTime(lastRefreshTime);
+      }
+      if (remove) {
+        if (expiredImmediately) {
+          heapEntry.setNextRefreshTime(Entry.EXPIRED);
+          heapEntry.setValueOrException(newValueOrException);
+        } else {
+          if (!heapEntry.isVirgin()) {
+            heapEntry.setNextRefreshTime(Entry.REMOVE_PENDING);
+          }
+        }
+      } else {
+        heapEntry.setValueOrException(newValueOrException);
+        evictionHint = heapCache.eviction.updateWeight(heapEntry);
+      }
       if (refresh) {
         heapCache.startRefreshProbationTimer(heapEntry, expiry);
       } else if (remove) {
@@ -1175,6 +1159,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           justExpired = true;
         }
       }
+      if (valueLoadedOrRevived) {
+        if (!remove ||
+          !(heapEntry.getValueOrException() == null && heapCache.isRejectNullValues())) {
+          operation.loaded(this, heapEntry);
+        }
+      }
       if (!justExpired) {
         heapEntry.processingDone(this);
         entryLocked = false;
@@ -1183,6 +1173,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (justExpired) {
       expiredAtEndOfOperationStartOver();
       return;
+    }
+    if (evictionHint) {
+      heapCache.eviction.evictEventually();
     }
     updateMutationStatistics();
     mutationDone();

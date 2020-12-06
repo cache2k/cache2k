@@ -1551,7 +1551,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     if (e.isGone() || e.isExpiredState()) {
       return;
     }
-    e.setExpiredState();
+    e.setNextRefreshTime(Entry.EXPIRED);
     expireAndRemoveEventually(e);
   }
 

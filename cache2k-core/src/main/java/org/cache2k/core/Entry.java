@@ -506,11 +506,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return false;
   }
 
-  /** Entry is kept in the cache but has expired */
-  public void setExpiredState() {
-    nextRefreshTime = EXPIRED;
-  }
-
   /**
    * The entry expired, still in the cache and subject to removal from the cache
    * if {@link HeapCache#isKeepAfterExpired()} is false. {@code true} means that
