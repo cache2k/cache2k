@@ -186,12 +186,6 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
         new WeakHashMap<ClassLoader, Map<String, CacheManager>>(loader2name2manager);
       copy.put(cm.getClassLoader(), name2managers);
       loader2name2manager = copy;
-      if (cm.isDefaultManager()) {
-        Map<ClassLoader, String> defaultNameCopy =
-          new WeakHashMap<ClassLoader, String>(loader2defaultName);
-        defaultNameCopy.remove(cm.getClassLoader());
-        loader2defaultName = defaultNameCopy;
-      }
     }
   }
 

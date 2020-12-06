@@ -78,8 +78,8 @@ public abstract class CacheManager implements AutoCloseable {
    * Change the default manager name. The method can only be called once early in application
    * startup, before the default manager instance is requested.
    *
-   * <p>It is also possible to set a different default manager name via JNDI context
-   * "java:comp/env" and name "org.cache2k.CacheManager.defaultName" or via the XML configuration.
+   * <p>It is also possible to set a different default manager name
+   * via the XML configuration.
    *
    * <p>The allowed characters in a manager name are identical to the characters in a cache name,
    * this is documented at {@link Cache2kBuilder#name(String)}

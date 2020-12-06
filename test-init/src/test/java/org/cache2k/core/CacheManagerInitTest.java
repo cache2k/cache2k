@@ -63,6 +63,7 @@ public class CacheManagerInitTest {
     CacheManager.closeAll();
     Cache c = Cache2kBuilder.forUnknownTypes().name("xy").build();
     assertNotSame(cm1, c.getCacheManager());
+    assertEquals(OTHER_DEFAULT_CACHE_MANAGER_NAME, c.getCacheManager().getName());
     c.close();
   }
 
