@@ -36,7 +36,6 @@ import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
 
-import java.io.Closeable;
 import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.HashMap;
@@ -235,9 +234,9 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   @Override
   public void closeCustomization(Object customization, String customizationName) {
-    if (customization instanceof Closeable) {
+    if (customization instanceof AutoCloseable) {
       try {
-        ((Closeable) customization).close();
+        ((AutoCloseable) customization).close();
       } catch (Exception e) {
         String message =
           customizationName + ".close() exception (" + nameQualifier(this) + ")";

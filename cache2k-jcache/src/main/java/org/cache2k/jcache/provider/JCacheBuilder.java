@@ -198,8 +198,8 @@ public class JCacheBuilder<K, V> {
         "propagate previous loader exception", loadExceptionInfo.getException())));
   }
 
-  abstract class CloseableLoader implements AdvancedCacheLoader<K, V>, Closeable { }
-  abstract class CloseableWriter implements CacheWriter<K, V>, Closeable { }
+  abstract class CloseableLoader implements AdvancedCacheLoader<K, V>, AutoCloseable { }
+  abstract class CloseableWriter implements CacheWriter<K, V>, AutoCloseable { }
 
   /**
    * Configure loader and writer.
@@ -212,7 +212,7 @@ public class JCacheBuilder<K, V> {
           new CloseableLoader() {
 
             @Override
-            public void close() throws IOException {
+            public void close() throws Exception {
               if (clf instanceof Closeable) {
                 ((Closeable) clf).close();
               }

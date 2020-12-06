@@ -27,7 +27,7 @@ package org.cache2k;
  * to a cache which extend and modify its behavior. Typical exceptions are
  * {@link org.cache2k.io.CacheLoader} and the {@link org.cache2k.expiry.ExpiryPolicy}.
  *
- * <p>A customization may implement {@link java.io.Closeable} to be notified upon
+ * <p>A customization may implement {@link AutoCloseable} to be notified upon
  * cache shutdown.
  *
  * @author Jens Wilke

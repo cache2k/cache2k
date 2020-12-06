@@ -23,7 +23,6 @@ package org.cache2k;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.spi.Cache2kCoreProvider;
 
-import java.io.Closeable;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -44,7 +43,7 @@ import java.util.ServiceLoader;
  *
  * @author Jens Wilke
  */
-public abstract class CacheManager implements Closeable {
+public abstract class CacheManager implements AutoCloseable {
 
   /**
    * Name of the default cache manager if not overridden, see {@link #setDefaultName(String)}.

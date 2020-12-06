@@ -34,7 +34,6 @@ import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 
-import java.io.Closeable;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -114,7 +113,7 @@ import java.util.function.Function;
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
 public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
-  KeyValueSource<K, V>, Closeable {
+  KeyValueSource<K, V>, AutoCloseable {
 
   /**
    * A configured or generated name of this cache instance. A cache in close state will still

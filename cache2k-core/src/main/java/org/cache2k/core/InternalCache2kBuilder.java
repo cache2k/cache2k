@@ -49,8 +49,6 @@ import org.cache2k.event.CacheLifecycleListener;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheLoader;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -166,7 +164,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
    * Starting with 2.0 we don't send an entry with an exception to the loader.
    */
   private static class WrappedAdvancedCacheLoader<K, V>
-    implements AdvancedCacheLoader<K, V>, Closeable {
+    implements AdvancedCacheLoader<K, V>, AutoCloseable {
 
     HeapCache<K, V> heapCache;
     private final AdvancedCacheLoader<K, V> forward;
@@ -178,9 +176,9 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     }
 
     @Override
-    public void close() throws IOException {
-      if (forward instanceof Closeable) {
-        ((Closeable) forward).close();
+    public void close() throws Exception {
+      if (forward instanceof AutoCloseable) {
+        ((AutoCloseable) forward).close();
       }
     }
 

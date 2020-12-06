@@ -33,6 +33,7 @@
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-annotations-jvm</artifactId>
       <version>1.4.10</version>
+      <scope>provided</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.checkerframework/checker-qual -->
     <dependency>
