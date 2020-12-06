@@ -168,8 +168,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       synchronized (lock) {
         checkClosed();
         if (loaderExecutor == this) {
-          int threadCount =
-            Runtime.getRuntime().availableProcessors() * TUNABLE.loaderThreadCountCpuFactor;
+          int threadCount = Runtime.getRuntime().availableProcessors();
           loaderExecutor = provideDefaultLoaderExecutor(threadCount);
         }
         loaderExecutor.execute(command);
@@ -1942,11 +1941,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
     public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
 
-    /**
-     * Number of maximum loader threads, depending on the CPUs.
-     */
-    public int loaderThreadCountCpuFactor = 1;
-
     public StandardCommonMetricsFactory commonMetricsFactory =
       new StandardCommonMetricsFactory();
 
@@ -1959,7 +1953,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     public int segmentCountOverride = 0;
 
     public long timerLagMillis = 1003;
-
   }
 
 }

@@ -148,10 +148,10 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   MutableCacheEntry<K, V> setValue(V v);
 
   /**
-   * Calls the loader unconditionally in this operation. Multiple calls to reload
-   * have no effect.
+   * Calls the loader unconditionally in this operation. Multiple calls have no effect.
+   * After the load, the loaded value can be retrieved with {@link #getValue()}.
    *
-   * @throws IllegalStateException if {@link #getValue()} was called before reload
+   * @throws IllegalStateException if {@link #getValue()} was called before
    * @throws UnsupportedOperationException if no loader is defined
    * @throws RestartException If the information is not yet available and the cache
    *                          needs to do an operation to supply it. After completion,
