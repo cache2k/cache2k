@@ -13,7 +13,8 @@
   <name>cache2k addon</name>
 
   <description>
-    A collection of customizers that can be used as is or serve as an example for own code.
+    A collection of customizers and features that can be used as is or serve as an example
+    for own code.
   </description>
 
   <dependencies>

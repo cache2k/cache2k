@@ -37,11 +37,11 @@ public class UniversalResilienceConfig
   implements ConfigSection<UniversalResilienceConfig, UniversalResilienceConfig.Builder> {
 
   private int retryPercentOfResilienceDuration = 10;
+  private double backoffMultiplier = 1.5;
   private @Nullable Duration minRetryInterval = Duration.ZERO;
   private @Nullable Duration retryInterval = null;
   private @Nullable Duration maxRetryInterval = null;
   private @Nullable Duration resilienceDuration = null;
-  private double backoffMultiplier = 1.5;
 
   /**
    * @see Builder#retryInterval
