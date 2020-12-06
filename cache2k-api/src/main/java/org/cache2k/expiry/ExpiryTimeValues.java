@@ -36,6 +36,7 @@ import org.cache2k.processor.MutableCacheEntry;
  * @see ExpiryPolicy
  * @see ResiliencePolicy
  * @see org.cache2k.Cache#expireAt
+ * @see org.cache2k.processor.MutableCacheEntry#setExpiryTime(long)
  * @see Expiry
  */
 public interface ExpiryTimeValues {
@@ -49,16 +50,18 @@ public interface ExpiryTimeValues {
   long NEUTRAL = Cache2kConfig.UNSET_LONG;
 
   /**
-   * The value expires immediately.  An immediate load is triggered if
-   * {@link org.cache2k.Cache2kBuilder#refreshAhead} is enabled.
+   * The value expires immediately and will not be cached. No refreshing is started.
    */
   long NOW = 0;
 
   /**
-   * Starts a refresh. The current value is visible until the refresh is complete.
-   * With a negative value get requests will block until the refreshed value is available.
-   * <p>Rationale: Any value in the past does and between the current time, does the same
-   * as if the time is reached just now.
+   * Expires the entry and starts a refresh if {@link org.cache2k.Cache2kBuilder#refreshAhead}
+   * is enabled. With a positive value the current value is visible until the refresh is complete.
+   * With a negative value a {@code get()} requests will block until the refreshed value
+   * is available.
+   *
+   * <p>Rationale: Any value in the past does and between the current time, does
+   * the same as if the time is reached just now.
    */
   long REFRESH = 1234;
 
