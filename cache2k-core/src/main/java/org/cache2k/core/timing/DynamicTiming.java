@@ -74,7 +74,7 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
 
   @Override
   public synchronized void close(InternalCacheCloseContext closeContext) {
-    super.cancelAll();
+    super.close(closeContext);
     closeContext.closeCustomization(expiryPolicy, "expiryPolicy");
   }
 

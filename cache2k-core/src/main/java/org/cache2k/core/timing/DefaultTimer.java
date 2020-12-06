@@ -20,6 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.api.InternalClock;
 import org.cache2k.core.api.Scheduler;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Standard timer implementation. Due timer tasks are executed via a scheduler
- * that runs at most every second (lag time, configurable). There always only
+ * that runs at most every second (lag time, configurable). There is always only
  * one pending scheduler job per timer.
  *
  * @author Jens Wilke
@@ -53,19 +54,15 @@ public class DefaultTimer implements Timer {
     }
   };
 
-  public DefaultTimer(InternalClock c, long lagMillis) {
-    this(c, lagMillis, 876);
+  public DefaultTimer(InternalClock c, Scheduler scheduler, long lagMillis) {
+    this(c, scheduler, lagMillis, 876);
   }
 
-  public DefaultTimer(InternalClock c, long lagMillis, int steps) {
+  public DefaultTimer(InternalClock c, Scheduler scheduler, long lagMillis, int steps) {
     structure = new TimerWheels(c.millis() + 1, lagMillis + 1, steps);
     this.lagMillis = lagMillis;
     this.clock = c;
-    if (c instanceof Scheduler) {
-      scheduler = (Scheduler) clock;
-    } else {
-      scheduler = DefaultScheduler.INSTANCE;
-    }
+    this.scheduler = scheduler;
   }
 
   /**
@@ -137,6 +134,12 @@ public class DefaultTimer implements Timer {
     } finally {
       lock.unlock();
     }
+  }
+
+  @Override
+  public void close(InternalCacheCloseContext closeContext) {
+    cancelAll();
+    closeContext.closeCustomization(scheduler, "scheduler");
   }
 
   /**

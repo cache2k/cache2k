@@ -28,6 +28,7 @@ import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.api.InternalClock;
+import org.cache2k.core.api.Scheduler;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -49,8 +50,8 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final boolean refreshAhead;
   protected final long expiryMillis;
   protected final long lagMillis;
+  private final Timer timer;
 
-  private Timer timer;
   private TimerEventListener<K, V> target;
 
   StaticTiming(InternalCacheBuildContext<K, V> buildContext,
@@ -70,7 +71,13 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     } else {
       lagMillis = c.getTimerLag().toMillis();
     }
-    timer = new DefaultTimer(clock, lagMillis);
+    Scheduler scheduler;
+    if (clock instanceof Scheduler) {
+      scheduler = (Scheduler) clock;
+    } else {
+      scheduler = DefaultSchedulerProvider.INSTANCE.supply(buildContext);
+    }
+    timer = new DefaultTimer(clock, scheduler, lagMillis);
     this.resiliencePolicy = resiliencePolicy;
   }
 
@@ -81,20 +88,13 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public void cancelAll() {
-    Timer timer = this.timer;
-    if (timer != null) {
-      timer.cancelAll();
-    }
+    timer.cancelAll();
   }
 
   @Override
   public void close(InternalCacheCloseContext closeContext) {
-    Timer timer = this.timer;
-    if (timer != null) {
-      timer.cancelAll();
-      closeContext.closeCustomization(resiliencePolicy, "resiliencePolicy");
-    }
-    this.timer = null;
+    closeContext.closeCustomization(resiliencePolicy, "resiliencePolicy");
+    timer.close(closeContext);
   }
 
   @Override
@@ -104,7 +104,8 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
-    long pointInTime = resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
+    long pointInTime =
+      resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
     return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryMillis, pointInTime);
   }
 
@@ -210,20 +211,16 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   void scheduleTask(long nextRefreshTime, Entry<K, V> e) {
-    Timer timer = this.timer;
-    if (timer != null) {
-      try {
-        timer.schedule(e.getTask(), nextRefreshTime);
-      } catch (IllegalStateException ignore) {
-      }
+    try {
+      timer.schedule(e.getTask(), nextRefreshTime);
+    } catch (IllegalStateException ignore) {
     }
   }
 
   @SuppressWarnings("unchecked")
   public void cancelExpiryTimer(Entry<K, V> e) {
     Tasks<K, V> tsk = (Tasks<K, V>) e.getTask();
-    Timer timer = this.timer;
-    if (tsk != null && timer != null) {
+    if (tsk != null) {
       timer.cancel(tsk);
     }
     e.setTask(null);

@@ -26,6 +26,7 @@ import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.core.api.NeedsClose;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.io.LoadExceptionInfo;
@@ -39,7 +40,7 @@ import java.time.Duration;
  * @author Jens Wilke
  */
 @SuppressWarnings({"unchecked"})
-public abstract class Timing<K, V>  {
+public abstract class Timing<K, V> implements NeedsClose {
 
   /**
    * Instance of expiry calculator that extracts the expiry time from the value.
@@ -103,6 +104,7 @@ public abstract class Timing<K, V>  {
    */
   public void cancelAll() { }
 
+  @Override
   public void close(InternalCacheCloseContext closeContext) { }
 
   /**

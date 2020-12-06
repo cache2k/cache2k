@@ -54,12 +54,12 @@ public class TimerTest {
 
   void init(long startTime, long lagMillis, int steps) {
     clock = new MyClock(startTime);
-    timer = new DefaultTimer(clock, lagMillis, steps);
+    timer = new DefaultTimer(clock, clock, lagMillis, steps);
   }
 
   void init(long startTime, long lagMillis) {
     clock = new MyClock(startTime);
-    timer = new DefaultTimer(clock, lagMillis);
+    timer = new DefaultTimer(clock, clock, lagMillis);
   }
 
   List<MyTimerTask> schedule(long... times) {
@@ -102,8 +102,9 @@ public class TimerTest {
   @Test
   public void misc() {
     long startTime = 10;
+    final SimulatedClock simulatedClock = new SimulatedClock(startTime);
     Timer st =
-      new DefaultTimer(new SimulatedClock(startTime), 1);
+      new DefaultTimer(simulatedClock, simulatedClock, 1);
     TimerTask t = new MyTimerTask();
     try {
       st.schedule(t, -5);
@@ -127,7 +128,7 @@ public class TimerTest {
     long startTime = 10;
     long lagTime = 100;
     MyClock clock = new MyClock(startTime);
-    Timer st = new DefaultTimer(clock, lagTime);
+    Timer st = new DefaultTimer(clock, clock, lagTime);
     MyTimerTask tt1 = new MyTimerTask();
     long t1 = 123456789;
     st.schedule(tt1, t1);

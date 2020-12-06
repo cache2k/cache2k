@@ -23,6 +23,11 @@ package org.cache2k.core.api;
 import org.cache2k.CacheManager;
 
 /**
+ * Used to know cache and manager name during close for logging and throwing exceptions.
+ * Also provided {@link #closeCustomization(Object, String)} to optionally close
+ * a customization. Components using this implement {@link NeedsClose}
+ *
+ * @see NeedsClose
  * @author Jens Wilke
  */
 public interface InternalCacheCloseContext {
@@ -40,6 +45,9 @@ public interface InternalCacheCloseContext {
   /**
    * Call close on the customization if the {@link java.io.Closeable} interface
    * is implemented
+   *
+   * @param name Name of customization like "expiryPolicy". This is used when an exception
+   *             happens upon close.
    */
   void closeCustomization(Object customization, String name);
 

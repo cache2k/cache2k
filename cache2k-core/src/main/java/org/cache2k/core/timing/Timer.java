@@ -20,12 +20,14 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.core.api.NeedsClose;
+
 /**
  * Timer for triggering expiry or refresh.
  *
  * @author Jens Wilke
  */
-public interface Timer {
+public interface Timer extends NeedsClose {
 
   /**
    * Schedule the specified timer task for execution at the specified
