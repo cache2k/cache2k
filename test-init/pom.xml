@@ -6,12 +6,12 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>test-parent</artifactId>
-    <version>1.9.4.Beta</version>
+    <version>2.0-SNAPSHOT</version>
     <relativePath>../test-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>test-init</artifactId>
-  <version>1.9.4.Beta</version>
+  <version>2.0-SNAPSHOT</version>
   <name>cache2k initialization tests</name>
   <description>A few tests that check different default initialization and closing of cache managers.
   </description>
