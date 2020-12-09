@@ -9,12 +9,15 @@ cache2k is an in-memory high performance Java Caching library.
 ````java
   Cache<String,String> cache = new Cache2kBuilder<String, String>() {}
     .expireAfterWrite(5, TimeUnit.MINUTES)    // expire/refresh after 5 minutes
-    .resilienceDuration(30, TimeUnit.SECONDS) // cope with at most 30 seconds
-                                              // outage before propagating 
-                                              // exceptions
+    .setupWith(UniversalResiliencePolicy::enable, b -> b // enable resilience policy
+      .resilienceDuration(30, TimeUnit.SECONDS)          // cope with at most 30 seconds
+                                                         // outage before propagating 
+                                                         // exceptions
+    )
     .refreshAhead(true)                       // keep fresh when expiring
     .loader(this::expensiveOperation)         // auto populating function
     .build();
+
 ````
 
 For a detailed introduction continue with [Getting Started](https://cache2k.org/docs/latest/user-guide.html#getting-started).
@@ -22,10 +25,7 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
 ## Features at a glance
 
  * Small jar file (less than 400k) with no external dependencies
- * Even smaller, for use with [Android](https://cache2k.org/docs/latest/user-guide.html#android)
  * Fastest access times, due to non blocking and wait free access of cached values, [Blog article](https://cruftex.net/2017/09/01/Java-Caching-Benchmarks-Part-3.html)
- * Java 6 and [Android](https://cache2k.org/docs/latest/user-guide.html#android) compatible
- * Leverages Java 8 to increase performance (if possible)
  * Pure Java code, no use of `sun.misc.Unsafe`
  * Thread safe, with a complete set of [atomic operations](https://cache2k.org/docs/latest/user-guide.html#atomic-operations)
  * [Resilience and smart exception handling](https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions) 
