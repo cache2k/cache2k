@@ -29,14 +29,12 @@ import static org.junit.Assert.*;
 import org.cache2k.core.log.Log;
 import org.junit.Test;
 
-import javax.annotation.Nullable;
-
 /**
  * @author Jens Wilke
  */
 public class CacheManagerInitTest {
 
-  public static final @Nullable String OTHER_DEFAULT_CACHE_MANAGER_NAME = "main";
+  public static final String OTHER_DEFAULT_CACHE_MANAGER_NAME = "main";
 
   static {
     CacheManager.setDefaultName(OTHER_DEFAULT_CACHE_MANAGER_NAME);

@@ -24,8 +24,13 @@ import org.cache2k.config.Cache2kConfig;
 import org.cache2k.io.CacheLoader;
 
 /**
- * Set of metrics for cache statistics. The cache statistics are exported
- * to JMX or can be retrieved via {@link CacheControl#sampleStatistics()}
+ * Set of metrics for cache statistics. The cache statistics can be retrieved
+ * via {@link CacheControl#sampleStatistics()}. The statistics may be unavailable
+ * if disabled via {@link org.cache2k.Cache2kBuilder#disableStatistics(boolean)}.
+ * General information about the cache is available via {@link CacheInfo}.
+ *
+ * <p>For exporting to a monitoring system the separate modes {@code cache2k-jmx}
+ * and {@code cache2k-micrometer} are available.
  *
  * @author Jens Wilke
  */
@@ -138,8 +143,13 @@ public interface CacheStatistics {
 
   /**
    * Number of key mutations occurred. This should be always 0, otherwise it is an indicator
-   * that the hash keys objects are modified by the application after usage within a cache
-   * request.
+   * that the a key object was modified after it was stored in the cache. Whenever
+   * {@code `keyMutationCount`} is non-zero, check and correct your application.
+   *
+   * <p>How it works: When an entry is evicted the cache checks whether the {@code hashCode} of
+   * the key object is identical to the code when it was inserted. If not, the counter is
+   * incremented. When a mutation is detected, also a warning is logged but only once
+   * during the cache lifetime.
    */
   long getKeyMutationCount();
 

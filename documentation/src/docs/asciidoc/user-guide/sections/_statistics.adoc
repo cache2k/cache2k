@@ -3,23 +3,14 @@
 
 cache2k collects statistics by default and exposes them via JMX.
 
+=== Programmatic access
+
+Statistics are available via the API, see `CacheStatistics`.
+
 === JMX Metrics
 
-JMX support is present in `cache2k-core`. Registration of JMX beans is disabled by default and needs to be
-enabled via `Cache2kBuilder.enableJmx`. In server environments it is a good idea to enable JMX for all caches by
-default:
-
-[source,xml]
-----
-<cache2k>
-  <version>1.0</version>
-  <defaults>
-    <cache>
-      <enableJmx>true</enableJmx>
-    </cache>
-  </defaults>
-</cache2k>
-----
+JMX support is present in the module `cache2k-jmx`. Registration of JMX beans is disabled by default and needs to be
+enabled.
 
 The management beans are registered with the platform MBean server. The object name of a cache follows the
 pattern `org.cache2k:type=Cache,manager=<managerName>,name=<cacheName>`, the object name of a cache manager
@@ -34,8 +25,12 @@ More detailed information can be found in the API documentation:
 
 Multiple cache managers with the identical name may coexist under different class loaders. With JMX enabled, this
 will lead to identical JMX objects and refusal of operation. A workaround is to use unique cache manager names.
-The name of the default manager, which is usually `"default"` can be changed via the XML configuration, JNDI or
+The name of the default manager, which is usually `"default"` can be changed via the XML configuration or
 a call to `CacheManager.setDefaultName` early in the application startup.
+
+=== Micrometer Metrics
+
+Micrometer support is available in the module `cache2k-micrometer`.
 
 === `toString()` Output
 
@@ -74,37 +69,3 @@ The implementation uses a dirty counter per cache entry. The counter is used for
 access statistics are a by-product. The error is relatively small. Future releases may contain the option to
 obtain precise statistics.
 
-=== Internal Statistics
-
-The cache implementation has a lot statistics counters, that are exposed in an internal interface. This
-can be revealed via `((InternalCache) cache).getInfo()` and needs the `cache2k-core` artifact in the
-compile scope. However, internal interfaces may change from release to release.
-
-=== Noteworthy Metrics
-
-Some special metrics need some more explanation.
-
-==== Hash Quality
-
-Value between 100 and 0 to help evaluate the quality of the hashing function.
-100 means perfect. This metric takes into account the collision to size ratio, the longest collision size
-and the collision to slot ratio. The value reads 0 if the longest collision size gets more
-then 20.
-
-The number of collisions and the longest size of a collision slot is also available via JMX.
-
-==== Key Mutation Counter
-
-Storing objects by reference means it is possible for the application to alter the object
-value after it was involved in a cache operation. In case of the key object, this means that the
-internal data structure of the cache will be invalid after an illegal mutation.
-
-Within the cache eviction a key mutation is detected. The counter is incremented and a warning
-is written to the log. Per cache the warning is only logged once.
-
-Whenever `keyMutationCount` is non-zero, check and correct your application.
-
-==== Alert
-
-The cache as well as the cache manager have a single value health status which is intended for
-systems monitoring. The value 0 means everything is okay, 1 means warning, 2 means failure.
