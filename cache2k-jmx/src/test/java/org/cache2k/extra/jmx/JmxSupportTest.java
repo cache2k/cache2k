@@ -22,11 +22,9 @@ package org.cache2k.extra.jmx;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
 
-import org.cache2k.Weigher;
+import org.cache2k.operation.Weigher;
 import org.cache2k.annotation.Nullable;
-import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

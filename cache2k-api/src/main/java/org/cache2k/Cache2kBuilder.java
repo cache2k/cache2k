@@ -45,6 +45,7 @@ import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.integration.LoadDetail;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.io.CacheLoaderException;
+import org.cache2k.operation.Weigher;
 import org.cache2k.processor.MutableCacheEntry;
 
 import java.lang.reflect.ParameterizedType;

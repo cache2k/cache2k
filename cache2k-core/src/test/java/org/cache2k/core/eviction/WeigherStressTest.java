@@ -21,7 +21,7 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Weigher;
+import org.cache2k.operation.Weigher;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.pinpoint.stress.ThreadingStressTester;

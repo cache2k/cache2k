@@ -21,6 +21,7 @@ package org.cache2k.core.api;
  */
 
 import org.cache2k.core.eviction.EvictionMetrics;
+import org.cache2k.operation.Weigher;
 
 import java.util.Collection;
 
@@ -61,7 +62,7 @@ public interface InternalCacheInfo {
   long getMaximumWeight();
 
   /**
-   * Current sum of entry weights as returned by the {@link org.cache2k.Weigher}
+   * Current sum of entry weights as returned by the {@link Weigher}
    */
   long getTotalWeight();
 

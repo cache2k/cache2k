@@ -254,6 +254,9 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     if (config.getCacheWrapper() != null) {
       cache = config.getCacheWrapper().wrap(this, cache);
     }
+    if (wiredCache) {
+      wc.userCache = cache;
+    }
     String name = manager.newCache(cache, bc.getName());
     bc.setName(name);
     if (wiredCache) {

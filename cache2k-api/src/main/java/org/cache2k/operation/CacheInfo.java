@@ -77,7 +77,7 @@ public interface CacheInfo {
   /**
    * Configured maximum weight or -1.
    *
-   * @see org.cache2k.Weigher
+   * @see Weigher
    * @see Cache2kBuilder#maximumWeight(long)
    */
   long getMaximumWeight();
@@ -85,7 +85,7 @@ public interface CacheInfo {
   /**
    * Total weight of all entries in the cache.
    *
-   * @see org.cache2k.Weigher
+   * @see Weigher
    * @see Cache2kBuilder#maximumWeight(long)
    */
   long getTotalWeight();
@@ -94,7 +94,7 @@ public interface CacheInfo {
    * Either {@link #getMaximumWeight()} or {@link #getEntryCapacity()} depending
    * on whether a weigher is present or not.
    *
-   * @see org.cache2k.Weigher
+   * @see Weigher
    */
   long getCapacityLimit();
 

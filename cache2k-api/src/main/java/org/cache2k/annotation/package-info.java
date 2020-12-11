@@ -1,11 +1,9 @@
 /**
- * Operational aspects of a cache, like accessing statistics, basic information, change
- * runtime parameters and customizations that augment general behavior.
+ * Containing {@code NonNull} and {@code Nullable} annotations.
  *
  * @author Jens Wilke
  */
-@NonNullApi
-package org.cache2k.operation;
+package org.cache2k.annotation;
 
 /*
  * #%L
@@ -26,5 +24,3 @@ package org.cache2k.operation;
  * limitations under the License.
  * #L%
  */
-
-import org.cache2k.annotation.NonNullApi;

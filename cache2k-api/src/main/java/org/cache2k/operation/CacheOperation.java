@@ -79,7 +79,7 @@ public interface CacheOperation {
    * this is the maximum weight of all cache entries, otherwise the maximum count
    * of cache entries. The capacity is not allowed to be 0.
    *
-   * @see org.cache2k.Weigher
+   * @see Weigher
    * @param entryCountOrWeight either maximum number of entries or maximum weight
    *
    * @return See class description

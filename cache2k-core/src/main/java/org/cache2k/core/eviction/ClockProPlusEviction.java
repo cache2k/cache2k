@@ -20,7 +20,7 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
-import org.cache2k.Weigher;
+import org.cache2k.operation.Weigher;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegrityState;

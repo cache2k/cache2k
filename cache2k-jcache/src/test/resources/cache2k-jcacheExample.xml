@@ -37,7 +37,6 @@
          -->
         <section>
           <type>org.cache2k.jcache.JCacheConfig</type>
-          <!-- FIXME: parameters?! -->
           <copyAlwaysIfRequested>true</copyAlwaysIfRequested>
         </section>
       </sections>

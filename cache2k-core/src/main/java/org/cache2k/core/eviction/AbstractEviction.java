@@ -25,7 +25,7 @@ import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegerTo16BitFloatingPoint;
-import org.cache2k.Weigher;
+import org.cache2k.operation.Weigher;
 
 import java.util.function.Supplier;
 

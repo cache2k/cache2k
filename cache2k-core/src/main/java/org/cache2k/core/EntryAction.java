@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.api.CommonMetrics;
@@ -68,7 +69,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
   };
 
-  InternalCache<K, V> userCache;
+  /**
+   * Effective internal cache, either HeapCache or WiredCache.
+   */
+  InternalCache<K, V> internalCache;
+  /**
+   * Heap cache holding the in heap objects.
+   */
   HeapCache<K, V> heapCache;
   K key;
   Semantic<K, V, R> operation;
@@ -187,11 +194,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @SuppressWarnings("unchecked")
-  public EntryAction(HeapCache<K, V> heapCache, InternalCache<K, V> userCache,
+  public EntryAction(HeapCache<K, V> heapCache, InternalCache<K, V> internalCache,
                      Semantic<K, V, R> op, K k, Entry<K, V> e, CompletedCallback<K, V, R> cb) {
     super(null);
     this.heapCache = heapCache;
-    this.userCache = userCache;
+    this.internalCache = internalCache;
     operation = op;
     key = k;
     if (e != null) {
@@ -303,7 +310,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public boolean isLoaderPresent() {
-    return userCache.isLoaderPresent();
+    return internalCache.isLoaderPresent();
   }
 
   @Override
@@ -1047,6 +1054,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       mutationReleaseLockAndStartTimer();
       return;
     }
+    Cache<K, V> userCache = internalCache.getUserCache();
     V oldValueOrException = heapEntry.getValueOrException();
     if (expiredImmediately || remove) {
       CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(getKey(), oldValueOrException);
@@ -1114,6 +1122,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   private void sendExpiryEvents(CacheEntry<K, V> entryCopy) {
+    Cache<K, V> userCache =  internalCache.getUserCache();
     for (CacheEntryExpiredListener<K, V> l : entryExpiredListeners()) {
       try {
         l.onEntryExpired(userCache, entryCopy);

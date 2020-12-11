@@ -89,4 +89,10 @@ public interface InternalCache<K, V>
 
   Eviction getEviction();
 
+  /**
+   * Cache used by user, eventually wrapped. We only need to know our "wrapped self"
+   * in case events are send, so only implemented by WiredCache.
+   */
+  default Cache<K, V> getUserCache() { return null; }
+
 }

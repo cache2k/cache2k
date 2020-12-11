@@ -21,7 +21,7 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Weigher;
+import org.cache2k.operation.Weigher;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;

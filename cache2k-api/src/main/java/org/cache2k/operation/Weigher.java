@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.operation;
 
 /*
  * #%L
@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.DataAwareCustomization;
+
 /**
  * Allows to give cached values a weight and limit the cache capacity by total weight.
  *
@@ -34,7 +36,7 @@ public interface Weigher<K, V> extends DataAwareCustomization<K, V> {
    * <p>The cache implementations may derive an approximate value which has less precision.
    * The total weight in the statistics represents an approximation as well.
    *
-   * @return a positive long value representing the relative weight in comparison to the other
+   * @return a positive value representing the relative weight in comparison to the other
    * entries in the cache.
    */
   int weigh(K key, V value);

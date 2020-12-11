@@ -20,7 +20,7 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
-import org.cache2k.Weigher;
+import org.cache2k.operation.Weigher;
 import org.cache2k.test.util.TestingBase;
 import org.junit.Test;
 

@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.config.CacheType;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCacheInfo;
@@ -65,6 +66,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @SuppressWarnings("unchecked")
   final Operations<K, V> ops = Operations.SINGLETON;
 
+  /** Either ourselves or a wrapped cache used for events */
+  Cache<K, V> userCache;
   HeapCache<K, V> heapCache;
   AdvancedCacheLoader<K, V> loader;
   AsyncCacheLoader<K, V> asyncLoader;
@@ -543,7 +546,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (syncEntryEvictedListeners != null) {
       for (CacheEntryEvictedListener<K, V> l : syncEntryEvictedListeners) {
         try {
-          l.onEntryEvicted(this, currentEntry);
+          l.onEntryEvicted(getUserCache(), currentEntry);
         } catch (Throwable t) {
           getLog().warn("Exception from eviction listener", t);
         }
@@ -620,6 +623,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       if (e.getTask() != task) { return; }
     }
     enqueueTimerAction(e, ops.expireEvent);
+  }
+
+  @Override
+  public Cache<K, V> getUserCache() {
+    return userCache;
   }
 
   /**
