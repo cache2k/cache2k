@@ -9,7 +9,7 @@ export MAVEN_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 
 DEST=target/site;
 
-mvn -Dmaven.test.skip=true -T 1.5C clean compile site
+mvn -Dmaven.test.skip=true clean compile site
 
 # install stable version of 1.0 documentation
 # don't do that any more 12 Sep 2020;jw
@@ -41,7 +41,7 @@ mkdir -p $DOC
 DOC=$DEST/docs/latest
 mkdir -p $DOC
 cp documentation/target/generated-docs/user-* $DOC
-for I in cache2k-api cache2k-spring; do
+for I in cache2k-api cache2k-spring cache2k-micrometer cache2k-jmx cache2k-addon cache2k-jcache; do
   mkdir -p $DOC/apidocs/$I;
   cp -a $I/target/site/apidocs/* $DOC/apidocs/$I/;
 done

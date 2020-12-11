@@ -5,7 +5,8 @@
   <artifactId>cache2k-parent</artifactId>
   <packaging>pom</packaging>
   <version>2.0-SNAPSHOT</version>
-  <name>cache2k parent</name>
+  <!-- This name is also used as header for the cache2k.org homepage -->
+  <name>cache2k Java Caching</name>
 
   <description>A light weight and high performance Java caching library. Android and Java 6 compatible.</description>
 
@@ -190,25 +191,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.9.1</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.apache.maven.doxia</groupId>
-              <artifactId>doxia-module-markdown</artifactId>
-              <version>1.4</version>
-            </dependency>
-
-            <dependency>
-              <groupId>lt.velykis.maven.skins</groupId>
-              <artifactId>reflow-velocity-tools</artifactId>
-              <version>1.1.1</version>
-            </dependency>
-            <!-- Reflow skin requires Velocity >= 1.7  -->
-            <dependency>
-              <groupId>org.apache.velocity</groupId>
-              <artifactId>velocity</artifactId>
-              <version>1.7</version>
-            </dependency>
-          </dependencies>
         </plugin>
 
         <plugin>
