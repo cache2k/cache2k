@@ -19,8 +19,8 @@
   -->
 <cache2k
   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-  xmlns='https://cache2k.org/schema/v1.x'
-  xsi:schemaLocation="https://cache2k.org/schema/v1.x ../../../../cache2k-schemas/src/main/resources/org/cache2k/schema/cache2k-core.xsd">
+  xmlns='https://cache2k.org/schema/v2.x'
+  xsi:schemaLocation="https://cache2k.org/schema/v2.x ../../../../cache2k-schema/src/main/resources/org/cache2k/schema/cache2k.xsd">
 
   <version>1.0</version>
 

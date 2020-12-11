@@ -198,7 +198,7 @@ public class XmlConfigurationTest {
     SchemaFactory schemaFactory =
       SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
     Schema schema = schemaFactory.newSchema(Constants.class.getResource(
-      Constants.CORE_SCHEMA_LOCATION));
+      Constants.SCHEMA_LOCATION));
     schema.newValidator().validate(cfg);
   }
 

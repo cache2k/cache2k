@@ -47,4 +47,5 @@ for I in cache2k-api cache2k-spring cache2k-micrometer cache2k-jmx cache2k-addon
 done
 
 mkdir $DEST/schema;
-cp -a cache2k-schema/src/main//resources/org/cache2k/schema/cache2k-core.xsd $DEST/schema/cache2k-core-v1.x.xsd
+cp -a cache2k-schema/src/main//resources/org/cache2k/schema/cache2k-core-v1.x.xsd $DEST/schema/cache2k-core-v1.x.xsd
+cp -a cache2k-schema/src/main//resources/org/cache2k/schema/cache2k.xsd $DEST/schema/cache2k-v2.x.xsd

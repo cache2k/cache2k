@@ -165,11 +165,11 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="typeIncludeParameters">
+  <xs:complexType name="typeInlcudeParameters">
     <xs:choice>
       <xs:sequence>
         <xs:element name="type" type="xs:string"/>
-        <xs:element name="include" type="xs:string" minOccurs="0"/>
+        <xs:element name="include" type="xs:string"/>
         <xs:element name="parameters">
           <xs:complexType>
             <xs:sequence>
@@ -218,19 +218,6 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="featureSet">
-    <xs:annotation>
-      <xs:documentation>
-        List of cache features.
-      </xs:documentation>
-    </xs:annotation>
-    <xs:sequence>
-      <xs:choice maxOccurs="unbounded">
-        <xs:element name="feature" type="t:typeIncludeParameters"/>
-      </xs:choice>
-    </xs:sequence>
-  </xs:complexType>
-
   <xs:complexType name="sectionCollection">
     <xs:annotation>
       <xs:documentation>
@@ -239,10 +226,10 @@
     </xs:annotation>
     <xs:sequence>
       <xs:choice maxOccurs="unbounded">
-        <xs:element name="section" type="t:typeIncludeParameters"/>
+        <xs:element name="section" type="t:typeInlcudeParameters">
+        </xs:element>
         <!-- TODO: actually jcache may appear only once. -->
         <xs:element name="jcache" type="t:sectionJCache"/>
-        <xs:element name="resilience" type="t:sectionResilience"/>
       </xs:choice>
     </xs:sequence>
   </xs:complexType>
@@ -320,11 +307,20 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
+      <xs:element name="resilienceDuration" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            Time span the cache will suppress loader exceptions if a value is available from a previous load.
+            Value is in milliseconds. The suffixes s, m, h, d may be used. Example: '27s' for 27 seconds.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#resilienceDuration-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element name="keyType" type="xs:string" minOccurs="0" >
         <xs:annotation>
           <xs:documentation>
             Type or class used for the cache key.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#keyType-org.cache2k.config.CacheType-">Cache2kBuilder API Documentation</a>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#keyType-org.cache2k.configuration.CacheType-">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>
@@ -332,7 +328,7 @@
         <xs:annotation>
           <xs:documentation>
             Type or class used for the cached value.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#valueType-org.cache2k.config.CacheType-">Cache2kBuilder API Documentation</a>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#valueType-org.cache2k.configuration.CacheType-">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>
@@ -360,6 +356,20 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
+      <xs:element name="retryInterval" type="xs:string" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#retryInterval-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="maxRetryInterval" type="xs:string" minOccurs="0" default="-1">
+        <xs:annotation>
+          <xs:documentation>
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#maxRetryInterval-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
       <xs:element name="keepDataAfterExpired" type="xs:string" minOccurs="0" default="false">
         <xs:annotation>
           <xs:documentation>
@@ -373,6 +383,14 @@
           <xs:documentation>
             Expire a cached value with millisecond precision.
             For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#sharpExpiry-boolean-">Cache2kBuilder API Documentation</a>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="suppressExceptions" type="xs:string" minOccurs="0" default="true">
+        <xs:annotation>
+          <xs:documentation>
+            Enables resilience. This is enabled (true) by default.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#suppressExceptions-boolean-">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>
@@ -400,11 +418,11 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
-      <xs:element name="recordModificationTime" type="xs:string" minOccurs="0" default="false">
+      <xs:element name="recordRefreshedTime" type="xs:string" minOccurs="0" default="false">
         <xs:annotation>
           <xs:documentation>
-            Records modification time in the entry.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#recordModificationTime-boolean-">Cache2kBuilder API Documentation</a>
+            Records refreshed time in the entry.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#recordRefreshedTime-boolean-">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>
@@ -497,13 +515,6 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
-      <xs:element name="features" type="t:featureSet" minOccurs="0">
-        <xs:annotation>
-          <xs:documentation>
-            Set of enabled features.
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
       <xs:element name="asyncListeners" type="t:customizationCollection" minOccurs="0">
         <xs:annotation>
           <xs:documentation>
@@ -512,10 +523,11 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
-      <xs:element name="lifecyclcleListeners" type="t:customizationCollection" minOccurs="0">
+      <xs:element name="closedListeners" type="t:customizationCollection" minOccurs="0">
         <xs:annotation>
           <xs:documentation>
-            Lifecycle listeners.
+            Listener for cache closing.
+            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#addCacheClosedListener-org.cache2k.event.CacheClosedListener-org.cache2k.event.CacheClosedListener">Cache2kBuilder API Documentation</a>
           </xs:documentation>
         </xs:annotation>
       </xs:element>
@@ -537,15 +549,6 @@
         <xs:group ref="t:jcacheGroup"/>
       </xs:sequence>
    </xs:choice>
-  </xs:complexType>
-
-  <xs:complexType name="sectionResilience">
-    <xs:choice>
-      <xs:sequence maxOccurs="unbounded">
-        <xs:element name="include" type="xs:string" minOccurs="0"/>
-        <xs:group ref="t:resilienceGroup"/>
-      </xs:sequence>
-    </xs:choice>
   </xs:complexType>
 
   <xs:group name="jcacheGroup">
@@ -589,43 +592,5 @@
       </xs:element>
     </xs:sequence>
   </xs:group>
-
-  <xs:group name="resilienceGroup">
-    <xs:sequence>
-      <xs:element name="suppressExceptions" type="xs:string" minOccurs="0" default="true">
-        <xs:annotation>
-          <xs:documentation>
-            Enables resilience. This is enabled (true) by default.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#suppressExceptions-boolean-">Cache2kBuilder API Documentation</a>
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-      <xs:element name="maxRetryInterval" type="xs:string" minOccurs="0" default="-1">
-        <xs:annotation>
-          <xs:documentation>
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#maxRetryInterval-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-      <xs:element name="resilienceDuration" type="xs:string" minOccurs="0">
-        <xs:annotation>
-          <xs:documentation>
-            Time span the cache will suppress loader exceptions if a value is available from a previous load.
-            Value is in milliseconds. The suffixes s, m, h, d may be used. Example: '27s' for 27 seconds.
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#resilienceDuration-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-      <xs:element name="retryInterval" type="xs:string" minOccurs="0">
-        <xs:annotation>
-          <xs:documentation>
-            For a complete description, see <a href="https://cache2k.org/docs/latest/apidocs/cache2k-api/org/cache2k/Cache2kBuilder.html?utm_source=ide&amp;utm_medium=xsd#retryInterval-long-java.util.concurrent.TimeUnit-">Cache2kBuilder API Documentation</a>
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-    </xs:sequence>
-  </xs:group>
-
-
 
 </xs:schema>
