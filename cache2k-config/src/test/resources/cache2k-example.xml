@@ -36,10 +36,19 @@
     <cache>
       <name>regularExpiry</name>
       <expireAfterWrite>5m</expireAfterWrite>
+      <resiliencePolicy>
+        <bean>
+          <type>org.cache2k.addon.UniversalResilienceSupplier</type>
+        </bean>
+      </resiliencePolicy>
     </cache>
     <cache>
       <name>lessResilient</name>
-      <resilienceDuration>1m</resilienceDuration>
+      <sections>
+        <resilience>
+          <resilienceDuration>1m</resilienceDuration>
+        </resilience>
+      </sections>
     </cache>
   </templates>
   <caches>

@@ -17,10 +17,10 @@
   </description>
 
   <properties>
-    <asciidoctor.maven.plugin.version>1.5.3</asciidoctor.maven.plugin.version>
+    <asciidoctor.maven.plugin.version>2.1.0</asciidoctor.maven.plugin.version>
     <asciidoctorj.version>1.5.4</asciidoctorj.version>
-    <asciidoctorj.diagram.version>1.3.1</asciidoctorj.diagram.version>
-    <asciidoctorj.pdf.version>1.5.0-alpha.11</asciidoctorj.pdf.version>
+    <asciidoctorj.diagram.version>2.0.5</asciidoctorj.diagram.version>
+    <asciidoctorj.pdf.version>1.5.3</asciidoctorj.pdf.version>
     <jruby.version>9.1.5.0</jruby.version>
   </properties>
 
@@ -32,18 +32,20 @@
         <artifactId>asciidoctor-maven-plugin</artifactId>
         <version>${asciidoctor.maven.plugin.version}</version>
         <dependencies>
-          <!-- Comment this section to use the default jruby artifact provided by the plugin -->
+          <!-- Comment this section to use the default jruby artifact provided by the plugin
           <dependency>
             <groupId>org.jruby</groupId>
             <artifactId>jruby-complete</artifactId>
             <version>${jruby.version}</version>
           </dependency>
-          <!-- Comment this section to use the default AsciidoctorJ artifact provided by the plugin -->
+          -->
+          <!-- Comment this section to use the default AsciidoctorJ artifact provided by the plugin
           <dependency>
             <groupId>org.asciidoctor</groupId>
             <artifactId>asciidoctorj</artifactId>
             <version>${asciidoctorj.version}</version>
           </dependency>
+          -->
           <dependency>
             <groupId>org.asciidoctor</groupId>
             <artifactId>asciidoctorj-diagram</artifactId>

@@ -1,5 +1,5 @@
-== Loading / Read Through
 [[loading-read-through]]
+== Loading / Read Through
 
 In read through operation the cache will fetch the value by itself when the value is retrieved, for
 example by `Cache.get()`. This is also called a _loading cache_ or a _self populating cache_.
@@ -16,19 +16,21 @@ When caching reads, using the cache in read through operation has several advant
 
 === Defining a Loader
 
-A loader is defined by implementing the abstract class `CacheLoader`. See the <<getting
-started>> example about read through.
+A loader is defined by implementing the abstract class `CacheLoader`.
+See the <<getting-started,Getting Started>> example about read through.
 
 [source,java]
 ----
- V load(K key) throws Exception;
+interface CacheLoader<K, V> {
+  V load(K key) throws Exception;
+}
 ----
 
 The loader actions may only depend on the input key parameter. In case the load operation
 will yield an exception it may be passed on to the cache. How exceptions are handled by the cache
 is defined by the resilience policy and explained in the <<resilience,Resilience chapter>>.
 
-The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/integration/CacheLoader.html[`CacheLoader`]
+The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/io/CacheLoader.html[`CacheLoader`]
 contains additional details.
 
 === Advanced Loader
@@ -37,20 +39,16 @@ For more sophisticated load operations the `AdvancedCacheLoader` is available.
 
 [source,java]
 ----
- V load(K key, long currentTime, CacheEntry<K,V> currentEntry) throws Exception;
+interface AdvancedLoader<K, V> {
+  V load(K key, long currentTime, CacheEntry<K,V> currentEntry) throws Exception;
+}
 ----
 
 The information of the current entry can be used to optimize the data request. A typical
-example is the optimization of HTTP requests. When the current cached value and its time
-is known the request header `If-Modified-Since` can be set from `Entry.getLastModification()`.
+example is the optimization of HTTP requests and use the request header `If-Modified-Since`.
 
-The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/integration/AdvancedCacheLoader.html[`AdvancedCacheLoader`]
+The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/io/AdvancedCacheLoader.html[`AdvancedCacheLoader`]
 contains additional details.
-
-=== Using Lambda Loaders in Java 8
-
-Instead the abstract loader class, there is also a functional interface available for use with
-Java 8.
 
 === Invalidating
 

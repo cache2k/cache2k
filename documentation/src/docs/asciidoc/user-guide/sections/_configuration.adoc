@@ -11,7 +11,7 @@ Here is an example:
 
 [source,xml]
 ----
-include::../../../../../../cache2k-core/src/test/resources/cache2k-example.xml[]
+include::../../../../../../cache2k-config/src/test/resources/cache2k-example.xml[]
 ----
 
 === Combine Programmatic and XML Configuration
