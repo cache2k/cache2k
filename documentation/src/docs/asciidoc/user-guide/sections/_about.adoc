@@ -1,22 +1,21 @@
 == About
 
 you are reading the cache2k user guide which walks through all major
-feature in a separate section to give an overview of the functionality.
+feature in a separate section to give an overview.
 
 The following documentation resources are available:
 
 - link:user-guide.html[User Guide (this document) - HTML Version]
 - link:user-guide.pdf[User Guide (this document) - PDF Version]
+
+API documentation:
+
 - link:apidocs/cache2k-api/index.html[Cache - API Java Doc]
+- link:apidocs/cache2k-addon/index.html[Addon module - API Java Doc]
+- link:apidocs/cache2k-jmx/index.html[JMX module - API Java Doc]
+- link:apidocs/cache2k-micrometer/index.html[Micrometer module - API Java Doc]
+- link:apidocs/cache2k-jcache/index.html[JCache module - API Java Doc]
 - link:apidocs/cache2k-spring/index.html[Spring Support - API Java Doc]
-
-The documentation of the 1.0 version of cache2k is available at:
-
-- https://cache2k.org/docs/1.0/user-guide.html[User Guide - Version 1.0 - HTML version]
-- https://cache2k.org/docs/1.0/user-guide.pdf[User Guide - Version 1.0 - PDF verison]
-- https://cache2k.org/docs/1.0/apidocs/cache2k-api/index.html[Cache API - Version 1.0 ]
-- https://cache2k.org/docs/1.0/apidocs/cache2k-jmx-api/index.html[JMX-API - Version 1.0]
-- https://cache2k.org/docs/1.0/apidocs/cache2k-jcache-api/index.html[JCache API - Version 1.0]
 
 === Versioning
 
@@ -28,8 +27,7 @@ Furthermore, a Tick-Tock scheme is used to mark development releases. Examples:
 1.1.1.Beta:: *Odd minor version*, development version. A beta version may be used in production, but
  additional features may still change the API and may not completely tested.
 1.2.0.Final:: *Even minor version*, stable release, new features and compatible changes to the previous version.
-     Not be strictly binary compatible to the previous stable release. Interfaces not meant for
-     extension may get new methods.
+     Minor releases may not be strictly binary compatible. Recompilation is needed.
 2.0.0.Final:: New Major version, adds and removes features, may have incompatible changes to the previous version.
 
 === How to read the documentation

@@ -1,7 +1,8 @@
 [[android]]
 == Android
 
-cache2k is compatible with Java 6 and Android. Regular testing is done against API level 16.
+cache2k version 1 is compatible with Java 6 and Android. Regular testing is done against API level 16.
+Version 2 was not yet tested with Android. See [GH#143](https://github.com/cache2k/cache2k/issues/143).
 
 === Usage
 

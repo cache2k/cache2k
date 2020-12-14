@@ -1,7 +1,7 @@
 [[jcache-vs-cache2k-api]]
 == JCache/JSR107 vs cache2k API
 
-FIXME, needs finalization
+TODO / not yet included in the documentation
 
 This chapter compares JCache API with the cache2k API.
 
@@ -12,7 +12,6 @@ for the cache2k API, however, everything that looked impractical or inconsistent
 in JCache was improved.
 
 === Feature comparison
-
 
 Java 8
 

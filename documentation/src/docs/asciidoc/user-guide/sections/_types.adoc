@@ -67,7 +67,7 @@ a separate cache for each type with the proper type information.
 
 Future versions of cache2k will leverage the type information for:
 
-- optimizations depending on the type
-- optional strict type checking
-- optional copying
-- derive a optimal marshaller for off heap overflow and persistence
+- Optimizations depending on the type
+- Optional strict type checking
+- Optional copying
+- Derive an optimal marshaller for off heap overflow and persistence

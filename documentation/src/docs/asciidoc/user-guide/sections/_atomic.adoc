@@ -39,7 +39,11 @@ multiple keys, like `getAll()`, don't have atomic guarantees.
 |`V peekAndPut(key, value)`| Insert or update value and return the previous value
 |`boolean replaceIfEquals(key, expectedValue, newValue)`| Replace value only when old value is present in the cache
 |`boolean removeIfEquals(key, expectedValue)`| Remove only if present value matches
+|`V computeIfAbsent(K key, Function<? super K, ? extends V> function);`| Compute value if entry is not present
 |===
+
+The `ConcrurrentMap` methods `compute` and `computeIfPresent` are available in the map view
+which can be accessed via `Cache.asMap`.
 
 === Entry Processor
 
