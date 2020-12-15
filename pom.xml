@@ -89,16 +89,6 @@
     <android.plugin.version>4.5.0</android.plugin.version>
   </properties>
 
-  <dependencies>
-    <!-- https://mvnrepository.com/artifact/org.checkerframework/checker-qual -->
-    <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker-qual</artifactId>
-      <version>3.7.1</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
   <build>
     <pluginManagement>
       <plugins>
