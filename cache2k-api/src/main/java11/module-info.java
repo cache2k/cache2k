@@ -23,7 +23,6 @@
 module org.cache2k.api {
   requires static kotlin.annotations.jvm;
   requires static jsr305;
-  requires static org.checkerframework.checker.qual;
   exports org.cache2k;
   exports org.cache2k.config;
   exports org.cache2k.event;
@@ -34,5 +33,4 @@ module org.cache2k.api {
   exports org.cache2k.spi;
   exports org.cache2k.operation;
   uses org.cache2k.spi.Cache2kCoreProvider;
-  uses org.cache2k.spi.Cache2kExtensionProvider;
 }

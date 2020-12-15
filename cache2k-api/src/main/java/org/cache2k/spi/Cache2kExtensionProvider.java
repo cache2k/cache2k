@@ -26,7 +26,9 @@ package org.cache2k.spi;
  * is constructed.
  *
  * @author Jens Wilke
+ * @deprecated
  */
+@Deprecated
 public interface Cache2kExtensionProvider {
 
   void registerCache2kExtension();
