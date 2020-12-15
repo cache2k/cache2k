@@ -24,6 +24,8 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 
 import static org.junit.Assert.*;
+
+import org.cache2k.operation.CacheControl;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -108,10 +110,12 @@ public class SpringCache2KCacheManagerTest {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(
         SpringCache2KCacheManagerTest.class.getSimpleName() + "defaultSetup");
-    m.defaultSetup(b -> b.name("cache1"));
-    m.addCaches(b -> b, b -> b.name("cache2"));
-    assertNotNull(m.getCache("cache1"));
-    assertNotNull(m.getCache("cache2"));
+    m.defaultSetup(b -> b.entryCapacity(1802));
+    m.addCaches(b -> b.name("cache1"));
+    assertEquals(1802,
+      CacheControl.of(m.getCache("cache1").getNativeCache()).getEntryCapacity());
+    assertEquals(1802,
+      CacheControl.of(m.getCache("cache2").getNativeCache()).getEntryCapacity());
   }
 
   @Test

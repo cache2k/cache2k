@@ -103,7 +103,9 @@ public class SpringCache2kCacheManager implements CacheManager {
   }
 
   /**
-   * Returns an existing cache or retrieves and wraps a cache from cache2k.
+   * Returns an existing cache or creates and wraps a new cache. When a new
+   * cache is created which was not added by {@link #addCache(Cache2kConfig)} the
+   * default setup from {@link #defaultSetup} is applied.
    */
   @Override
   public SpringCache2kCache getCache(String name) {
@@ -111,12 +113,14 @@ public class SpringCache2kCacheManager implements CacheManager {
         if (!allowUnknownCache && !configuredCacheNames.contains(n)) {
           throw new IllegalArgumentException("Cache configuration missing for: " + n);
         }
-        return buildAndWrap(getDefaultBuilder().name(n));
+        return buildAndWrap(defaultSetup.apply(getDefaultBuilder()).name(n));
       });
   }
 
   /**
    * Function providing default settings for caches added to the manager via {@link #addCaches}
+   * and for dynamically created caches (not configured explicitly) that are retrieved
+   * via {@link #getCache(String)}.
    */
   public SpringCache2kCacheManager defaultSetup(
     Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> f) {
