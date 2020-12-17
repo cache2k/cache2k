@@ -29,10 +29,12 @@ import java.util.concurrent.Executor;
 
 /**
  * Alternative interface to {@link CacheLoader} for asynchronous operation.
+ * There is also version with bulk support, {@link AsyncBulkCacheLoader}.
  *
  * @author Jens Wilke
- * @since 2
+ * @since 2.0
  * @see CacheLoader
+ * @see AsyncBulkCacheLoader
  */
 @FunctionalInterface
 public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
