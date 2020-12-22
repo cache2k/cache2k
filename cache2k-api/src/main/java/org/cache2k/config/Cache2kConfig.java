@@ -118,14 +118,13 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   private @Nullable CustomizationSupplier<? extends Scheduler> scheduler;
   private @Nullable
     CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> resiliencePolicy;
-  private @Nullable CustomizationSupplier<? extends CacheLoader<K, V>> loader;
   private @Nullable CustomizationSupplier<? extends CacheWriter<K, V>> writer;
+  private @Nullable CustomizationSupplier<? extends CacheLoader<K, V>> loader;
   private @Nullable CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> advancedLoader;
   private @Nullable CustomizationSupplier<? extends AsyncCacheLoader<K, V>> asyncLoader;
   private @Nullable
     CustomizationSupplier<? extends ExceptionPropagator<? super K, ? super V>> exceptionPropagator;
   private @Nullable CustomizationSupplier<? extends Weigher<K, V>> weigher;
-
   private @Nullable Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> listeners;
   private @Nullable
     Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> asyncListeners;

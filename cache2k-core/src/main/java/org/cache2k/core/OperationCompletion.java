@@ -56,21 +56,25 @@ public class OperationCompletion<K> {
   }
 
   private void allCompleted() {
-    if (exceptionCount == 0) { listener.onCompleted();
-    } else if (exceptionCount == 1) { listener.onException(wrap(null, exception));
-    } else {
-      listener.onException(
-        wrap(
-          "finished with " + exceptionCount + " exceptions " +
-          "out of " + initialCount + " operations" +
-          ", one propagated as cause", exception));
+    if (exceptionCount == 0) {
+      listener.onCompleted();
+      return;
     }
+    String txt = null;
+    if (exceptionCount > 1) {
+      txt = "finished with " + exceptionCount + " exceptions " +
+        "out of " + initialCount + " operations" +
+        ", one propagated as cause";
+    }
+    listener.onException(wrap(txt, exception));
   }
+
   CacheException wrap(String txt, Throwable t) {
-    if (txt == null) {
-      return new CacheLoaderException(t);
+    if (exception instanceof CacheLoaderException) {
+      return new CacheLoaderException(txt, exception.getCause());
+    } else {
+      return new CacheException(txt, exception);
     }
-    return new CacheLoaderException(txt, t);
   }
 
   static final AtomicIntegerFieldUpdater<OperationCompletion> BULK_OP_COUNT =

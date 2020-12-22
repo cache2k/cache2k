@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.io.AsyncBulkCacheLoader;
+import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.annotation.Nullable;
@@ -583,12 +585,23 @@ public class Cache2kBuilder<K, V>
     return this;
   }
 
+  public final Cache2kBuilder<K, V> bulkLoader(AsyncBulkCacheLoader<K, V> l) {
+    loader(l);
+    return this;
+  }
+
+  public final Cache2kBuilder<K, V> bulkLoader(BulkCacheLoader<K, V> l) {
+    loader(l);
+    return this;
+  }
+
   /**
    * Enables read through operation and sets a cache loader
    *
    * @see CacheLoader for general discussion on cache loaders
    */
   @SuppressWarnings("unchecked")
+  @Deprecated
   public final Cache2kBuilder<K, V> wrappingLoader(AdvancedCacheLoader<K, LoadDetail<V>> l) {
     cfg().setAdvancedLoader((
       CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));

@@ -109,7 +109,7 @@ public class Operations<K, V> {
     return GET_ENTRY;
   }
 
-  static final Semantic GET_ENTRY = new Semantic.MightUpdate() {
+  public static final Semantic GET_ENTRY = new Semantic.MightUpdate() {
 
     @Override
     public void examine(Progress c, ExaminationEntry e) {

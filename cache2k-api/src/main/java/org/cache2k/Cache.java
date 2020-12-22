@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -308,7 +309,8 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *         value is {@code null} and the cache does not permit {@code null} values
    * @throws IllegalArgumentException if some property of the specified key
    *         or value prevents it from being stored in this cache
-   * @deprecated will be removed in version 2.2, replaced by {@link #computeIfAbsent(Object, Function)}
+   * @deprecated will be removed in version 2.2,
+   *             replaced by {@link #computeIfAbsent(Object, Function)}
    */
   @Deprecated
   default V computeIfAbsent(K key, Callable<V> callable) {
@@ -658,7 +660,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
   void expireAt(K key, long millis);
 
   /**
-   * Asynchronously loads the given set of keys into the cache. Only missing or expired
+   * Requests to loads the given set of keys into the cache. Only missing or expired
    * values will be loaded.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
@@ -702,8 +704,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
   void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
 
   /**
-   * Asynchronously loads the given set of keys into the cache. Only missing or expired
-   * values will be loaded.
+   * Request to load the given set of keys into the cache. Only missing or expired
+   * values will be loaded. The method returns immediately with a {@code CompletableFuture}.
+   * If no asynchronous loader is specified, the executor sepcified by
+   * {@link Cache2kBuilder#loaderExecutor(Executor)} will be used.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
    * are not sufficient, meaning the used executor is throwing
@@ -721,8 +725,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
   CompletableFuture<Void> loadAll(Iterable<? extends K> keys);
 
   /**
-   * Asynchronously loads the given set of keys into the cache. Always invokes load for all keys
-   * and replaces values already in the cache.
+   * Request to load the given set of keys into the cache. Missing or expired values will be loaded
+   * a {@code CompletableFuture}. The method returns immediately with a {@code CompletableFuture}.
+   * If no asynchronous loader is specified, the executor sepcified by
+   * {@link Cache2kBuilder#loaderExecutor(Executor)} will be used.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
    * are not sufficient, meaning the used executor is throwing

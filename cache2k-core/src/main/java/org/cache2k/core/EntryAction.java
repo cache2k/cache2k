@@ -179,6 +179,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   private boolean completed;
 
   /**
+   * Abort if the entry is currently processing and we cannot proceed with
+   * this operation. Used by the bulk action.
+   */
+  private boolean bulkMode;
+
+  /**
    * Called on the processing action to enqueue another action
    * to be executed next. Insert at the tail of the double linked
    * list. We are not part of the list.
@@ -284,9 +290,17 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   protected abstract Timing<K, V> timing();
 
+  public void setBulkMode(boolean v) {
+    bulkMode = v;
+  }
+
+  public boolean isBulkMode() {
+    return bulkMode;
+  }
+
   @Override
   public K getKey() {
-    return heapEntry.getKey();
+    return key;
   }
 
   @Override
@@ -628,6 +642,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     for (;;) {
       synchronized (e) {
+        if (bulkMode && e.isProcessing()) {
+          throw new AbortWhenProcessingException();
+        }
         if (tryEnqueueOperationInCurrentlyProcessing(e)) {
           return true;
         }
@@ -641,7 +658,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   /**
    * If entry is currently processing, and this is an async request, we can
-   * enqueue this operation in a waitlist that gets executed when
+   * enqueue this operation in a wait list that gets executed when
    * the processing has completed.
    */
   @SuppressWarnings("rawtypes")
@@ -1326,33 +1343,40 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   /**
+   * Exception that might have happened during processing. A processing
+   * exception takes precedence over a loader exception, because its more severe.
+   */
+  public RuntimeException getExceptionToPropagate() {
+    return exceptionToPropagate;
+  }
+
+  public Throwable getLoadException() {
+    if (result instanceof ExceptionWrapper) {
+      return new CacheLoaderException(((ExceptionWrapper<?, ?>) result).getException());
+    }
+    return null;
+  }
+
+  public Throwable getException() {
+    if (exceptionToPropagate != null) {
+      return exceptionToPropagate;
+    }
+    return getLoadException();
+  }
+
+  /**
    * If thread is a synchronous call, wait until operation is complete.
    * There is a little chance that the callback completes before we get
    * here as well as some other operation mutating the entry again.
+   *
+   * <p>For bulk operation we may use the entry in synchronous mode (without callback)
+   * but expect the entry not to stoll here, so we can collect all load requests.
    */
   private void asyncExecutionStartedWaitIfSynchronousCall() {
-    if (syncThread == Thread.currentThread()) {
+    if (!bulkMode && syncThread == Thread.currentThread()) {
       synchronized (heapEntry) {
         heapEntry.waitForProcessing();
       }
-    }
-  }
-
-  public static class StorageReadException extends CustomizationException {
-    public StorageReadException(Throwable cause) {
-      super(cause);
-    }
-  }
-
-  public static class StorageWriteException extends CustomizationException {
-    public StorageWriteException(Throwable cause) {
-      super(cause);
-    }
-  }
-
-  public static class ProcessingFailureException extends CustomizationException {
-    public ProcessingFailureException(Throwable cause) {
-      super(cause);
     }
   }
 
@@ -1361,6 +1385,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       super(cause);
     }
   }
+
+  public static class AbortWhenProcessingException extends CacheException { }
 
   public interface CompletedCallback<K, V, R> {
     void entryActionCompleted(EntryAction<K, V, R> ea);

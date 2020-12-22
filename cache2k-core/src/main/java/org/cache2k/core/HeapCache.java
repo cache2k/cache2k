@@ -41,6 +41,7 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
+import org.cache2k.io.CacheLoaderException;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
@@ -1046,7 +1047,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   /** null is legal, if loaded value is immediate*/
   Throwable extractException(Entry<K, V> e) {
-    return e != null ? e.getException() : null;
+    if (e != null) {
+      Throwable exception = e.getException();
+      if (exception != null) {
+        return new CacheLoaderException(exception);
+      }
+    }
+    return null;
   }
 
   void executeLoader(OperationCompletion<K> completion, K key, Callable<Throwable> action) {
@@ -1060,35 +1067,17 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       }
       completion.complete(key, exception);
     };
+    executeLoader(r);
+  }
+
+  /**
+   * Execute with loader executor and back pressure
+   */
+  public void executeLoader(Runnable r) {
     try {
       loaderExecutor.execute(r);
     } catch (RejectedExecutionException ex) {
       r.run();
-    }
-  }
-
-  public abstract static class RunWithCatch implements Runnable {
-
-    final InternalCache cache;
-
-    public RunWithCatch(InternalCache cache) {
-      this.cache = cache;
-    }
-
-    protected abstract void action();
-
-    @Override
-    public final void run() {
-      if (cache.isClosed()) {
-        return;
-      }
-      try {
-        action();
-      } catch (CacheClosedException ignore) {
-      } catch (Throwable t) {
-        cache.logAndCountInternalException("Loader thread exception (" +
-          Thread.currentThread().getName() + ")", t);
-      }
     }
   }
 

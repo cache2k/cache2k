@@ -30,6 +30,7 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.DefaultClock;
+import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheCreatedListener;
@@ -235,12 +236,14 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       throw new IllegalArgumentException("refresh ahead enabled, but no loader defined");
     }
 
+    CacheLoader<K, V> loader = createCustomization(config.getLoader());
     boolean wiredCache =
       config.getWeigher() != null ||
       config.hasListeners() ||
       config.hasAsyncListeners() ||
       config.getWriter() != null ||
-      config.getAsyncLoader() != null;
+      config.getAsyncLoader() != null ||
+      loader instanceof BulkCacheLoader;
 
     WiredCache<K, V> wc = null;
     if (wiredCache) {
@@ -261,6 +264,9 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     bc.setName(name);
     if (wiredCache) {
       wc.loader = bc.loader;
+      if (loader instanceof BulkCacheLoader) {
+        wc.bulkCacheLoader = (BulkCacheLoader<K, V>) loader;
+      }
       wc.writer = createCustomization(config.getWriter());
       wc.asyncLoader = createCustomization(config.getAsyncLoader());
       List<CacheEntryCreatedListener<K, V>> syncCreatedListeners =

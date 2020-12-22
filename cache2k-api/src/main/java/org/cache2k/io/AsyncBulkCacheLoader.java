@@ -43,11 +43,13 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
    * in case the cache client uses {@link org.cache2k.Cache#loadAll(Iterable)} or
    * {@link org.cache2k.Cache#getAll(Iterable)}.
    *
-   * @param ctxs set of contexts that contain the keys to load as well as more detailed
+   * @param keys the keys to load
+   * @param contextSet set of contexts that contain the keys to load as well as more detailed
    *             information
    * @return a map containing values for all keys that were requested
    */
-  void loadAll(Set<Context<K, V>> ctxs, BulkCallback<K, V> callback) throws Exception;
+  void loadAll(Set<K> keys, Set<Context<K, V>> contextSet, BulkCallback<K, V> callback)
+    throws Exception;
 
   /**
    * By default loads a single value via {@link #loadAll}.
@@ -56,7 +58,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
    */
   @Override
   default void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
-    loadAll(Collections.singleton(context), new BulkCallback<K, V>() {
+    loadAll(null, Collections.singleton(context), new BulkCallback<K, V>() {
       @Override
       public void onLoadSuccess(Map<? extends K, ? extends V> data) {
         Map.Entry<? extends K, ? extends V> entry = data.entrySet().iterator().next();
