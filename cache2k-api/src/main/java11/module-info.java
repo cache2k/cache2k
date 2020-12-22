@@ -32,5 +32,6 @@ module org.cache2k.api {
   exports org.cache2k.processor;
   exports org.cache2k.spi;
   exports org.cache2k.operation;
+  exports org.cache2k.annotation;
   uses org.cache2k.spi.Cache2kCoreProvider;
 }
