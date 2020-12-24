@@ -164,7 +164,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
     for (K k : keys) {
       try {
-        final R result = invoke(k, entryProcessor);
+        R result = invoke(k, entryProcessor);
         if (result == null) {
           continue;
         }
@@ -180,7 +180,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
           }
         });
       } catch (EntryProcessingException t) {
-        final Throwable cause = t.getCause();
+        Throwable cause = t.getCause();
         m.put(k, new EntryProcessingResult<R>() {
           @Override
           public R getResult() {

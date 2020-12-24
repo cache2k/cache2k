@@ -246,6 +246,10 @@ public class AsyncBulkAction<K, V, R> implements
     return exceptionToPropagate;
   }
 
+  public Collection<EntryAction<K, V, R>> getActions() {
+    return key2action.values();
+  }
+
   public Map<K, R> getResultMap() {
     Map<K, R> map = new HashMap<>();
     for (Map.Entry<K, EntryAction<K, V, R>> e : key2action.entrySet()) {

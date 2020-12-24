@@ -40,7 +40,7 @@ public interface Progress<K, V, R> {
    * Requests that the cache content for an entry will be provided.
    * If the cache is tiered, the data will be read into the heap cache.
    * Last command of semantic method. Calls back on
-   * {@link Semantic#examine(Progress, ExaminationEntry)}
+   * {@link Semantic#examine(Object, Progress, ExaminationEntry)}
    */
   void wantData();
 
@@ -80,9 +80,9 @@ public interface Progress<K, V, R> {
 
   /**
    * The entry gets locked for mutation. Last command of semantic method.
-   * Calls {@link Semantic#examine(Progress, ExaminationEntry)} again after lock
+   * Calls {@link Semantic#examine(Object, Progress, ExaminationEntry)} again after lock
    * is obtain to assess the the state again. Calls back on
-   * {@link Semantic#mutate(Progress, ExaminationEntry)} if lock is already taken.
+   * {@link Semantic#mutate(Object, Progress, ExaminationEntry)} if lock is already taken.
    */
   void wantMutation();
 

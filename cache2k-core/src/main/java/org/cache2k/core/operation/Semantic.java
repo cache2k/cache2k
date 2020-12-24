@@ -34,7 +34,7 @@ public interface Semantic<K, V, R> {
    * at the start means we don't need the current data and will mutate the
    * entry unconditionally.
    */
-  void start(Progress<K, V, R> c);
+  void start(K key, Progress<K, V, R> c);
 
   /**
    * Called with the entry containing the recent content. If this method finishes with
@@ -42,17 +42,17 @@ public interface Semantic<K, V, R> {
    * for mutation to reevaluate the examination after concurrent operations on the
    * same entry have completed.
    */
-  void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e);
+  void examine(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e);
 
   /**
    * Perform the mutation. The mutation is done by calling the methods on {@link Progress}.
    */
-  void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e);
+  void mutate(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e);
 
   /**
    * Load is complete.
    */
-  void loaded(Progress<K, V, R> c, ExaminationEntry<K, V> e);
+  void loaded(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e);
 
   /**
    * Base class to provide a default for the load result.
@@ -63,11 +63,12 @@ public interface Semantic<K, V, R> {
      * By default a load returns always the value as result. May be overridden to change.
      * This is only called when a load was requested.
      *
+     * @param key
      * @param e the entry containing the old data
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void loaded(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+    public void loaded(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) {
       c.result((R) e.getValueOrException());
     }
 
@@ -80,7 +81,7 @@ public interface Semantic<K, V, R> {
 
     /** Instruct to lock the entry for the update. */
     @Override
-    public final void start(Progress<K, V, R> c) {
+    public final void start(K key, Progress<K, V, R> c) {
       c.wantMutation();
     }
 
@@ -89,7 +90,7 @@ public interface Semantic<K, V, R> {
      * entry is there.
      */
     @Override
-    public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+    public final void examine(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) {
       c.wantMutation();
     }
 
@@ -102,7 +103,7 @@ public interface Semantic<K, V, R> {
 
     /** Reqeust latest data */
     @Override
-    public final void start(Progress<K, V, R> c) {
+    public final void start(K key, Progress<K, V, R> c) {
       c.wantData();
     }
 
@@ -115,7 +116,7 @@ public interface Semantic<K, V, R> {
 
     /** Unconditionally request mutation lock. */
     @Override
-    public final void examine(Progress<K, V, R> c, ExaminationEntry<K, V> e) { c.wantMutation(); }
+    public final void examine(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) { c.wantMutation(); }
 
   }
 
@@ -126,13 +127,13 @@ public interface Semantic<K, V, R> {
 
     /** Instruct to provide the cache content */
     @Override
-    public final void start(Progress<K, V, R> c) {
+    public final void start(K key, Progress<K, V, R> c) {
       c.wantData();
     }
 
     /** No operation. */
     @Override
-    public final void mutate(Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+    public final void mutate(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) {
     }
 
   }

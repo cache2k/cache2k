@@ -1699,7 +1699,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     if (key == null) {
       throw new NullPointerException();
     }
-    return execute(key, spec().invoke(key, processor));
+    return execute(key, spec().invoke(processor));
   }
 
   public final long getLocalSize() {

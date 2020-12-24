@@ -399,7 +399,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public void start() {
     int callbackCount = semanticCallback;
-    operation.start(this);
+    operation.start(key, this);
   }
 
   @Override
@@ -453,7 +453,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public void examine() {
     int callbackCount = semanticCallback;
     mutationStartTime = 0;
-    operation.examine(this, heapOrLoadedEntry);
+    operation.examine(key, this, heapOrLoadedEntry);
   }
 
   @Override
@@ -546,7 +546,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void continueWithMutation() {
     int callbackCount = semanticCallback;
-    operation.mutate(this, heapOrLoadedEntry);
+    operation.mutate(key, this, heapOrLoadedEntry);
   }
 
   @Override
@@ -1188,7 +1188,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       if (valueLoadedOrRevived) {
         if (!remove ||
           !(heapEntry.getValueOrException() == null && heapCache.isRejectNullValues())) {
-          operation.loaded(this, heapEntry);
+          operation.loaded(key, this, heapEntry);
         }
       }
       if (!justExpired) {

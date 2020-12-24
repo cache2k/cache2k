@@ -41,7 +41,7 @@ public class EntryActionTest extends TestingBase {
       final AtomicInteger count = new AtomicInteger();
 
       @Override
-      public void start(Progress<Integer, Integer, Object> c) {
+      public void start(Integer key, Progress<Integer, Integer, Object> c) {
         c.wantData();
       }
 
@@ -51,7 +51,7 @@ public class EntryActionTest extends TestingBase {
        * would result in no mutation.
        */
       @Override
-      public void examine(Progress<Integer, Integer, Object> c,
+      public void examine(Integer key, Progress<Integer, Integer, Object> c,
                           ExaminationEntry<Integer, Integer> e) {
         if (count.getAndIncrement() % 2 == 0) {
           c.wantMutation();
@@ -61,13 +61,13 @@ public class EntryActionTest extends TestingBase {
       }
 
       @Override
-      public void mutate(Progress<Integer, Integer, Object> c,
+      public void mutate(Integer key, Progress<Integer, Integer, Object> c,
                          ExaminationEntry<Integer, Integer> e) {
         c.put(123);
       }
 
       @Override
-      public void loaded(Progress<Integer, Integer, Object> c,
+      public void loaded(Integer key, Progress<Integer, Integer, Object> c,
                          ExaminationEntry<Integer, Integer> e) {
 
       }

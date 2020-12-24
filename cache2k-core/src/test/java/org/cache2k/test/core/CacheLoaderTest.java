@@ -30,6 +30,7 @@ import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.ExceptionCollector;
+import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.Condition;
@@ -48,6 +49,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -1149,6 +1152,32 @@ public class CacheLoaderTest extends TestingBase {
     Map<Integer, Integer> result = cache.getAll(asList(3, 4, 5));
     req1.get();
     Map<Integer, Integer> result2 = cache.getAll(asList(1, 2, 3, 4, 5));
+    assertEquals(5, target.info().getLoadCount());
+    assertEquals(2, bulkRequests.get());
+  }
+
+  @Test
+  public void bulkLoader_invokeAll() throws Exception {
+    AtomicInteger bulkRequests = new AtomicInteger();
+    Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader(keys -> {
+          bulkRequests.incrementAndGet();
+          Map<Integer, Integer> result = new HashMap<>();
+          for (Integer key : keys) {
+            result.put(key, key);
+          }
+          return result;
+        });
+      }
+    });
+    CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
+    Map<Integer, EntryProcessingResult<Integer>> result =
+      cache.invokeAll(asList(3, 4, 5), entry -> entry.getValue());
+    req1.get();
+    Map<Integer, EntryProcessingResult<Integer>> result2 =
+      cache.invokeAll(asList(1, 2, 3, 4, 5), entry -> entry.getValue());
     assertEquals(5, target.info().getLoadCount());
     assertEquals(2, bulkRequests.get());
   }

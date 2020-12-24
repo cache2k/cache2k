@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheException;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.CacheType;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCacheInfo;
@@ -37,6 +38,8 @@ import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.ExceptionPropagator;
+import org.cache2k.processor.EntryProcessingException;
+import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
@@ -148,7 +151,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public CacheEntry<K, V> peekEntry(K key) {
-    return execute(key, ops.peekEntry(key));
+    return execute(key, ops.peekEntry());
   }
 
   @Override
@@ -219,8 +222,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   private void executeSyncBulkOp(Semantic operation, Set<K> keys,
                                  CacheOperationCompletionListener listener) {
     Runnable runnable = () -> {
-      AsyncBulkAction<K, V, V> result = syncBulkOp(operation, keys);
-      Throwable t = result.getExceptionToPropagate();
+      Throwable t;
+      try {
+        AsyncBulkAction<K, V, V> result = syncBulkOp(operation, keys);
+        t = result.getExceptionToPropagate();
+      } catch (Throwable maybeCacheClosedException) {
+        t = maybeCacheClosedException;
+      }
       if (t != null) {
         listener.onException(t);
       } else {
@@ -438,7 +446,40 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     if (key == null) {
       throw new NullPointerException();
     }
-    return execute(key, ops.invoke(key, processor));
+    return execute(key, ops.invoke(processor));
+  }
+
+  @Override
+  public <@Nullable R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
+                                                                  EntryProcessor<K, V, R> entryProcessor) {
+    if (bulkCacheLoader == null) {
+      return super.invokeAll(keys, entryProcessor);
+    }
+    Set<K> keySet = heapCache.generateKeySet(keys);
+    AsyncBulkAction<K, V, R> actionResult = syncBulkOp(ops.invoke(entryProcessor), keySet);
+    Map<K, EntryProcessingResult<R>> resultMap = new HashMap<>();
+    for (EntryAction<K, V, R> action : actionResult.getActions()) {
+      EntryProcessingResult<R> singleResult;
+      Throwable exception = action.getException();
+      if (exception == null) {
+        R value = action.result;
+        singleResult = new EntryProcessingResult<R>() {
+          @Override
+          public @Nullable R getResult() { return value; }
+          @Override
+          public @Nullable Throwable getException() { return null; }
+        };
+      } else {
+        singleResult = new EntryProcessingResult<R>() {
+          @Override
+          public @Nullable R getResult() { throw new EntryProcessingException(exception); }
+          @Override
+          public @Nullable Throwable getException() { return exception; }
+        };
+      }
+      resultMap.put(action.getKey(), singleResult);
+    }
+    return resultMap;
   }
 
   @SuppressWarnings("unchecked")
@@ -489,7 +530,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   public Map<K, V> peekAll(Iterable<? extends K> keys) {
     Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
     for (K k : keys) {
-      CacheEntry<K, V> e = execute(k, ops.peekEntry(k));
+      CacheEntry<K, V> e = execute(k, ops.peekEntry());
       if (e != null) {
         map.put(k, e);
       }
