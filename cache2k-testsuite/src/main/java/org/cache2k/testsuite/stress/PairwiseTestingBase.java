@@ -51,7 +51,8 @@ public class PairwiseTestingBase {
     int count = 0;
     for (int i = 0; i < 3; i++) {
       for (CacheKeyActorPair<?, Integer, Integer> p : actorPairs(this.getClass())) {
-        suite.addPair(p.setCache(c).setKey(count++));
+        suite.addPair(p.setCache(c).setKey(count));
+        count += 1000;
       }
     }
     suite.run();

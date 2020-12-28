@@ -22,6 +22,7 @@ package org.cache2k.io;
 
 import org.cache2k.DataAware;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -58,7 +59,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
    */
   @Override
   default void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
-    loadAll(null, Collections.singleton(context), new BulkCallback<K, V>() {
+    loadAll(Collections.singleton(key), Collections.singleton(context), new BulkCallback<K, V>() {
       @Override
       public void onLoadSuccess(Map<? extends K, ? extends V> data) {
         Map.Entry<? extends K, ? extends V> entry = data.entrySet().iterator().next();

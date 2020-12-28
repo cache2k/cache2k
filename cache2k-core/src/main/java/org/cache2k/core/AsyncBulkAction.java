@@ -45,27 +45,50 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
-public class AsyncBulkAction<K, V, R> implements
+public abstract class AsyncBulkAction<K, V, R> implements
   AsyncCacheLoader<K, V>,
   AsyncBulkCacheLoader.BulkCallback<K, V>,
   EntryAction.CompletedCallback<K, V, R> {
 
-  private final Map<K, EntryAction<K, V, R>> key2action = new HashMap<>();
-  private final Collection<EntryAction<K, V, R>> toStart = new ArrayList<>();
-  private final Set<K> toLoad = new HashSet<>();
-  private final Set<K> completed = new HashSet<>();
-  private AsyncCacheLoader<K, V> loader;
+  private final Map<K, EntryAction<K, V, R>> key2action;
+  private final Collection<EntryAction<K, V, R>> toStart;
+  private final Set<K> toLoad;
+  private final Set<K> completed;
+  private final AsyncCacheLoader<K, V> loader;
   private Throwable exceptionToPropagate;
   private int exceptionCount = 0;
 
-  public synchronized void start(AsyncCacheLoader<K, V> loader, Set<EntryAction<K, V, R>> actions) {
+  /** Create object and start operation. */
+  public AsyncBulkAction(AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+    key2action = new HashMap<>(keys.size());
+    toLoad = new HashSet<>(keys.size());
+    completed = new HashSet<>();
+    Collection<EntryAction<K, V, R>> actions = toStart = new ArrayList<>(keys.size());
+    for (K k : keys) {
+      actions.add(createEntryAction(k, this));
+    }
     this.loader = loader;
-    toStart.addAll(actions);
     for (EntryAction<K, V, R> action : actions) {
       K key = action.getKey();
       key2action.put(key, action);
     }
-    startRemaining();
+    synchronized (this) {
+      startRemaining();
+      if (sync) {
+        loopIfSyncAndComplete();
+      }
+    }
+  }
+
+  /**
+   * In sync mode we don't get a callback in a separate thread.
+   */
+  private void loopIfSyncAndComplete() {
+    while (!toStart.isEmpty()) {
+      startRemaining();
+    }
+    extractException();
+    bulkOperationCompleted();
   }
 
   /**
@@ -154,9 +177,9 @@ public class AsyncBulkAction<K, V, R> implements
 
   private void startBulkLoad() {
     AsyncCacheLoader<K, V> loader = this.loader;
-    if (loader instanceof AsyncBulkCacheLoader) {
+    if (loader instanceof AsyncBulkCacheLoader && toLoad.size() > 1) {
       AsyncBulkCacheLoader<K, V> bulkLoader = (AsyncBulkCacheLoader<K, V>) loader;
-      Set<Context<K, V>> contextSet = new HashSet<>();
+      Set<Context<K, V>> contextSet = new HashSet<>(toLoad.size());
       for (K key : toLoad) {
         contextSet.add(key2action.get(key));
       }
@@ -166,7 +189,10 @@ public class AsyncBulkAction<K, V, R> implements
         onLoadFailure(ouch);
       }
     } else {
-      for (K key : toLoad) {
+      Iterator<K> it = toLoad.iterator();
+      while (it.hasNext()) {
+        K key = it.next();
+        it.remove();
         EntryAction<K, V, R> action = key2action.get(key);
         try {
           loader.load(key, action, action);
@@ -174,7 +200,6 @@ public class AsyncBulkAction<K, V, R> implements
           action.onLoadFailure(ouch);
         }
       }
-      toLoad.clear();
     }
   }
 
@@ -214,15 +239,22 @@ public class AsyncBulkAction<K, V, R> implements
 
   @Override
   public synchronized void entryActionCompleted(EntryAction<K, V, R> ea) {
-    propagateFirstException(ea);
     completed.add(ea.getKey());
-    int started = (key2action.size() - toStart.size());
-    if (completed.size() == started) {
+    int startedCount = key2action.size() - toStart.size();
+    boolean allCompletedThatWasStarted = completed.size() == startedCount;
+    if (allCompletedThatWasStarted) {
       if (!toStart.isEmpty()) {
         startRemaining();
       } else {
+        extractException();
         bulkOperationCompleted();
       }
+    }
+  }
+
+  private void extractException() {
+    for (EntryAction<K, V, R> ea : key2action.values()) {
+      propagateFirstException(ea);
     }
   }
 
@@ -250,14 +282,14 @@ public class AsyncBulkAction<K, V, R> implements
     return key2action.values();
   }
 
-  public Map<K, R> getResultMap() {
-    Map<K, R> map = new HashMap<>();
+  public void fillResultMap(Map<K, R> map) {
     for (Map.Entry<K, EntryAction<K, V, R>> e : key2action.entrySet()) {
       map.put(e.getKey(), e.getValue().result);
     }
-    return map;
   }
 
   protected void bulkOperationCompleted() { }
+
+  protected abstract EntryAction<K, V, R> createEntryAction(K key, AsyncBulkAction<K, V, R> self);
 
 }

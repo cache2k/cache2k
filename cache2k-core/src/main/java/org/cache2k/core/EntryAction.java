@@ -87,7 +87,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   volatile Entry<K, V> heapEntry;
   ExaminationEntry<K, V> heapOrLoadedEntry;
   V newValueOrException;
-  R result;
 
   /**
    * Only set on request, use getter {@link #getMutationStartTime()}
@@ -98,6 +97,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   long loadStartedTime;
   long loadCompletedTime;
   RuntimeException exceptionToPropagate;
+  R result;
+
   boolean remove;
   /** Special case of remove, expiry is in the past */
   boolean expiredImmediately;

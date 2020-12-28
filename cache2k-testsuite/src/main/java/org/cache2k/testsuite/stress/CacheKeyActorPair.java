@@ -34,12 +34,12 @@ public abstract class CacheKeyActorPair<R, K, V> implements ActorPair<R>, Clonea
   protected Cache<K, V> cache;
   protected K key;
 
-  public CacheKeyActorPair<R, K, V> setCache(final Cache<K, V> cache) {
+  public CacheKeyActorPair<R, K, V> setCache(Cache<K, V> cache) {
     this.cache = cache;
     return this;
   }
 
-  public CacheKeyActorPair<R, K, V> setKey(final K key) {
+  public CacheKeyActorPair<R, K, V> setKey(K key) {
     this.key = key;
     return this;
   }

@@ -35,6 +35,7 @@ import org.cache2k.core.util.TunableFactory;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.CacheOperationCompletionListener;
+import org.cache2k.pinpoint.SupervisedExecutor;
 import org.cache2k.test.core.CacheLoaderTest;
 import org.cache2k.test.core.Statistics;
 import org.cache2k.test.core.TestingParameters;
@@ -51,6 +52,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -602,6 +604,10 @@ public class TestingBase {
     } catch (UnsupportedOperationException ex) {
       return false;
     }
+  }
+
+  public SupervisedExecutor executor() {
+    return new SupervisedExecutor(loaderExecutor);
   }
 
   /**
