@@ -20,7 +20,6 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -29,23 +28,17 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ExceptionCollector {
 
   private final AtomicReference<Throwable> firstException = new AtomicReference<>();
-  private final AtomicInteger exceptionCount = new AtomicInteger();
 
   /**
    * Collect exception or ignore if null.
    */
   public void collect(Throwable t) {
     firstException.compareAndSet(null, t);
-    if (t != null) {
-      exceptionCount.incrementAndGet();
-    }
   }
 
   public void assertNoException() {
     if (firstException.get() != null) {
-      throw new AssertionError(
-        "No exception expected, " + exceptionCount.get() +
-        " exceptions, first one propagated", getFirstException());
+      throw new AssertionError("No exception expected", firstException.get());
     }
   }
 
@@ -54,10 +47,6 @@ public class ExceptionCollector {
    */
   public Throwable getFirstException() {
     return firstException.get();
-  }
-
-  public int getExceptionCount() {
-    return exceptionCount.get();
   }
 
 }

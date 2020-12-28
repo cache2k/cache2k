@@ -30,12 +30,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 /**
@@ -85,16 +85,6 @@ public class LoadingPairwiseStressTest extends PairwiseTestingBase {
     return l;
   }
 
-  static class GetAndLoad1 extends CacheKeyActorPair<Integer, Integer, Integer> {
-    public void setup() { cache.remove(key); }
-    public Integer actor1() { return cache.get(key); }
-    public Integer actor2() { return cache.get(key); }
-    public void check(Integer r1, Integer r2) {
-      int value = value();
-      assertEquals(value, (int) r1);
-      assertEquals(value, (int) r2);
-    }
-  }
 
   private static void checkResult(List<Integer> keys, Map<Integer, Integer> result) {
     assertEquals("Size of result", keys.size(), result.size());
@@ -105,25 +95,22 @@ public class LoadingPairwiseStressTest extends PairwiseTestingBase {
     }
   }
 
-  static class GetAllAndLoad1 extends CacheKeyActorPair<Void, Integer, Integer> {
-    public void setup() { cache.removeAll(asList(key, key + 1, key + 2, key + 3, key + 4)); }
-    public Void actor1() {
-      List<Integer> keys = asList(key, key + 1, key + 2, key + 3);
+  static class GetAllAndLoad1 extends CacheKeyActorPair<Map<Integer, Integer>, Integer, Integer> {
+    public void setup() { }
+    public Map<Integer, Integer> actor1() {
+      List<Integer> keys = Arrays.asList(key, key + 1, key + 2);
       Map<Integer, Integer> result = cache.getAll(keys);
       checkResult(keys, result);
-      return null;
+      return result;
     }
 
-    public Void actor2() {
-      cache.loadAll(asList(key, key + 1));
-      List<Integer> keys = asList(key, key + 1, key + 2, key + 4);
+    public Map<Integer, Integer> actor2() {
+      List<Integer> keys = Arrays.asList(key, key + 1, key + 3);
       Map<Integer, Integer> result = cache.getAll(keys);
       checkResult(keys, result);
-      return null;
+      return result;
     }
-    public void check(Void r1, Void r2) {
-      List<Integer> keys = asList(key, key + 1, key + 2, key + 3, key + 4);
-      checkResult(keys, cache.peekAll(keys));
+    public void check(Map<Integer, Integer> r1, Map<Integer, Integer> r2) {
     }
   }
 
