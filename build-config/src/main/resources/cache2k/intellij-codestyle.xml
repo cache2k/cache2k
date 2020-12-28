@@ -1,0 +1,65 @@
+<!--
+  #%L
+  Checkstyle and PMD rules
+  %%
+  Copyright (C) 2000 - 2020 headissue GmbH, Munich
+  %%
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  #L%
+  -->
+<code_scheme name="Jens Default" version="173">
+  <option name="PARAMETER_NAME_PREFIX" value="_" />
+  <option name="LOCAL_VARIABLE_NAME_PREFIX" value="_" />
+  <option name="GENERATE_FINAL_PARAMETERS" value="true" />
+  <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="1000" />
+  <option name="RIGHT_MARGIN" value="100" />
+  <JavaCodeStyleSettings>
+    <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="1000" />
+  </JavaCodeStyleSettings>
+  <JetCodeStyleSettings>
+    <option name="PACKAGES_TO_USE_STAR_IMPORTS">
+      <value>
+        <package name="java.util" alias="false" withSubpackages="false" />
+        <package name="kotlinx.android.synthetic" alias="false" withSubpackages="true" />
+        <package name="io.ktor" alias="false" withSubpackages="true" />
+      </value>
+    </option>
+    <option name="PACKAGES_IMPORT_LAYOUT">
+      <value>
+        <package name="" alias="false" withSubpackages="true" />
+        <package name="java" alias="false" withSubpackages="true" />
+        <package name="javax" alias="false" withSubpackages="true" />
+        <package name="kotlin" alias="false" withSubpackages="true" />
+        <package name="" alias="true" withSubpackages="true" />
+      </value>
+    </option>
+  </JetCodeStyleSettings>
+  <MarkdownNavigatorCodeStyleSettings>
+    <option name="RIGHT_MARGIN" value="72" />
+  </MarkdownNavigatorCodeStyleSettings>
+  <XML>
+    <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
+  </XML>
+  <codeStyleSettings language="JAVA">
+    <indentOptions>
+      <option name="INDENT_SIZE" value="2" />
+      <option name="CONTINUATION_INDENT_SIZE" value="2" />
+      <option name="TAB_SIZE" value="2" />
+    </indentOptions>
+  </codeStyleSettings>
+  <codeStyleSettings language="XML">
+    <indentOptions>
+      <option name="INDENT_SIZE" value="2" />
+    </indentOptions>
+  </codeStyleSettings>
+</code_scheme>
