@@ -22,14 +22,15 @@ package org.cache2k.test.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.cache2k.core.AsyncBulkAction;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoaderException;
+import org.cache2k.pinpoint.CaughtInterruptedException;
 import org.cache2k.pinpoint.ExceptionCollector;
+import org.cache2k.pinpoint.SupervisedExecutor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.CacheRule;
@@ -44,17 +45,15 @@ import org.cache2k.test.util.ExpectedException;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.IntCacheRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -244,11 +243,8 @@ public class CacheLoaderTest extends TestingBase {
   @Test
   public void loadExceptionAsyncSyncLoaderImmediateFail() {
     Cache<Integer, Integer> c = target.cache(b -> b
-      .loader(new AsyncCacheLoader<Integer, Integer>() {
-        @Override
-        public void load(Integer key, Context<Integer, Integer> context, Callback<Integer> callback) throws Exception {
-          throw new AlwaysFailException();
-        }
+      .loader((AsyncCacheLoader<Integer, Integer>) (key, context, callback) -> {
+        throw new AlwaysFailException();
       }));
     loadExceptionChecks(c);
   }
@@ -1007,28 +1003,38 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   public static class AsyncLoadBuffer<K, V> {
-    private final AtomicInteger startedLoadRequests = new AtomicInteger();
-    private final ConcurrentHashMap<K, AsyncCacheLoader.Callback<V>> pending = new ConcurrentHashMap<>();
+    private int startedLoadRequests = 0;
+    private final Map<K, AsyncCacheLoader.Callback<V>> pending = new HashMap<>();
     private final Function<K, V> loader;
     public AsyncLoadBuffer(Function<K, V> loader) { this.loader = loader; }
-    public void put(K key, AsyncCacheLoader.Callback<V> cb) {
-      startedLoadRequests.incrementAndGet();
+    public synchronized void put(K key, AsyncCacheLoader.Callback<V> cb) {
+      startedLoadRequests++;
       cb = pending.putIfAbsent(key, cb);
       assertNull("no request pending for " + key, cb);
     }
     public void put(K key, AsyncBulkCacheLoader.BulkCallback<K, V> cb) {
       put(key, new BulkCallbackWrapper<K, V>(key, cb));
     }
-    public void complete(K key) {
+    public synchronized void complete(K key) {
+      notifyAll();
       pending.compute(key, (k, vCallback) -> {
-        assertNotNull("still pending", vCallback);
+        assertNotNull("Expected pending. Exception?! Key: " + key, vCallback);
         vCallback.onLoadSuccess(loader.apply(k));
         return null;
       });
     }
-    public AsyncBulkCacheLoader.BulkCallback<K, V> getBulkCallback(K key) {
+    public void complete(K... keys) {
+      for (K key : keys) {
+        complete(key);
+      }
+    }
+    public synchronized AsyncBulkCacheLoader.BulkCallback<K, V> getBulkCallback(K key) {
       return ((BulkCallbackWrapper) pending.get(key)).getOriginalCallback();
     }
+
+    /**
+     * Complete with bulk callback, expecting all keys are within a single bulk request.
+     */
     public void bulkComplete(K... keys) {
       Map<K, V> map = new HashMap<>();
       K key = keys[0];
@@ -1042,16 +1048,37 @@ public class CacheLoaderTest extends TestingBase {
       }
       cb.onLoadSuccess(map);
     }
-    public void assertStarted(K... keys) {
+    /** Expect that async load is started for the set of keys */
+    public synchronized void assertStarted(K... keys) {
       for (K k : keys) {
         assertNotNull("load request pending for " + k, pending.get(k));
       }
     }
-    public int getStartedLoadRequests() { return startedLoadRequests.get(); }
+    /** Wait until async load is started for the set of keys */
+    public synchronized void awaitStarted(K... keys) {
+      long t0 = System.currentTimeMillis();
+      long timeout = TestingParameters.MAX_FINISH_WAIT_MILLIS;
+      for (K k : keys) {
+        while (!pending.containsKey(k)) {
+          try {
+            long remainingTimeout = timeout - (System.currentTimeMillis() - t0);
+            if (remainingTimeout <= 0) {
+              throw new AssertionError(
+                "Load for " + k + " not started within " + timeout + " millis");
+            }
+            wait(remainingTimeout);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CaughtInterruptedException(e);
+          }
+        }
+      }
+    }
+    public synchronized int getStartedLoadRequests() { return startedLoadRequests; }
 
   }
   public static class BulkCallbackWrapper<K, V> implements AsyncCacheLoader.Callback<V> {
-    private K key;
+    private final K key;
     private AsyncBulkCacheLoader.BulkCallback<K, V> cb;
     public BulkCallbackWrapper(K key, AsyncBulkCacheLoader.BulkCallback<K, V> cb) {
       this.key = key; this.cb = cb;
@@ -1069,7 +1096,7 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void asyncBulkLoaderComplex() throws Exception {
+  public void asyncBulkLoaderComplex() {
     AtomicInteger bulkRequests = new AtomicInteger();
     AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
@@ -1098,6 +1125,74 @@ public class CacheLoaderTest extends TestingBase {
     buffer.bulkComplete(6, 7);
     assertEquals(7, buffer.getStartedLoadRequests());
     assertEquals(3, bulkRequests.get());
+  }
+
+  @Test
+  public void asyncBulkLoader_singleLoad() throws Exception {
+    AtomicInteger bulkRequests = new AtomicInteger();
+    AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
+    Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader((keys, contextSet, callback) -> {
+          assertEquals(keys.size(), contextSet.size());
+          bulkRequests.incrementAndGet();
+          contextSet.stream().forEach(ctx -> {
+            assertTrue(keys.contains(ctx.getKey()));
+            buffer.put(ctx.getKey(), callback);
+          });
+        });
+      }
+    });
+    CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
+    CompletableFuture<Void> req2 = cache.loadAll(asList(1, 2, 3, 4));
+    buffer.complete(1, 2, 3, 4);
+    req1.get();
+    req2.get();
+  }
+
+  @Test
+  public void asyncBulkLoader_immediateException() throws Exception {
+    AtomicInteger bulkRequests = new AtomicInteger();
+    AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
+    Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader((keys, contextSet, callback) -> {
+          throw new ExpectedException();
+        });
+      }
+    });
+    CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
+    assertTrue("exception expected", req1.isCompletedExceptionally());
+    CompletableFuture<Void> req2 = cache.loadAll(asList(4));
+    assertTrue("exception expected", req2.isCompletedExceptionally());
+  }
+
+  @Test @Ignore
+  public void asyncBulkLoader_enforceSingleLoad() throws InterruptedException {
+    AtomicInteger bulkRequests = new AtomicInteger();
+    AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
+    Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader((keys, contextSet, callback) -> {
+          bulkRequests.incrementAndGet();
+          contextSet.stream().forEach(ctx -> buffer.put(ctx.getKey(), callback));
+        });
+      }
+    });
+    CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
+    buffer.assertStarted(1, 2, 3);
+    SupervisedExecutor exe = executor();
+    exe.execute(() -> {
+      cache.getAll(asList(1, 2, 3, 4));
+    });
+    buffer.awaitStarted(1, 2, 3, 4);
+    buffer.complete(2);
+    buffer.bulkComplete(1, 3);
+    buffer.complete(4);
+    exe.join();
   }
 
   @Test

@@ -177,9 +177,9 @@ public abstract class AsyncBulkAction<K, V, R> implements
 
   private void startBulkLoad() {
     AsyncCacheLoader<K, V> loader = this.loader;
-    if (loader instanceof AsyncBulkCacheLoader) {
+    if (loader instanceof AsyncBulkCacheLoader && toLoad.size() > 1) {
       AsyncBulkCacheLoader<K, V> bulkLoader = (AsyncBulkCacheLoader<K, V>) loader;
-      Set<Context<K, V>> contextSet = new HashSet<>();
+      Set<Context<K, V>> contextSet = new HashSet<>(toLoad.size());
       for (K key : toLoad) {
         contextSet.add(key2action.get(key));
       }
@@ -189,7 +189,10 @@ public abstract class AsyncBulkAction<K, V, R> implements
         onLoadFailure(ouch);
       }
     } else {
-      for (K key : toLoad) {
+      Iterator<K> it = toLoad.iterator();
+      while (it.hasNext()) {
+        K key = it.next();
+        it.remove();
         EntryAction<K, V, R> action = key2action.get(key);
         try {
           loader.load(key, action, action);
@@ -197,7 +200,6 @@ public abstract class AsyncBulkAction<K, V, R> implements
           action.onLoadFailure(ouch);
         }
       }
-      toLoad.clear();
     }
   }
 
