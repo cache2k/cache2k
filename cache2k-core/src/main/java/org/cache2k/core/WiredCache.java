@@ -30,6 +30,7 @@ import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.BulkCacheLoader;
+import org.cache2k.io.CacheLoaderException;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -56,6 +57,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
@@ -209,7 +212,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     Set<K> keysToLoad = heapCache.checkAllPresent(keys);
     if (keysToLoad.isEmpty()) { listener.onCompleted(); return; }
     if (asyncLoader != null) {
-      asyncBulkOp(Operations.GET, listener, keysToLoad);
+      forward(asyncBulkOp(Operations.GET, keysToLoad), listener);
     } else {
       if (bulkCacheLoader == null) {
         loadAllWithSyncLoader(listener, keysToLoad);
@@ -240,6 +243,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   /**
    * Process operation synchronously and use the bulk loader, if possible.
+   * Expects bulk loader is available.
    */
   private <R> AsyncBulkAction<K, V, R> syncBulkOp(Semantic<K, V, R> op, Set<K> keys) {
     AsyncBulkCacheLoader<K, V> myLoader = (keySet, contexts, callback) -> {
@@ -264,39 +268,39 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   /**
-   * Process operation asynchronously and use the bulk loader, if possible.
+   * Process operation asynchronously and use the bulk loader, if possible and available.
+   * Expects an async loader is available, with optional bulk capabilities.
    */
-  private void asyncBulkOp(Semantic<K, V, Void> op,
-                           CacheOperationCompletionListener listener,
-                           Set<K> keys) {
-    new AsyncBulkAction<K, V, Void>(asyncLoader, keys, false) {
+  private <R> CompletableFuture<AsyncBulkAction<K, V, R>> asyncBulkOp(
+    Semantic<K, V, R> op, Set<K> keys) {
+    CompletableFuture<AsyncBulkAction<K, V, R>> future = new CompletableFuture<>();
+    new AsyncBulkAction<K, V, R>(asyncLoader, keys, false) {
       @Override
-      protected EntryAction<K, V, Void> createEntryAction(K key, AsyncBulkAction<K, V, Void> self) {
-        return new MyEntryAction<Void>(op, key, null, self) {
+      protected EntryAction<K, V, R> createEntryAction(K key, AsyncBulkAction<K, V, R> self) {
+        return new MyEntryAction<R>(op, key, null, self) {
           @Override
           protected AsyncCacheLoader<K, V> asyncLoader() {
             return self;
           }
         };
       }
-
       @Override
       protected void bulkOperationCompleted() {
         Throwable exception = getExceptionToPropagate();
         if (exception != null) {
-          listener.onException(exception);
+          future.completeExceptionally(exception);
         } else {
-          listener.onCompleted();
+          future.complete(this);
         }
       }
     };
+    return future;
   }
 
   /**
    * Only sync loader present. Use loader executor to run things in parallel.
    */
-  private void loadAllWithSyncLoader(CacheOperationCompletionListener listener,
-                                     Set<K> keysToLoad) {
+  private void loadAllWithSyncLoader(CacheOperationCompletionListener listener, Set<K> keysToLoad) {
     OperationCompletion<K> completion = new OperationCompletion<K>(keysToLoad, listener);
     for (K key : keysToLoad) {
       heapCache.executeLoader(completion, key, () -> {
@@ -308,6 +312,17 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
   }
 
+  private void forward(CompletableFuture<?> future, CacheOperationCompletionListener listener) {
+    future.handle((result, exception) -> {
+      if (exception == null) {
+        listener.onCompleted();
+      } else {
+        listener.onException(exception);
+      }
+      return null;
+    });
+  }
+
   @Override
   public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
@@ -315,12 +330,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keySet = HeapCache.generateKeySet(keys);
     if (asyncLoader != null) {
-      asyncBulkOp(ops.unconditionalLoad, listener, keySet);
+      forward(asyncBulkOp((Semantic<K, V, Void>) ops.unconditionalLoad, keySet), listener);
     } else {
       if (bulkCacheLoader == null) {
         reloadAllWithSyncLoader(listener, keySet);
       } else {
-        executeSyncBulkOp(ops.unconditionalLoad, keySet, l);
+        executeSyncBulkOp(ops.unconditionalLoad, keySet, listener);
       }
     }
   }
@@ -391,34 +406,62 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   @Override
   public Map<K, V> getAll(Iterable<? extends K> requestedKeys) {
-    if (bulkCacheLoader == null) {
-      return getAllSequential(requestedKeys);
-    } else {
-      Map<K, CacheEntry<K, V>> resultMap = new HashMap<>();
-      Set<K> keys = new HashSet<>();
-      for (K key : requestedKeys) {
-        Entry<K, V> e = lookupQuick(key);
-        if (e != null && e.hasFreshData(getClock())) {
-          resultMap.put(key, heapCache.returnCacheEntry(e));
-        } else {
-          keys.add(key);
+    Map<K, V> resultMap = new HashMap<>();
+    Set<K> keys = new HashSet<>();
+    for (K key : requestedKeys) {
+      Entry<K, V> e = lookupQuick(key);
+      if (e != null && e.hasFreshData(getClock())) {
+        resultMap.put(key, e.getValueOrException());
+      } else {
+        if (e != null) {
+          metrics().heapHitButNoRead();
         }
+        keys.add(key);
       }
-      if (!keys.isEmpty()) {
-        AsyncBulkAction<K, V, CacheEntry<K, V>> result = syncBulkOp(Operations.GET_ENTRY, keys);
-        Throwable t = result.getExceptionToPropagate();
-        if (t != null) {
-          if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
-          } else if (t instanceof Error) {
-            throw (Error) t;
-          }
-          throw new CacheException(t);
-        }
-        result.fillResultMap(resultMap);
-      }
-      return heapCache.convertCacheEntry2ValueMap(resultMap);
     }
+    if (!keys.isEmpty()) {
+      if (asyncLoader != null) {
+        try {
+          AsyncBulkAction<K, V, V> bulkAction =
+            asyncBulkOp((Semantic<K, V, V>) Operations.GET_VALUE_OR_EXCEPTION, keys).get();
+          bulkAction.fillResultMap(resultMap);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+          throw new CacheException(ex);
+        } catch (ExecutionException ex) {
+          Throwable cause = ex.getCause();
+          if (cause instanceof CacheLoaderException) {
+            cause.fillInStackTrace();
+            throw (CacheLoaderException) cause;
+          }
+          throw new CacheException(ex.getCause());
+        }
+      } else {
+        if (bulkCacheLoader == null) {
+          return getAllSequential(requestedKeys);
+        } else {
+          if (!keys.isEmpty()) {
+            AsyncBulkAction<K, V, V> result = syncBulkOp(Operations.GET_VALUE_OR_EXCEPTION, keys);
+            Throwable t = result.getExceptionToPropagate();
+            if (t != null) {
+              if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+              } else if (t instanceof Error) {
+                throw (Error) t;
+              }
+              throw new CacheException(t);
+            }
+            result.fillResultMap(resultMap);
+          }
+        }
+      }
+    }
+    return new MapValueConverterProxy<K, V, V>(resultMap) {
+      @Override
+      protected V convert(V v) {
+        return heapCache.returnValue(v);
+      }
+    };
   }
 
   private Map<K, V> getAllSequential(Iterable<? extends K> keys) {

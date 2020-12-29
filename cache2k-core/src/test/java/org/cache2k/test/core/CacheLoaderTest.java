@@ -1152,7 +1152,7 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void asyncBulkLoader_immediateException() throws Exception {
+  public void asyncBulkLoader_immediateException_loadAll_get_getAll() throws Exception {
     AtomicInteger bulkRequests = new AtomicInteger();
     AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
@@ -1167,6 +1167,14 @@ public class CacheLoaderTest extends TestingBase {
     assertTrue("exception expected", req1.isCompletedExceptionally());
     CompletableFuture<Void> req2 = cache.loadAll(asList(4));
     assertTrue("exception expected", req2.isCompletedExceptionally());
+    for (int i = 1; i < 6; i++) {
+      CacheEntry<Integer, Integer> entry = cache.getEntry(i);
+      assertNotNull("expect exception", entry.getException());
+      assertThat(entry.getException()).isInstanceOf(ExpectedException.class);
+    }
+    assertThatCode(() -> {
+      cache.getAll(asList(1, 2, 3));
+    }).isInstanceOf(CacheLoaderException.class);
   }
 
   @Test @Ignore

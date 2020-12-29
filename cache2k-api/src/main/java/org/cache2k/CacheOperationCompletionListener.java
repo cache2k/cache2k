@@ -34,8 +34,7 @@ import java.util.EventListener;
 public interface CacheOperationCompletionListener extends EventListener {
 
   /**
-   * Signals the completion of a {@link Cache#loadAll}, {@link Cache#reloadAll} or
-   * {@link Cache#prefetchAll} operation.
+   * Signals the completion of a {@link Cache#loadAll} or {@link Cache#reloadAll} operation.
    */
   void onCompleted();
 
