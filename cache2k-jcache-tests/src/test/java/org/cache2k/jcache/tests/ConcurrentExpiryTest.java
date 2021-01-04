@@ -4,7 +4,7 @@ package org.cache2k.jcache.tests;
  * #%L
  * cache2k JCache tests
  * %%
- * Copyright (C) 2000 - 2020 headissue GmbH, Munich
+ * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
