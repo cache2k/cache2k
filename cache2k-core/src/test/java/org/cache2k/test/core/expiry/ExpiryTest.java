@@ -1520,18 +1520,19 @@ public class ExpiryTest extends TestingBase {
     assertFalse(c.containsKey(1));
   }
 
+  /**
+   * If null values are not permitted and the expiry policy says immediate
+   * expiry for a null value, the load does not store a null value but removes
+   * the entry. In this case the get operation variants need to behave like no
+   * entry is present.
+   */
   @Test
-  public void rejectNull_skipLoaderException_null_getAll_empty() {
+  public void nullFromLoaderRemoves_get_getEntry_getAll() {
     Cache<Integer, Integer> c = cacheNoNullNoLoaderException();
-    Map<Integer, Integer> map = c.getAll(toIterable(1, 2, 3));
+    assertNull(c.get(1));
+    assertNull(c.getEntry(2));
+    Map<Integer, Integer> map = c.getAll(asList(3, 4, 5));
     assertEquals(0, map.size());
-  }
-
-  @Test
-  public void rejectNull_skipLoaderException_null_entry() {
-    Cache<Integer, Integer> c = cacheNoNullNoLoaderException();
-    CacheEntry<?, ?> e = c.getEntry(1);
-    assertNull(e);
   }
 
   @Test

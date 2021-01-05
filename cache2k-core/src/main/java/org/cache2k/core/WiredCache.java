@@ -58,6 +58,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -400,89 +401,99 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    }
 
   /**
-   * Just a simple loop at the moment. We need to deal with possible null values
-   * and exceptions. This is a simple placeholder implementation that covers it
-   * all by working on the entry.
+   * This takes four different execution path depending on cache setup and
+   * state: no loader and/or all data present in heap, async or async bulk, parallel single load,
+   * bulk load.
    */
   @Override
   public Map<K, V> getAll(Iterable<? extends K> requestedKeys) {
-    Map<K, V> resultMap = new HashMap<>();
-    Set<K> keys = new HashSet<>();
+    BulkResultCollector<K, V> collect = new BulkResultCollector<>();
+    Set<K> keysMissing = getAllPrescreen(requestedKeys, collect);
+    if (!keysMissing.isEmpty()) {
+      if (asyncLoader != null) {
+        getAllAsyncLoad(collect, keysMissing);
+      } else {
+        if (loader != null) {
+          if (bulkCacheLoader == null) {
+            getAllParallelSingleLoad(collect, keysMissing);
+          } else {
+            getAllBulkLoad(collect, keysMissing);
+          }
+        }
+      }
+    }
+    return collect.getMap();
+  }
+
+  private void getAllBulkLoad(BulkResultCollector<K, V> collect, Set<K> keysMissing) {
+    AsyncBulkAction<K, V, V> bulkAction = syncBulkOp(ops.GET, keysMissing);
+    Throwable t = bulkAction.getExceptionToPropagate();
+    if (t != null) {
+      if (t instanceof RuntimeException) {
+        throw (RuntimeException) t;
+      } else if (t instanceof Error) {
+        throw (Error) t;
+      }
+      throw new CacheException(t);
+    }
+    collect.putAll(bulkAction.getActions());
+  }
+
+  private void getAllAsyncLoad(BulkResultCollector<K, V> collect, Set<K> keysMissing) {
+    try {
+      AsyncBulkAction<K, V, V> bulkAction =
+        asyncBulkOp((Semantic<K, V, V>) Operations.GET, keysMissing).get();
+      collect.putAll(bulkAction.getActions());
+    } catch (InterruptedException ex) {
+      CacheOperationInterruptedException.propagate(ex);
+    } catch (ExecutionException ex) {
+      Throwable cause = ex.getCause();
+      if (cause instanceof CacheLoaderException) {
+        cause.fillInStackTrace();
+        throw (CacheLoaderException) cause;
+      }
+      throw new CacheException(ex.getCause());
+    }
+  }
+
+  /**
+   * Check for fresh on heap data of the requested keys and collect it.
+   *
+   * @return missing keys that need processing
+   */
+  private Set<K> getAllPrescreen(
+    Iterable<? extends K> requestedKeys, BulkResultCollector<K, V> collect) {
+    Set<K> keysMissing = new HashSet<>();
     for (K key : requestedKeys) {
       Entry<K, V> e = lookupQuick(key);
       if (e != null && e.hasFreshData(getClock())) {
-        resultMap.put(key, e.getValueOrException());
+        collect.put(key, e.getValueOrException());
       } else {
         if (e != null) {
           metrics().heapHitButNoRead();
         }
-        keys.add(key);
+        keysMissing.add(key);
       }
     }
-    if (!keys.isEmpty()) {
-      if (asyncLoader != null) {
-        try {
-          AsyncBulkAction<K, V, V> bulkAction =
-            asyncBulkOp((Semantic<K, V, V>) Operations.GET_VALUE_OR_EXCEPTION, keys).get();
-          bulkAction.fillResultMap(resultMap);
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-          throw new CacheException(ex);
-        } catch (ExecutionException ex) {
-          Throwable cause = ex.getCause();
-          if (cause instanceof CacheLoaderException) {
-            cause.fillInStackTrace();
-            throw (CacheLoaderException) cause;
-          }
-          throw new CacheException(ex.getCause());
-        }
-      } else {
-        if (bulkCacheLoader == null) {
-          return getAllSequential(requestedKeys);
-        } else {
-          if (!keys.isEmpty()) {
-            AsyncBulkAction<K, V, V> result = syncBulkOp(Operations.GET_VALUE_OR_EXCEPTION, keys);
-            Throwable t = result.getExceptionToPropagate();
-            if (t != null) {
-              if (t instanceof RuntimeException) {
-                throw (RuntimeException) t;
-              } else if (t instanceof Error) {
-                throw (Error) t;
-              }
-              throw new CacheException(t);
-            }
-            result.fillResultMap(resultMap);
-          }
-        }
-      }
-    }
-    return new MapValueConverterProxy<K, V, V>(resultMap) {
-      @Override
-      protected V convert(V v) {
-        return heapCache.returnValue(v);
-      }
-    };
+    return keysMissing;
   }
 
-  private Map<K, V> getAllSequential(Iterable<? extends K> keys) {
-    /* copied from reloadAll:
-    OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad, listener);
-    for (K key : keysToLoad) {
-      heapCache.executeLoader(completion, key, () -> {
-        EntryAction<K, V, V> action = createEntryAction(key, null, ops.unconditionalLoad);
-        action.start();
-        return action.getException();
-      });
+  private void getAllParallelSingleLoad(BulkResultCollector<K, V> collect,
+                                        Set<? extends K> keysMissing) {
+    Set<EntryAction<K, V, V>> actions = new HashSet<>(keysMissing.size());
+    CountDownLatch completion = new CountDownLatch(keysMissing.size());
+    EntryAction.CompletedCallback cb = ea -> completion.countDown();
+    for (K key : keysMissing) {
+      EntryAction<K, V, V> action = new MyEntryAction<>(ops.GET, key, null, cb);
+      actions.add(action);
+      heapCache.executeLoader(action);
     }
-    */
-    Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
-    for (K k : keys) {
-      CacheEntry<K, V> e = execute(k, ops.getEntry(k));
-      if (e != null) {
-        map.put(k, e);
-      }
+    try {
+      completion.await();
+    } catch (InterruptedException ex) {
+      CacheOperationInterruptedException.propagate(ex);
     }
-    return heapCache.convertCacheEntry2ValueMap(map);
+    collect.putAll(actions);
   }
 
   @Override
@@ -516,7 +527,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       EntryProcessingResult<R> singleResult;
       Throwable exception = action.getException();
       if (exception == null) {
-        R value = action.result;
+        R value = action.getResult();
         singleResult = new EntryProcessingResult<R>() {
           @Override
           public @Nullable R getResult() { return value; }

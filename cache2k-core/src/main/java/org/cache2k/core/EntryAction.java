@@ -97,7 +97,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   long loadStartedTime;
   long loadCompletedTime;
   RuntimeException exceptionToPropagate;
-  R result;
+  /** @see #isResultAvailable() */
+  private boolean resultAvailable;
+  private R result;
 
   boolean remove;
   /** Special case of remove, expiry is in the past */
@@ -172,6 +174,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   private EntryAction<K, V, ?> nextAction = null;
 
+  /**
+   * @see {@link #start()}
+   */
   private int semanticCallback = 0;
 
   /**
@@ -748,12 +753,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public void result(R r) {
+    resultAvailable = true;
     result = r;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void entryResult(ExaminationEntry<K, V> e) {
+    resultAvailable = true;
     result = (R) heapCache.returnEntry(e);
   }
 
@@ -1379,6 +1386,18 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         heapEntry.waitForProcessing();
       }
     }
+  }
+
+  public R getResult() {
+    return result;
+  }
+
+  /**
+   * If false, the result is not set. This deals with the fact if null values are not
+   * permitted a loaded null means remove or no mapping.
+   */
+  public boolean isResultAvailable() {
+    return resultAvailable;
   }
 
   public static class ListenerException extends CustomizationException {

@@ -225,7 +225,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
       t.fillInStackTrace();
       throw t;
     }
-    return action.result;
+    return action.getResult();
   }
 
   protected <R> R execute(K key, Semantic<K, V, R> op) {

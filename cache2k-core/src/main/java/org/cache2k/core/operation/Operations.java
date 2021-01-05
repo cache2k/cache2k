@@ -136,33 +136,6 @@ public class Operations<K, V> {
     }
   };
 
-  public static final Semantic GET_VALUE_OR_EXCEPTION = new Semantic.MightUpdate() {
-
-    @Override
-    public void examine(Object key, Progress c, ExaminationEntry e) {
-      if (c.isDataFreshOrMiss()) {
-        c.result(e.getValueOrException());
-        c.noMutation();
-      } else {
-        if (c.isLoaderPresent()) {
-          c.wantMutation();
-        } else {
-          c.noMutation();
-        }
-      }
-    }
-
-    @Override
-    public void mutate(Object key, Progress c, ExaminationEntry e) {
-      c.load();
-    }
-
-    @Override
-    public void loaded(Object key, Progress c, ExaminationEntry e) {
-      c.result(e.getValueOrException());
-    }
-  };
-
   public Semantic<K, V, ResultEntry<K, V>> peekEntry() {
     return PEEK_ENTRY;
   }

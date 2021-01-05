@@ -282,12 +282,6 @@ public abstract class AsyncBulkAction<K, V, R> implements
     return key2action.values();
   }
 
-  public void fillResultMap(Map<K, R> map) {
-    for (Map.Entry<K, EntryAction<K, V, R>> e : key2action.entrySet()) {
-      map.put(e.getKey(), e.getValue().result);
-    }
-  }
-
   protected void bulkOperationCompleted() { }
 
   protected abstract EntryAction<K, V, R> createEntryAction(K key, AsyncBulkAction<K, V, R> self);

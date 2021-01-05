@@ -1173,9 +1173,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   @SuppressWarnings("unchecked")
-  protected V returnValue(V v) {
+  public static <V> V returnValue(V v) {
     if (v instanceof ExceptionWrapper) {
-      throw ((ExceptionWrapper<K, V>) v).generateExceptionToPropagate();
+      throw ((ExceptionWrapper<?, V>) v).generateExceptionToPropagate();
     }
     return v;
   }
