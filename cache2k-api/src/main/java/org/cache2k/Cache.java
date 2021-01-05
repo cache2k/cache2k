@@ -706,7 +706,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
   /**
    * Request to load the given set of keys into the cache. Only missing or expired
    * values will be loaded. The method returns immediately with a {@code CompletableFuture}.
-   * If no asynchronous loader is specified, the executor sepcified by
+   * If no asynchronous loader is specified, the executor specified by
    * {@link Cache2kBuilder#loaderExecutor(Executor)} will be used.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
@@ -716,7 +716,10 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
    *
-   * <p>After the load is completed, the completion listener will be called, if provided.
+   * <p>The operation will return a {@link CacheLoaderException} in case of a call to the loader
+   * threw an exception. If resilience is used and exceptions are cached, this also applied to
+   * cached exceptions. Thus, the operation completes successful only if all values were
+   * loaded successfully.
    *
    * @param keys The keys to be loaded
    * @return future getting notified on completion
@@ -736,8 +739,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    * back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
-   *
-   * <p>After the load is completed, the completion listener will be called, if provided.
    *
    * @param keys The keys to be loaded
    * @return future getting notified on completion
@@ -835,14 +836,13 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *
    * <p>Executing the request, the cache may do optimizations like
    * utilizing multiple threads for invoking the loader or using the bulk
-   * methods on the loader. This is not yet fully exploited and will improve
-   * with further cache2k releases.
+   * methods on the loader.
    *
-   * <p>Exception handling: The method may terminate normal, even if the cache
-   * loader failed to provide values for some keys. The cache will generally
-   * do everything to delay the propagation of the exception until the key is requested,
-   * to be most specific. If the loader has permanent failures this method may
-   * throw an exception immediately.
+   * <p>Exception handling: In case of loader exceptions, the method will throw
+   * an immediate exception if the load for all requested keys resulted in an
+   * exception or another problem occurred. If some keys were loaded successfully the method
+   * will return a map and terminate without exception, but requesting the faulty value from the
+   * map returns an exception.
    *
    * <p>The operation is not performed atomically.
    *

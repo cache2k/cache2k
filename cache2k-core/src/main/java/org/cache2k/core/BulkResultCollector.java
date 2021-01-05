@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.io.CacheLoaderException;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,13 +45,48 @@ public class BulkResultCollector<K, V> {
     }
   }
 
-  public Map<K, V> getMap() {
+  /**
+   * Return result map or throw exception if every map entry has an exception.
+   */
+  public Map<K, V> mapOrThrowIfAllFaulty() {
+    if (exceptionCount > 0 && exceptionCount == map.size()) {
+      throw getAnyLoaderException();
+    }
     return new MapValueConverterProxy<K, V, V>(map) {
       @Override
       protected V convert(V v) {
         return HeapCache.returnValue(v);
       }
     };
+  }
+
+  /**
+   * Gets a loader exception if any value represents an exception
+   *
+   * @return CacheLoaderException or null if no exception is present
+   */
+  public CacheLoaderException getAnyLoaderException() {
+    if (exceptionCount == 0) {
+      return null;
+    }
+    return createBulkLoaderException(exceptionCount, map.size(), anyException);
+  }
+
+  public void throwOnAnyLoaderException() {
+    if (exceptionCount > 0) {
+      throw getAnyLoaderException();
+    }
+  }
+
+  public static CacheLoaderException createBulkLoaderException(
+    int exceptionCount, int operationCount, Throwable example) {
+    if (exceptionCount > 1) {
+      String txt =
+        exceptionCount + " out of " + operationCount + " cache requests" +
+        ", one as cause";
+      return new CacheLoaderException(txt, example);
+    }
+    return new CacheLoaderException(example);
   }
 
   public void putAll(Collection<EntryAction<K, V, V>> actions) {

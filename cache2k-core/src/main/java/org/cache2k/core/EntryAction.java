@@ -1352,15 +1352,17 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   /**
    * Exception that might have happened during processing. A processing
-   * exception takes precedence over a loader exception, because its more severe.
+   * exception takes precedence over a loader exception, because it is probably more severe.
+   * Loader exceptions will be delayed until the value is accessed. This exception
+   * will be propagated instantly.
    */
   public RuntimeException getExceptionToPropagate() {
     return exceptionToPropagate;
   }
 
-  public Throwable getLoadException() {
+  public Throwable getLoaderException() {
     if (result instanceof ExceptionWrapper) {
-      return new CacheLoaderException(((ExceptionWrapper<?, ?>) result).getException());
+      return ((ExceptionWrapper<?, ?>) result).getException();
     }
     return null;
   }
@@ -1369,7 +1371,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (exceptionToPropagate != null) {
       return exceptionToPropagate;
     }
-    return getLoadException();
+    return getLoaderException();
   }
 
   /**

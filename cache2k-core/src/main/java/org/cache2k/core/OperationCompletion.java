@@ -60,21 +60,9 @@ public class OperationCompletion<K> {
       listener.onCompleted();
       return;
     }
-    String txt = null;
-    if (exceptionCount > 1) {
-      txt = "finished with " + exceptionCount + " exceptions " +
-        "out of " + initialCount + " operations" +
-        ", one propagated as cause";
-    }
-    listener.onException(wrap(txt, exception));
-  }
-
-  CacheException wrap(String txt, Throwable t) {
-    if (exception instanceof CacheLoaderException) {
-      return new CacheLoaderException(txt, exception.getCause());
-    } else {
-      return new CacheException(txt, exception);
-    }
+    CacheLoaderException bulkLoaderException =
+      BulkResultCollector.createBulkLoaderException(exceptionCount, initialCount, exception);
+    listener.onException(bulkLoaderException);
   }
 
   static final AtomicIntegerFieldUpdater<OperationCompletion> BULK_OP_COUNT =

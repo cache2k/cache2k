@@ -1048,10 +1048,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   /** null is legal, if loaded value is immediate*/
   Throwable extractException(Entry<K, V> e) {
     if (e != null) {
-      Throwable exception = e.getException();
-      if (exception != null) {
-        return new CacheLoaderException(exception);
-      }
+      return e.getException();
     }
     return null;
   }

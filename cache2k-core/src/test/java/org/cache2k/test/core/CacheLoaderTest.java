@@ -27,6 +27,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
+import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.CaughtInterruptedException;
 import org.cache2k.pinpoint.ExceptionCollector;
@@ -54,6 +55,7 @@ import org.junit.rules.Timeout;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -251,15 +253,37 @@ public class CacheLoaderTest extends TestingBase {
   @Test
   public void loadExceptionAsyncSyncLoaderDelayedFail() {
     Cache<Integer, Integer> c = target.cache(b -> b
-      .loader(new AsyncCacheLoader<Integer, Integer>() {
-        @Override
-        public void load(Integer key,
-                         Context<Integer, Integer> context, Callback<Integer> callback) {
-          context.getExecutor().execute(() -> {
-            callback.onLoadFailure(new AlwaysFailException());
-          });
-        }
+      .loader((AsyncCacheLoader<Integer, Integer>) (key, context, callback) -> {
+        context.getExecutor().execute(() -> {
+          callback.onLoadFailure(new AlwaysFailException());
+        });
       }));
+    loadExceptionChecks(c);
+  }
+
+  @Test
+  public void loadExceptionBulkSyncLoaderFail() {
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .bulkLoader(keys -> { throw new AlwaysFailException(); })
+    );
+    loadExceptionChecks(c);
+  }
+
+  @Test
+  public void loadExceptionBulkAsyncSyncLoaderImmediateFail() {
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .bulkLoader((keys, contexts, callback) -> { throw new AlwaysFailException(); })
+    );
+    loadExceptionChecks(c);
+  }
+
+  @Test @Ignore // FIXME: change interface
+  public void loadExceptionBulkAsyncSyncLoaderDelayedFail() {
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .bulkLoader((keys, contexts, callback) -> {
+
+      })
+    );
     loadExceptionChecks(c);
   }
 
@@ -283,15 +307,19 @@ public class CacheLoaderTest extends TestingBase {
       .as("contains number of exceptions")
       .hasMessageContaining("3")
       .getCause().isInstanceOf(AlwaysFailException.class);
+    assertThatCode(() -> c.loadAll(asList(key)).get())
+      .as("loadAll().get() single value propagates loader exception, if loaded before")
+      .isInstanceOf(ExecutionException.class)
+      .getCause()
+      .isInstanceOf(CacheLoaderException.class)
+      .getCause().isInstanceOf(AlwaysFailException.class);
     assertThatCode(() -> c.reloadAll(asList(key, 7, 8)).get())
       .as("reloadAll().get() propagates loader exception")
       .isInstanceOf(ExecutionException.class)
       .getCause()
       .isInstanceOf(CacheLoaderException.class)
-      .as("contains number of exceptions")
-      .hasMessageContaining("3")
-      .hasMessageContaining("finished with 3 exceptions out of 3 operations, " +
-        "one propagated as cause")
+      .as("contains number of exceptions and operations")
+      .hasMessageContaining("3 out of 3")
       .getCause().isInstanceOf(AlwaysFailException.class);
     assertThat(c.peek(key))
       .as("expect nothing loaded and no exception present on entry")

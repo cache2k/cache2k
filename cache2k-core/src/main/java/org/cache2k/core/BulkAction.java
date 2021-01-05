@@ -35,11 +35,11 @@ import java.util.Set;
 
 /**
  * Execute a set of entry actions in parallel to leverage bulk I/O. The basic idea is to
- * collect I/O requests by implementing the interfaces {@code EntryAction} calls and then
- * issue a bulk I/O request on the corresponding bulk interface. This way the actual
+ * collect I/O requests by implementing the callback interfaces and then
+ * issue a bulk I/O request on the corresponding bulk interface. This way the
  * entry processing code can be used and it does not need to be aware of bulk operations.
- * Its also possible to process an inhomogeneous set of actions and try to do as much bulk I/O
- * as possible.
+ * Theoretically, its also possible to process an inhomogeneous set of actions and try to
+ * do as much bulk I/O as possible.
  *
  * <p>Since multiple entries are locked, we need to do precautions to avoid deadlocks.
  * The strategy is to never hold a lock for one entry and wait for locking another entry.
@@ -55,21 +55,17 @@ public abstract class BulkAction<K, V, R> implements
   private final Collection<EntryAction<K, V, R>> toStart;
   private final Set<K> toLoad;
   private final AsyncCacheLoader<K, V> loader;
-  private Throwable exceptionToPropagate;
-  private int exceptionCount = 0;
   private int completedCount = 0;
 
   /** Create object and start operation. */
   public BulkAction(AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+    this.loader = loader;
     key2action = new HashMap<>(keys.size());
     toLoad = new HashSet<>(keys.size());
-    Collection<EntryAction<K, V, R>> actions = toStart = new ArrayList<>(keys.size());
-    for (K k : keys) {
-      actions.add(createEntryAction(k, this));
-    }
-    this.loader = loader;
-    for (EntryAction<K, V, R> action : actions) {
-      K key = action.getKey();
+    toStart = new ArrayList<>(keys.size());
+    for (K key : keys) {
+      EntryAction<K, V, R> action = createEntryAction(key, this);
+      toStart.add(action);
       key2action.put(key, action);
     }
     synchronized (this) {
@@ -87,7 +83,6 @@ public abstract class BulkAction<K, V, R> implements
     while (!toStart.isEmpty()) {
       startRemaining();
     }
-    extractException();
     bulkOperationCompleted();
   }
 
@@ -151,7 +146,7 @@ public abstract class BulkAction<K, V, R> implements
    */
   private void processPendingIo() {
     if (!toLoad.isEmpty()) {
-      startBulkLoad();
+      startLoading();
     }
   }
 
@@ -179,31 +174,47 @@ public abstract class BulkAction<K, V, R> implements
     throw new IllegalArgumentException("Callback key not part of request or already processed");
   }
 
-  private void startBulkLoad() {
-    AsyncCacheLoader<K, V> loader = this.loader;
+  /**
+   * Start loading via the available async loader. User bulk if available.
+   */
+  private void startLoading() {
     if (loader instanceof AsyncBulkCacheLoader && toLoad.size() > 1) {
-      AsyncBulkCacheLoader<K, V> bulkLoader = (AsyncBulkCacheLoader<K, V>) loader;
-      Set<Context<K, V>> contextSet = new HashSet<>(toLoad.size());
-      for (K key : toLoad) {
-        contextSet.add(key2action.get(key));
-      }
-      try {
-        bulkLoader.loadAll(toLoad, contextSet, this);
-      } catch (Throwable ouch) {
-        onLoadFailure(ouch);
-      }
+      startLoadingBulk();
     } else {
-      Iterator<K> it = toLoad.iterator();
-      while (it.hasNext()) {
-        K key = it.next();
-        it.remove();
-        EntryAction<K, V, R> action = key2action.get(key);
-        try {
-          loader.load(key, action, action);
-        } catch (Throwable ouch) {
-          action.onLoadFailure(ouch);
-        }
+      startLoadingSingle();
+    }
+  }
+
+  /**
+   * Call async loader for all load requests we collected.
+   */
+  private void startLoadingSingle() {
+    Iterator<K> it = toLoad.iterator();
+    while (it.hasNext()) {
+      K key = it.next();
+      it.remove();
+      EntryAction<K, V, R> action = key2action.get(key);
+      try {
+        loader.load(key, action, action);
+      } catch (Throwable ouch) {
+        action.onLoadFailure(ouch);
       }
+    }
+  }
+
+  /**
+   * Start loading via calling the async bulk loader. The keys are removed from
+   * toLoad in the callback to ourselves, we use toLoad additionally to keep track
+   * of partial completions
+   */
+  private void startLoadingBulk() {
+    AsyncBulkCacheLoader<K, V> bulkLoader = (AsyncBulkCacheLoader<K, V>) loader;
+    Set<Context<K, V>> contextSet = new HashSet<>(toLoad.size());
+    for (K key : toLoad) { contextSet.add(key2action.get(key)); }
+    try {
+      bulkLoader.loadAll(toLoad, contextSet, this);
+    } catch (Throwable ouch) {
+      onLoadFailure(ouch);
     }
   }
 
@@ -254,36 +265,42 @@ public abstract class BulkAction<K, V, R> implements
       if (!toStart.isEmpty()) {
         startRemaining();
       } else {
-        extractException();
         bulkOperationCompleted();
       }
     }
   }
 
-  private void extractException() {
-    for (EntryAction<K, V, R> ea : key2action.values()) {
-      propagateFirstException(ea);
-    }
-  }
-
-  private void propagateFirstException(EntryAction<K, V, R> ea) {
-    Throwable exception = ea.getException();
-    if (exception != null) {
-      exceptionCount++;
-    }
-    if (exceptionToPropagate == null && exception != null) {
-      exceptionToPropagate = exception;
-    }
-  }
-
   public Throwable getExceptionToPropagate() {
-    if (exceptionToPropagate instanceof CacheLoaderException) {
-      String txt = "finished with " + exceptionCount + " exceptions " +
-        "out of " + key2action.size() + " operations" +
-        ", one propagated as cause";
-      return new CacheLoaderException(txt, exceptionToPropagate.getCause());
+    Throwable exceptionToPropagate = null;
+    int exceptionCount = 0;
+    for (EntryAction<K, V, R> ea : key2action.values()) {
+      Throwable exception = ea.getExceptionToPropagate();
+      if (exception != null) {
+        exceptionToPropagate = exception;
+        exceptionCount++;
+      }
+    }
+    if (exceptionCount > 1) {
+      return new BulkOperationException(exceptionCount, key2action.size(), exceptionToPropagate);
     }
     return exceptionToPropagate;
+  }
+
+  public CacheLoaderException getLoaderException() {
+    Throwable exceptionToPropagate = null;
+    int exceptionCount = 0;
+    for (EntryAction<K, V, R> ea : key2action.values()) {
+      Throwable exception = ea.getLoaderException();
+      if (exception != null) {
+        exceptionToPropagate = exception;
+        exceptionCount++;
+      }
+    }
+    if (exceptionCount == 0) {
+      return null;
+    }
+    return BulkResultCollector.createBulkLoaderException(
+      exceptionCount, key2action.size(), exceptionToPropagate);
   }
 
   public Collection<EntryAction<K, V, R>> getActions() {

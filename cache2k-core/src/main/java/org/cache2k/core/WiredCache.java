@@ -205,31 +205,58 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return execute(key, ops.replace(key, oldValue, newValue));
   }
 
+
   @Override
   public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
     checkLoaderPresent();
     CacheOperationCompletionListener listener =
       l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
-    Set<K> keysToLoad = heapCache.checkAllPresent(keys);
-    if (keysToLoad.isEmpty()) { listener.onCompleted(); return; }
+    BulkResultCollector<K, V> collect = new BulkResultCollector<>();
+    Set<K> keysToLoad = getAllPrescreen(keys, collect);
+    CacheLoaderException exception = collect.getAnyLoaderException();
+    if (keysToLoad.isEmpty()) {
+      if (exception != null) {
+        listener.onException(exception);
+      }
+      listener.onCompleted();
+      return;
+    }
+    if (exception != null) {
+      CacheOperationCompletionListener originalListener = listener;
+      listener = new CacheOperationCompletionListener() {
+        @Override
+        public void onCompleted() {
+          originalListener.onException(exception);
+        }
+
+        @Override
+        public void onException(Throwable exception) {
+          originalListener.onException(exception);
+        }
+      };
+    }
     if (asyncLoader != null) {
-      forward(asyncBulkOp(Operations.GET, keysToLoad), listener);
+      forwardLoadCompleted(asyncBulkOp(Operations.GET, keysToLoad), listener);
     } else {
       if (bulkCacheLoader == null) {
         loadAllWithSyncLoader(listener, keysToLoad);
       } else {
-        executeSyncBulkOp(Operations.GET, keysToLoad, listener);
+        executeSyncBulkOp(Operations.GET, keysToLoad, listener, true);
       }
     }
   }
 
   private void executeSyncBulkOp(Semantic operation, Set<K> keys,
-                                 CacheOperationCompletionListener listener) {
+                                 CacheOperationCompletionListener listener,
+                                 boolean propagateLoadException) {
     Runnable runnable = () -> {
       Throwable t;
       try {
         BulkAction<K, V, V> result = syncBulkOp(operation, keys);
         t = result.getExceptionToPropagate();
+        if (propagateLoadException && t == null) {
+          t = result.getLoaderException();
+        }
       } catch (Throwable maybeCacheClosedException) {
         t = maybeCacheClosedException;
       }
@@ -305,7 +332,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     OperationCompletion<K> completion = new OperationCompletion<K>(keysToLoad, listener);
     for (K key : keysToLoad) {
       heapCache.executeLoader(completion, key, () -> {
-        execute(key, null, ops.get(key));
         EntryAction<K, V, V> action = createEntryAction(key, null, ops.get(key));
         action.start();
         return action.getException();
@@ -313,10 +339,15 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     }
   }
 
-  private void forward(CompletableFuture<?> future, CacheOperationCompletionListener listener) {
+  private void forwardLoadCompleted(CompletableFuture<BulkAction<K, V, Void>> future, CacheOperationCompletionListener listener) {
     future.handle((result, exception) -> {
       if (exception == null) {
-        listener.onCompleted();
+        CacheLoaderException ex = result.getLoaderException();
+        if (ex != null) {
+          listener.onException(ex);
+        } else {
+          listener.onCompleted();
+        }
       } else {
         listener.onException(exception);
       }
@@ -331,12 +362,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keySet = HeapCache.generateKeySet(keys);
     if (asyncLoader != null) {
-      forward(asyncBulkOp((Semantic<K, V, Void>) ops.unconditionalLoad, keySet), listener);
+      forwardLoadCompleted(asyncBulkOp((Semantic<K, V, Void>) ops.unconditionalLoad, keySet), listener);
     } else {
       if (bulkCacheLoader == null) {
         reloadAllWithSyncLoader(listener, keySet);
       } else {
-        executeSyncBulkOp(ops.unconditionalLoad, keySet, listener);
+        executeSyncBulkOp(ops.unconditionalLoad, keySet, listener, true);
       }
     }
   }
@@ -422,7 +453,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         }
       }
     }
-    return collect.getMap();
+    return collect.mapOrThrowIfAllFaulty();
   }
 
   private void getAllBulkLoad(BulkResultCollector<K, V> collect, Set<K> keysMissing) {
