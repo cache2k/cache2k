@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +46,7 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
-public abstract class AsyncBulkAction<K, V, R> implements
+public abstract class BulkAction<K, V, R> implements
   AsyncCacheLoader<K, V>,
   AsyncBulkCacheLoader.BulkCallback<K, V>,
   EntryAction.CompletedCallback<K, V, R> {
@@ -53,16 +54,15 @@ public abstract class AsyncBulkAction<K, V, R> implements
   private final Map<K, EntryAction<K, V, R>> key2action;
   private final Collection<EntryAction<K, V, R>> toStart;
   private final Set<K> toLoad;
-  private final Set<K> completed;
   private final AsyncCacheLoader<K, V> loader;
   private Throwable exceptionToPropagate;
   private int exceptionCount = 0;
+  private int completedCount = 0;
 
   /** Create object and start operation. */
-  public AsyncBulkAction(AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+  public BulkAction(AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
     key2action = new HashMap<>(keys.size());
     toLoad = new HashSet<>(keys.size());
-    completed = new HashSet<>();
     Collection<EntryAction<K, V, R>> actions = toStart = new ArrayList<>(keys.size());
     for (K k : keys) {
       actions.add(createEntryAction(k, this));
@@ -95,22 +95,22 @@ public abstract class AsyncBulkAction<K, V, R> implements
    * Try to start as much as possible. If nothing can be started at all we
    */
   private void startRemaining() {
-    if (!tryStartAll()) {
-      startOneWithStalling();
+    if (!tryStartAllAndProcessPendingIo()) {
+      startSingleActionWithDelay();
     }
   }
 
   /**
-   * Try to start all actions. An action, e.g. when mutating may require
-   * an processing lock. If the lock cannot be acquired straight away,
-   * we will reject the start and keep the action in the toStart list.
+   * Try to start all actions. An action may require a processing lock.
+   * When in bulk mode, if the lock cannot be acquired straight away, the start is rejected.
+   * In this case we keep the action in the toStart list.
    *
    * @return true, if some were started
    */
-  private boolean tryStartAll() {
+  private boolean tryStartAllAndProcessPendingIo() {
     boolean someStarted = false;
-    Collection<EntryAction<K, V, R>> rejected = new ArrayList<>();
     Iterator<EntryAction<K, V, R>> it = toStart.iterator();
+    List<EntryAction<K, V, R>> rejected = new ArrayList<>(toStart.size());
     while (it.hasNext()) {
       EntryAction<K, V, R> action = it.next();
       action.setBulkMode(true);
@@ -118,7 +118,7 @@ public abstract class AsyncBulkAction<K, V, R> implements
         it.remove();
         action.start();
         someStarted = true;
-      } catch (EntryAction.AbortWhenProcessingException ex) {
+      } catch (EntryAction.AbortWhenProcessingException e) {
         rejected.add(action);
       }
     }
@@ -130,20 +130,24 @@ public abstract class AsyncBulkAction<K, V, R> implements
   }
 
   /**
-   * At least start one action. The operation will wait until the entry can be locked.
+   * All actions were tried but no action could be started without delay.
+   * Start a single action. The processing will proceed as soon as the
+   * ongoing operation finishes.
    */
-  private void startOneWithStalling() {
+  private void startSingleActionWithDelay() {
     for (EntryAction<K, V, R> action : toStart) {
       action.setBulkMode(false);
-      action.start();
       toStart.remove(action);
+      action.start();
       break;
     }
   }
 
   /**
-   * After we started some or at least one action, check for pending IO requests
-   * we collected.
+   * After we started at least one action, check for pending IO requests
+   * we collected. This currently only looks for collected load requests, but
+   * can/will be extended to other IO operation like tiered read/write and
+   * bulk writer.
    */
   private void processPendingIo() {
     if (!toLoad.isEmpty()) {
@@ -237,11 +241,15 @@ public abstract class AsyncBulkAction<K, V, R> implements
     toLoad.clear();
   }
 
+  /**
+   * Callback upon completion of a entry action. Either start more actions
+   * or complete processing.
+   */
   @Override
   public synchronized void entryActionCompleted(EntryAction<K, V, R> ea) {
-    completed.add(ea.getKey());
+    completedCount++;
     int startedCount = key2action.size() - toStart.size();
-    boolean allCompletedThatWasStarted = completed.size() == startedCount;
+    boolean allCompletedThatWasStarted = completedCount == startedCount;
     if (allCompletedThatWasStarted) {
       if (!toStart.isEmpty()) {
         startRemaining();
@@ -284,6 +292,6 @@ public abstract class AsyncBulkAction<K, V, R> implements
 
   protected void bulkOperationCompleted() { }
 
-  protected abstract EntryAction<K, V, R> createEntryAction(K key, AsyncBulkAction<K, V, R> self);
+  protected abstract EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self);
 
 }

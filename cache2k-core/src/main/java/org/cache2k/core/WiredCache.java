@@ -228,7 +228,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     Runnable runnable = () -> {
       Throwable t;
       try {
-        AsyncBulkAction<K, V, V> result = syncBulkOp(operation, keys);
+        BulkAction<K, V, V> result = syncBulkOp(operation, keys);
         t = result.getExceptionToPropagate();
       } catch (Throwable maybeCacheClosedException) {
         t = maybeCacheClosedException;
@@ -246,7 +246,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Process operation synchronously and use the bulk loader, if possible.
    * Expects bulk loader is available.
    */
-  private <R> AsyncBulkAction<K, V, R> syncBulkOp(Semantic<K, V, R> op, Set<K> keys) {
+  private <R> BulkAction<K, V, R> syncBulkOp(Semantic<K, V, R> op, Set<K> keys) {
     AsyncBulkCacheLoader<K, V> myLoader = (keySet, contexts, callback) -> {
       try {
         callback.onLoadSuccess(bulkCacheLoader.loadAll(keySet));
@@ -254,9 +254,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         callback.onLoadFailure(ouch);
       }
     };
-    AsyncBulkAction<K, V, R> bulkAction = new AsyncBulkAction<K, V, R>(myLoader, keys, true) {
+    BulkAction<K, V, R> bulkAction = new BulkAction<K, V, R>(myLoader, keys, true) {
       @Override
-      protected EntryAction<K, V, R> createEntryAction(K key, AsyncBulkAction<K, V, R> self) {
+      protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
         return new MyEntryAction<R>(op, key, null) {
           @Override
           protected AsyncCacheLoader<K, V> asyncLoader() {
@@ -272,12 +272,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Process operation asynchronously and use the bulk loader, if possible and available.
    * Expects an async loader is available, with optional bulk capabilities.
    */
-  private <R> CompletableFuture<AsyncBulkAction<K, V, R>> asyncBulkOp(
+  private <R> CompletableFuture<BulkAction<K, V, R>> asyncBulkOp(
     Semantic<K, V, R> op, Set<K> keys) {
-    CompletableFuture<AsyncBulkAction<K, V, R>> future = new CompletableFuture<>();
-    new AsyncBulkAction<K, V, R>(asyncLoader, keys, false) {
+    CompletableFuture<BulkAction<K, V, R>> future = new CompletableFuture<>();
+    new BulkAction<K, V, R>(asyncLoader, keys, false) {
       @Override
-      protected EntryAction<K, V, R> createEntryAction(K key, AsyncBulkAction<K, V, R> self) {
+      protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
         return new MyEntryAction<R>(op, key, null, self) {
           @Override
           protected AsyncCacheLoader<K, V> asyncLoader() {
@@ -426,7 +426,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private void getAllBulkLoad(BulkResultCollector<K, V> collect, Set<K> keysMissing) {
-    AsyncBulkAction<K, V, V> bulkAction = syncBulkOp(ops.GET, keysMissing);
+    BulkAction<K, V, V> bulkAction = syncBulkOp(ops.GET, keysMissing);
     Throwable t = bulkAction.getExceptionToPropagate();
     if (t != null) {
       if (t instanceof RuntimeException) {
@@ -441,7 +441,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   private void getAllAsyncLoad(BulkResultCollector<K, V> collect, Set<K> keysMissing) {
     try {
-      AsyncBulkAction<K, V, V> bulkAction =
+      BulkAction<K, V, V> bulkAction =
         asyncBulkOp((Semantic<K, V, V>) Operations.GET, keysMissing).get();
       collect.putAll(bulkAction.getActions());
     } catch (InterruptedException ex) {
@@ -521,7 +521,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return super.invokeAll(keys, entryProcessor);
     }
     Set<K> keySet = HeapCache.generateKeySet(keys);
-    AsyncBulkAction<K, V, R> actionResult = syncBulkOp(ops.invoke(entryProcessor), keySet);
+    BulkAction<K, V, R> actionResult = syncBulkOp(ops.invoke(entryProcessor), keySet);
     Map<K, EntryProcessingResult<R>> resultMap = new HashMap<>();
     for (EntryAction<K, V, R> action : actionResult.getActions()) {
       EntryProcessingResult<R> singleResult;
