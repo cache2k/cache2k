@@ -29,8 +29,7 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.CacheOperationCompletionListener;
 
-import java.util.Arrays;
-
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
@@ -38,10 +37,6 @@ import static org.junit.Assert.assertNull;
  * @author Jens Wilke
  */
 public class StaticUtil {
-
-  public static <T> Iterable<T> toIterable(T... keys) {
-    return Arrays.asList(keys);
-  }
 
   public static InternalCacheInfo latestInfo(Cache c) {
     return ((InternalCache) c).getLatestInfo();
@@ -63,12 +58,12 @@ public class StaticUtil {
       CacheManager.getInstance().getActiveCaches().iterator().hasNext());
   }
 
-  public static int count(Iterable<?> _things) {
-    int _counter = 0;
-    for (Object o : _things) {
-      _counter++;
+  public static int count(Iterable<?> things) {
+    int count = 0;
+    for (Object o : things) {
+      count++;
     }
-    return _counter;
+    return count;
   }
 
   public static void loadAndWait(LoaderRunner x) {
@@ -83,16 +78,16 @@ public class StaticUtil {
     return w.getException();
   }
 
-  public static <K, V> CacheLoaderTest.CompletionWaiter load(Cache<K, V> c, K ...keys) {
+  public static <K, V> CacheLoaderTest.CompletionWaiter load(Cache<K, V> c, K... keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.loadAll(toIterable(keys), w);
+    c.loadAll(asList(keys), w);
     w.awaitCompletion();
     return w;
   }
 
-  public static <K, V> CacheLoaderTest.CompletionWaiter reload(Cache<K, V> c, K ...keys) {
+  public static <K, V> CacheLoaderTest.CompletionWaiter reload(Cache<K, V> c, K... keys) {
     CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.reloadAll(toIterable(keys), w);
+    c.reloadAll(asList(keys), w);
     w.awaitCompletion();
     return w;
   }

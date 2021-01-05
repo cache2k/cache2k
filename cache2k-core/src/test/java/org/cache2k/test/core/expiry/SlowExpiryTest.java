@@ -96,7 +96,7 @@ public class SlowExpiryTest extends TestingBase {
     } else {
       cb.loader(new BasicCacheTest.AlwaysExceptionSource());
     }
-    final Cache<Integer, Integer> c = cb.build();
+    Cache<Integer, Integer> c = cb.build();
     cache = c;
     within(timespan)
       .perform(new Runnable() {
@@ -144,7 +144,7 @@ public class SlowExpiryTest extends TestingBase {
     String cacheName = generateUniqueCacheName(this);
     final int count = 4;
     final long timespan =  TestingParameters.MINIMAL_TICK_MILLIS;
-    final Cache<Integer, Integer> c = builder(cacheName, Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
       .resiliencePolicy(new ExpiryTest.EnableExceptionCaching(timespan))
       .loader(key -> {
@@ -199,10 +199,10 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void testExceptionExpirySuppressTwiceWaitForExceptionExpiry() {
-    final long exceptionExpiryMillis =  TestingParameters.MINIMAL_TICK_MILLIS;
-    final BasicCacheTest.OccasionalExceptionSource src =
+    final long exceptionExpiryMillis = TestingParameters.MINIMAL_TICK_MILLIS;
+    BasicCacheTest.OccasionalExceptionSource src =
       new BasicCacheTest.PatternExceptionSource(false, true, false);
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
         .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
         .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
           @Override
@@ -242,7 +242,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void testExceptionExpiryNoSuppress() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
         .expiryPolicy((key, value1, loadTime, oldEntry) -> 0)
         .resiliencePolicy(
           new ExpiryTest.EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
@@ -407,7 +407,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void testSuppressExceptionLongExpiryAndReload() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
@@ -427,7 +427,7 @@ public class SlowExpiryTest extends TestingBase {
     syncLoad(new LoaderStarter() {
       @Override
       public void startLoad(CacheOperationCompletionListener l) {
-        c.reloadAll(toIterable(2), l);
+        c.reloadAll(asList(2), l);
       }
     });
     await(new Condition() {
@@ -442,7 +442,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void testNeverSuppressWithRetryInterval0() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
       .loader(src)
       .build();
@@ -452,7 +452,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void testNeverSuppressWithLoadTimeUntil() {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
@@ -494,7 +494,7 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
-    c.getAll(toIterable(1, 2, 3));
+    c.getAll(asList(1, 2, 3));
     await(new Condition() {
       @Override
       public boolean check() {
@@ -505,7 +505,7 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void testExpireNoKeepAsserts() {
-    final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
       .expireAfterWrite(TestingParameters.MINIMAL_TICK_MILLIS, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(false)
@@ -514,7 +514,7 @@ public class SlowExpiryTest extends TestingBase {
       .perform(new Runnable() {
         @Override
         public void run() {
-          c.getAll(toIterable(1, 2, 3));
+          c.getAll(asList(1, 2, 3));
         }
       })
       .expectMaybe(new Runnable() {
@@ -529,7 +529,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   public void testExpireNoKeep(long millis) {
-    final Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
       .expireAfterWrite(millis, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(false)
@@ -538,7 +538,7 @@ public class SlowExpiryTest extends TestingBase {
       .perform(new Runnable() {
         @Override
         public void run() {
-          c.getAll(toIterable(1, 2, 3));
+          c.getAll(asList(1, 2, 3));
         }
       })
       .expectMaybe(new Runnable() {
@@ -598,7 +598,7 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
-    c.getAll(toIterable(1, 2, 3));
+    c.getAll(asList(1, 2, 3));
     await(new Condition() {
       @Override
       public boolean check() {
@@ -644,11 +644,11 @@ public class SlowExpiryTest extends TestingBase {
    * If both are set, the entry will expire at the point in time. Either the get or the refresh
    * will load the new value.
    */
-  public void refreshAndSharp_get(boolean keepData, final long tickTime) {
+  public void refreshAndSharp_get(boolean keepData, long tickTime) {
     final int key = 1;
-    final AtomicLong expiryTime = new AtomicLong();
-    final CountingLoader loader = new CountingLoader();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    AtomicLong expiryTime = new AtomicLong();
+    CountingLoader loader = new CountingLoader();
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
       .keepDataAfterExpired(keepData)
@@ -733,10 +733,10 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void refresh_sharp_regularExpireAfterWriter_lagging() throws Exception {
     final int key = 1;
-    final AtomicInteger counter = new AtomicInteger();
+    AtomicInteger counter = new AtomicInteger();
     final long expiry = TestingParameters.MINIMAL_TICK_MILLIS;
-    final CountDownLatch latch = new CountDownLatch(1);
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    CountDownLatch latch = new CountDownLatch(1);
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
       .expireAfterWrite(expiry, TimeUnit.MILLISECONDS)
@@ -771,11 +771,11 @@ public class SlowExpiryTest extends TestingBase {
 
   int value;
 
-  public void refresh_sharp_noKeep(final long expiry) {
-    final long maxFinishWaitMillis = TestingParameters.MAX_FINISH_WAIT_MILLIS;
+  public void refresh_sharp_noKeep(long expiry) {
+    long maxFinishWaitMillis = TestingParameters.MAX_FINISH_WAIT_MILLIS;
     final int key = 1;
-    final CountingLoader loader = new CountingLoader();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    CountingLoader loader = new CountingLoader();
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
       .eternal(true)
@@ -846,8 +846,8 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void refresh_sharp_keep() {
     final int key = 1;
-    final CountingLoader loader = new CountingLoader();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    CountingLoader loader = new CountingLoader();
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
       .eternal(true)
@@ -868,7 +868,7 @@ public class SlowExpiryTest extends TestingBase {
       .perform(new Runnable() {
         @Override
         public void run() {
-          final AtomicInteger v = new AtomicInteger();
+          AtomicInteger v = new AtomicInteger();
           within(TestingParameters.MINIMAL_TICK_MILLIS)
             .perform(new Runnable() {
               @Override
@@ -914,7 +914,7 @@ public class SlowExpiryTest extends TestingBase {
   public void refresh_immediate() {
     final int key = 1;
     CountingLoader loader = new CountingLoader();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
       .keepDataAfterExpired(false)
@@ -941,7 +941,7 @@ public class SlowExpiryTest extends TestingBase {
   public void refresh_sharp_noKeep_eternalAfterRefresh() throws Exception {
     final int key = 1;
     CountingLoader loader = new CountingLoader();
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
       .eternal(true)
@@ -954,7 +954,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .loader(loader)
       .build();
-    final AtomicInteger v = new AtomicInteger();
+    AtomicInteger v = new AtomicInteger();
     within(TestingParameters.MINIMAL_TICK_MILLIS)
       .perform(() ->
         v.set(c.get(key)))
@@ -1037,7 +1037,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 1);
-    c.reloadAll(toIterable(1), null);
+    c.reloadAll(asList(1), null);
     await(new Condition() {
       @Override
       public boolean check() {
@@ -1054,7 +1054,7 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void manualExpire_nowIsh() {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(5, TimeUnit.MINUTES)
       .build();
     c.put(1, 2);
@@ -1083,7 +1083,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   private void expireAt_x_doesRefresh(long x) {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .loader(new CacheLoader<Integer, Integer>() {
@@ -1111,7 +1111,7 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void manualExpire_NOW_doesNotRefresh() {
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .loader(new CacheLoader<Integer, Integer>() {
@@ -1154,8 +1154,8 @@ public class SlowExpiryTest extends TestingBase {
    */
   @Test
   public void timerLag_raisedLag() {
-    final long lagMillis = HeapCache.TUNABLE.timerLagMillis + 74;
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    long lagMillis = HeapCache.TUNABLE.timerLagMillis + 74;
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
       .timerLag(lagMillis, TimeUnit.MILLISECONDS)
       .build();
@@ -1176,7 +1176,7 @@ public class SlowExpiryTest extends TestingBase {
   @Test
   public void neutralWhenModified() throws Exception {
     final long expiry = 100;
-    final Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .sharpExpiry(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override

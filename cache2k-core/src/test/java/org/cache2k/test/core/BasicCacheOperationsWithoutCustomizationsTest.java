@@ -31,8 +31,6 @@ import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.io.LoadExceptionInfo;
-import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
@@ -67,8 +65,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.cache2k.test.core.StaticUtil.toIterable;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -936,11 +934,11 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
    */
   @Test
   public void peekAll() {
-    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
     assertEquals(0, m.size());
     assertTrue(m.isEmpty());
     cache.put(KEY, VALUE);
-    m = cache.peekAll(toIterable(KEY, OTHER_KEY));
+    m = cache.peekAll(asList(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
@@ -951,21 +949,21 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAll_Null() {
     cache.put(KEY, null);
-    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertNull(m.get(KEY));
   }
 
   @Test(expected = NullPointerException.class)
   public void peekAll_NullKey() {
-    cache.peekAll(toIterable(new Integer[]{null}));
+    cache.peekAll(asList(new Integer[]{null}));
   }
 
   @Test
   public void peekAll_Exception() {
     if (!pars.keepExceptions) { return; }
     assignException(KEY);
-    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     assertEquals(1, m.values().size());
     assertEquals(1, m.keySet().size());
@@ -1000,7 +998,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAll_MutationMethodsUnsupported() {
     cache.put(KEY, VALUE);
-    Map<Integer, Integer> m = cache.peekAll(toIterable(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
     assertEquals(1, m.size());
     try {
       m.clear();
@@ -1056,7 +1054,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void getAll() {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, VALUE);
-    Map<Integer, Integer> m = cache.getAll(toIterable(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.getAll(asList(KEY, OTHER_KEY));
     assertEquals(2, m.size());
     assertEquals(VALUE, m.get(KEY));
     assertTrue(m.containsKey(KEY));
@@ -1065,12 +1063,12 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test(expected = NullPointerException.class)
   public void getAll_NullKey() {
-    cache.getAll((toIterable(new Integer[]{null})));
+    cache.getAll((asList(new Integer[]{null})));
   }
 
   @Test
   public void getAll_not_present_no_loader() {
-    Map<Integer, Integer> m = cache.getAll(toIterable(KEY, OTHER_KEY));
+    Map<Integer, Integer> m = cache.getAll(asList(KEY, OTHER_KEY));
     assertEquals(0, m.size());
   }
 
@@ -1459,12 +1457,12 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test(expected = UnsupportedOperationException.class)
   public void loadAll() {
-    cache.loadAll(toIterable(KEY, OTHER_KEY));
+    cache.loadAll(asList(KEY, OTHER_KEY));
   }
 
   @Test(expected = UnsupportedOperationException.class)
   public void reloadAll() {
-    cache.reloadAll(toIterable(KEY, OTHER_KEY));
+    cache.reloadAll(asList(KEY, OTHER_KEY));
   }
 
   @Test

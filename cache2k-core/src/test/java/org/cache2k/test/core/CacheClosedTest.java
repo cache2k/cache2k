@@ -22,11 +22,15 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.core.CacheClosedException;
 import org.cache2k.testing.category.FastTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.Collections;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 
 /**
  * @author Jens Wilke
@@ -66,7 +70,7 @@ public class CacheClosedTest {
 
   @Test(expected = IllegalStateException.class)
   public void peekAll() {
-    cache.peekAll(StaticUtil.toIterable(KEY));
+    cache.peekAll(singleton(KEY));
   }
 
   @Test(expected = IllegalStateException.class)

@@ -55,7 +55,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -185,7 +184,7 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals((Integer) 20, c.get(10));
     assertEquals(0, executionCount.get());
     CompletionWaiter waiter = new CompletionWaiter();
-    c.loadAll(toIterable(1, 2, 3), waiter);
+    c.loadAll(asList(1, 2, 3), waiter);
     waiter.awaitCompletion();
     assertEquals("executor is used", 3, executionCount.get());
   }
@@ -381,11 +380,11 @@ public class CacheLoaderTest extends TestingBase {
     });
     c.get(5);
     CompletionWaiter w = new CompletionWaiter();
-    c.loadAll(toIterable(5, 6), w);
+    c.loadAll(asList(5, 6), w);
     w.awaitCompletion();
     assertEquals(2, countLoad.get());
     assertEquals((Integer) 2, c.get(6));
-    c.loadAll(toIterable(5, 6), null);
+    c.loadAll(asList(5, 6), null);
     c.loadAll(Collections.EMPTY_SET, null);
   }
 
@@ -407,7 +406,7 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals(1, countLoad.get());
     c.reloadAll(asList(5, 6)).get();
     assertEquals(3, countLoad.get());
-    c.reloadAll(toIterable(5, 6));
+    c.reloadAll(asList(5, 6));
     c.reloadAll(Collections.EMPTY_SET);
   }
 
@@ -450,8 +449,8 @@ public class CacheLoaderTest extends TestingBase {
         });
       }
     });
-    c.loadAll(toIterable(1), null);
-    c.loadAll(toIterable(2), null);
+    c.loadAll(asList(1), null);
+    c.loadAll(asList(2), null);
     inLoader.await();
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
@@ -486,8 +485,8 @@ public class CacheLoaderTest extends TestingBase {
           });
       }
     });
-    c.loadAll(toIterable(1), null);
-    c.loadAll(toIterable(2), null);
+    c.loadAll(asList(1), null);
+    c.loadAll(asList(2), null);
     inLoader.await();
     assertEquals("only one load is separate thread", 1, latestInfo(c).getAsyncLoadsStarted());
     assertEquals("only one load is separate thread", 1, asyncCount.get());
@@ -642,7 +641,7 @@ public class CacheLoaderTest extends TestingBase {
     });
     ExceptionCollector exceptionCollector = new ExceptionCollector();
     for (int i = 0; i < count; i++) {
-      c.loadAll(toIterable(1, 2, 3)).handle((unused, throwable) -> {
+      c.loadAll(asList(1, 2, 3)).handle((unused, throwable) -> {
         complete.countDown();
         exceptionCollector.collect(throwable);
         return null;

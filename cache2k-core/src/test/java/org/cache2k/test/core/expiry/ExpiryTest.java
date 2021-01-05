@@ -895,7 +895,7 @@ public class ExpiryTest extends TestingBase {
     loadAndWait(new LoaderRunner() {
       @Override
       public void run(CacheOperationCompletionListener l) {
-        c.reloadAll(toIterable(1), l);
+        c.reloadAll(asList(1), l);
       }
     });
     assertEquals(1, suppressRetryCount.get());
@@ -903,7 +903,7 @@ public class ExpiryTest extends TestingBase {
     loadAndWait(new LoaderRunner() {
       @Override
       public void run(CacheOperationCompletionListener l) {
-        c.reloadAll(toIterable(1), l);
+        c.reloadAll(asList(1), l);
       }
     });
     assertEquals(2, suppressRetryCount.get());

@@ -54,10 +54,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-import static org.cache2k.test.core.StaticUtil.*;
 
 /**
  * Tests for the entry processor.
@@ -251,7 +251,7 @@ public class EntryProcessorTest {
   public void invokeAll_exception() {
     Cache<Integer, Integer> c = target.cache();
     Map<Integer, EntryProcessingResult<Object>> resultMap =
-      c.invokeAll(toIterable(KEY), new EntryProcessor<Integer, Integer, Object>() {
+      c.invokeAll(asList(KEY), new EntryProcessor<Integer, Integer, Object>() {
       @Override
       public Object process(MutableCacheEntry<Integer, Integer> e) {
         throw new IllegalStateException("test");
