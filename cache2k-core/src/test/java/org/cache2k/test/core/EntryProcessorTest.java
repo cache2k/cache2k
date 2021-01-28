@@ -1148,4 +1148,20 @@ public class EntryProcessorTest {
     assertEquals("exception not cached", 0, info.getUntil());
   }
 
+  public void speedTest() {
+    CacheWithLoader cl = cacheWithLoader();
+    for (int i = 0; i < 100; i++) {
+      for (int j = 0; i < 1000000; i++) {
+        cl.cache.invoke(i, entry -> {
+          if (entry.exists()) {
+            entry.setValue(entry.getValue() + 1);
+          } else {
+            entry.setValue(entry.getKey());
+          }
+          return null;
+        });
+      }
+    }
+  }
+
 }
