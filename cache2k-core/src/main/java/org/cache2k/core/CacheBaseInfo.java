@@ -108,9 +108,9 @@ class CacheBaseInfo implements InternalCacheInfo {
       metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     hitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
-    if (heapCache.loaderExecutor instanceof ExclusiveExecutor) {
+    if (heapCache.getLoaderExecutor() instanceof ExclusiveExecutor) {
       ThreadPoolExecutor ex =
-        ((ExclusiveExecutor) heapCache.loaderExecutor).getThreadPoolExecutor();
+        ((ExclusiveExecutor) heapCache.getLoaderExecutor()).getThreadPoolExecutor();
       asyncLoadsInFlight = ex.getActiveCount();
       asyncLoadsStarted = ex.getTaskCount();
       loaderThreadsLimit = ex.getCorePoolSize();

@@ -82,7 +82,7 @@ public class BulkResultCollector<K, V> {
     int exceptionCount, int operationCount, Throwable example) {
     if (exceptionCount > 1) {
       String txt =
-        exceptionCount + " out of " + operationCount + " cache requests" +
+        exceptionCount + " out of " + operationCount + " requests" +
         ", one as cause";
       return new CacheLoaderException(txt, example);
     }

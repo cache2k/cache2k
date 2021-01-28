@@ -41,7 +41,6 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.io.CacheLoaderException;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
@@ -158,7 +157,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   private Executor executor;
 
-  protected volatile Executor loaderExecutor = new LazyLoaderExecutor();
+  private volatile Executor loaderExecutor = new LazyLoaderExecutor();
+
+  public Executor getLoaderExecutor() {
+    return loaderExecutor;
+  }
 
   /**
    * Create executor only if needed.

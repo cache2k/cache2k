@@ -83,7 +83,7 @@ public interface CacheLoader<K, V> extends DataAwareCustomization<K, V> {
    *         values a {@link NullPointerException} is thrown, but the expiry policy is
    *         called before it.
    * @throws Exception Unhandled exception from the loader. Exceptions are suppressed or
-   *                   wrapped and rethrown via a {@link CacheLoaderException}
+   *                   wrapped and rethrown via a {@link CacheLoaderException}. Rethrow
    */
   V load(K key) throws Exception;
 

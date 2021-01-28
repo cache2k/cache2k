@@ -27,7 +27,6 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
-import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.CaughtInterruptedException;
 import org.cache2k.pinpoint.ExceptionCollector;
@@ -55,7 +54,6 @@ import org.junit.rules.Timeout;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -676,8 +674,9 @@ public class CacheLoaderTest extends TestingBase {
       });
     }
     releaseLoader.countDown();
-    complete.await(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+    boolean okay = complete.await(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
     exceptionCollector.assertNoException();
+    assertTrue("no timeout", okay);
   }
 
   /**
@@ -825,13 +824,13 @@ public class CacheLoaderTest extends TestingBase {
       }
     });
     CompletionWaiter w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    c.loadAll(asList(1, 2, 1802), w);
     w.awaitCompletion();
     assertEquals(1, (int) c.peek(1));
     Object o1 = c.peek(1802);
     assertTrue(c.peek(1802) == o1);
     w = new CompletionWaiter();
-    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    c.reloadAll(asList(1802, 4, 5), w);
     w.awaitCompletion();
     assertNotNull(c.peek(1802));
     assertTrue(c.peek(1802) != o1);
@@ -846,12 +845,12 @@ public class CacheLoaderTest extends TestingBase {
           ctx.getLoaderExecutor().execute(() -> callback.onLoadSuccess(key)));
       }
     });
-    c.loadAll(TestingBase.keys(1, 2, 1802)).get();
+    c.loadAll(asList(1, 2, 1802)).get();
     assertNotNull(c.peek(1802));
     assertEquals(1, (int) c.peek(1));
     Object o1 = c.peek(1802);
     assertTrue(c.peek(1802) == o1);
-    c.reloadAll(TestingBase.keys(1802, 4, 5)).get();
+    c.reloadAll(asList(1802, 4, 5)).get();
     assertNotNull(c.peek(1802));
     assertTrue(c.peek(1802) != o1);
   }
@@ -895,7 +894,7 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(Collections.EMPTY_LIST, w);
     w.awaitCompletion();
     w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    c.loadAll(asList(1, 2, 1802), w);
     w.awaitCompletion();
     assertNull(otherException.get());
     assertEquals("loader called", 3, loaderCalled.get());
@@ -908,13 +907,13 @@ public class CacheLoaderTest extends TestingBase {
     });
     assertEquals("always throws exception", 0, gotNoException.get());
     w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    c.loadAll(asList(1, 2, 1802), w);
     w.awaitCompletion();
     assertEquals(1, (int) c.peek(1));
     Object o1 = c.peek(1802);
     assertTrue(c.peek(1802) == o1);
     w = new CompletionWaiter();
-    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    c.reloadAll(asList(1802, 4, 5), w);
     w.awaitCompletion();
     assertNotNull(c.peek(1802));
     assertTrue(c.peek(1802) != o1);
@@ -957,7 +956,7 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(Collections.EMPTY_LIST, w);
     w.awaitCompletion();
     w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    c.loadAll(asList(1, 2, 1802), w);
     w.awaitCompletion();
     if (otherException.get() != null) {
       otherException.get().printStackTrace();
@@ -983,13 +982,13 @@ public class CacheLoaderTest extends TestingBase {
       }
     });
     w = new CompletionWaiter();
-    c.loadAll(TestingBase.keys(1, 2, 1802), w);
+    c.loadAll(asList(1, 2, 1802), w);
     w.awaitCompletion();
     assertEquals(1, (int) c.peek(1));
     Object o1 = c.peek(1802);
     assertTrue(c.peek(1802) == o1);
     w = new CompletionWaiter();
-    c.reloadAll(TestingBase.keys(1802, 4, 5), w);
+    c.reloadAll(asList(1802, 4, 5), w);
     w.awaitCompletion();
     assertNotNull(c.peek(1802));
     assertTrue(c.peek(1802) != o1);
@@ -1011,20 +1010,31 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void asyncBulkLoader() throws Exception {
+  public void asyncBulkLoader_direct() throws Exception {
+    final int assertKey = 987;
+    final int exceptionKey = 789;
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.loader((AsyncBulkCacheLoader<Integer, Integer>) (keys, contextSet, callback) ->
-          contextSet.stream().forEach(ctx -> callback.onLoadSuccess(ctx.getKey(), ctx.getKey())));
+        b.loader((AsyncBulkCacheLoader<Integer, Integer>) (keys, context, callback) ->
+          {
+            int firstKey = keys.iterator().next();
+            assertNotEquals("No assertion provoked", assertKey, firstKey);
+            if (exceptionKey == firstKey) {
+              throw new ExpectedException();
+            }
+            keys.forEach(key -> callback.onLoadSuccess(key, key));
+          }
+        );
       }
     });
-    c.loadAll(TestingBase.keys(1, 2, 1802)).get();
+    
+    c.loadAll(asList(1, 2, 1802)).get();
     assertNotNull(c.peek(1802));
     assertEquals(1, (int) c.peek(1));
     Object o1 = c.peek(1802);
     assertTrue(c.peek(1802) == o1);
-    c.reloadAll(TestingBase.keys(1802, 4, 5)).get();
+    c.reloadAll(asList(1802, 4, 5)).get();
     assertNotNull(c.peek(1802));
     assertTrue(c.peek(1802) != o1);
   }
@@ -1131,7 +1141,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader((keys, contextSet, callback) -> {
           bulkRequests.incrementAndGet();
-          contextSet.stream().forEach(ctx -> buffer.put(ctx.getKey(), callback));
+          keys.forEach(key -> buffer.put(key, callback));
         });
       }
     });
@@ -1161,18 +1171,20 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.bulkLoader((keys, contextSet, callback) -> {
-          assertEquals(keys.size(), contextSet.size());
+        b.bulkLoader((keys, context, callback) -> {
+          assertEquals(keys.size(), context.getContextSet().size());
           bulkRequests.incrementAndGet();
-          contextSet.stream().forEach(ctx -> {
-            assertTrue(keys.contains(ctx.getKey()));
-            buffer.put(ctx.getKey(), callback);
+          keys.forEach(key -> {
+            assertTrue(keys.contains(key));
+            buffer.put(key, callback);
           });
         });
       }
     });
     CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
+    assertThat(req1).hasNotFailed();
     CompletableFuture<Void> req2 = cache.loadAll(asList(1, 2, 3, 4));
+    assertThat(req2).hasNotFailed();
     buffer.complete(1, 2, 3, 4);
     req1.get();
     req2.get();
@@ -1201,7 +1213,8 @@ public class CacheLoaderTest extends TestingBase {
     }
     assertThatCode(() -> {
       cache.getAll(asList(1, 2, 3));
-    }).isInstanceOf(CacheLoaderException.class);
+    }).describedAs("Expect exception if all requested keys yield and exception")
+      .isInstanceOf(CacheLoaderException.class);
   }
 
   @Test @Ignore
@@ -1211,9 +1224,9 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.bulkLoader((keys, contextSet, callback) -> {
+        b.bulkLoader((keys, context, callback) -> {
           bulkRequests.incrementAndGet();
-          contextSet.stream().forEach(ctx -> buffer.put(ctx.getKey(), callback));
+          keys.forEach(key -> buffer.put(key, callback));
         });
       }
     });

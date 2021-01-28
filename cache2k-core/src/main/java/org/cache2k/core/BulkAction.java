@@ -26,12 +26,14 @@ import org.cache2k.io.CacheLoaderException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * Execute a set of entry actions in parallel to leverage bulk I/O. The basic idea is to
@@ -51,6 +53,12 @@ public abstract class BulkAction<K, V, R> implements
   AsyncBulkCacheLoader.BulkCallback<K, V>,
   EntryAction.CompletedCallback<K, V, R> {
 
+  /** Used for executors **/
+  private HeapCache heapCache;
+  /**
+   * Map with the individual entry actions, the map will not be modified after the
+   * bulk operation start, so its save to read from it from different threads.
+   */
   private final Map<K, EntryAction<K, V, R>> key2action;
   private final Collection<EntryAction<K, V, R>> toStart;
   private final Set<K> toLoad;
@@ -58,7 +66,8 @@ public abstract class BulkAction<K, V, R> implements
   private int completedCount = 0;
 
   /** Create object and start operation. */
-  public BulkAction(AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+  public BulkAction(HeapCache heapCache, AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+    this.heapCache = heapCache;
     this.loader = loader;
     key2action = new HashMap<>(keys.size());
     toLoad = new HashSet<>(keys.size());
@@ -204,15 +213,15 @@ public abstract class BulkAction<K, V, R> implements
 
   /**
    * Start loading via calling the async bulk loader. The keys are removed from
-   * toLoad in the callback to ourselves, we use toLoad additionally to keep track
-   * of partial completions
+   * toLoad in the callback to ourselves since we use toLoad additionally to keep track
+   * of partial completions. We need to copy the keys, since we modify the toLoad set
+   * if we get partial completions.
    */
   private void startLoadingBulk() {
     AsyncBulkCacheLoader<K, V> bulkLoader = (AsyncBulkCacheLoader<K, V>) loader;
-    Set<Context<K, V>> contextSet = new HashSet<>(toLoad.size());
-    for (K key : toLoad) { contextSet.add(key2action.get(key)); }
+    Set<K> keysCopy = Collections.unmodifiableSet(new HashSet<K>(toLoad));
     try {
-      bulkLoader.loadAll(toLoad, contextSet, this);
+      bulkLoader.loadAll(keysCopy, new MyBulkLoadContext(keysCopy), this);
     } catch (Throwable ouch) {
       onLoadFailure(ouch);
     }
@@ -310,5 +319,49 @@ public abstract class BulkAction<K, V, R> implements
   protected void bulkOperationCompleted() { }
 
   protected abstract EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self);
+
+  private class MyBulkLoadContext implements AsyncBulkCacheLoader.BulkLoadContext<K, V> {
+
+    private final Set<K> keys;
+    private Set<Context<K, V>> contextSet;
+
+    MyBulkLoadContext(Set<K> keys) {
+      this.keys = keys;
+    }
+
+    /** Lazily create set with entry contexts */
+    @Override
+    public Set<Context<K, V>> getContextSet() {
+      if (contextSet == null) {
+        contextSet = new HashSet<>(toLoad.size());
+        for (K key : keys) {
+          contextSet.add(key2action.get(key));
+        }
+      }
+      return contextSet;
+    }
+
+    @Override
+    public long getStartTime() {
+      K firstKey = keys.iterator().next();
+      return key2action.get(firstKey).getStartTime();
+    }
+
+    @Override
+    public Set<K> getKeys() {
+      return keys;
+    }
+
+    @Override
+    public Executor getExecutor() {
+      return heapCache.getExecutor();
+    }
+
+    @Override
+    public Executor getLoaderExecutor() {
+      return heapCache.getLoaderExecutor();
+    }
+
+  }
 
 }

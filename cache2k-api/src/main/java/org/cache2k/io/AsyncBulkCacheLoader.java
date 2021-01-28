@@ -22,11 +22,11 @@ package org.cache2k.io;
 
 import org.cache2k.DataAware;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * Extension of {@link AsyncCacheLoader} with bulk load capabilities.
@@ -40,16 +40,18 @@ import java.util.Set;
 public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
 
   /**
-   * Load all data referenced by the key set. This operation to load more efficiently
+   * Load all values referenced by the key set. This method is used to load more efficiently
    * in case the cache client uses {@link org.cache2k.Cache#loadAll(Iterable)} or
    * {@link org.cache2k.Cache#getAll(Iterable)}.
    *
    * @param keys the keys to load
-   * @param contextSet set of contexts that contain the keys to load as well as more detailed
-   *             information
-   * @return a map containing values for all keys that were requested
+   * @param context context of this request with additional information. Also contains
+   *                per key context with current entry values, if present.
+   * @param callback Callback to post results
+   * @throws Exception An exception, if the load operation cannot be started. The exception will
+   *                   be assigned to every requested key depending on the resilience policy.
    */
-  void loadAll(Set<K> keys, Set<Context<K, V>> contextSet, BulkCallback<K, V> callback)
+  void loadAll(Set<K> keys, BulkLoadContext<K, V> context, BulkCallback<K, V> callback)
     throws Exception;
 
   /**
@@ -59,7 +61,20 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
    */
   @Override
   default void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
-    loadAll(Collections.singleton(key), Collections.singleton(context), new BulkCallback<K, V>() {
+    Set<K> keySet = Collections.singleton(key);
+    BulkLoadContext<K, V> bulkLoadContext = new BulkLoadContext<K, V>() {
+      @Override
+      public Set<Context<K, V>> getContextSet() { return Collections.singleton(context); }
+      @Override
+      public long getStartTime() { return context.getStartTime(); }
+      @Override
+      public Set<K> getKeys() { return keySet; }
+      @Override
+      public Executor getExecutor() { return context.getExecutor(); }
+      @Override
+      public Executor getLoaderExecutor() { return context.getLoaderExecutor(); }
+    };
+    loadAll(keySet, bulkLoadContext, new BulkCallback<K, V>() {
       @Override
       public void onLoadSuccess(Map<? extends K, ? extends V> data) {
         Map.Entry<? extends K, ? extends V> entry = data.entrySet().iterator().next();
@@ -77,6 +92,36 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
         callback.onLoadFailure(exception);
       }
     });
+  }
+
+  interface BulkLoadContext<K, V> {
+
+    /**
+     * Individual load context for each key.
+     */
+    Set<Context<K, V>> getContextSet();
+
+    long getStartTime();
+
+    /**
+     * Keys requested to load.
+     */
+    Set<K> getKeys();
+
+    /**
+     * The configured executor for async operations.
+     *
+     * @see org.cache2k.Cache2kBuilder#executor(Executor)
+     */
+    Executor getExecutor();
+
+    /**
+     * The configured loader executor.
+     *
+     * @see org.cache2k.Cache2kBuilder#loaderExecutor(Executor)
+     */
+    Executor getLoaderExecutor();
+
   }
 
   interface BulkCallback<K, V> extends DataAware<K, V> {

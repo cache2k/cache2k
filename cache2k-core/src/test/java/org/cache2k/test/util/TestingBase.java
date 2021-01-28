@@ -587,10 +587,6 @@ public class TestingBase {
     }
   }
 
-  public static <T> Iterable<T> keys(T... keys) {
-    return Arrays.asList(keys);
-  }
-
   public boolean isHeapCache() {
     provideCache();
     return cache.requestInterface(HeapCache.class) != null;
