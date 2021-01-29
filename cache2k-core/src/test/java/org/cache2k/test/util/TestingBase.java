@@ -50,10 +50,9 @@ import org.junit.runners.model.Statement;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
@@ -102,7 +101,7 @@ public class TestingBase {
       new ThreadPoolExecutor.AbortPolicy());
 
   private Executor loaderExecutor = new ExecutorWrapper();
-  private Executor asyncExecutor = HeapCache.SHARED_EXECUTOR;
+  private Executor asyncExecutor = ForkJoinPool.commonPool();
 
   public Executor getLoaderExecutor() {
     return loaderExecutor;

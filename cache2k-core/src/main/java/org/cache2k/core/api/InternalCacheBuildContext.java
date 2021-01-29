@@ -26,6 +26,8 @@ import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.operation.TimeReference;
 
+import java.util.concurrent.Executor;
+
 /**
  * Context information when a cache is build.
  *
@@ -36,7 +38,11 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext<K, V>
   /**
    * The time reference for the cache.
    */
-  TimeReference getClock();
+  @Override
+  TimeReference getTimeReference();
+
+  @Override
+  Executor getExecutor();
 
   /**
    * Cache configuration.

@@ -21,6 +21,9 @@ package org.cache2k.config;
  */
 
 import org.cache2k.CacheManager;
+import org.cache2k.operation.TimeReference;
+
+import java.util.concurrent.Executor;
 
 /**
  * Access to configuration and cache manager properties during the construction of
@@ -40,6 +43,22 @@ public interface CacheBuildContext<K, V> {
    * The cache name. Always identical to {@link Cache2kConfig#getName()}
    */
   String getName();
+
+  /**
+   * Time reference to use for this cache instance.
+   *
+   * @throws IllegalStateException if this method is called within the supplier of
+   *                               the time reference or executor.
+   */
+  TimeReference getTimeReference();
+
+  /**
+   * Executor to use for this cache instance.
+   *
+   * @throws IllegalStateException if this method is called within the supplier of
+   *                               the time reference or executor.
+   */
+  Executor getExecutor();
 
   /**
    * The effective cache configuration. The data is only valid within the call.

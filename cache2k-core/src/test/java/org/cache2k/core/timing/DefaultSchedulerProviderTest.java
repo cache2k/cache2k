@@ -20,9 +20,18 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.CacheManager;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.CacheClosedException;
 import org.cache2k.operation.Scheduler;
+import org.cache2k.operation.TimeReference;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -31,29 +40,32 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  *
  * @author Jens Wilke
  */
+@Category(FastTests.class)
 public class DefaultSchedulerProviderTest {
+
+  private MyBuildContext ctx() {
+    return new MyBuildContext();
+  }
 
   @Test
   public void createAndClose() throws Exception {
     DefaultSchedulerProvider provider = new DefaultSchedulerProvider();
-    Scheduler s1 = provider.supply(null);
-    Scheduler s2 = provider.supply(null);
+    Scheduler s1 = provider.supply(ctx());
+    Scheduler s2 = provider.supply(ctx());
     s1.schedule(() -> { }, 123);
     s2.schedule(() -> { }, 123);
     ((AutoCloseable) s1).close();
     s1.schedule(() -> { }, 123);
     s2.schedule(() -> { }, 123);
     ((AutoCloseable) s2).close();
-    assertThatCode(() -> {
-        s1.schedule(() -> { }, 123);
-      }
+    assertThatCode(() -> s1.schedule(() -> { }, 123)
     ).isInstanceOf(CacheClosedException.class);
   }
 
   @Test
   public void doubleClose() throws Exception {
     DefaultSchedulerProvider provider = new DefaultSchedulerProvider();
-    Scheduler s1 = provider.supply(null);
+    Scheduler s1 = provider.supply(ctx());
     s1.schedule(() -> { }, 123);
     ((AutoCloseable) s1).close();
     ((AutoCloseable) s1).close();
@@ -62,11 +74,44 @@ public class DefaultSchedulerProviderTest {
   @Test
   public void closeAndCreate() throws Exception {
     DefaultSchedulerProvider provider = new DefaultSchedulerProvider();
-    Scheduler s1 = provider.supply(null);
+    Scheduler s1 = provider.supply(ctx());
     s1.schedule(() -> { }, 123);
     ((AutoCloseable) s1).close();
-    s1 = provider.supply(null);
+    s1 = provider.supply(ctx());
     s1.schedule(() -> { }, 123);
+  }
+
+  @SuppressWarnings("rawtypes")
+  static class MyBuildContext implements CacheBuildContext {
+    @Override
+    public CacheManager getCacheManager() {
+      return null;
+    }
+
+    @Override
+    public String getName() {
+      return null;
+    }
+
+    @Override
+    public TimeReference getTimeReference() {
+      return null;
+    }
+
+    @Override
+    public Executor getExecutor() {
+      return null;
+    }
+
+    @Override
+    public Cache2kConfig getConfig() {
+      return null;
+    }
+
+    @Override
+    public Object createCustomization(CustomizationSupplier supplier) {
+      return null;
+    }
   }
 
 }

@@ -23,7 +23,6 @@ package org.cache2k.core.timing;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.CacheClosedException;
-import org.cache2k.core.HeapCache;
 import org.cache2k.operation.Scheduler;
 
 import java.util.concurrent.Executor;
@@ -46,9 +45,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler> {
 
+  private static final int THREAD_COUNT = 2;
+  private static final String THREAD_PREFIX = "cache2k-scheduler";
   public static final DefaultSchedulerProvider INSTANCE = new DefaultSchedulerProvider();
 
-  private final Executor pooledExecutor = HeapCache.SHARED_EXECUTOR;
   private ScheduledExecutorService scheduledExecutor = null;
   private int usageCounter = 0;
 
@@ -61,10 +61,10 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
   public synchronized Scheduler supply(CacheBuildContext<?, ?> buildContext) {
     if (usageCounter == 0) {
       scheduledExecutor = new ScheduledThreadPoolExecutor(
-        2, new DaemonThreadFactory());
+        THREAD_COUNT, new DaemonThreadFactory());
     }
     usageCounter++;
-    return new MyScheduler();
+    return new MyScheduler(buildContext.getExecutor());
   }
 
   /**
@@ -84,7 +84,12 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
 
   private class MyScheduler implements Scheduler, AutoCloseable {
 
+    private final Executor executor;
     private boolean closed;
+
+    private MyScheduler(Executor executor) {
+      this.executor = executor;
+    }
 
     /**
      * Wrap task to be executed in separate executor to not black the common
@@ -96,7 +101,7 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
      */
     @Override
     public void schedule(Runnable task, long millis) {
-      Runnable wrap = () -> pooledExecutor.execute(task);
+      Runnable wrap = () -> executor.execute(task);
       long delay = millis - System.currentTimeMillis();
       delay = Math.max(0, delay);
       try {
@@ -108,14 +113,14 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
 
     @Override
     public void execute(Runnable command) {
-      pooledExecutor.execute(command);
+      executor.execute(command);
     }
 
     /**
      * Make sure usage counter is decreased exactly once.
      */
     @Override
-    public synchronized void close() throws Exception {
+    public synchronized void close() {
       if (!closed) {
         cacheClientClosed();
         closed = true;
@@ -127,7 +132,7 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
     public Thread newThread(Runnable r) {
       Thread t = new Thread(r);
       t.setDaemon(true);
-      t.setName("cache2k-scheduler");
+      t.setName(THREAD_PREFIX);
       t.setPriority(Thread.MAX_PRIORITY);
       return t;
     }

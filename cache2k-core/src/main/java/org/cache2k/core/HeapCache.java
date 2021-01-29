@@ -41,6 +41,7 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
+import org.cache2k.io.CacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
@@ -62,11 +63,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -106,9 +103,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   public static final ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR =
     TUNABLE.exceptionPropagator;
 
-  protected String name;
-  public CacheManagerImpl manager;
-  protected AdvancedCacheLoader<K, V> loader;
+  protected final String name;
+  public final CacheManagerImpl manager;
+  protected final AdvancedCacheLoader<K, V> loader;
   protected TimeReference clock;
   @SuppressWarnings("unchecked")
   protected Timing<K, V> timing = TimeAgnosticTiming.ETERNAL;
@@ -129,7 +126,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   /** Statistics */
 
   protected CacheBaseInfo info;
-  CommonMetrics.Updater metrics;
+  final CommonMetrics.Updater metrics;
 
   /**
    * Counts the number of key mutations. The count is not guarded and racy, but does not need
@@ -155,7 +152,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    */
   protected long internalExceptionCnt = 0;
 
-  private Executor executor;
+  private final Executor executor;
 
   private volatile Executor loaderExecutor = new LazyLoaderExecutor();
 
@@ -205,11 +202,11 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected CacheType valueType;
 
   @SuppressWarnings("unchecked")
-  protected ExceptionPropagator<K, V> exceptionPropagator = DEFAULT_EXCEPTION_PROPAGATOR;
+  protected final ExceptionPropagator<K, V> exceptionPropagator;
 
   Collection<CacheClosedListener> cacheClosedListeners = Collections.emptyList();
 
-  private int featureBits = 0;
+  private int featureBits;
 
   private static final int KEEP_AFTER_EXPIRED = 2;
   private static final int REJECT_NULL_VALUES = 8;
@@ -237,12 +234,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   protected final boolean isRecordRefreshTime() { return (featureBits & RECORD_REFRESH_TIME) > 0; }
 
-  protected final void setFeatureBit(int bitmask, boolean flag) {
-    if (flag) {
-      featureBits |= bitmask;
-    } else {
-      featureBits &= ~bitmask;
-    }
+  private static int featureBit(int bitmask, boolean flag) {
+    return flag ? bitmask : 0;
   }
 
   /**
@@ -269,17 +262,32 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   /** called from CacheBuilder */
   @SuppressWarnings("unchecked")
-  public void setCacheConfig(InternalCacheBuildContext<K, V> buildContext) {
-    Cache2kConfig<K, V> cfg = buildContext.getConfig();
+  public HeapCache(InternalCacheBuildContext<K, V> ctx) {
+    Cache2kConfig<K, V> cfg = ctx.getConfig();
     valueType = cfg.getValueType();
     keyType = cfg.getKeyType();
-    setName(cfg.getName());
-    setFeatureBit(KEEP_AFTER_EXPIRED, cfg.isKeepDataAfterExpired());
-    setFeatureBit(REJECT_NULL_VALUES, !cfg.isPermitNullValues());
-    setFeatureBit(BACKGROUND_REFRESH, cfg.isRefreshAhead());
-    setFeatureBit(UPDATE_TIME_NEEDED, cfg.isRecordModificationTime());
-    setFeatureBit(RECORD_REFRESH_TIME, cfg.isRecordModificationTime());
-
+    name = cfg.getName();
+    manager = (CacheManagerImpl) ctx.getCacheManager();
+    clock = ctx.getTimeReference();
+    featureBits =
+      featureBit(KEEP_AFTER_EXPIRED, cfg.isKeepDataAfterExpired()) |
+      featureBit(REJECT_NULL_VALUES, !cfg.isPermitNullValues()) |
+      featureBit(BACKGROUND_REFRESH, cfg.isRefreshAhead()) |
+      featureBit(UPDATE_TIME_NEEDED, cfg.isRecordModificationTime()) |
+      featureBit(RECORD_REFRESH_TIME, cfg.isRecordModificationTime());
+    if (cfg.getLoader() != null) {
+      Object obj = ctx.createCustomization(cfg.getLoader());
+      CacheLoader<K, V> simpleLoader = (CacheLoader) obj;
+      loader = (key, startTime, currentEntry) -> simpleLoader.load(key);
+    } else if (cfg.getAdvancedLoader() != null) {
+      AdvancedCacheLoader<K, V> advanceLoader = ctx.createCustomization(cfg.getAdvancedLoader());
+      loader =
+        new InternalCache2kBuilder.WrappedAdvancedCacheLoader<K, V>(this, advanceLoader);
+    } else {
+      loader = null;
+    }
+    exceptionPropagator =
+      ctx.createCustomization(cfg.getExceptionPropagator(), DEFAULT_EXCEPTION_PROPAGATOR);
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
       public boolean isDisabled() {
@@ -293,34 +301,16 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     });
 
     if (cfg.getLoaderExecutor() != null) {
-      loaderExecutor = buildContext.createCustomization(cfg.getLoaderExecutor());
+      loaderExecutor = ctx.createCustomization(cfg.getLoaderExecutor());
     } else {
       if (cfg.getLoaderThreadCount() > 0) {
         loaderExecutor = provideDefaultLoaderExecutor(cfg.getLoaderThreadCount());
       }
     }
     refreshExecutor =
-      buildContext.createCustomization(cfg.getRefreshExecutor(), new LazyRefreshExecutor());
-    executor = buildContext.createCustomization(cfg.getExecutor(), SHARED_EXECUTOR);
+      ctx.createCustomization(cfg.getRefreshExecutor(), new LazyRefreshExecutor());
+    executor = ctx.getExecutor();
   }
-
-  /**
-   * Use ForkJoinPool in Java 8, otherwise create a simple executor
-   */
-  private static Executor provideSharedExecutor() {
-    try {
-      return ForkJoinPool.commonPool();
-    } catch (NoClassDefFoundError ignore) {
-    } catch (NoSuchMethodError ignore) {
-    }
-    return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-      21, TimeUnit.SECONDS,
-      new SynchronousQueue<Runnable>(),
-      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("cache2k-executor"),
-      new ThreadPoolExecutor.AbortPolicy());
-  }
-
-  public static final Executor SHARED_EXECUTOR = provideSharedExecutor();
 
   String getThreadNamePrefix() {
     return "cache2k-loader-" + compactFullName(manager, name);
@@ -333,37 +323,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   public void setTiming(Timing<K, V> rh) {
     timing = rh;
     if (!(rh instanceof TimeAgnosticTiming)) {
-      setFeatureBit(UPDATE_TIME_NEEDED, true);
+      featureBits = featureBits | featureBit(UPDATE_TIME_NEEDED, true);
     }
-  }
-
-  public void setClock(TimeReference clock) {
-    this.clock = clock;
-  }
-
-  @SuppressWarnings("unchecked")
-  public void setExceptionPropagator(ExceptionPropagator ep) {
-    exceptionPropagator = ep;
-  }
-
-  public void setAdvancedLoader(AdvancedCacheLoader<K, V> al) {
-    loader = al;
-  }
-
-  /**
-   * Set the name and configure a logging, used within cache construction.
-   */
-  public void setName(String n) {
-    name = n;
   }
 
   @Override
   public String getName() {
     return name;
-  }
-
-  public void setCacheManager(CacheManagerImpl cm) {
-    manager = cm;
   }
 
   @Override

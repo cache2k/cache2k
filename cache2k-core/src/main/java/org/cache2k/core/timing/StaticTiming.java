@@ -56,7 +56,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   StaticTiming(InternalCacheBuildContext<K, V> buildContext,
                ResiliencePolicy<K, V> resiliencePolicy) {
-    clock = buildContext.getClock();
+    clock = buildContext.getTimeReference();
     Cache2kConfig<K, V> cfg = buildContext.getConfig();
     if (cfg.getExpireAfterWrite() == null
       || cfg.getExpireAfterWrite() == Cache2kConfig.EXPIRY_ETERNAL) {

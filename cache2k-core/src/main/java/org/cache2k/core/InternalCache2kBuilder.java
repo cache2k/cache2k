@@ -26,7 +26,6 @@ import org.cache2k.CustomizationException;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
-import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.DefaultClock;
@@ -52,6 +51,7 @@ import org.cache2k.io.CacheLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -68,6 +68,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   private final CacheManagerImpl manager;
   private final Cache2kConfig<K, V> config;
   private TimeReference clock;
+  private Executor executor;
 
   public InternalCache2kBuilder(Cache2kConfig<K, V> config,
                                 CacheManager manager) {
@@ -106,8 +107,19 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   @Override
-  public TimeReference getClock() {
+  public TimeReference getTimeReference() {
+    if (clock == null) {
+      throw new IllegalStateException("Time reference not set yet");
+    }
     return clock;
+  }
+
+  @Override
+  public Executor getExecutor() {
+    if (executor == null) {
+      throw new IllegalStateException("Executor not set yet");
+    }
+    return executor;
   }
 
   @Override
@@ -131,45 +143,15 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   /**
-   * The generic wiring code is not working on android.
-   * Explicitly call the wiring methods.
-   */
-  @SuppressWarnings("unchecked")
-  private void configureViaSettersDirect(HeapCache<K, V> c) {
-    if (config.getLoader() != null) {
-      Object obj =  createCustomization(config.getLoader());
-      if (obj instanceof CacheLoader) {
-        CacheLoader<K, V> loader = (CacheLoader) obj;
-        c.setAdvancedLoader(new AdvancedCacheLoader<K, V>() {
-          @Override
-          public V load(K key, long startTime, CacheEntry<K, V> currentEntry)
-            throws Exception {
-            return loader.load(key);
-          }
-        });
-      }
-    }
-    if (config.getAdvancedLoader() != null) {
-      AdvancedCacheLoader<K, V> loader = createCustomization(config.getAdvancedLoader());
-      AdvancedCacheLoader<K, V> wrappedLoader = new WrappedAdvancedCacheLoader<K, V>(c, loader);
-      c.setAdvancedLoader(wrappedLoader);
-    }
-    if (config.getExceptionPropagator() != null) {
-      c.setExceptionPropagator(createCustomization(config.getExceptionPropagator()));
-    }
-    c.setCacheConfig(this);
-  }
-
-  /**
    * Starting with 2.0 we don't send an entry with an exception to the loader.
    */
-  private static class WrappedAdvancedCacheLoader<K, V>
+  public static class WrappedAdvancedCacheLoader<K, V>
     implements AdvancedCacheLoader<K, V>, AutoCloseable {
 
     HeapCache<K, V> heapCache;
     private final AdvancedCacheLoader<K, V> forward;
 
-    WrappedAdvancedCacheLoader(HeapCache<K, V> heapCache,
+    public WrappedAdvancedCacheLoader(HeapCache<K, V> heapCache,
                                AdvancedCacheLoader<K, V> forward) {
       this.heapCache = heapCache;
       this.forward = forward;
@@ -216,19 +198,17 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       config.getFeatures().stream().forEach(x -> x.enlist(this));
     }
     checkConfiguration();
-    Cache<K, V> cache;
+    clock = createCustomization(config.getTimeReference(), DefaultClock.INSTANCE);
+    executor = createCustomization(config.getExecutor(), buildContext -> ForkJoinPool.commonPool());
+    HeapCache<K, V> bc;
     Class<?> keyType = config.getKeyType().getType();
     if (keyType == Integer.class) {
-      cache = (InternalCache<K, V>) new IntHeapCache<V>();
+      bc = (HeapCache<K, V>)
+        new IntHeapCache<V>((InternalCacheBuildContext<Integer, V>) this);
     } else {
-      cache = new HeapCache<K, V>();
+      bc = new HeapCache<K, V>(this);
     }
-    clock = createCustomization(config.getTimeReference(), DefaultClock.INSTANCE);
-    HeapCache bc = (HeapCache) cache;
-    bc.setCacheManager(manager);
-    configureViaSettersDirect(bc);
-    bc.setClock(clock);
-
+    Cache<K, V> cache = bc;
     if (config.isRefreshAhead() && !(
           config.getAsyncLoader() != null ||
           config.getLoader() != null ||
@@ -261,7 +241,6 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       wc.userCache = cache;
     }
     String name = manager.newCache(cache, bc.getName());
-    bc.setName(name);
     if (wiredCache) {
       wc.loader = bc.loader;
       if (loader instanceof BulkCacheLoader) {

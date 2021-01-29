@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.api.InternalCacheBuildContext;
+
 /**
  * Overwrite methods so the integer value gets stored directly in the
  * {@code Entry.hashCode} field and {@code Entry.value} is set to null.
@@ -27,6 +29,10 @@ package org.cache2k.core;
  * @author Jens Wilke
  */
 public class IntHeapCache<V> extends HeapCache<Integer, V> {
+
+  public IntHeapCache(InternalCacheBuildContext<Integer, V> ctx) {
+    super(ctx);
+  }
 
   @Override
   public Integer extractIntKeyObj(Integer key) {

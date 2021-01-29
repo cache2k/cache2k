@@ -41,6 +41,8 @@ public interface Scheduler extends Executor {
 
   /**
    * Schedule a task to be run at the given time
+   * 
+   * @param millis since epoch, provided by {@link TimeReference#toMillis(long)}
    */
   void schedule(Runnable runnable, long millis);
 

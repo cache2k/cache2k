@@ -860,9 +860,8 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Executor for asynchronous operations. On Java 8 and above the
-   * {@link ForkJoinPool#commonPool()} is used by default or an internal
-   * executor is used that has unbounded thread capacity otherwise.
+   * Executor for asynchronous operations and expiry. The {@link ForkJoinPool#commonPool()} is
+   * used by default.
    */
   public final Cache2kBuilder<K, V> executor(Executor v) {
     cfg().setExecutor(new CustomizationReferenceSupplier<Executor>(v));

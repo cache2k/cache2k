@@ -35,6 +35,7 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -52,11 +53,11 @@ public class TimingUnitTest {
   private static final long NOW = 10000000;
   private static final TimeReference CLOCK = DefaultClock.INSTANCE;
 
-  private <K, V> Timing<K, V> create(final TimeReference clock,
-                                     final Cache2kConfig<K, V> cfg) {
+  private <K, V> Timing<K, V> create(TimeReference clock,
+                                     Cache2kConfig<K, V> cfg) {
     return Timing.of(new InternalCacheBuildContext<K, V>() {
       @Override
-      public TimeReference getClock() {
+      public TimeReference getTimeReference() {
         return clock;
       }
 
@@ -69,6 +70,9 @@ public class TimingUnitTest {
       public CacheManager getCacheManager() {
         return null;
       }
+
+      @Override
+      public Executor getExecutor() { return null; }
 
       @Override
       public String getName() {
