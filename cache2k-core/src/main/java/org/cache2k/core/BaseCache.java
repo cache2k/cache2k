@@ -168,30 +168,9 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
         if (result == null) {
           continue;
         }
-        m.put(k, new EntryProcessingResult<R>() {
-          @Override
-          public R getResult() {
-            return result;
-          }
-
-          @Override
-          public Throwable getException() {
-            return null;
-          }
-        });
+        m.put(k, EntryProcessingResultFactory.result(result));
       } catch (EntryProcessingException t) {
-        Throwable cause = t.getCause();
-        m.put(k, new EntryProcessingResult<R>() {
-          @Override
-          public R getResult() {
-            throw new EntryProcessingException(cause);
-          }
-
-          @Override
-          public Throwable getException() {
-            return cause;
-          }
-        });
+        m.put(k, EntryProcessingResultFactory.exception(t));
       }
     }
     return Collections.unmodifiableMap(m);

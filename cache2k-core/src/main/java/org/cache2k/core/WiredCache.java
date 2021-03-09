@@ -56,9 +56,11 @@ import org.cache2k.core.log.Log;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -214,20 +216,20 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     BulkResultCollector<K, V> collect = new BulkResultCollector<>();
     Set<K> keysToLoad = getAllPrescreen(keys, collect);
-    CacheLoaderException exception = collect.getAnyLoaderException();
+    CacheLoaderException prescreenException = collect.getAnyLoaderException();
     if (keysToLoad.isEmpty()) {
-      if (exception != null) {
-        listener.onException(exception);
+      if (prescreenException != null) {
+        listener.onException(prescreenException);
       }
       listener.onCompleted();
       return;
     }
-    if (exception != null) {
+    if (prescreenException != null) {
       CacheOperationCompletionListener originalListener = listener;
       listener = new CacheOperationCompletionListener() {
         @Override
         public void onCompleted() {
-          originalListener.onException(exception);
+          originalListener.onException(prescreenException);
         }
 
         @Override
@@ -296,6 +298,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return bulkAction;
   }
 
+  final List<BulkAction> bulkAction = new CopyOnWriteArrayList<>();
+
   /**
    * Process operation asynchronously and use the bulk loader, if possible and available.
    * Expects an async loader is available, with optional bulk capabilities.
@@ -303,7 +307,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   private <R> CompletableFuture<BulkAction<K, V, R>> asyncBulkOp(
     Semantic<K, V, R> op, Set<K> keys) {
     CompletableFuture<BulkAction<K, V, R>> future = new CompletableFuture<>();
-    new BulkAction<K, V, R>(heapCache, asyncLoader, keys, false) {
+    BulkAction<?, ?, ?> action =
+      new BulkAction<K, V, R>(heapCache, asyncLoader, keys, false) {
       @Override
       protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
         return new MyEntryAction<R>(op, key, null, self) {
@@ -323,6 +328,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         }
       }
     };
+    bulkAction.add(action);
     return future;
   }
 
@@ -495,19 +501,21 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   private Set<K> getAllPrescreen(
     Iterable<? extends K> requestedKeys, BulkResultCollector<K, V> collect) {
-    Set<K> keysMissing = new HashSet<>();
+    Set<K> missingKeys = new HashSet<>();
     for (K key : requestedKeys) {
       Entry<K, V> e = lookupQuick(key);
-      if (e != null && e.hasFreshData(getClock())) {
-        collect.put(key, e.getValueOrException());
-      } else {
-        if (e != null) {
+      if (e != null) {
+        if (e.hasFreshData(getClock())) {
+          collect.put(key, e.getValueOrException());
+        } else {
           metrics().heapHitButNoRead();
+          missingKeys.add(key);
         }
-        keysMissing.add(key);
+      } else {
+        missingKeys.add(key);
       }
     }
-    return keysMissing;
+    return missingKeys;
   }
 
   private void getAllParallelSingleLoad(BulkResultCollector<K, V> collect,
@@ -559,20 +567,9 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       EntryProcessingResult<R> singleResult;
       Throwable exception = action.getException();
       if (exception == null) {
-        R value = action.getResult();
-        singleResult = new EntryProcessingResult<R>() {
-          @Override
-          public @Nullable R getResult() { return value; }
-          @Override
-          public @Nullable Throwable getException() { return null; }
-        };
+        singleResult = EntryProcessingResultFactory.result(action.getResult());
       } else {
-        singleResult = new EntryProcessingResult<R>() {
-          @Override
-          public @Nullable R getResult() { throw new EntryProcessingException(exception); }
-          @Override
-          public @Nullable Throwable getException() { return exception; }
-        };
+        singleResult = EntryProcessingResultFactory.exception(exception);
       }
       resultMap.put(action.getKey(), singleResult);
     }

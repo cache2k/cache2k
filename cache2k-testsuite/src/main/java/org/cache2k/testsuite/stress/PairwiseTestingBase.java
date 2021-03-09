@@ -35,7 +35,8 @@ import java.util.List;
 @Ignore("Ignore base class with IDE tests")
 public class PairwiseTestingBase {
 
-  private final BuilderAugmenter augmenter;
+  public int KEY_STEP = 1000;
+  public final BuilderAugmenter augmenter;
 
   public PairwiseTestingBase(Object obj) {
     augmenter = (BuilderAugmenter) obj;
@@ -52,7 +53,7 @@ public class PairwiseTestingBase {
     for (int i = 0; i < 3; i++) {
       for (CacheKeyActorPair<?, Integer, Integer> p : actorPairs(this.getClass())) {
         suite.addPair(p.setCache(c).setKey(count));
-        count += 1000;
+        count += KEY_STEP;
       }
     }
     suite.run();

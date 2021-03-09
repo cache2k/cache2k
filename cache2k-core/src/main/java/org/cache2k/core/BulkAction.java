@@ -48,25 +48,28 @@ import java.util.concurrent.Executor;
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("Convert2Diamond")
 public abstract class BulkAction<K, V, R> implements
   AsyncCacheLoader<K, V>,
   AsyncBulkCacheLoader.BulkCallback<K, V>,
   EntryAction.CompletedCallback<K, V, R> {
 
   /** Used for executors **/
-  private HeapCache heapCache;
+  private final HeapCache<K, V> heapCache;
   /**
    * Map with the individual entry actions, the map will not be modified after the
    * bulk operation start, so its save to read from it from different threads.
    */
   private final Map<K, EntryAction<K, V, R>> key2action;
-  private final Collection<EntryAction<K, V, R>> toStart;
   private final Set<K> toLoad;
   private final AsyncCacheLoader<K, V> loader;
+  private Collection<EntryAction<K, V, R>> toStart;
   private int completedCount = 0;
+  /** For debugging to check complete is called once. */
+  private boolean completedCalled = false;
 
   /** Create object and start operation. */
-  public BulkAction(HeapCache heapCache, AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+  public BulkAction(HeapCache<K, V> heapCache, AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
     this.heapCache = heapCache;
     this.loader = loader;
     key2action = new HashMap<>(keys.size());
@@ -96,11 +99,16 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   /**
-   * Try to start as much as possible. If nothing can be started at all we
+   * Try to start as much entry actions in parallel as possible.
+   * A start may fail, if there is currently processing going on for an
+   * entry. If nothing can be started we queue in our action in only one entry.
+   * Waiting for more than one entry might cause a deadlock.
    */
   private void startRemaining() {
-    if (!tryStartAllAndProcessPendingIo()) {
-      startSingleActionWithDelay();
+    while (!tryStartAllAndProcessPendingIo()) {
+      if (startSingleActionWithDelay()) {
+        return;
+      }
     }
   }
 
@@ -109,42 +117,59 @@ public abstract class BulkAction<K, V, R> implements
    * When in bulk mode, if the lock cannot be acquired straight away, the start is rejected.
    * In this case we keep the action in the toStart list.
    *
-   * @return true, if some were started
+   * @return true, if callback is expected and actions are running or if completed
    */
   private boolean tryStartAllAndProcessPendingIo() {
     boolean someStarted = false;
     Iterator<EntryAction<K, V, R>> it = toStart.iterator();
     List<EntryAction<K, V, R>> rejected = new ArrayList<>(toStart.size());
+    int alreadyCompleted = completedCount;
     while (it.hasNext()) {
       EntryAction<K, V, R> action = it.next();
       action.setBulkMode(true);
       try {
-        it.remove();
         action.start();
         someStarted = true;
       } catch (EntryAction.AbortWhenProcessingException e) {
         rejected.add(action);
       }
     }
-    toStart.addAll(rejected);
     if (someStarted) {
       processPendingIo();
     }
-    return someStarted;
+    boolean allCompletedInSameThread =
+      (completedCount - alreadyCompleted) == (toStart.size() - rejected.size());
+    toStart = rejected;
+    if (completedCount == key2action.size()) {
+      triggerComplete();
+      return true;
+    }
+    boolean callbackPending = someStarted && !allCompletedInSameThread;
+    return callbackPending;
   }
 
   /**
    * All actions were tried but no action could be started without delay.
    * Start a single action. The processing will proceed as soon as the
    * ongoing operation finishes.
+   *
+   * @return true if callback is pending or completed
    */
-  private void startSingleActionWithDelay() {
+  private boolean startSingleActionWithDelay() {
+    int alreadyCompleted = completedCount;
     for (EntryAction<K, V, R> action : toStart) {
       action.setBulkMode(false);
       toStart.remove(action);
       action.start();
       break;
     }
+    if (completedCount == key2action.size()) {
+      triggerComplete();
+      return true;
+    }
+    boolean callbackPending =
+      alreadyCompleted == completedCount;
+    return callbackPending;
   }
 
   /**
@@ -228,21 +253,23 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   @Override
-  public synchronized void onLoadSuccess(Map<? extends K, ? extends V> data) {
+  public void onLoadSuccess(Map<? extends K, ? extends V> data) {
     for (Map.Entry<? extends K, ? extends V> entry : data.entrySet()) {
       onLoadSuccessInternal(entry.getKey(), entry.getValue());
     }
   }
 
   @Override
-  public synchronized void onLoadSuccess(K key, V value) {
+  public void onLoadSuccess(K key, V value) {
     onLoadSuccessInternal(key, value);
   }
 
   private void onLoadSuccessInternal(K key, V value) {
-    boolean present = toLoad.remove(key);
-    if (!present) {
-      wrongCallback();
+    synchronized (this) {
+      boolean present = toLoad.remove(key);
+      if (!present) {
+        wrongCallback();
+      }
     }
     EntryAction<K, V, R> action = key2action.get(key);
     checkPresent(action);
@@ -262,21 +289,30 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   /**
-   * Callback upon completion of a entry action. Either start more actions
+   * Callback upon completion of an entry action. Either start more actions
    * or complete processing.
    */
   @Override
-  public synchronized void entryActionCompleted(EntryAction<K, V, R> ea) {
-    completedCount++;
-    int startedCount = key2action.size() - toStart.size();
-    boolean allCompletedThatWasStarted = completedCount == startedCount;
-    if (allCompletedThatWasStarted) {
-      if (!toStart.isEmpty()) {
-        startRemaining();
-      } else {
-        bulkOperationCompleted();
+  public void entryActionCompleted(EntryAction<K, V, R> ea) {
+    boolean sameThread = Thread.holdsLock(this);
+    synchronized (this) {
+      completedCount++;
+      if (sameThread) { return; }
+      int startedCount = key2action.size() - toStart.size();
+      boolean allCompletedThatWasStarted = completedCount == startedCount;
+      if (allCompletedThatWasStarted) {
+        if (!toStart.isEmpty()) {
+          startRemaining();
+        } else {
+          triggerComplete();
+        }
       }
     }
+  }
+
+  private void triggerComplete() {
+    completedCalled = true;
+    bulkOperationCompleted();
   }
 
   public Throwable getExceptionToPropagate() {

@@ -31,6 +31,7 @@ import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.CaughtInterruptedException;
 import org.cache2k.pinpoint.ExceptionCollector;
 import org.cache2k.pinpoint.SupervisedExecutor;
+import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.CacheRule;
@@ -59,6 +60,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -640,7 +642,7 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void blockAndComplete() throws Exception {
-    final int count = 3;
+    final int count = 5;
     AtomicInteger loaderCalled = new AtomicInteger();
     CountDownLatch complete = new CountDownLatch(count);
     AtomicInteger loaderExecuted = new AtomicInteger();
@@ -648,33 +650,31 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.loaderExecutor(ForkJoinPool.commonPool());
         b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
           loaderCalled.incrementAndGet();
-          ctx.getLoaderExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                releaseLoader.await();
-              } catch (InterruptedException ex) {
-                ex.printStackTrace();
-              }
-              loaderExecuted.incrementAndGet();
-              callback.onLoadSuccess(key);
+          ctx.getLoaderExecutor().execute(() -> {
+            try {
+              releaseLoader.await();
+            } catch (InterruptedException ex) {
+              ex.printStackTrace();
             }
+            loaderExecuted.incrementAndGet();
+            callback.onLoadSuccess(key);
           });
         });
       }
     });
     ExceptionCollector exceptionCollector = new ExceptionCollector();
     for (int i = 0; i < count; i++) {
-      c.loadAll(asList(1, 2, 3)).handle((unused, throwable) -> {
-        complete.countDown();
+      c.loadAll(asList(1 + (i / 2), 2 + (i / 2), 3 + (i / 2))).handle((unused, throwable) -> {
         exceptionCollector.collect(throwable);
+        complete.countDown();
         return null;
       });
     }
     releaseLoader.countDown();
-    boolean okay = complete.await(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+    boolean okay = complete.await(3, TimeUnit.SECONDS);
     exceptionCollector.assertNoException();
     assertTrue("no timeout", okay);
   }
@@ -1347,6 +1347,19 @@ public class CacheLoaderTest extends TestingBase {
       cache.invokeAll(asList(1, 2, 3, 4, 5), entry -> entry.getValue());
     assertEquals(5, target.info().getLoadCount());
     assertEquals(2, bulkRequests.get());
+    assertEquals(5, result2.size());
+    assertEquals((Integer) 2, result2.get(2).getResult());
+    assertNull(result2.get(2).getException());
+    Map<Integer, EntryProcessingResult<Integer>> result3 =
+      cache.invokeAll(asList(1, 2, 3), entry -> { throw new ExpectedException(); });
+    assertEquals(3, result3.size());
+    assertThat(result3.get(2).getException())
+      .as("Propagates exception")
+      .isInstanceOf(ExpectedException.class);
+    assertThatCode(() -> result3.get(2).getResult())
+      .isInstanceOf(EntryProcessingException.class)
+      .getCause()
+      .isInstanceOf(ExpectedException.class);
   }
 
   @Test
