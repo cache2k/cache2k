@@ -27,6 +27,7 @@ import org.cache2k.config.CacheType;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.Eviction;
+import org.cache2k.core.eviction.InternalEvictionListener;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.BulkCacheLoader;
@@ -71,7 +72,7 @@ import java.util.function.Function;
  * @author Jens Wilke
  */
 public class WiredCache<K, V> extends BaseCache<K, V>
-  implements HeapCacheListener<K, V> {
+  implements InternalEvictionListener<K, V> {
 
   @SuppressWarnings("unchecked")
   final Operations<K, V> ops = Operations.SINGLETON;

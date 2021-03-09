@@ -27,6 +27,7 @@ import org.cache2k.config.CacheType;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.eviction.EvictionFactory;
+import org.cache2k.core.eviction.InternalEvictionListener;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.DefaultClock;
 import org.cache2k.io.BulkCacheLoader;
@@ -360,7 +361,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       Timing rh = Timing.of(this);
       bc.setTiming(rh);
       bc.eviction = EVICTION_FACTORY.constructEviction(
-        this, bc, HeapCacheListener.NO_OPERATION, config,
+        this, bc, InternalEvictionListener.NO_OPERATION, config,
         Runtime.getRuntime().availableProcessors());
       bc.init();
     }

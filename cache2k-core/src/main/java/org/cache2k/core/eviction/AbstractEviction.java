@@ -23,7 +23,6 @@
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
-import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegerTo16BitFloatingPoint;
 import org.cache2k.operation.Weigher;
 
@@ -57,7 +56,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private final Weigher weigher;
   protected final HeapCacheForEviction heapCache;
   private final Object lock = new Object();
-  private final HeapCacheListener listener;
+  private final InternalEvictionListener listener;
   private final boolean noListenerCall;
   private final boolean noChunking;
 
@@ -98,13 +97,13 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   private long totalWeight;
   private long evictedWeight;
 
-  public AbstractEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
+  public AbstractEviction(HeapCacheForEviction heapCache, InternalEvictionListener listener,
                           long maxSize, Weigher weigher, long maxWeight,
                           boolean noChunking) {
     this.weigher = weigher;
     this.heapCache = heapCache;
     this.listener = listener;
-    noListenerCall = listener instanceof HeapCacheListener.NoOperation;
+    noListenerCall = listener == InternalEvictionListener.NO_OPERATION;
 
     this.noChunking = noChunking;
     this.maxSize = maxSize;

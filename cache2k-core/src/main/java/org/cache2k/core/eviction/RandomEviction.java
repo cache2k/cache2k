@@ -22,7 +22,6 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.operation.Weigher;
 import org.cache2k.core.Entry;
-import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegrityState;
 
 /**
@@ -35,7 +34,7 @@ public class RandomEviction extends AbstractEviction {
   private long size = 0;
   private final Entry head = new Entry().shortCircuit();
 
-  public RandomEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
+  public RandomEviction(HeapCacheForEviction heapCache, InternalEvictionListener listener,
                         long maxSize, Weigher weigher, long maxWeight) {
     super(heapCache, listener, maxSize, weigher, maxWeight, false);
   }

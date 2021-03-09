@@ -22,7 +22,6 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.operation.Weigher;
 import org.cache2k.core.Entry;
-import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.IntegrityState;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
@@ -84,7 +83,7 @@ public class ClockProPlusEviction extends AbstractEviction {
     GHOST_MAX_PERCENTAGE = tunable.ghostMaxPercentage;
   }
 
-  public ClockProPlusEviction(HeapCacheForEviction heapCache, HeapCacheListener listener,
+  public ClockProPlusEviction(HeapCacheForEviction heapCache, InternalEvictionListener listener,
                               long maxSize, Weigher weigher, long maxWeight,
                               boolean noChunking) {
     super(heapCache, listener, maxSize, weigher, maxWeight, noChunking);

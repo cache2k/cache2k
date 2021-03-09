@@ -24,7 +24,6 @@ import org.cache2k.operation.Weigher;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.HeapCacheListener;
 import org.cache2k.core.SegmentedEviction;
 
 /**
@@ -39,7 +38,7 @@ public class EvictionFactory {
    * there is no effect on read performance.
    */
   public Eviction constructEviction(InternalCacheBuildContext customizationContext,
-                                    HeapCacheForEviction hc, HeapCacheListener l,
+                                    HeapCacheForEviction hc, InternalEvictionListener l,
                                     Cache2kConfig config, int availableProcessors) {
     boolean strictEviction = config.isStrictEviction();
     boolean boostConcurrency = config.isBoostConcurrency();

@@ -1052,15 +1052,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * set or an collection.
    */
   public static <K> Set<K> generateKeySet(Iterable<? extends K> keys) {
-    Set<K> keySet;
-    if (keys instanceof Collection) {
+     if (keys instanceof Collection) {
       if (keys instanceof Set) {
         return (Set<K>) keys;
       }
-      keySet = new HashSet<K>(((Collection<? extends K>) keys).size());
-    } else {
-      keySet = new HashSet<K>();
+      return new HashSet<K>(((Collection<? extends K>) keys));
     }
+    Set<K> keySet = new HashSet<K>();
     for (K k : keys) {
       keySet.add(k);
     }

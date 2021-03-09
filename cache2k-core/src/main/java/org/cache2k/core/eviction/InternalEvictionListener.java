@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.core.eviction;
 
 /*
  * #%L
@@ -20,22 +20,18 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.Entry;
+
 /**
+ * Internal eviction event from eviction. Gets passed on the the application
+ * by the cache implementation.
+ *
  * @author Jens Wilke
  */
-public interface HeapCacheListener<K, V> {
+public interface InternalEvictionListener<K, V> {
 
-  HeapCacheListener NO_OPERATION = new NoOperation();
+  InternalEvictionListener NO_OPERATION = e -> { };
 
   void onEvictionFromHeap(Entry<K, V> e);
-
-  final class NoOperation<K, V> implements HeapCacheListener<K, V> {
-
-    @Override
-    public void onEvictionFromHeap(final Entry<K, V> e) {
-
-    }
-
-  }
 
 }
