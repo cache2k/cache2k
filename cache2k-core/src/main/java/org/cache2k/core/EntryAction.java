@@ -666,6 +666,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * If entry is currently processing, and this is an async request, we can
    * enqueue this operation in a wait list that gets executed when
    * the processing has completed.
+   *
+   * @return action is enqueued and will be completed in another thread
    */
   @SuppressWarnings("rawtypes")
   private boolean tryEnqueueOperationInCurrentlyProcessing(Entry e) {
