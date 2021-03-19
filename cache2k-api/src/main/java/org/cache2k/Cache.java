@@ -346,9 +346,8 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
    * is missing, a miss and put is counted.
    *
-   * <p>Exceptions: If call throws an exception the cache contents will
-   * not be modified and the exception is propagated. The exception propagator
-   * or resilience policy is not used for this method.
+   * <p>Exceptions: If the call throws an exception the cache contents will
+   * not be modified and the exception is propagated.
    *
    * @param key key with which the specified value is to be associated
    * @param function task that computes the value
@@ -357,6 +356,9 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *         this is thrown directly
    * @throws NullPointerException if the specified key is {@code null} or the
    *         value is {@code null} and the cache does not permit {@code null} values
+   * @throws CacheLoaderException Depending on the {@link org.cache2k.io.ResiliencePolicy} the
+   *                              cache entry may hold a loader exception which is rethrown
+   *                              via the {@link org.cache2k.io.ExceptionPropagator}
    */
   V computeIfAbsent(K key, Function<? super K, ? extends V> function);
 
