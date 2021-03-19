@@ -51,6 +51,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
@@ -605,11 +606,42 @@ public class TestingBase {
     return new SupervisedExecutor(loaderExecutor);
   }
 
+  private int pendingExecution = 0;
+
   /**
-   * Execute concurrently
+   * Execute concurrently.
+   *
+   * @see #join()
    */
-  public void execute(Runnable action) {
-    loaderExecutor.execute(action);
+  public synchronized void execute(Runnable action) {
+    pendingExecution++;
+    loaderExecutor.execute(() -> {
+      try {
+        action.run();
+      } finally {
+        synchronized (TestingBase.this) {
+          pendingExecution--;
+          if (pendingExecution == 0) {
+            TestingBase.this.notifyAll();
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Wait for all concurrent jobs started with {@link #execute(Runnable)}
+   */
+  public void join() {
+    synchronized (this) {
+      while (pendingExecution > 0) {
+        try {
+          this.wait();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
   }
 
 }

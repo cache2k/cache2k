@@ -1321,6 +1321,7 @@ public class CacheLoaderTest extends TestingBase {
     execute(() -> cache.getAll(asList(1, 2, 3)));
     Map<Integer, Integer> result2 = cache.getAll(asList(1, 2, 3));
     result2.forEach((k, v) -> assertEquals((int) k, (int) v));
+    join();
   }
 
   @Test
