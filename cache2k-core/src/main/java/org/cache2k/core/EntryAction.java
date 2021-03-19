@@ -96,7 +96,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   long lastRefreshTime;
   long loadStartedTime;
   long loadCompletedTime;
-  RuntimeException exceptionToPropagate;
+  private RuntimeException exceptionToPropagate;
   /** @see #isResultAvailable() */
   private boolean resultAvailable;
   private R result;

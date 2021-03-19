@@ -267,8 +267,6 @@ public class Operations<K, V> {
           c.put(value);
         } catch (RuntimeException ex) {
           c.failure(ex);
-        } catch (Exception ex) {
-          c.failure(new CacheLoaderException(ex));
         }
       }
 

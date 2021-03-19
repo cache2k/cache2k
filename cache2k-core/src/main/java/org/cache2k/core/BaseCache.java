@@ -182,34 +182,22 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     execute(key, Operations.SINGLETON.expire(key, millis));
   }
 
+  protected <R> R execute(K key, Semantic<K, V, R> op) {
+    return execute(key, null, op);
+  }
+
   protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<K, V, R> action = createEntryAction(key, e, op);
-    return execute(action);
-  }
-
-  protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e,
-                                                                Semantic<K, V, R> op);
-
-  protected <R> R execute(EntryAction<K, V, R> action) {
     action.start();
-    return finishExecution(action);
-  }
-
-  /**
-   * Not used for async, async will always report the exception via the callback.
-   */
-  protected <R> R finishExecution(EntryAction<K, V, R> action) {
-    RuntimeException t = action.exceptionToPropagate;
+    RuntimeException t = action.getExceptionToPropagate();
     if (t != null) {
-      t.fillInStackTrace();
       throw t;
     }
     return action.getResult();
   }
 
-  protected <R> R execute(K key, Semantic<K, V, R> op) {
-    return execute(key, null, op);
-  }
+  protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e,
+                                                                Semantic<K, V, R> op);
 
   @Override
   public void closeCustomization(Object customization, String customizationName) {

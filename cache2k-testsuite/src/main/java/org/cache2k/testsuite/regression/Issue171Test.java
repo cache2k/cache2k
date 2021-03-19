@@ -23,8 +23,10 @@ package org.cache2k.testsuite.regression;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.event.CacheEntryRemovedListener;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -35,17 +37,16 @@ import static org.junit.Assert.fail;
  * @author Jens Wilke
  * @link <a href="https://github.com/cache2k/cache2k/issues/171"/>
  */
+@Category(FastTests.class)
 public class Issue171Test {
 
   @Test
-  @Ignore("FIXME")
   public void testNpeWithoutListener() {
     testAndVerifyStacktrace(Cache2kBuilder.of(String.class, String.class)
       .build());
   }
 
   @Test
-  @Ignore("FIXME")
   public void testNpeWithListener() {
     testAndVerifyStacktrace(Cache2kBuilder.of(String.class, String.class)
       .addListener((CacheEntryRemovedListener<String, String>) (cache1, cacheEntry) -> {
@@ -59,7 +60,7 @@ public class Issue171Test {
       cache.computeIfAbsent("npeKey", s -> value.substring(10));
       fail("this shall not pass");
     } catch (NullPointerException e) {
-      assertEquals(e.getStackTrace()[0].getClassName(), Issue171Test.class.getName());
+      assertEquals(Issue171Test.class.getName(), e.getStackTrace()[0].getClassName());
     }
   }
 
