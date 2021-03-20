@@ -687,6 +687,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       return;
     }
     heapCache.closePart2(this);
+    closeCustomization(asyncLoader, "asyncLoader");
     closeCustomization(writer, "writer");
     if (syncEntryCreatedListeners != null) {
       for (Object l : syncEntryCreatedListeners) {
