@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.*;
 
 import java.util.HashMap;
@@ -326,6 +327,10 @@ public class ConcurrentMapTest {
     value = map.computeIfAbsent(123, integer -> "bar");
     assertEquals("foo", value);
     assertEquals("foo", map.get(123));
+    assertThatCode(() -> {
+      map.computeIfAbsent(4711, key -> key.toString().charAt(123) + "");
+    }).as("expect out of bounds")
+      .isInstanceOf(StringIndexOutOfBoundsException.class);
   }
 
   @Test
@@ -341,6 +346,11 @@ public class ConcurrentMapTest {
     assertNull(value);
     assertNull(map.get(123));
     assertFalse(untypedMap().containsValue(123));
+    map.put(123, "xy");
+    assertThatCode(() -> {
+      map.computeIfPresent(123, (key, s) -> s.charAt(123) + "");
+    }).as("expect out of bounds")
+      .isInstanceOf(StringIndexOutOfBoundsException.class);
   }
 
   @Test
@@ -361,6 +371,10 @@ public class ConcurrentMapTest {
     assertNull(value);
     assertNull(map.get(123));
     assertFalse(untypedMap().containsValue(123));
+    assertThatCode(() -> {
+      map.compute(123, (integer, s) -> s.hashCode() + "");
+    }).as("expect NPE")
+      .isInstanceOf(NullPointerException.class);
   }
 
   @Test

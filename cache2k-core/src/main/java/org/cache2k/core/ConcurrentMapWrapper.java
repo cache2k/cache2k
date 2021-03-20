@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.core.api.InternalCache;
+import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
@@ -314,7 +315,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
   @Override
   public V computeIfPresent(K key,
                             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    return cache.invoke(key, entry -> {
+    return invokeUnwrapException(key, entry -> {
       V value = null;
       if (entry.exists()) {
         entry.lock();
@@ -331,7 +332,7 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
 
   @Override
   public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    return cache.invoke(key, entry -> {
+    return invokeUnwrapException(key, entry -> {
       V value = null;
       if (entry.exists()) {
         value = entry.getValue();
@@ -359,6 +360,18 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
   @Override
   public int hashCode() {
     return cache.hashCode();
+  }
+
+  /**
+   * Used for compute methods which use the entry processor.
+   * Unwrap the exception to comply with ConcurrentMap contract.
+   */
+  private <R> R invokeUnwrapException(K key, EntryProcessor<K, V, R> p) {
+    try {
+      return cache.invoke(key, p);
+    } catch (EntryProcessingException ex) {
+      throw (RuntimeException) ex.getCause();
+    }
   }
 
 }
