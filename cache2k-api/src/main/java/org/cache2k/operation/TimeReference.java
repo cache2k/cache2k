@@ -35,6 +35,22 @@ import org.cache2k.processor.MutableCacheEntry;
 public interface TimeReference {
 
   /**
+   * Default implementation using {@link System#currentTimeMillis()} as
+   * time reference.
+   */
+  final TimeReference DEFAULT = new TimeReference() {
+    @Override
+    public long millis() {
+      return System.currentTimeMillis();
+    }
+
+    @Override
+    public void sleep(long millis) throws InterruptedException {
+      Thread.sleep(millis);
+    }
+  };
+
+  /**
    * Returns the milliseconds since epoch. In the simulated clock a call to this method
    * would make time pass in small increments.
    *

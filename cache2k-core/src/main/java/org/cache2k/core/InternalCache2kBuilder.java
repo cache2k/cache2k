@@ -29,7 +29,6 @@ import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.InternalEvictionListener;
 import org.cache2k.core.timing.Timing;
-import org.cache2k.core.util.DefaultClock;
 import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.event.CacheClosedListener;
@@ -199,7 +198,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       config.getFeatures().stream().forEach(x -> x.enlist(this));
     }
     checkConfiguration();
-    clock = createCustomization(config.getTimeReference(), DefaultClock.INSTANCE);
+    clock = createCustomization(config.getTimeReference(), TimeReference.DEFAULT);
     executor = createCustomization(config.getExecutor(), buildContext -> ForkJoinPool.commonPool());
     HeapCache<K, V> bc;
     Class<?> keyType = config.getKeyType().getType();

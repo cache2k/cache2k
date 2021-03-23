@@ -29,7 +29,6 @@ import org.cache2k.core.HeapCache;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
-import org.cache2k.core.util.DefaultClock;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.core.util.SimulatedClock;
@@ -51,7 +50,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
@@ -108,9 +106,9 @@ public class TestingBase {
     return loaderExecutor;
   }
 
-  private static final TimeStepper TIME_STEPPER = new TimeStepper(DefaultClock.INSTANCE);
-  private TimeStepper stepper = TIME_STEPPER;
-  private TimeReference clock;
+  private static final TimeStepper DEFAULT_TIME_STEPPER = new TimeStepper(TimeReference.DEFAULT);
+  private TimeStepper stepper = DEFAULT_TIME_STEPPER;
+  private TimeReference clock = TimeReference.DEFAULT;
   private Statistics statistics;
 
   @Rule
@@ -164,7 +162,7 @@ public class TestingBase {
 
 
   public void setClock(TimeReference c) {
-    if (clock != null) {
+    if (clock != TimeReference.DEFAULT) {
       throw new IllegalArgumentException("clock already set");
     }
     clock = c;
@@ -416,9 +414,6 @@ public class TestingBase {
   }
 
   public TimeReference getClock() {
-    if (clock == null) {
-      setClock(DefaultClock.INSTANCE);
-    }
     return clock;
   }
 
