@@ -246,7 +246,7 @@ public abstract class BulkAction<K, V, R> implements
     AsyncBulkCacheLoader<K, V> bulkLoader = (AsyncBulkCacheLoader<K, V>) loader;
     Set<K> keysCopy = Collections.unmodifiableSet(new HashSet<K>(toLoad));
     try {
-      bulkLoader.loadAll(keysCopy, new MyBulkLoadContext(keysCopy), this);
+      bulkLoader.loadAll(keysCopy, new MyBulkLoadContext(keysCopy, this), this);
     } catch (Throwable ouch) {
       onLoadFailure(ouch);
     }
@@ -359,22 +359,25 @@ public abstract class BulkAction<K, V, R> implements
   private class MyBulkLoadContext implements AsyncBulkCacheLoader.BulkLoadContext<K, V> {
 
     private final Set<K> keys;
+    private final AsyncBulkCacheLoader.BulkCallback<K, V> callback;
     private Set<Context<K, V>> contextSet;
+    private Map<K, Context<K, V>> contextMap;
 
-    MyBulkLoadContext(Set<K> keys) {
+    MyBulkLoadContext(Set<K> keys, AsyncBulkCacheLoader.BulkCallback<K, V> callback) {
       this.keys = keys;
+      this.callback = callback;
     }
 
     /** Lazily create set with entry contexts */
     @Override
-    public Set<Context<K, V>> getContextSet() {
-      if (contextSet == null) {
-        contextSet = new HashSet<>(toLoad.size());
+    public Map<K, Context<K, V>> getContextMap() {
+      if (contextMap == null) {
+        contextMap = new HashMap<>(toLoad.size());
         for (K key : keys) {
-          contextSet.add(key2action.get(key));
+          contextMap.put(key, key2action.get(key));
         }
       }
-      return contextSet;
+      return contextMap;
     }
 
     @Override
@@ -396,6 +399,11 @@ public abstract class BulkAction<K, V, R> implements
     @Override
     public Executor getLoaderExecutor() {
       return heapCache.getLoaderExecutor();
+    }
+
+    @Override
+    public AsyncBulkCacheLoader.BulkCallback<K, V> getCallback() {
+      return callback;
     }
 
   }

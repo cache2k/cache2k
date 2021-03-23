@@ -62,19 +62,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
   @Override
   default void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
     Set<K> keySet = Collections.singleton(key);
-    BulkLoadContext<K, V> bulkLoadContext = new BulkLoadContext<K, V>() {
-      @Override
-      public Set<Context<K, V>> getContextSet() { return Collections.singleton(context); }
-      @Override
-      public long getStartTime() { return context.getStartTime(); }
-      @Override
-      public Set<K> getKeys() { return keySet; }
-      @Override
-      public Executor getExecutor() { return context.getExecutor(); }
-      @Override
-      public Executor getLoaderExecutor() { return context.getLoaderExecutor(); }
-    };
-    loadAll(keySet, bulkLoadContext, new BulkCallback<K, V>() {
+    BulkCallback<K, V> bulkCallback = new BulkCallback<K, V>() {
       @Override
       public void onLoadSuccess(Map<? extends K, ? extends V> data) {
         Map.Entry<? extends K, ? extends V> entry = data.entrySet().iterator().next();
@@ -91,15 +79,32 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
       public void onLoadFailure(Throwable exception) {
         callback.onLoadFailure(exception);
       }
-    });
+    };
+    BulkLoadContext<K, V> bulkLoadContext = new BulkLoadContext<K, V>() {
+      @Override
+      public Map<K, Context<K, V>> getContextMap() {
+        return Collections.singletonMap(key, context);
+      }
+      @Override
+      public long getStartTime() { return context.getStartTime(); }
+      @Override
+      public Set<K> getKeys() { return keySet; }
+      @Override
+      public Executor getExecutor() { return context.getExecutor(); }
+      @Override
+      public Executor getLoaderExecutor() { return context.getLoaderExecutor(); }
+      @Override
+      public BulkCallback<K, V> getCallback() { return bulkCallback; }
+    };
+    loadAll(keySet, bulkLoadContext, bulkCallback);
   }
 
-  interface BulkLoadContext<K, V> {
+  interface BulkLoadContext<K, V> extends DataAware<K, V> {
 
     /**
      * Individual load context for each key.
      */
-    Set<Context<K, V>> getContextSet();
+    Map<K, Context<K, V>> getContextMap();
 
     long getStartTime();
 
@@ -121,6 +126,8 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
      * @see org.cache2k.Cache2kBuilder#loaderExecutor(Executor)
      */
     Executor getLoaderExecutor();
+
+    BulkCallback<K, V> getCallback();
 
   }
 

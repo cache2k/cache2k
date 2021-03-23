@@ -1166,14 +1166,12 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void asyncBulkLoader_singleLoad() throws Exception {
-    AtomicInteger bulkRequests = new AtomicInteger();
     AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader((keys, context, callback) -> {
-          assertEquals(keys.size(), context.getContextSet().size());
-          bulkRequests.incrementAndGet();
+          assertEquals(keys.size(), context.getContextMap().size());
           keys.forEach(key -> {
             assertTrue(keys.contains(key));
             buffer.put(key, callback);
@@ -1192,8 +1190,6 @@ public class CacheLoaderTest extends TestingBase {
 
   @Test
   public void asyncBulkLoader_immediateException_loadAll_get_getAll() throws Exception {
-    AtomicInteger bulkRequests = new AtomicInteger();
-    AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
