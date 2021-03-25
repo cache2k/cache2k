@@ -512,6 +512,9 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin-version}</version>
                 <configuration>
+                  <excludes>
+                    <exclude>org/cache2k/testsuite/**/*</exclude>
+                  </excludes>
                     <fileSets>
                         <fileSet>
                             <directory>${project.basedir}</directory>
