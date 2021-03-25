@@ -39,12 +39,12 @@ import java.util.Set;
  * atomicity or order of a bulk request.
  *
  * <p>Deadlock avoidance: When a load operation is in flight the entry is blocked and no
- * other operation take place on that entry. When operating on multiple entries, deadlocks
+ * other operations take place on that entry. When operating on multiple entries, deadlocks
  * might occur, when one operation is processing and locking one entry and waiting for another
  * entry. To avoid deadlocks, the cache will only wait for one entry when holding no locks on
  * another entry. Practically speaking: The cache will issue a bulk request to as many entries
- * it can lock, when its finished, it will will try again or wait for concurrent processing if
- * no more operations can be started.
+ * it can lock at once, when that request is completed, it will will try again or wait
+ * for concurrent processing if no more operations can be started.
  *
  * <p>Rationale: Other cache products and JCache/JSR107 defines a {@link #loadAll}
  * on the same interface as the cache loader. The JCache variant does not work as functional

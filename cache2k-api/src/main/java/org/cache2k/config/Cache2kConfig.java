@@ -372,6 +372,9 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     return asyncLoader;
   }
 
+  /**
+   * @see Cache2kBuilder#loader(AsyncCacheLoader)
+   */
   public void setAsyncLoader(@Nullable CustomizationSupplier<? extends AsyncCacheLoader<K, V>> v) {
     asyncLoader = v;
   }
