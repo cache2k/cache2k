@@ -816,7 +816,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
           loaderCalled.incrementAndGet();
-          ctx.getLoaderExecutor().execute(() -> {
+          ctx.getExecutor().execute(() -> {
             loaderExecuted.incrementAndGet();
             callback.onLoadSuccess(key);
           });
