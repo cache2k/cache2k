@@ -1260,6 +1260,7 @@ public class CacheLoaderTest extends TestingBase {
     CompletableFuture<Void> req3 = cache.loadAll(asList(1, 2, 3, 4, 5));
     CompletableFuture<Void> req4 = cache.loadAll(asList(1, 2, 3, 4, 5, 6, 7));
     req4.get();
+    req1.get(); req2.get(); req3.get();
     assertEquals(7, target.info().getLoadCount());
     int bulkRequests0 = bulkRequests.get();
     assertThat(bulkRequests.get())
