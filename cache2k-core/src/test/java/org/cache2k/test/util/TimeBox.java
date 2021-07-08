@@ -33,9 +33,8 @@ import java.sql.Timestamp;
 public class TimeBox {
 
   private final TimeReference clock;
-  private long startTime;
+  private final long startTime;
   private final long timeBox;
-  private boolean outcomeUndefined = false;
 
   public static TimeBox millis(long t) {
     TimeBox b = new TimeBox(TimeReference.DEFAULT, t);
@@ -46,14 +45,14 @@ public class TimeBox {
     return millis(t * 1000);
   }
 
-  public TimeBox(TimeReference _clock, long _timeBox) {
-    clock = _clock;
-    startTime = _clock.millis();
-    timeBox = _timeBox;
+  public TimeBox(TimeReference clock, long timeBox) {
+    this.clock = clock;
+    startTime = clock.millis();
+    this.timeBox = timeBox;
   }
 
   /**
-   * Immediately executes the runnable. This method serves the purpose to make the
+   * Always executes the runnable. This method serves the purpose to make the
    * code look more fluent.
    */
   public TimeBox perform(Runnable r) {
@@ -75,22 +74,27 @@ public class TimeBox {
     long ms = clock.millis();
     long delta = ms - startTime;
     boolean withinTimeBox = delta < timeBox;
-    if (withinTimeBox) {
-      if (failedAssertion != null) {
-        throw new PropagateAssertionError(startTime, delta, failedAssertion);
-      }
-    } else {
+    if (!withinTimeBox) {
       return new Noop();
+    }
+    if (failedAssertion != null) {
+      throw new PropagateAssertionError(startTime, delta, failedAssertion);
     }
     return new Chain();
   }
 
   public class Chain {
 
+    /**
+     * Executes block if previous time box was met and no exception occurred.
+     */
     public void concludesMaybe(Runnable r) {
       r.run();
     }
 
+    /**
+     * Span new time box, if previous time box was met and no exception occurred.
+     */
     public TimeBox within(long timeBox) {
       return new TimeBox(clock, timeBox);
     }
@@ -105,7 +109,7 @@ public class TimeBox {
 
     @Override
     public TimeBox within(long timeBox) {
-      return new TimeBox(null, 0) {
+      return new TimeBox(TimeReference.DEFAULT, 0) {
         @Override
         public TimeBox perform(Runnable r) {
           return this;
