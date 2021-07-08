@@ -209,7 +209,7 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   /**
-   * Start loading via the available async loader. User bulk if available.
+   * Start loading via the available async loader. Use bulk if available.
    */
   private void startLoading() {
     if (loader instanceof AsyncBulkCacheLoader && toLoad.size() > 1) {
@@ -220,7 +220,7 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   /**
-   * Call async loader for all load requests we collected.
+   * Call non bulk async loader for all load requests we collected.
    */
   private void startLoadingSingle() {
     Iterator<K> it = toLoad.iterator();
