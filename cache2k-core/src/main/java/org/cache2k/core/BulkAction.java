@@ -287,15 +287,20 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   /**
-   * Fail all pending load requests
+   * Fail all pending load requests.
+   * Do nothing when all requests are completed already.
    */
   @Override
-  public synchronized void onLoadFailure(Throwable exception) {
-    for (K key : toLoad) {
+  public void onLoadFailure(Throwable exception) {
+    Set<K> toLoadCopy = null;
+    synchronized (this) {
+      toLoadCopy = new HashSet<>(toLoad);
+      toLoad.clear();
+    }
+    for (K key : toLoadCopy) {
       EntryAction<K, V, R> action = key2action.get(key);
       action.onLoadFailure(exception);
     }
-    toLoad.clear();
   }
 
   /**

@@ -277,11 +277,11 @@ public class CacheLoaderTest extends TestingBase {
     loadExceptionChecks(c);
   }
 
-  @Test @Ignore // FIXME: change interface
+  @Test
   public void loadExceptionBulkAsyncSyncLoaderDelayedFail() {
     Cache<Integer, Integer> c = target.cache(b -> b
       .bulkLoader((keys, contexts, callback) -> {
-
+        contexts.getExecutor().execute(() -> { callback.onLoadFailure(new AlwaysFailException()); });
       })
     );
     loadExceptionChecks(c);

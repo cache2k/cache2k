@@ -66,6 +66,9 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
     BulkCallback<K, V> bulkCallback = new BulkCallback<K, V>() {
       @Override
       public void onLoadSuccess(Map<? extends K, ? extends V> data) {
+        if (data.isEmpty()) {
+          return;
+        }
         Map.Entry<? extends K, ? extends V> entry = data.entrySet().iterator().next();
         onLoadSuccess(entry.getKey(), entry.getValue());
       }
