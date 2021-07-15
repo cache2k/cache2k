@@ -20,6 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import org.cache2k.core.CacheClosedException;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.Scheduler;
@@ -144,10 +145,10 @@ public class DefaultTimer implements Timer {
   }
 
   /**
-   * Called from the schedule when a scheduled time was reached.
+   * Called from the scheduler when a scheduled time was reached.
    * Its expected that the time is increasing constantly.
-   * Per timer there is only one scheduled event, so the body of
-   * the method only runs once at any time.
+   * Per timer there is only one scheduled event, so this method is not
+   * running concurrently
    */
   private void timeReachedEvent(long currentTime) {
     while (true) {
@@ -167,6 +168,7 @@ public class DefaultTimer implements Timer {
         try {
           nextTime = structure.nextRun();
           schedule(currentTime, nextTime);
+        } catch (CacheClosedException ex) {
         } finally {
           lock.unlock();
         }
