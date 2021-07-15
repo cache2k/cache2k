@@ -20,8 +20,10 @@ package org.cache2k.io;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.DataAware;
 import org.cache2k.DataAwareCustomization;
 
 import java.util.EventListener;
@@ -60,7 +62,12 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
    * of the {@link AsyncCacheLoader}. The context does not include the cache, since the
    * loader should not depend on it and do any other operations on the cache while loading.
    */
-  interface Context<K, V> {
+  interface Context<K, V> extends DataAware<K, V> {
+
+    /**
+     * The cache originating the load request
+     */
+    Cache<K, V> getCache();
 
     /**
      * Time in millis since epoch of start of load operation

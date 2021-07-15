@@ -284,7 +284,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         callback.onLoadFailure(ouch);
       }
     };
-    BulkAction<K, V, R> bulkAction = new BulkAction<K, V, R>(heapCache, myLoader, keys, true) {
+    BulkAction<K, V, R> bulkAction = new BulkAction<K, V, R>(heapCache, this, myLoader, keys, true) {
       @Override
       protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
         return new MyEntryAction<R>(op, key, null) {
@@ -308,7 +308,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     Semantic<K, V, R> op, Set<K> keys) {
     CompletableFuture<BulkAction<K, V, R>> future = new CompletableFuture<>();
     BulkAction<?, ?, ?> action =
-      new BulkAction<K, V, R>(heapCache, asyncLoader, keys, false) {
+      new BulkAction<K, V, R>(heapCache, this, asyncLoader, keys, false) {
       @Override
       protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
         return new MyEntryAction<R>(op, key, null, self) {

@@ -71,12 +71,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   /**
    * Effective internal cache, either HeapCache or WiredCache.
+   * @see InternalCache#getUserCache()
    */
-  InternalCache<K, V> internalCache;
+  final InternalCache<K, V> internalCache;
   /**
    * Heap cache holding the in heap objects.
    */
-  HeapCache<K, V> heapCache;
+  final HeapCache<K, V> heapCache;
   K key;
   Semantic<K, V, R> operation;
 
@@ -1081,7 +1082,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       mutationReleaseLockAndStartTimer();
       return;
     }
-    Cache<K, V> userCache = internalCache.getUserCache();
+    Cache<K, V> userCache = getCache();
     V oldValueOrException = heapEntry.getValueOrException();
     if (expiredImmediately || remove) {
       CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(getKey(), oldValueOrException);
@@ -1130,6 +1131,15 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   /**
+   * User facing cache interface instance. Part of async call context.
+   * @see AsyncCacheLoader.Context#getCache()
+   */
+  @Override
+  public Cache<K, V> getCache() {
+    return internalCache.getUserCache();
+  }
+
+  /**
    * Entry was expired during the operation, e.g. by calling setExpiry.
    * In case the entry is freshly created
    * <p>If an entry is created or updated, the expiry listener might be called
@@ -1149,7 +1159,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   private void sendExpiryEvents(CacheEntry<K, V> entryCopy) {
-    Cache<K, V> userCache =  internalCache.getUserCache();
+    Cache<K, V> userCache = getCache();
     for (CacheEntryExpiredListener<K, V> l : entryExpiredListeners()) {
       try {
         l.onEntryExpired(userCache, entryCopy);

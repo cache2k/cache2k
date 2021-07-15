@@ -20,6 +20,7 @@ package org.cache2k.io;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.DataAware;
 
 import java.util.Collections;
@@ -72,7 +73,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
       @Override
       public void onLoadSuccess(K key, V value) {
         Objects.requireNonNull(key);
-        callback.onLoadSuccess((V) value);
+        callback.onLoadSuccess(value);
       }
 
       @Override
@@ -81,25 +82,23 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
       }
     };
     BulkLoadContext<K, V> bulkLoadContext = new BulkLoadContext<K, V>() {
-      @Override
-      public Map<K, Context<K, V>> getContextMap() {
+      @Override public Cache<K, V> getCache() { return context.getCache(); }
+      @Override public Map<K, Context<K, V>> getContextMap() {
         return Collections.singletonMap(key, context);
       }
-      @Override
-      public long getStartTime() { return context.getStartTime(); }
-      @Override
-      public Set<K> getKeys() { return keySet; }
-      @Override
-      public Executor getExecutor() { return context.getExecutor(); }
-      @Override
-      public Executor getLoaderExecutor() { return context.getLoaderExecutor(); }
-      @Override
-      public BulkCallback<K, V> getCallback() { return bulkCallback; }
+      @Override public long getStartTime() { return context.getStartTime(); }
+      @Override public Set<K> getKeys() { return keySet; }
+      @Override public Executor getExecutor() { return context.getExecutor(); }
+      @Override public Executor getLoaderExecutor() { return context.getLoaderExecutor(); }
+      @Override public BulkCallback<K, V> getCallback() { return bulkCallback; }
     };
     loadAll(keySet, bulkLoadContext, bulkCallback);
   }
 
   interface BulkLoadContext<K, V> extends DataAware<K, V> {
+
+    /** Cache originating the request */
+    Cache<K, V> getCache();
 
     /**
      * Individual load context for each key.

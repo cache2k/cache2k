@@ -23,6 +23,7 @@ package org.cache2k.addon;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.io.AsyncBulkCacheLoader;
+import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.junit.Test;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +42,38 @@ import static org.junit.Assert.*;
  * @author Jens Wilke
  */
 public class CoalescingBulkLoaderTest {
+
+  void endlessRefresh() {
+    AsyncBulkCacheLoader<Integer, Integer> bulkLoader = (keys, context, callback) -> {
+    };
+    CoalescingBulkLoader<Integer, Integer> coalescingLoader = new CoalescingBulkLoader<>(
+      bulkLoader,
+      TimeReference.DEFAULT, // the cache might have a different time reference
+      100, // delay milliseconds before sending the request
+      50 // maximum batch size
+    );
+    AtomicReference<Cache<Integer, Integer>> cacheRef = new AtomicReference<>();
+    Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
+      .loader((AsyncCacheLoader<Integer, Integer>) (key, context, callback) -> {
+        if (context.getCurrentEntry() == null) {
+          coalescingLoader.load(key, context, callback);
+        } else {
+          coalescingLoader.load(key, context, new AsyncCacheLoader.Callback<Integer>() {
+            @Override
+            public void onLoadSuccess(Integer value) { cacheRef.get().put(key, value); }
+            @Override
+            public void onLoadFailure(Throwable t) {
+            }
+          });
+          callback.onLoadSuccess(context.getCurrentEntry().getValue());
+        }
+      })
+      .refreshAhead(true)
+      .expireAfterWrite(5, TimeUnit.MINUTES) // trigger a refresh every 5 minutes
+      .expiryPolicy((key, value, loadTime, currentEntry) -> value == null ? 0 : Long.MAX_VALUE)
+      .build();
+    cacheRef.set(cache);
+  }
 
   void exampleDeclarative() {
     Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)

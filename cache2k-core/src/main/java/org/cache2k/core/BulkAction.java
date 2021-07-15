@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.Cache;
+import org.cache2k.core.api.InternalCache;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoaderException;
@@ -57,6 +59,11 @@ public abstract class BulkAction<K, V, R> implements
   /** Used for executors **/
   private final HeapCache<K, V> heapCache;
   /**
+   * Effective internal cache, either HeapCache or WiredCache.
+   * @see InternalCache#getUserCache()
+   */
+  final InternalCache<K, V> internalCache;
+  /**
    * Map with the individual entry actions, the map will not be modified after the
    * bulk operation start, so its save to read from it from different threads.
    */
@@ -69,8 +76,11 @@ public abstract class BulkAction<K, V, R> implements
   private boolean completedCalled = false;
 
   /** Create object and start operation. */
-  public BulkAction(HeapCache<K, V> heapCache, AsyncCacheLoader<K, V> loader, Set<K> keys, boolean sync) {
+  public BulkAction(HeapCache<K, V> heapCache, InternalCache<K, V> internalCache,
+                    AsyncCacheLoader<K, V> loader,
+                    Set<K> keys, boolean sync) {
     this.heapCache = heapCache;
+    this.internalCache = internalCache;
     this.loader = loader;
     key2action = new HashMap<>(keys.size());
     toLoad = new HashSet<>(keys.size());
@@ -366,6 +376,11 @@ public abstract class BulkAction<K, V, R> implements
     MyBulkLoadContext(Set<K> keys, AsyncBulkCacheLoader.BulkCallback<K, V> callback) {
       this.keys = keys;
       this.callback = callback;
+    }
+
+    @Override
+    public Cache<K, V> getCache() {
+      return internalCache.getUserCache();
     }
 
     /** Lazily create set with entry contexts */

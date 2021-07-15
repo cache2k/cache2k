@@ -20,6 +20,7 @@ package org.cache2k.addon;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.DataAware;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.operation.TimeReference;
@@ -133,18 +134,13 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       }
     };
     BulkLoadContext<K, V> context = new BulkLoadContext<K, V>() {
-      @Override
-      public Map<K, Context<K, V>> getContextMap() { return contextMap; }
-      @Override
-      public long getStartTime() { return finalStartTime; }
-      @Override
-      public Set<K> getKeys() { return keys; }
-      @Override
-      public Executor getExecutor() { return finalFirstContext.getExecutor(); }
-      @Override
-      public Executor getLoaderExecutor() { return finalFirstContext.getLoaderExecutor(); }
-      @Override
-      public BulkCallback<K, V> getCallback() {
+      @Override public Cache<K, V> getCache() { return finalFirstContext.getCache(); }
+      @Override public Map<K, Context<K, V>> getContextMap() { return contextMap; }
+      @Override public long getStartTime() { return finalStartTime; }
+      @Override public Set<K> getKeys() { return keys; }
+      @Override public Executor getExecutor() { return finalFirstContext.getExecutor(); }
+      @Override public Executor getLoaderExecutor() { return finalFirstContext.getLoaderExecutor(); }
+      @Override public BulkCallback<K, V> getCallback() {
         return callback;
       }
     };
