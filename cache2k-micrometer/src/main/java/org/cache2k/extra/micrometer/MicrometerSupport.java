@@ -48,7 +48,7 @@ public class MicrometerSupport
   }
 
   @Override
-  protected void doEnlist(CacheBuildContext<?, ?> ctx) {
+  protected <K, V> void doEnlist(CacheBuildContext<K, V> ctx) {
     if (ctx.getConfig().isDisableMonitoring()) {
       return;
     }

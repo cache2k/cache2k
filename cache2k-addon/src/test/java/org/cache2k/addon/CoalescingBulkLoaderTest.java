@@ -29,6 +29,8 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,6 +41,73 @@ import static org.junit.Assert.*;
  */
 public class CoalescingBulkLoaderTest {
 
+  void exampleDeclarative() {
+    Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
+      .bulkLoader((keys, context, callback) -> {
+      })
+      .refreshAhead(true)
+      .enableWith(CoalescingBulkLoaderSupport.class, b -> b
+        .maxLoadSize(50)
+        .maxDelay(100, TimeUnit.MILLISECONDS))
+      .build();
+  }
+
+  void exampleWrap() {
+    AsyncBulkCacheLoader<Integer, Integer> bulkLoader = (keys, context, callback) -> {
+    };
+    CoalescingBulkLoader<Integer, Integer> coalescingLoader = new CoalescingBulkLoader<>(
+      bulkLoader,
+      TimeReference.DEFAULT,
+      100, // delay milliseconds
+      50 // batch size
+    );
+    Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
+      .bulkLoader(coalescingLoader)
+      .refreshAhead(true)
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .build();
+  }
+
+  /**
+   * Init via declarative config scheme. We issue a load with only one key and
+   * expect that the bulk loader is called with more than one key, so coalescing effective.
+   */
+  @Test
+  public void testDeclarative() {
+    final int maxLoadSize = 17;
+    AtomicInteger maxBulkRequestSize = new AtomicInteger();
+    Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
+      .bulkLoader((keys, context, callback) -> {
+        int currentMax;
+        do {
+          currentMax = maxBulkRequestSize.get();
+          if (keys.size() < currentMax) {
+            break;
+          }
+        } while(!maxBulkRequestSize.compareAndSet(currentMax, keys.size()));
+        Map<Integer, Integer> result = new HashMap<>();
+        for (int k : keys) {
+          result.put(k, k);
+        }
+        callback.onLoadSuccess(result);
+      })
+      .refreshAhead(true)
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .enableWith(CoalescingBulkLoaderSupport.class, b -> b
+        .maxLoadSize(maxLoadSize)
+        .maxDelay(2000, TimeUnit.MILLISECONDS))
+      .build();
+    for (int i = 0; i < maxLoadSize; i++) {
+      cache.loadAll(asList(i));
+    }
+    assertTrue(maxBulkRequestSize.get() > 1);
+    cache.close();
+  }
+
+  /**
+   * Test single threaded via wrapping. We call the CoalescingBulkLoader directly
+   * for checks.
+   */
   @Test
   public void coalescingAsyncBulkLoader_singleThread() throws Exception {
     AsyncBulkCacheLoader<Integer, Integer> loader = (keys, context, callback) -> {

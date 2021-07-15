@@ -110,13 +110,13 @@ public abstract class ToggleFeature implements SingleFeature {
    * Checks whether enabled and call implementations doEnlist method.
    */
   @Override
-  public final void enlist(CacheBuildContext<?, ?> ctx) {
+  public final <K, V> void enlist(CacheBuildContext<K, V> ctx) {
     if (enabled) {
       doEnlist(ctx);
     }
   }
 
-  protected abstract void doEnlist(CacheBuildContext<?, ?> ctx);
+  protected abstract <K, V> void doEnlist(CacheBuildContext<K, V> ctx);
 
   public final boolean isEnabled() {
     return enabled;

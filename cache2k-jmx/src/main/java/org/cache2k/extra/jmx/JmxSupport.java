@@ -52,7 +52,7 @@ public final class JmxSupport extends ToggleFeature {
    * is build or closed.
    */
   @Override
-  public void doEnlist(CacheBuildContext<?, ?> ctx) {
+  public <K, V> void doEnlist(CacheBuildContext<K, V> ctx) {
     Cache2kConfig<?, ?> cfg = ctx.getConfig();
     if (cfg.isDisableMonitoring()) {
       return;

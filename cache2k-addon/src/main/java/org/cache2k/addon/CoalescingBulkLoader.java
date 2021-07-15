@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, AutoCloseable {
 
-  private final long maxDelay;
+  private final long maxDelayMillis;
   private final int maxLoadSize;
   private final AsyncBulkCacheLoader<K, V> forwardingLoader;
   private final TimeReference timeReference;
@@ -55,8 +55,8 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
 
   public CoalescingBulkLoader(
     AsyncBulkCacheLoader<K, V> forwardingLoader, TimeReference timeReference,
-    long maxDelay, int maxLoadSize) {
-    this.maxDelay = maxDelay;
+    long maxDelayMillis, int maxLoadSize) {
+    this.maxDelayMillis = maxDelayMillis;
     this.maxLoadSize = maxLoadSize;
     this.forwardingLoader = forwardingLoader;
     this.timeReference = timeReference;
@@ -153,7 +153,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
 
   private synchronized void startDelay() {
     if (schedule == null && queueSize.get() > 0) {
-      schedule = timer.schedule(this::doLoad, maxDelay, TimeUnit.MILLISECONDS);
+      schedule = timer.schedule(this::doLoad, maxDelayMillis, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -179,7 +179,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
     if (rq != null) {
       long startTime = timeReference.toMillis(rq.context.getStartTime());
       long now = timeReference.toMillis(timeReference.millis());
-      schedule = timer.schedule(this::doLoad, startTime + maxDelay - now, TimeUnit.MILLISECONDS);
+      schedule = timer.schedule(this::doLoad, startTime + maxDelayMillis - now, TimeUnit.MILLISECONDS);
     }
   }
 

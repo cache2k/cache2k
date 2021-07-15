@@ -45,7 +45,7 @@ public class InspectionFeature extends ToggleFeature {
   }
 
   @Override
-  protected void doEnlist(CacheBuildContext<?, ?> ctx) {
+  protected <K, V> void doEnlist(CacheBuildContext<K, V> ctx) {
     MAP_MANAGER_CACHE_FLAG
       .computeIfAbsent(ctx.getCacheManager().getName(), s -> new ConcurrentHashMap<>())
       .put(ctx.getName(), true);

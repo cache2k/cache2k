@@ -22,6 +22,7 @@ package org.cache2k.addon;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.ToggleFeature;
 import org.cache2k.config.WithSection;
 import org.cache2k.io.AsyncBulkCacheLoader;
@@ -33,7 +34,7 @@ import org.cache2k.io.AsyncCacheLoader;
 public class CoalescingBulkLoaderSupport extends ToggleFeature
   implements WithSection<CoalescingBulkLoaderConfig, CoalescingBulkLoaderConfig.Builder>  {
 
-  private static CoalescingBulkLoaderConfig DEFAULT_CONFIG = new CoalescingBulkLoaderConfig();
+  private static final CoalescingBulkLoaderConfig DEFAULT_CONFIG = new CoalescingBulkLoaderConfig();
 
   public static CoalescingBulkLoaderSupport enable(Cache2kBuilder<?, ?> b) {
     return ToggleFeature.enable(b, CoalescingBulkLoaderSupport.class);
@@ -43,24 +44,35 @@ public class CoalescingBulkLoaderSupport extends ToggleFeature
     b.disable(CoalescingBulkLoaderSupport.class);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  protected void doEnlist(CacheBuildContext<?, ?> ctx) {
-    AsyncCacheLoader asyncCacheLoader = ctx.createCustomization(ctx.getConfig().getAsyncLoader());
-    if (!(asyncCacheLoader instanceof AsyncBulkCacheLoader)) {
-      throw new IllegalArgumentException(this.getClass().getName()
-        + " requires a configure bulk loader");
+  protected <K, V> void doEnlist(CacheBuildContext<K, V> ctx) {
+    CustomizationSupplier<? extends AsyncCacheLoader<?, ?>> originalLoaderSupplier =
+      ctx.getConfig().getAsyncLoader();
+    if (originalLoaderSupplier == null) {
+      bulkLoaderNeeded();
     }
-    AsyncBulkCacheLoader finalAsyncBulkCacheLoader = (AsyncBulkCacheLoader) asyncCacheLoader;
-    CoalescingBulkLoaderConfig config =
-      ctx.getConfig().getSections().getSection(CoalescingBulkLoaderConfig.class, DEFAULT_CONFIG);
-    ctx.getConfig().builder().bulkLoader(
-      new CoalescingBulkLoader(finalAsyncBulkCacheLoader, ctx.getTimeReference(),
-        config.getMaxDelay(), config.getMaxLoadSize())
-    );
+    CustomizationSupplier<AsyncCacheLoader<K, V>> xy = buildContext -> {
+      AsyncCacheLoader<?, ?> loader = buildContext.createCustomization(originalLoaderSupplier);
+      if (!(loader instanceof AsyncBulkCacheLoader)) {
+        bulkLoaderNeeded();
+      }
+      CoalescingBulkLoaderConfig config =
+        ctx.getConfig().getSections().getSection(CoalescingBulkLoaderConfig.class, DEFAULT_CONFIG);
+      return new CoalescingBulkLoader<K, V>((AsyncBulkCacheLoader<K, V>) loader, buildContext.getTimeReference(),
+        config.getMaxDelay(), config.getMaxLoadSize());
+    };
+    ctx.getConfig().setAsyncLoader(xy);
+  }
+
+  private void bulkLoaderNeeded() {
+    throw new IllegalArgumentException(this.getClass().getName()
+      + " requires a configured bulk loader");
   }
 
   @Override
   public Class<CoalescingBulkLoaderConfig> getConfigClass() {
     return CoalescingBulkLoaderConfig.class;
   }
+
 }

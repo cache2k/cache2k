@@ -24,7 +24,9 @@ import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.annotation.Nullable;
+import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.config.Feature;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.testing.category.FastTests;
 import org.junit.After;
@@ -61,20 +63,24 @@ public class UniversalResiliencePolicyTest {
   }
 
   private Cache2kBuilder<Integer, Integer> builder() {
-    return new Cache2kBuilder<Integer, Integer>() { }
-      .setup(b -> b.config().getFeatures().add(ctx -> {
+    Feature ft = new Feature() {
+      @Override
+      public <K, V> void enlist(CacheBuildContext<K, V> ctx) {
         CustomizationSupplier<? extends ResiliencePolicy> configuredSupplier =
           ctx.getConfig().getResiliencePolicy();
         if (configuredSupplier != null) {
           ctx.getConfig().setResiliencePolicy(buildContext -> {
             ResiliencePolicy policy = configuredSupplier.supply(buildContext);
             if (policy instanceof UniversalResiliencePolicy) {
-              this.policy = (UniversalResiliencePolicy<?, ?>) policy;
+              UniversalResiliencePolicyTest.this.policy = (UniversalResiliencePolicy<?, ?>) policy;
             }
             return policy;
           });
         }
-      }));
+      }
+    };
+    return new Cache2kBuilder<Integer, Integer>() { }
+      .setup(b -> b.config().getFeatures().add(ft));
   }
 
   /* Set supplier and add config section in two commands */

@@ -1443,34 +1443,26 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     within(LONG_DELTA)
-      .perform(new Runnable() {
-        @Override
-        public void run() {
-          c.expireAt(1, -millis());
-          assertFalse(
-            "entry not visible after expireAt, during refresh and after refresh",
-            c.containsKey(1));
-          await(() -> getInfo().getRefreshCount() == 1);
-        }
-      }).expectMaybe(new Runnable() {
-        @Override
-        public void run() {
-          assertEquals(1, getInfo().getSize());
-          assertFalse("Still invisible", c.containsKey(1));
-          c.expireAt(1, ExpiryTimeValues.ETERNAL);
-          assertTrue("Visible, when expiry extended", c.containsKey(1));
-          assertEquals(4711, (int) c.peek(1));
-          assertEquals(1, getInfo().getSize());
-          assertEquals(1, getInfo().getRefreshCount());
-          c.expireAt(1, ExpiryTimeValues.REFRESH);
-          assertEquals(1, getInfo().getSize());
-        }
-      }).concludesMaybe(() -> {
+      .perform(() -> {
+        c.expireAt(1, -millis());
+        assertFalse(
+          "entry not visible after expireAt, during refresh and after refresh",
+          c.containsKey(1));
+        await(() -> getInfo().getRefreshCount() == 1);
+      }).expectMaybe(() -> {
+        assertEquals(1, getInfo().getSize());
+        assertFalse("Still invisible", c.containsKey(1));
+        c.expireAt(1, ExpiryTimeValues.ETERNAL);
+        assertTrue("Visible, when expiry extended", c.containsKey(1));
+        assertEquals(4711, (int) c.peek(1));
+        assertEquals(1, getInfo().getSize());
+        assertEquals(1, getInfo().getRefreshCount());
+        c.expireAt(1, ExpiryTimeValues.REFRESH);
+        assertEquals(1, getInfo().getSize());
         await(() -> getInfo().getRefreshCount() == 2);
         assertFalse("Invisible", c.containsKey(1));
         assertEquals(4712, (int) c.get(1));
       });
-
   }
 
   @Test

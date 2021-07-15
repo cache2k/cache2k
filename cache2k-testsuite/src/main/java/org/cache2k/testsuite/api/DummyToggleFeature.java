@@ -26,6 +26,7 @@ import org.cache2k.config.ToggleFeature;
 public class DummyToggleFeature extends ToggleFeature {
 
   @Override
-  protected void doEnlist(CacheBuildContext<?, ?> ctx) {
+  protected <K, V> void doEnlist(CacheBuildContext<K, V> ctx) {
   }
+
 }
