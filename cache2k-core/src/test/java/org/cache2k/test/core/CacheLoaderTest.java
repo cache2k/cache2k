@@ -1049,6 +1049,7 @@ public class CacheLoaderTest extends TestingBase {
       startedLoadRequests++;
       cb = pending.putIfAbsent(key, cb);
       assertNull("no request pending for " + key, cb);
+      notifyAll();
     }
     public void put(K key, AsyncBulkCacheLoader.BulkCallback<K, V> cb) {
       put(key, new BulkCallbackWrapper<K, V>(key, cb));
@@ -1150,6 +1151,13 @@ public class CacheLoaderTest extends TestingBase {
         });
       }
     });
+    CompletableFuture<Void> reqA = cache.loadAll(asList(9));
+    buffer.assertStarted(9);
+    CompletableFuture<Void> reqB = cache.loadAll(asList(8, 9));
+    buffer.bulkComplete(9);
+    buffer.bulkComplete(8);
+    assertTrue("completed in our thread", reqA.isDone());
+    await("completed via executor", () -> reqB.isDone());
     CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
     buffer.assertStarted(1, 2, 3);
     CompletableFuture<Void> req2 = cache.loadAll(asList(1, 2, 3));
@@ -1165,8 +1173,8 @@ public class CacheLoaderTest extends TestingBase {
     assertTrue("completed in our thread", req3.isDone());
     Map<Integer, Integer> res = cache.getAll(asList(1, 2, 3, 4, 5));
     buffer.bulkComplete(6, 7);
-    assertEquals(7, buffer.getStartedLoadRequests());
-    assertEquals(3, bulkRequests.get());
+    assertEquals(9, buffer.getStartedLoadRequests());
+    assertEquals(5, bulkRequests.get());
   }
 
   @Test
@@ -1218,8 +1226,8 @@ public class CacheLoaderTest extends TestingBase {
       .isInstanceOf(CacheLoaderException.class);
   }
 
-  @Test @Ignore
-  public void asyncBulkLoader_enforceSingleLoad() throws InterruptedException {
+  @Test
+  public void asyncBulkLoader_enforceSingleLoad() {
     AtomicInteger bulkRequests = new AtomicInteger();
     AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
     Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
@@ -1242,6 +1250,7 @@ public class CacheLoaderTest extends TestingBase {
     buffer.bulkComplete(1, 3);
     buffer.complete(4);
     exe.join();
+    assertEquals(2, bulkRequests.get());
   }
 
   @Test
@@ -1403,6 +1412,52 @@ public class CacheLoaderTest extends TestingBase {
   private void completeWithIdentMapping(java.util.Set<Integer> keys, AsyncBulkCacheLoader.BulkCallback<Integer, Integer> callback) {
     Map<Integer, Integer> result = buildIdentMap(keys);
     callback.onLoadSuccess(result);
+  }
+
+  @Test
+  public void asyncBulkLoaderContext() throws ExecutionException, InterruptedException {
+    AtomicInteger checkCount = new AtomicInteger();
+    AtomicReference<Cache> cacheRef = new AtomicReference<>();
+    long t = millis();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader((keys, context, callback) -> {
+          assertTrue(t <= context.getStartTime());
+          assertTrue(keys == context.getKeys());
+          assertNotNull(context.getExecutor());
+          assertNotNull(context.getLoaderExecutor());
+          assertNotNull(context.getContextMap());
+          assertSame(cacheRef.get(), context.getCache());
+          assertSame(callback, context.getCallback());
+          for (Integer key : keys) {
+            callback.onLoadSuccess(key, key);
+          }
+          checkCount.incrementAndGet();
+        });
+      }
+    });
+    cacheRef.set(c);
+    c.get(123);
+    assertEquals("Check context from default single load implementation in API",
+      1, checkCount.get());
+    c.loadAll(asList(1, 2, 3)).get();
+    assertEquals("Check context of bulk request",2, checkCount.get());
+  }
+
+  @Test
+  public void asyncBulkLoaderDuplicateKeyRequests() throws ExecutionException, InterruptedException {
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader((keys, context, callback) -> { throw new ExpectedException(); })
+        .resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
+      }
+    });
+    assertThatCode(() -> c.getAll(asList(1, 1, 1, 1)))
+      .isInstanceOf(CacheLoaderException.class);
+    assertThatCode(() -> c.getAll(asList(1, 1, 1, 1)))
+      .isInstanceOf(CacheLoaderException.class);
   }
 
   @Test

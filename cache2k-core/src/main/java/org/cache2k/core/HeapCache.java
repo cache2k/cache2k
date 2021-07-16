@@ -1569,19 +1569,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         map.put(extractKeyObj(e), e.getValueOrException());
       }
     }
-    return convertValueMap2(map);
+    return convertValueMap(map);
   }
 
-  public Map<K, V> convertValueMap(Map<K, ExaminationEntry<K, V>> map) {
-    return new MapValueConverterProxy<K, V, ExaminationEntry<K, V>>(map) {
-      @Override
-      protected V convert(ExaminationEntry<K, V> v) {
-        return returnValue(v.getValueOrException());
-      }
-    };
-  }
-
-  public Map<K, V> convertValueMap2(Map<K, V> map) {
+  public Map<K, V> convertValueMap(Map<K, V> map) {
     return new MapValueConverterProxy<K, V, V>(map) {
       @Override
       protected V convert(V v) {
@@ -1607,7 +1598,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         map.put(k, e.getValueOrException());
       }
     }
-    return convertValueMap2(map);
+    return convertValueMap(map);
   }
 
   public void putAll(Map<? extends K, ? extends V> valueMap) {

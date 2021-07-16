@@ -495,13 +495,17 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   /**
    * Check for fresh data of the requested keys is available in the heap and collect it.
+   * The requested keys might contains duplicates, so keep track of already processed
+   * keys.
    *
    * @return missing keys that need further processing
    */
   private Set<K> getAllPrescreen(
     Iterable<? extends K> requestedKeys, BulkResultCollector<K, V> collect) {
     Set<K> missingKeys = new HashSet<>();
+    Set<K> processedKeys = new HashSet<>();
     for (K key : requestedKeys) {
+      if (processedKeys.contains(key)) { continue; }
       Entry<K, V> e = lookupQuick(key);
       if (e != null) {
         if (e.hasFreshData(getClock())) {
@@ -513,6 +517,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       } else {
         missingKeys.add(key);
       }
+      processedKeys.add(key);
     }
     return missingKeys;
   }

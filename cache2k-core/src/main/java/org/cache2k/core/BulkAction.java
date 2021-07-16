@@ -116,7 +116,7 @@ public abstract class BulkAction<K, V, R> implements
    */
   private void startRemaining() {
     while (!tryStartAllAndProcessPendingIo()) {
-      if (startSingleActionWithDelay()) {
+      if (startSingleActionWithBlocking()) {
         return;
       }
     }
@@ -159,13 +159,13 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   /**
-   * All actions were tried but no action could be started without delay.
-   * Start a single action. The processing will proceed as soon as the
-   * ongoing operation finishes.
+   * All actions were tried but no action could be started without blocking.
+   * Start a single action. The bulk processing of the remaining keys will
+   * proceed as soon as the ongoing operation finishes.
    *
-   * @return true if callback is pending or completed
+   * @return {@code true} if callback is pending or completed
    */
-  private boolean startSingleActionWithDelay() {
+  private boolean startSingleActionWithBlocking() {
     int alreadyCompleted = completedCount;
     for (EntryAction<K, V, R> action : toStart) {
       action.setBulkMode(false);
@@ -177,8 +177,7 @@ public abstract class BulkAction<K, V, R> implements
       triggerComplete();
       return true;
     }
-    boolean callbackPending =
-      alreadyCompleted == completedCount;
+    boolean callbackPending = alreadyCompleted == completedCount;
     return callbackPending;
   }
 
@@ -206,16 +205,6 @@ public abstract class BulkAction<K, V, R> implements
     } else {
       loader.load(key, context, callback);
     }
-  }
-
-  private void checkPresent(Object action) {
-    if (action == null) {
-      wrongCallback();
-    }
-  }
-
-  private void wrongCallback() {
-    throw new IllegalArgumentException("Callback key not part of request or already processed");
   }
 
   /**
@@ -278,11 +267,10 @@ public abstract class BulkAction<K, V, R> implements
     synchronized (this) {
       boolean present = toLoad.remove(key);
       if (!present) {
-        wrongCallback();
+        throw new IllegalStateException("Callback key not part of request or already processed");
       }
     }
     EntryAction<K, V, R> action = key2action.get(key);
-    checkPresent(action);
     action.onLoadSuccess(value);
   }
 
@@ -402,8 +390,11 @@ public abstract class BulkAction<K, V, R> implements
 
     @Override
     public long getStartTime() {
-      K firstKey = keys.iterator().next();
-      return key2action.get(firstKey).getStartTime();
+      long t = Long.MAX_VALUE;
+      for (K key : keys) {
+        t = Math.min(t, key2action.get(key).getStartTime());
+      }
+      return t;
     }
 
     @Override
