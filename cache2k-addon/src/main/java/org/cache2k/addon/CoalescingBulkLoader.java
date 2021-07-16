@@ -28,6 +28,7 @@ import org.cache2k.operation.TimeReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, AutoCloseable {
 
   private final long maxDelayMillis;
-  private final int maxLoadSize;
+  private final int maxBatchSize;
   private final AsyncBulkCacheLoader<K, V> forwardingLoader;
   private final TimeReference timeReference;
   private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
@@ -54,11 +55,27 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
   private final Queue<Request<K, V>> pending = new ConcurrentLinkedQueue<>();
   private ScheduledFuture<?> schedule = null;
 
-  public CoalescingBulkLoader(
-    AsyncBulkCacheLoader<K, V> forwardingLoader, TimeReference timeReference,
-    long maxDelayMillis, int maxLoadSize) {
+  /**
+   * Constructor using the default time reference {@link TimeReference#DEFAULT}
+   * @param forwardingLoader requests are forwarded to this loader
+   * @param maxDelayMillis see {@link CoalescingBulkLoaderConfig.Builder#maxDelay(long, TimeUnit)}                        
+   * @param maxBatchSize see {@link CoalescingBulkLoaderConfig.Builder#maxBatchSize(int)}
+   */
+  public CoalescingBulkLoader(AsyncBulkCacheLoader<K, V> forwardingLoader, long maxDelayMillis,
+                              int maxBatchSize) {
+    this(forwardingLoader, TimeReference.DEFAULT, maxDelayMillis, maxBatchSize);
+  }
+
+  /**
+   * Constructor using the specified time reference instance.
+   * @param timeReference if the cache is using a different time reference, the instance is
+   *                      used to translate to milli seconds via {@link TimeReference#toMillis(long)}
+   */
+  public CoalescingBulkLoader(AsyncBulkCacheLoader<K, V> forwardingLoader,
+                              TimeReference timeReference, long maxDelayMillis, int maxBatchSize) {
+    Objects.requireNonNull(forwardingLoader, "forwardingLoader");
     this.maxDelayMillis = maxDelayMillis;
-    this.maxLoadSize = maxLoadSize;
+    this.maxBatchSize = maxBatchSize;
     this.forwardingLoader = forwardingLoader;
     this.timeReference = timeReference;
   }
@@ -73,7 +90,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
     }
     int sizeToAdd = keys.size();
     long totalSize = queueSize.addAndGet(sizeToAdd);
-    if (totalSize >= maxLoadSize) {
+    if (totalSize >= maxBatchSize) {
       doLoad();
     } else if (totalSize == sizeToAdd) {
       startDelay();
@@ -149,7 +166,18 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
 
   private synchronized void startDelay() {
     if (schedule == null && queueSize.get() > 0) {
-      schedule = timer.schedule(this::doLoad, maxDelayMillis, TimeUnit.MILLISECONDS);
+      schedule = timer.schedule(this::timerEvent, maxDelayMillis, TimeUnit.MILLISECONDS);
+    }
+  }
+
+  /**
+   * Only execute
+   */
+  private synchronized void timerEvent() {
+    if (schedule != null) {
+      schedule.cancel(false);
+      schedule = null;
+      callLoader();
     }
   }
 
@@ -158,10 +186,14 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       schedule.cancel(false);
       schedule = null;
     }
+    callLoader();
+  }
+
+  private void callLoader() {
     long sizeRemaining;
     do {
       ConcurrentMap<K, BulkLoadContext<K, V>> requestMap = new ConcurrentHashMap<>();
-      for (int i = 0; i < maxLoadSize; i++) {
+      for (int i = 0; i < maxBatchSize; i++) {
         Request<K, V> rq = pending.poll();
         if (rq == null) {
           break;
@@ -170,12 +202,12 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       }
       sizeRemaining = queueSize.addAndGet(-requestMap.size());
       startLoad(requestMap);
-    } while(sizeRemaining >= maxLoadSize);
+    } while(sizeRemaining >= maxBatchSize);
     Request rq = pending.peek();
     if (rq != null) {
       long startTime = timeReference.toMillis(rq.context.getStartTime());
       long now = timeReference.toMillis(timeReference.millis());
-      schedule = timer.schedule(this::doLoad, startTime + maxDelayMillis - now, TimeUnit.MILLISECONDS);
+      schedule = timer.schedule(this::timerEvent, startTime + maxDelayMillis - now, TimeUnit.MILLISECONDS);
     }
   }
 

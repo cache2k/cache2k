@@ -32,22 +32,27 @@ public class CoalescingBulkLoaderConfig
   implements ConfigSection<CoalescingBulkLoaderConfig, CoalescingBulkLoaderConfig.Builder> {
 
   private long maxDelay = 100;
-  private int maxLoadSize = 100;
+  private int maxBatchSize = 100;
 
   public long getMaxDelay() {
     return maxDelay;
   }
 
+  /**
+   * Delay in milliseconds.
+   *
+   * @see Builder#maxDelay(long, TimeUnit)
+   */
   public void setMaxDelay(long maxDelay) {
     this.maxDelay = maxDelay;
   }
 
-  public int getMaxLoadSize() {
-    return maxLoadSize;
+  public int getMaxBatchSize() {
+    return maxBatchSize;
   }
 
-  public void setMaxLoadSize(int maxLoadSize) {
-    this.maxLoadSize = maxLoadSize;
+  public void setMaxBatchSize(int maxBatchSize) {
+    this.maxBatchSize = maxBatchSize;
   }
 
   @Override
@@ -64,15 +69,19 @@ public class CoalescingBulkLoaderConfig
     }
 
     /**
-     * Timespan a load request is delayed before its sent to the loader.
+     * Maximum timespan a load request may be delayed before its sent to the loader.
      */
     public Builder maxDelay(long duration, TimeUnit unit) {
       config.setMaxDelay(unit.toMillis(duration));
       return this;
     }
 
-    public Builder maxLoadSize(int v) {
-      config.setMaxLoadSize(v);
+    /**
+     * If the number of entries waiting for sending to the loader is reached the
+     * loader will be called even the delay timespan is not reached yet.
+     */
+    public Builder maxBatchSize(int v) {
+      config.setMaxBatchSize(v);
       return this;
     }
 

@@ -35,8 +35,7 @@ import org.cache2k.processor.MutableCacheEntry;
 public interface TimeReference {
 
   /**
-   * Default implementation using {@link System#currentTimeMillis()} as
-   * time reference.
+   * Default implementation using {@link System#currentTimeMillis()} as time reference.
    */
   final TimeReference DEFAULT = new TimeReference() {
     @Override
@@ -57,8 +56,8 @@ public interface TimeReference {
    * <p>It is possible to use other time scales and references (e.g. nano seconds). In
    * this case the method {@link #toMillis(long)} needs to be implemented. All times in the
    * cache API, e.g. {@link MutableCacheEntry#getExpiryTime()} or in
-   * {@link org.cache2k.io.AdvancedCacheLoader#load(Object, long, CacheEntry)} be based on the
-   * time defined here. That may lead to confusion and should be used with caution.
+   * {@link org.cache2k.io.AdvancedCacheLoader#load(Object, long, CacheEntry)} are based on the
+   * time defined here.
    */
   long millis();
 

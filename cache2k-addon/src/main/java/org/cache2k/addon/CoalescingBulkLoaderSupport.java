@@ -60,7 +60,7 @@ public class CoalescingBulkLoaderSupport extends ToggleFeature
       CoalescingBulkLoaderConfig config =
         ctx.getConfig().getSections().getSection(CoalescingBulkLoaderConfig.class, DEFAULT_CONFIG);
       return new CoalescingBulkLoader<K, V>((AsyncBulkCacheLoader<K, V>) loader, buildContext.getTimeReference(),
-        config.getMaxDelay(), config.getMaxLoadSize());
+        config.getMaxDelay(), config.getMaxBatchSize());
     };
     ctx.getConfig().setAsyncLoader(xy);
   }
