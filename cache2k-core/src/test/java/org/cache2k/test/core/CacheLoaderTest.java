@@ -55,6 +55,7 @@ import org.junit.rules.Timeout;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -1073,15 +1074,19 @@ public class CacheLoaderTest extends TestingBase {
      * Complete with bulk callback, expecting all keys are within a single bulk request.
      */
     public void bulkComplete(K... keys) {
+      AsyncBulkCacheLoader.BulkCallback<K, V> cb;
       Map<K, V> map = new HashMap<>();
-      K key = keys[0];
-      AsyncBulkCacheLoader.BulkCallback<K, V> cb = getBulkCallback(key);
-      map.put(key, loader.apply(key));
-      for (int i = 1; i < keys.length; i++) {
-        key = keys[i];
-        AsyncBulkCacheLoader.BulkCallback<K, V> cb2 = getBulkCallback(key);
-        assertSame("belongs to same bulk request", cb, cb2);
+      synchronized (this) {
+        K key = keys[0];
+        cb = getBulkCallback(key);
         map.put(key, loader.apply(key));
+        for (int i = 1; i < keys.length; i++) {
+          key = keys[i];
+          AsyncBulkCacheLoader.BulkCallback<K, V> cb2 = getBulkCallback(key);
+          assertSame("belongs to same bulk request", cb, cb2);
+          map.put(key, loader.apply(key));
+        }
+        for (K k : keys) { pending.remove(k); }
       }
       cb.onLoadSuccess(map);
     }
@@ -1247,10 +1252,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader(keys -> {
           bulkRequests.incrementAndGet();
-          Map<Integer, Integer> result = new HashMap<>();
-          for (Integer key : keys) {
-            result.put(key, key);
-          }
+          Map<Integer, Integer> result = buildIdentMap(keys);
           return result;
         });
       }
@@ -1280,10 +1282,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader(keys -> {
           bulkRequests.incrementAndGet();
-          Map<Integer, Integer> result = new HashMap<>();
-          for (Integer key : keys) {
-            result.put(key, key);
-          }
+          Map<Integer, Integer> result = buildIdentMap(keys);
           return result;
         });
       }
@@ -1307,10 +1306,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader(keys -> {
           bulkRequests.incrementAndGet();
-          Map<Integer, Integer> result = new HashMap<>();
-          for (Integer key : keys) {
-            result.put(key, key);
-          }
+          Map<Integer, Integer> result = buildIdentMap(keys);
           return result;
         });
       }
@@ -1329,10 +1325,7 @@ public class CacheLoaderTest extends TestingBase {
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader(keys -> {
           bulkRequests.incrementAndGet();
-          Map<Integer, Integer> result = new HashMap<>();
-          for (Integer key : keys) {
-            result.put(key, key);
-          }
+          Map<Integer, Integer> result = buildIdentMap(keys);
           return result;
         });
       }
@@ -1358,6 +1351,58 @@ public class CacheLoaderTest extends TestingBase {
       .isInstanceOf(EntryProcessingException.class)
       .getCause()
       .isInstanceOf(ExpectedException.class);
+  }
+
+  public Map<Integer, Integer> buildIdentMap(Set<? extends Integer> keys) {
+    Map<Integer, Integer> result = new HashMap<>();
+    for (Integer key : keys) {
+      result.put(key, key);
+    }
+    return result;
+  }
+
+  @Test
+  public void asyncBulkLoader_invokeAll() throws Exception {
+    AtomicInteger bulkRequests = new AtomicInteger();
+    Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader((keys, context, callback) -> {
+          bulkRequests.incrementAndGet();
+          context.getExecutor().execute(() ->  completeWithIdentMapping(keys, callback));
+        });
+      }
+    });
+    checksWithInvokeAll(bulkRequests, cache);
+  }
+
+  private void checksWithInvokeAll(AtomicInteger bulkRequests, Cache<Integer, Integer> cache) throws InterruptedException, ExecutionException {
+    CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
+    Map<Integer, EntryProcessingResult<Integer>> result =
+      cache.invokeAll(asList(3, 4, 5), entry -> entry.getValue());
+    req1.get();
+    Map<Integer, EntryProcessingResult<Integer>> result2 =
+      cache.invokeAll(asList(1, 2, 3, 4, 5), entry -> entry.getValue());
+    assertEquals(5, target.info().getLoadCount());
+    assertEquals("number of bulk requests",2, bulkRequests.get());
+    assertEquals(5, result2.size());
+    assertEquals((Integer) 2, result2.get(2).getResult());
+    assertNull(result2.get(2).getException());
+    Map<Integer, EntryProcessingResult<Integer>> result3 =
+      cache.invokeAll(asList(1, 2, 3), entry -> { throw new ExpectedException(); });
+    assertEquals(3, result3.size());
+    assertThat(result3.get(2).getException())
+      .as("Propagates exception")
+      .isInstanceOf(ExpectedException.class);
+    assertThatCode(() -> result3.get(2).getResult())
+      .isInstanceOf(EntryProcessingException.class)
+      .getCause()
+      .isInstanceOf(ExpectedException.class);
+  }
+
+  private void completeWithIdentMapping(java.util.Set<Integer> keys, AsyncBulkCacheLoader.BulkCallback<Integer, Integer> callback) {
+    Map<Integer, Integer> result = buildIdentMap(keys);
+    callback.onLoadSuccess(result);
   }
 
   @Test

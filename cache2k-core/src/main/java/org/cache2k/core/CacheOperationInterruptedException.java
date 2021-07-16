@@ -37,7 +37,7 @@ public class CacheOperationInterruptedException extends CacheException {
     throw new CacheOperationInterruptedException(ex);
   }
 
-  private CacheOperationInterruptedException(InterruptedException original) {
+  public CacheOperationInterruptedException(InterruptedException original) {
     super(original);
   }
 }

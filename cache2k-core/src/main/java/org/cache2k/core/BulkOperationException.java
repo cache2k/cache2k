@@ -29,6 +29,6 @@ public class BulkOperationException extends CacheException {
 
   public BulkOperationException(int exceptionCount, int totalOperationsCount, Throwable cause) {
     super(exceptionCount + " out of " + totalOperationsCount +
-      "completed with exception, one as cause", cause);
+      " completed with exception, one as cause", cause);
   }
 }
