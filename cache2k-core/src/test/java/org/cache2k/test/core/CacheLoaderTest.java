@@ -751,6 +751,22 @@ public class CacheLoaderTest extends TestingBase {
     reload(c, 1);
   }
 
+  @Test(expected = IllegalStateException.class)
+  public void exceptionOnEntryAccessOutSideProcessing() {
+    AtomicReference<AsyncCacheLoader.Context<Integer, Integer>> contextRef = new AtomicReference<>();
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+          contextRef.set(ctx);
+          callback.onLoadSuccess(key);
+        });
+      }
+    });
+    Integer v = c.get(1);
+    contextRef.get().getCurrentEntry();
+  }
+
   @Test
   public void testAsyncLoaderContextProperties_withException() {
     AtomicInteger loaderCalled = new AtomicInteger();

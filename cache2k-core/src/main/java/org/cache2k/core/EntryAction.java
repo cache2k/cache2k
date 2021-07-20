@@ -183,7 +183,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   /**
    * Action is completed
    */
-  private boolean completed;
+  private volatile boolean completed;
 
   /**
    * Abort if the entry is currently processing and we cannot proceed with
@@ -324,8 +324,15 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     return mutationStartTime;
   }
 
+  /**
+   * Returns the heap entry directly. This is only consistent while the entry
+   * is blocked for processing.
+   */
   @Override
   public CacheEntry<K, V> getCurrentEntry() {
+    if (completed) {
+      throw new IllegalStateException("Entry in context only valid while processing");
+    }
     return heapEntry.isValidOrExpiredAndNoException() ? heapEntry : null;
   }
 
@@ -1344,9 +1351,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * Execute any callback or other actions waiting for this one to complete.
    * It is safe to access {@link #nextAction} here, also we don't hold the entry lock
    * since the entry does not point on this action any more.
-   *
-   * <p>This is pretty basic and maybe needs more work.
-   * TODO: what about an exception in a callback? send callbacks with another executor?
    */
   public void completeProcessCallbacks() {
     completed = true;
