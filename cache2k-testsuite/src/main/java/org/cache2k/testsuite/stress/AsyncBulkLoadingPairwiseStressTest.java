@@ -60,15 +60,12 @@ public class AsyncBulkLoadingPairwiseStressTest extends PairwiseTestingBase {
       @Override
       public <K, V> Cache2kBuilder<K, V> augment(Cache2kBuilder<K, V> b) {
         return b.bulkLoader((keys, context, callback) -> {
-          context.getExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-              Map<K, V> map = new HashMap<>();
-              for (K key : keys) {
-                map.put(key, (V) key);
-              }
-              callback.onLoadSuccess(map);
+          context.getExecutor().execute(() -> {
+            Map<K, V> map = new HashMap<>();
+            for (K key : keys) {
+              map.put(key, (V) key);
             }
+            callback.onLoadSuccess(map);
           });
         });
       }
@@ -77,22 +74,18 @@ public class AsyncBulkLoadingPairwiseStressTest extends PairwiseTestingBase {
       @Override
       public <K, V> Cache2kBuilder<K, V> augment(Cache2kBuilder<K, V> b) {
         return b.bulkLoader((keys, context, callback) -> {
-          context.getExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-              List<K> keyList = new ArrayList<>();
-              keyList.addAll(keys);
-              int idx = Math.abs(System.identityHashCode(keyList)) % keyList.size();
-              K separateKey = keyList.get(idx);
-              System.err.println(separateKey);
-              callback.onLoadSuccess(separateKey, (V) separateKey);
-              keyList.remove(idx);
-              Map<K, V> map = new HashMap<>();
-              for (K key : keyList) {
-                map.put(key, (V) key);
-              }
-              callback.onLoadSuccess(map);
+          context.getExecutor().execute(() -> {
+            List<K> keyList = new ArrayList<>();
+            keyList.addAll(keys);
+            int idx = Math.abs(System.identityHashCode(keyList)) % keyList.size();
+            K separateKey = keyList.get(idx);
+            callback.onLoadSuccess(separateKey, (V) separateKey);
+            keyList.remove(idx);
+            Map<K, V> map = new HashMap<>();
+            for (K key : keyList) {
+              map.put(key, (V) key);
             }
+            callback.onLoadSuccess(map);
           });
         });
       }
@@ -157,9 +150,7 @@ public class AsyncBulkLoadingPairwiseStressTest extends PairwiseTestingBase {
       keySet = fromTo(key, key + 5);
       cache.removeAll(keySet);
     }
-    public CompletableFuture<Void> actor1() {
-      return cache.loadAll(keySet);
-    }
+    public CompletableFuture<Void> actor1() { return cache.loadAll(keySet); }
     public CompletableFuture<Void> actor2() {
       return cache.loadAll(keySet);
     }

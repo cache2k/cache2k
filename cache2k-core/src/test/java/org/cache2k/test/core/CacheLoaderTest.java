@@ -684,7 +684,7 @@ public class CacheLoaderTest extends TestingBase {
    * Execute loader in another thread.
    */
   @Test
-  public void testAsyncLoaderLoadViaExecutor() {
+  public void asyncLoaderLoadViaExecutor() {
     AtomicInteger loaderCalled = new AtomicInteger();
     AtomicInteger loaderExecuted = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
@@ -710,7 +710,7 @@ public class CacheLoaderTest extends TestingBase {
    * Call the callback within the loading thread.
    */
   @Test
-  public void testAsyncLoaderLoadDirect() {
+  public void asyncLoaderLoadDirect() {
     AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
@@ -728,8 +728,33 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals(1, (int) v);
   }
 
+  /**
+   * Test whether no loader executor is used
+   */
   @Test
-  public void testAsyncLoaderContextProperties() {
+  public void asyncLoader_noLoaderExecutorUsed() throws ExecutionException, InterruptedException {
+    AtomicInteger executorUsed = new AtomicInteger();
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+        System.err.println(key);
+        Thread.dumpStack();
+        callback.onLoadSuccess(key);
+      })
+      .loaderExecutor(command -> {
+        executorUsed.incrementAndGet();
+        fail("loader executor use unexpected");
+      })
+      .refreshAhead(true)
+      .expireAfterWrite(1, TimeUnit.MILLISECONDS));
+    Integer v = c.get(1);
+    c.loadAll(asList(1, 2, 3, 4, 5)).get();
+    c.reloadAll(asList(1, 2, 3, 4, 5)).get();
+    c.invokeAll(asList(2, 3, 4), e -> e.setExpiryTime(ExpiryTimeValues.REFRESH));
+    assertFalse(executorUsed.get() > 0);
+  }
+
+  @Test
+  public void asyncLoaderContextProperties() {
     AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
@@ -1321,6 +1346,22 @@ public class CacheLoaderTest extends TestingBase {
     assertEquals(2, bulkRequests.get());
     Map<Integer, Integer> result3 = cache.getAll(asList(4, 5, 6, 7));
     result3.forEach((k, v) -> assertEquals((int) k, (int) v));
+  }
+
+  @Test
+  public void bulkLoader_getAllOnly() throws Exception {
+    AtomicInteger bulkRequests = new AtomicInteger();
+    Cache<Integer, Integer> cache = target.cache(new CacheRule.Specialization<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.bulkLoader(keys -> {
+          bulkRequests.incrementAndGet();
+          Map<Integer, Integer> result = buildIdentMap(keys);
+          return result;
+        });
+      }
+    });
+    Map<Integer, Integer> result = cache.getAll(asList(3, 4, 5));
   }
 
   @Test
