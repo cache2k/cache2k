@@ -29,7 +29,6 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.log.Log;
 import org.cache2k.core.util.SimulatedClock;
-import org.cache2k.integration.FunctionalCacheLoader;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.testing.category.FastTests;
 import static org.cache2k.test.core.StaticUtil.*;
@@ -455,12 +454,7 @@ public class Cache2kBuilderTest {
   @Test(expected = IllegalArgumentException.class)
   public void refreshAheadButNoExpiry() {
     Cache c = Cache2kBuilder.forUnknownTypes()
-      .loader(new FunctionalCacheLoader() {
-        @Override
-        public Object load(final Object key) throws Exception {
-          return null;
-        }
-      })
+      .loader(key -> null)
       .refreshAhead(true).build();
     c.close();
   }

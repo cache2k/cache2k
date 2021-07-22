@@ -42,9 +42,7 @@ import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
-import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
-import org.cache2k.integration.LoadDetail;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.operation.Weigher;
@@ -53,7 +51,6 @@ import org.cache2k.processor.MutableCacheEntry;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -439,55 +436,6 @@ public class Cache2kBuilder<K, V>
    * are wrapped into a {@link CacheLoaderException}.
    */
   public final Cache2kBuilder<K, V> exceptionPropagator(
-    final org.cache2k.integration.ExceptionPropagator<K> ep) {
-    Objects.requireNonNull(ep);
-    ExceptionPropagator<K, V> newPropagator = new ExceptionPropagator<K, V>() {
-      @Override
-      public RuntimeException propagateException(LoadExceptionInfo<K, V> newInfo) {
-        org.cache2k.integration.ExceptionInformation oldInfo =
-          new org.cache2k.integration.ExceptionInformation() {
-          @Override
-          public org.cache2k.integration.ExceptionPropagator getExceptionPropagator() {
-            return ep;
-          }
-
-          @Override
-          public Throwable getException() {
-            return newInfo.getException();
-          }
-
-          @Override
-          public int getRetryCount() {
-            return newInfo.getRetryCount();
-          }
-
-          @Override
-          public long getSinceTime() {
-            return newInfo.getSinceTime();
-          }
-
-          @Override
-          public long getLoadTime() {
-            return newInfo.getLoadTime();
-          }
-
-          @Override
-          public long getUntil() {
-            return newInfo.getUntil();
-          }
-        };
-        return ep.propagateException(newInfo.getKey(), oldInfo);
-      }
-    };
-    exceptionPropagator(newPropagator);
-    return this;
-  }
-
-  /**
-   * Sets customization for propagating loader exceptions. By default loader exceptions
-   * are wrapped into a {@link CacheLoaderException}.
-   */
-  public final Cache2kBuilder<K, V> exceptionPropagator(
     ExceptionPropagator<? super K, ? super V> ep) {
     cfg().setExceptionPropagator(wrapCustomizationInstance(ep));
     return this;
@@ -496,59 +444,6 @@ public class Cache2kBuilder<K, V>
   /** Wraps to factory but passes on nulls. */
   private static <T> CustomizationReferenceSupplier<T> wrapCustomizationInstance(T obj) {
     return new CustomizationReferenceSupplier<T>(obj);
-  }
-
-  @Deprecated
-  public final Cache2kBuilder<K, V> loader(
-    final org.cache2k.integration.AsyncCacheLoader<K, V> oldLoader) {
-    Objects.requireNonNull(oldLoader);
-    AsyncCacheLoader<K, V> newLoader = new AsyncCacheLoader<K, V>() {
-      @Override
-      public void load(K key, Context<K, V> context, Callback<V> callback) throws Exception {
-        org.cache2k.integration.AsyncCacheLoader.Context<K, V> oldContext =
-          new org.cache2k.integration.AsyncCacheLoader.Context<K, V>() {
-            @Override
-            public long getLoadStartTime() {
-              return context.getStartTime();
-            }
-
-            @Override
-            public K getKey() {
-              return context.getKey();
-            }
-
-            @Override
-            public Executor getExecutor() {
-              return context.getExecutor();
-            }
-
-            @Override
-            public Executor getLoaderExecutor() {
-              return context.getLoaderExecutor();
-            }
-
-            @Override
-            public CacheEntry<K, V> getCurrentEntry() {
-              return context.getCurrentEntry();
-            }
-          };
-        org.cache2k.integration.AsyncCacheLoader.Callback<V> oldCallback =
-          new org.cache2k.integration.AsyncCacheLoader.Callback<V>() {
-          @Override
-          public void onLoadSuccess(V value) {
-            callback.onLoadSuccess(value);
-          }
-
-          @Override
-          public void onLoadFailure(Throwable t) {
-            callback.onLoadFailure(t);
-          }
-        };
-        oldLoader.load(key, oldContext, oldCallback);
-      }
-    };
-    this.loader(newLoader);
-    return this;
   }
 
   /**
@@ -592,31 +487,6 @@ public class Cache2kBuilder<K, V>
 
   public final Cache2kBuilder<K, V> bulkLoader(BulkCacheLoader<K, V> l) {
     loader(l);
-    return this;
-  }
-
-  /**
-   * Enables read through operation and sets a cache loader
-   *
-   * @see CacheLoader for general discussion on cache loaders
-   */
-  @SuppressWarnings("unchecked")
-  @Deprecated
-  public final Cache2kBuilder<K, V> wrappingLoader(AdvancedCacheLoader<K, LoadDetail<V>> l) {
-    cfg().setAdvancedLoader((
-      CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
-    return this;
-  }
-
-  /**
-   * Enables read through operation and sets a cache loader
-   *
-   * @see CacheLoader for general discussion on cache loaders
-   */
-  @SuppressWarnings("unchecked")
-  public final Cache2kBuilder<K, V> wrappingLoader(CacheLoader<K, LoadDetail<V>> l) {
-    cfg().setAdvancedLoader((
-      CustomizationSupplier<AdvancedCacheLoader<K, V>>) (Object) wrapCustomizationInstance(l));
     return this;
   }
 

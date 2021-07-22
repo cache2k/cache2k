@@ -49,7 +49,6 @@ import org.cache2k.core.util.TunableFactory;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.ExceptionPropagator;
-import org.cache2k.integration.RefreshedTimeWrapper;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.processor.EntryProcessor;
 
@@ -1267,11 +1266,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         v = loader.load(extractKeyObj(e), t0, null);
       } else {
         v = loader.load(extractKeyObj(e), t0, e);
-      }
-      if (v instanceof RefreshedTimeWrapper) {
-        RefreshedTimeWrapper<V> wr = (RefreshedTimeWrapper<V>) v;
-        refreshTime = wr.getRefreshTime();
-        v = wr.getValue();
       }
     } catch (Throwable ouch) {
       long t = t0;

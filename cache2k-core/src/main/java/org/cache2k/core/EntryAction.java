@@ -42,7 +42,6 @@ import org.cache2k.core.experimentalApi.AsyncCacheWriter;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
-import org.cache2k.integration.RefreshedTimeWrapper;
 
 import java.util.concurrent.Executor;
 
@@ -737,11 +736,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   private void onLoadSuccessIntern(V v) {
-    if (v instanceof RefreshedTimeWrapper) {
-      RefreshedTimeWrapper<V> wr = (RefreshedTimeWrapper<V>) v;
-      lastRefreshTime = wr.getRefreshTime();
-      v = wr.getValue();
-    }
 
     newValueOrException = v;
     loadCompleted();

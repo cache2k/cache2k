@@ -20,6 +20,7 @@ package org.cache2k.io;
  * #L%
  */
 
+import org.cache2k.CacheException;
 import org.cache2k.CustomizationException;
 
 /**
@@ -40,7 +41,7 @@ import org.cache2k.CustomizationException;
  * @author Jens Wilke
  * @since 2
  */
-public class CacheLoaderException extends org.cache2k.integration.CacheLoaderException {
+public class CacheLoaderException extends CacheException {
 
   public CacheLoaderException(String message) {
     super(message);
