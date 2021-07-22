@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>cache2k-parent</artifactId>
-    <version>2.2-SNAPSHOT</version>
+    <version>2.1.3.Alpha</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>cache2k-java11-parent</artifactId>
-  <version>2.2-SNAPSHOT</version>
+  <version>2.1.3.Alpha</version>
   <name>cache2k Java 11 parent pom</name>
 
   <description>
