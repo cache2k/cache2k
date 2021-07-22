@@ -29,6 +29,9 @@ import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 
 /**
+ * Wraps a configured {@link AsyncBulkCacheLoader} with a {@link CoalescingBulkLoader}
+ * and configures it with {@link CoalescingBulkLoaderConfig}.
+ *
  * @author Jens Wilke
  */
 public class CoalescingBulkLoaderSupport extends ToggleFeature

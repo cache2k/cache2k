@@ -42,6 +42,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Wraps a {@link AsyncBulkCacheLoader} and combines (single) load requests into bulk
+ * requests. Usually a bulk load takes place, when a bulk operation, e.g.
+ * {@link Cache#getAll} is issued. The cache core is producing no bulk requests take
+ * place for refresh, because every expiry is handled individually. This class
+ * coalesces requests into larger chunks.
+ *
+ * <p>Parameters: You may specify how long requests are being delayed and a maximum
+ * of loads coalesced into one batch.
+ *
+ * <p>Usage: Either use the constructor {@link #CoalescingBulkLoader(AsyncBulkCacheLoader, long, int)}
+ * and wrap a loader explicitly, or use the declarative configuration with
+ * {@link CoalescingBulkLoaderSupport}. If in doubt check the test cases.
+ *
  * @author Jens Wilke
  */
 public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, AutoCloseable {

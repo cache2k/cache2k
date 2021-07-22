@@ -26,6 +26,8 @@ import org.cache2k.config.SectionBuilder;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Configuration options for {@link CoalescingBulkLoaderSupport}.
+ *
  * @author Jens Wilke
  */
 public class CoalescingBulkLoaderConfig
