@@ -1027,6 +1027,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       Throwable exception;
       try {
         exception = action.call();
+      } catch (CacheClosedException ignore) {
+        exception = ignore;
       } catch (Throwable internalException) {
         getLog().warn("Loader exception", internalException);
         internalExceptionCnt++;

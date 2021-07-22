@@ -736,8 +736,6 @@ public class CacheLoaderTest extends TestingBase {
     AtomicInteger executorUsed = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(b -> b
       .loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
-        System.err.println(key);
-        Thread.dumpStack();
         callback.onLoadSuccess(key);
       })
       .loaderExecutor(command -> {
