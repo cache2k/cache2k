@@ -97,11 +97,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   long lastRefreshTime;
   long loadStartedTime;
   long loadCompletedTime;
-  private RuntimeException exceptionToPropagate;
-  /** @see #isResultAvailable() */
-  private boolean resultAvailable;
-  private R result;
-
   boolean remove;
   /** Special case of remove, expiry is in the past */
   boolean expiredImmediately;
@@ -190,6 +185,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * this operation. Used by the bulk action.
    */
   private boolean bulkMode;
+
+  private volatile RuntimeException exceptionToPropagate;
+  /** @see #isResultAvailable() */
+  private volatile boolean resultAvailable;
+  private volatile R result;
 
   /**
    * Called on the processing action to enqueue another action
@@ -403,6 +403,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       start();
     } catch (CacheClosedException ignore) {
     } catch (Throwable t) {
+      heapCache.getLog().warn("Exception during entry processing", t);
       heapCache.internalExceptionCnt++;
       throw t;
     }

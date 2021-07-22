@@ -177,7 +177,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
   }
 
-  protected volatile Executor refreshExecutor = new LazyRefreshExecutor();
+  protected volatile Executor refreshExecutor;
 
   /**
    * Create executor only if needed.
@@ -1028,6 +1028,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       try {
         exception = action.call();
       } catch (Throwable internalException) {
+        getLog().warn("Loader exception", internalException);
         internalExceptionCnt++;
         exception = internalException;
       }
@@ -1037,7 +1038,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   /**
-   * Execute with loader executor and back pressure
+   * Execute with loader executor and back pressure.
+   * In case the execution is rejected because there are not enough threads available, the
+   * task is executed in the calling thread to produce back pressure. If callers should never
+   * block upon a {@code loadAll} the executor must have a unbound queue.
    */
   public void executeLoader(Runnable r) {
     try {

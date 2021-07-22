@@ -77,8 +77,7 @@ public abstract class BulkAction<K, V, R> implements
 
   /** Create object and start operation. */
   public BulkAction(HeapCache<K, V> heapCache, InternalCache<K, V> internalCache,
-                    AsyncCacheLoader<K, V> loader,
-                    Set<K> keys, boolean sync) {
+                    AsyncCacheLoader<K, V> loader, Set<K> keys) {
     this.heapCache = heapCache;
     this.internalCache = internalCache;
     this.loader = loader;
@@ -92,7 +91,7 @@ public abstract class BulkAction<K, V, R> implements
     }
     synchronized (this) {
       startRemaining();
-      if (sync) {
+      if (isSyncMode()) {
         loopIfSyncAndComplete();
       }
     }
@@ -105,7 +104,7 @@ public abstract class BulkAction<K, V, R> implements
     while (!toStart.isEmpty()) {
       startRemaining();
     }
-    bulkOperationCompleted();
+    triggerComplete();
   }
 
   /**
@@ -147,13 +146,13 @@ public abstract class BulkAction<K, V, R> implements
     if (someStarted) {
       processPendingIo();
     }
-    boolean allCompletedInSameThread =
-      (completedCount - alreadyCompleted) == (toStart.size() - rejected.size());
-    toStart = rejected;
     if (completedCount == key2action.size()) {
       triggerComplete();
       return true;
     }
+    boolean allCompletedInSameThread =
+      (completedCount - alreadyCompleted) == (toStart.size() - rejected.size());
+    toStart = rejected;
     boolean callbackPending = someStarted && !allCompletedInSameThread;
     return callbackPending;
   }
@@ -358,6 +357,11 @@ public abstract class BulkAction<K, V, R> implements
   protected void bulkOperationCompleted() { }
 
   protected abstract EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self);
+
+  /**
+   * Processing is synchronous e.g. for {@code getAll} no callback is called.
+   */
+  protected boolean isSyncMode() { return false; }
 
   private class MyBulkLoadContext implements AsyncBulkCacheLoader.BulkLoadContext<K, V> {
 

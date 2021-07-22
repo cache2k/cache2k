@@ -717,7 +717,9 @@ public class Cache2kBuilder<K, V>
    * If no separate executor is set via {@link #loaderExecutor(Executor)} the cache will
    * create a separate thread pool used exclusively by it. Defines the maximum number of threads
    * this cache should use for calls to the {@link CacheLoader}. The default is one thread
-   * per available CPU.
+   * per available CPU. If threads are exhausted the executor rejects the execution. If that
+   * happens the cache will carry out load requests in the calling thread or, in case of a refresh,
+   * drop the request.
    *
    * <p>If a separate executor is defined the parameter has no effect.
    *
@@ -835,6 +837,14 @@ public class Cache2kBuilder<K, V>
   /**
    * Thread pool / executor service to use for triggered load operations. If no executor is
    * specified the cache will create a thread pool, if needed.
+   *
+   * <p>The loader thread pool is used by the cache for executing load requests concurrent
+   * to the application, when a {@link Cache#loadAll(Iterable)} is issued. If no bulk loader
+   * is specified the thread pool will be used to carry out load requests in parallel. If an
+   * {@link AsyncCacheLoader} is used, the cache itself does not use the loader executor.
+   *
+   * <p>The executor should reject when not enough threads are available.
+   * In that case the cache will use the calling thread for the load operation.
    *
    * @see #loaderThreadCount(int)
    */

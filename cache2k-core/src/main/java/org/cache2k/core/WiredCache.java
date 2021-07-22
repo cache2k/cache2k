@@ -283,13 +283,14 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         callback.onLoadFailure(ouch);
       }
     };
-    BulkAction<K, V, R> bulkAction = new BulkAction<K, V, R>(heapCache, this, myLoader, keys, true) {
+    BulkAction<K, V, R> bulkAction = new BulkAction<K, V, R>(heapCache, this, myLoader, keys) {
+      @Override protected boolean isSyncMode() { return true; }
       @Override
-      protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
-        return new MyEntryAction<R>(op, key, null) {
+      protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> bulkAction) {
+        return new MyEntryAction<R>(op, key, null, null /* no callback */) {
           @Override
           protected AsyncCacheLoader<K, V> asyncLoader() {
-            return self;
+            return bulkAction;
           }
         };
       }
@@ -308,13 +309,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     Semantic<K, V, R> op, Set<K> keys, boolean completeExceptionally) {
     CompletableFuture<BulkAction<K, V, R>> future = new CompletableFuture<>();
     BulkAction<?, ?, ?> action =
-      new BulkAction<K, V, R>(heapCache, this, asyncLoader, keys, false) {
+      new BulkAction<K, V, R>(heapCache, this, asyncLoader, keys) {
       @Override
-      protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> self) {
-        return new MyEntryAction<R>(op, key, null, self) {
+      protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> bulkAction) {
+        return new MyEntryAction<R>(op, key, null, bulkAction) {
           @Override
           protected AsyncCacheLoader<K, V> asyncLoader() {
-            return self;
+            return bulkAction;
           }
         };
       }
