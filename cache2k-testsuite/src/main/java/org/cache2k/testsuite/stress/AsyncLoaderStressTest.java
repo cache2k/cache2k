@@ -49,7 +49,7 @@ public class AsyncLoaderStressTest {
   public void testVisibility1() {
     Cache<Integer, Integer> c = Cache2kBuilder.of(Integer.class, Integer.class)
         .loader((AsyncCacheLoader<Integer, Integer>)
-          (key, ctx, callback) -> ctx.getLoaderExecutor().execute(
+          (key, ctx, callback) -> ctx.getExecutor().execute(
             () -> callback.onLoadSuccess(key)
           )
         )
