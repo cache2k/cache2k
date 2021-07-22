@@ -66,7 +66,6 @@ public class AsyncLoaderStressTest {
     c.close();
   }
 
-  @Test @Ignore("Java 11 bug")
   public void testCompletableFuture() {
     ThreadingStressTester tst = new ThreadingStressTester();
     Executor ex = Executors.newCachedThreadPool();

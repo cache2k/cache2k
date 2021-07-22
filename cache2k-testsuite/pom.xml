@@ -43,6 +43,19 @@
 
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <testSourceDirectory>${project.build.sourceDirectory}</testSourceDirectory>
+          <testClassesDirectory>${project.build.outputDirectory}</testClassesDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <profiles>
     <profile>
       <id>CheckerFramework</id>

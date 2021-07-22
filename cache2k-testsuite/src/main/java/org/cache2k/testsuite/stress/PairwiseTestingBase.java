@@ -25,18 +25,27 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.pinpoint.stress.pairwise.ActorPairSuite;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * @author Jens Wilke
  */
-@Ignore("Ignore base class with IDE tests")
+@RunWith(Parameterized.class)
 public class PairwiseTestingBase {
 
   public int KEY_STEP = 1000;
   public final BuilderAugmenter augmenter;
+
+  @Parameters
+  public static Iterable<Object[]> data() {
+    return Collections.emptyList();
+  }
 
   public PairwiseTestingBase(Object obj) {
     augmenter = (BuilderAugmenter) obj;
