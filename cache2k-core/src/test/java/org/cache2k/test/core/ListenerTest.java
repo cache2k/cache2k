@@ -45,12 +45,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.cache2k.test.core.StaticUtil.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -741,7 +743,11 @@ public class ListenerTest {
       public void run() {
         cache.put(123, 5);
         assertEquals("created", 1, created.get());
-        TestingBase.reload(cache, 123);
+        try {
+          cache.reloadAll(asList(123)).get();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
         assertEquals("expired", 1, expired.get());
       }
     });
@@ -779,7 +785,11 @@ public class ListenerTest {
         } catch (InterruptedException ignore) {
         }
         assertEquals("created", 1, created.get());
-        TestingBase.reload(cache, 123);
+        try {
+          cache.reloadAll(asList(123)).get();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
         assertEquals("updated", 1, updated.get());
       }
     });

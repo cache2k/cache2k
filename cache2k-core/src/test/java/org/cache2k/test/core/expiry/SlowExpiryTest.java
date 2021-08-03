@@ -31,7 +31,6 @@ import org.cache2k.core.HeapCache;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.io.CacheLoader;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.test.util.Condition;
@@ -52,6 +51,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -405,7 +405,7 @@ public class SlowExpiryTest extends TestingBase {
   }
 
   @Test
-  public void testSuppressExceptionLongExpiryAndReload() {
+  public void testSuppressExceptionLongExpiryAndReload() throws ExecutionException, InterruptedException {
     BasicCacheTest.OccasionalExceptionSource src = new BasicCacheTest.OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MINUTES)
@@ -424,12 +424,7 @@ public class SlowExpiryTest extends TestingBase {
       .loader(src)
       .build();
     c.get(2);
-    syncLoad(new LoaderStarter() {
-      @Override
-      public void startLoad(CacheOperationCompletionListener l) {
-        c.reloadAll(asList(2), l);
-      }
-    });
+    c.reloadAll(asList(2)).get();
     await(new Condition() {
       @Override
       public boolean check() {
@@ -1037,7 +1032,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .build();
     c.put(1, 1);
-    c.reloadAll(asList(1), null);
+    c.reloadAll(asList(1));
     await(new Condition() {
       @Override
       public boolean check() {

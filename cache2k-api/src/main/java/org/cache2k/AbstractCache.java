@@ -76,11 +76,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V computeIfAbsent(K key, Callable<V> callable) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
     throw new UnsupportedOperationException();
   }
@@ -138,18 +133,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   @SuppressWarnings("deprecation")
   @Override
   public void expireAt(K key, long millis) {
-    throw new UnsupportedOperationException();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
-    throw new UnsupportedOperationException();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
     throw new UnsupportedOperationException();
   }
 

@@ -241,22 +241,16 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
       cache.remove(key);
     }
     public Integer actor1() {
-      return cache.computeIfAbsent(key, new Callable<Integer>() {
-        @Override
-        public Integer call() {
-          count.getAndIncrement();
-          return 1;
-        }
+      return cache.computeIfAbsent(key, k -> {
+        count.getAndIncrement();
+        return 1;
       });
     }
     public Integer actor2() {
-      return cache.computeIfAbsent(key, new Callable<Integer>() {
-        @Override
-        public Integer call() {
+      return cache.computeIfAbsent(key, k -> {
           count.getAndIncrement();
           return 2;
-        }
-      });
+        });
     }
     public void check(Integer r1, Integer r2) {
       assertEquals("compute called once", 1, count.get());

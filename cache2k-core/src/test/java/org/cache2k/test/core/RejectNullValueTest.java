@@ -34,6 +34,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.ExecutionException;
+
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 import static org.cache2k.test.core.StaticUtil.*;
@@ -128,11 +131,11 @@ public class RejectNullValueTest {
    * Special rule if expiry policy says NO_CACHE, value is removed.
    */
   @Test
-  public void get_no_cache() {
+  public void get_no_cache() throws ExecutionException, InterruptedException {
     Cache<Integer, Integer> c = target.cache();
     c.put(4, 1);
     assertTrue(c.containsKey(4));
-    reload(c, 4);
+    c.reloadAll(asList(4)).get();
     assertFalse(c.containsKey(4));
   }
 

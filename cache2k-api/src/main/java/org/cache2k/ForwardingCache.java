@@ -82,11 +82,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V computeIfAbsent(K key, Callable<V> callable) {
-    return delegate().computeIfAbsent(key, callable);
-  }
-
-  @Override
   public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
     return delegate().computeIfAbsent(key, function);
   }
@@ -145,18 +140,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   @Override
   public void expireAt(K key, long millis) {
     delegate().expireAt(key, millis);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
-    delegate().loadAll(keys, listener);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener) {
-    delegate().reloadAll(keys, listener);
   }
 
   @Override

@@ -46,7 +46,6 @@ import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
 import org.cache2k.CacheManager;
 import org.cache2k.io.CacheWriter;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
@@ -55,11 +54,9 @@ import org.cache2k.core.log.Log;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -207,50 +204,44 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return execute(key, ops.replace(key, oldValue, newValue));
   }
 
-
-  @Override
-  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
+  public CompletableFuture<Void> loadAll(Iterable<? extends K> keys) {
     checkLoaderPresent();
-    CacheOperationCompletionListener listener =
-      l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     BulkResultCollector<K, V> collect = new BulkResultCollector<>();
     Set<K> keysToLoad = getAllPrescreen(keys, collect);
     CacheLoaderException prescreenException = collect.getAnyLoaderException();
     if (keysToLoad.isEmpty()) {
       if (prescreenException != null) {
-        listener.onException(prescreenException);
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        f.completeExceptionally(prescreenException);
+        return f;
       }
-      listener.onCompleted();
-      return;
-    }
-    if (prescreenException != null) {
-      CacheOperationCompletionListener originalListener = listener;
-      listener = new CacheOperationCompletionListener() {
-        @Override
-        public void onCompleted() {
-          originalListener.onException(prescreenException);
-        }
-
-        @Override
-        public void onException(Throwable exception) {
-          originalListener.onException(exception);
-        }
-      };
+      return CompletableFuture.completedFuture(null);
     }
     if (asyncLoader != null) {
-      forwardLoadCompleted(asyncBulkOp(Operations.GET, keysToLoad, true), listener);
+      return failAnyway(prescreenException,
+        completeWithVoid(asyncBulkOp(Operations.GET, keysToLoad, true)));
     } else {
       if (bulkCacheLoader == null) {
-        loadAllWithSyncLoader(listener, keysToLoad);
+        return failAnyway(prescreenException, loadAllWithSyncLoader(keysToLoad));
       } else {
-        executeSyncBulkOp(Operations.GET, keysToLoad, listener, true);
+        return failAnyway(prescreenException,
+          executeSyncBulkOp(Operations.GET, keysToLoad, true));
       }
     }
   }
 
-  private void executeSyncBulkOp(Semantic operation, Set<K> keys,
-                                 CacheOperationCompletionListener listener,
-                                 boolean propagateLoadException) {
+  private CompletableFuture<Void> failAnyway(CacheLoaderException ex, CompletableFuture<Void> f) {
+    if (ex != null) {
+      CompletableFuture<Void> other = new CompletableFuture<>();
+      f.handle((unused, throwable) -> { other.completeExceptionally(ex); return null; });
+      return other;
+    }
+    return f;
+  }
+
+  private CompletableFuture<Void> executeSyncBulkOp(Semantic operation, Set<K> keys,
+                                                    boolean propagateLoadException) {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     Runnable runnable = () -> {
       Throwable t;
       try {
@@ -263,12 +254,13 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         t = maybeCacheClosedException;
       }
       if (t != null) {
-        listener.onException(t);
+        future.completeExceptionally(t);
       } else {
-        listener.onCompleted();
+        future.complete(null);
       }
     };
     heapCache.executeLoader(runnable);
+    return future;
   }
 
   /**
@@ -321,7 +313,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       }
       @Override
       protected void bulkOperationCompleted() {
-        Throwable exception = completeExceptionally ? getExceptionToPropagate() : null;
+        Throwable exception = completeExceptionally ? getException() : null;
         if (exception != null) {
           future.completeExceptionally(exception);
         } else {
@@ -335,8 +327,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   /**
    * Only sync loader present. Use loader executor to run things in parallel.
    */
-  private void loadAllWithSyncLoader(CacheOperationCompletionListener listener, Set<K> keysToLoad) {
-    OperationCompletion<K> completion = new OperationCompletion<K>(keysToLoad, listener);
+  private CompletableFuture<Void> loadAllWithSyncLoader(Set<K> keysToLoad) {
+    OperationCompletion<K> completion = new OperationCompletion<K>(keysToLoad);
     for (K key : keysToLoad) {
       heapCache.executeLoader(completion, key, () -> {
         EntryAction<K, V, V> action = createEntryAction(key, null, ops.get(key));
@@ -344,44 +336,30 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return action.getException();
       });
     }
+    return completion.getFuture();
   }
 
-  private void forwardLoadCompleted(CompletableFuture<BulkAction<K, V, Void>> future, CacheOperationCompletionListener listener) {
-    future.handle((result, exception) -> {
-      if (exception == null) {
-        CacheLoaderException ex = result.getLoaderException();
-        if (ex != null) {
-          listener.onException(ex);
-        } else {
-          listener.onCompleted();
-        }
-      } else {
-        listener.onException(exception);
-      }
-      return null;
-    });
+  private CompletableFuture<Void> completeWithVoid(CompletableFuture<BulkAction<K, V, Void>> future) {
+    return future.thenApply(action -> (Void) null);
   }
 
   @Override
-  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
+  public CompletableFuture<Void> reloadAll(Iterable<? extends K> keys) {
     checkLoaderPresent();
-    CacheOperationCompletionListener listener =
-      l != null ? l : HeapCache.DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keySet = HeapCache.generateKeySet(keys);
     if (asyncLoader != null) {
-      forwardLoadCompleted(asyncBulkOp((Semantic<K, V, Void>) ops.unconditionalLoad, keySet, true), listener);
+      return completeWithVoid(asyncBulkOp((Semantic<K, V, Void>) ops.unconditionalLoad, keySet, true));
     } else {
       if (bulkCacheLoader == null) {
-        reloadAllWithSyncLoader(listener, keySet);
+        return reloadAllWithSyncLoader(keySet);
       } else {
-        executeSyncBulkOp(ops.unconditionalLoad, keySet, listener, true);
+        return executeSyncBulkOp(ops.unconditionalLoad, keySet, true);
       }
     }
   }
 
-  private void reloadAllWithSyncLoader(CacheOperationCompletionListener listener,
-                                       Set<K> keysToLoad) {
-    OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad, listener);
+  private CompletableFuture<Void> reloadAllWithSyncLoader(Set<K> keysToLoad) {
+    OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad);
     for (K key : keysToLoad) {
       heapCache.executeLoader(completion, key, () -> {
         EntryAction<K, V, V> action = createEntryAction(key, null, ops.unconditionalLoad);
@@ -389,6 +367,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return action.getException();
       });
     }
+    return completion.getFuture();
   }
 
   protected <R> MyEntryAction<R> createFireAndForgetAction(Entry<K, V> e, Semantic<K, V, R> op) {
@@ -439,7 +418,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    }
 
   /**
-   * This takes four different execution path depending on cache setup and
+   * This takes four different execution paths depending on cache setup and
    * state: no loader and/or all data present in heap, async or async bulk, parallel single load,
    * bulk load.
    */
@@ -839,7 +818,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         return;
       }
       try {
-        heapCache.refreshExecutor.execute(createFireAndForgetAction(e, ops.refresh));
+        heapCache.getRefreshExecutor().execute(createFireAndForgetAction(e, ops.refresh));
       } catch (RejectedExecutionException ex) {
         metrics().refreshRejected();
         enqueueTimerAction(e, ops.expireEvent);

@@ -23,7 +23,6 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheType;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -61,6 +60,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.locks.StampedLock;
@@ -83,19 +83,6 @@ import static org.cache2k.core.util.Util.*;
  */
 @SuppressWarnings({"rawtypes", "SynchronizationOnLocalVariableOrMethodParameter"})
 public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEviction<K, V> {
-
-  static final CacheOperationCompletionListener DUMMY_LOAD_COMPLETED_LISTENER =
-    new CacheOperationCompletionListener() {
-    @Override
-    public void onCompleted() {
-
-    }
-
-    @Override
-    public void onException(Throwable exception) {
-
-    }
-  };
 
   public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
@@ -176,7 +163,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
   }
 
-  protected volatile Executor refreshExecutor;
+  private volatile Executor refreshExecutor;
 
   /**
    * Create executor only if needed.
@@ -990,27 +977,26 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return refreshExecutor;
   }
 
-  @Override
-  public void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
+  public CompletableFuture<Void> loadAll(Iterable<? extends K> keys) {
     checkLoaderPresent();
-    CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keysToLoad = checkAllPresent(keys);
-    if (keysToLoad.isEmpty()) { listener.onCompleted(); return; }
-    OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
+    if (keysToLoad.isEmpty()) { return CompletableFuture.completedFuture(null); }
+    OperationCompletion completion = new OperationCompletion(keysToLoad);
     for (K k : keysToLoad) {
       executeLoader(completion, k, () -> extractException(getEntryInternal(k)));
     }
+    return completion.getFuture();
   }
 
   @Override
-  public void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener l) {
+  public CompletableFuture<Void> reloadAll(Iterable<? extends K> keys) {
     checkLoaderPresent();
-    CacheOperationCompletionListener listener = l != null ? l : DUMMY_LOAD_COMPLETED_LISTENER;
     Set<K> keysToLoad = generateKeySet(keys);
-    OperationCompletion completion = new OperationCompletion(keysToLoad, listener);
+    OperationCompletion completion = new OperationCompletion(keysToLoad);
     for (K k : keysToLoad) {
       executeLoader(completion, k, () -> extractException(loadAndReplace(k)));
     }
+    return completion.getFuture();
   }
 
   /** null is legal, if loaded value is immediate*/

@@ -26,6 +26,7 @@ import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Cache wrapper for the spring cache abstraction.
@@ -94,7 +95,13 @@ public class SpringCache2kCache implements Cache {
   @Override
   public <T> T get(Object key, Callable<T> valueLoader) {
     try {
-      return (T) cache.computeIfAbsent(key, (Callable<Object>) valueLoader);
+      return (T) cache.computeIfAbsent(key, o -> {
+        try {
+          return valueLoader.call();
+        } catch (Exception ex) {
+          throw new RuntimeException(ex);
+        }
+      });
     } catch (RuntimeException ex) {
       throw new ValueRetrievalException(key, valueLoader, ex);
     }

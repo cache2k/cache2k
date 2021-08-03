@@ -33,9 +33,7 @@ import org.cache2k.operation.TimeReference;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.core.util.SimulatedClock;
 import org.cache2k.io.CacheLoader;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.pinpoint.SupervisedExecutor;
-import org.cache2k.test.core.CacheLoaderTest;
 import org.cache2k.test.core.Statistics;
 import org.cache2k.test.core.TestingParameters;
 import org.junit.Rule;
@@ -510,32 +508,6 @@ public class TestingBase {
 
   public void checkIntegrity(Cache c) {
     ((CanCheckIntegrity) c).checkIntegrity();
-  }
-
-  public Throwable syncLoad(LoaderStarter x) {
-    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    x.startLoad(w);
-    w.awaitCompletion();
-    return w.getException();
-  }
-
-  public interface LoaderStarter {
-    void startLoad(CacheOperationCompletionListener l);
-  }
-
-  public void reload(int... keys) {
-    provideCache();
-    reload(cache, keys);
-  }
-
-  public static void reload(Cache c, int... keys) {
-    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    List<Integer> l = new ArrayList<Integer>();
-    for (int i : keys) {
-      l.add(i);
-    }
-    c.reloadAll(l, w);
-    w.awaitCompletion();
   }
 
   /**

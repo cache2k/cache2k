@@ -27,11 +27,8 @@ import org.cache2k.CacheManager;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
-import org.cache2k.CacheOperationCompletionListener;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author Jens Wilke
@@ -64,36 +61,6 @@ public class StaticUtil {
       count++;
     }
     return count;
-  }
-
-  public static void loadAndWait(LoaderRunner x) {
-    Throwable t = loadAndWaitMaybeFaulty(x);
-    assertNull(t);
-  }
-
-  public static Throwable loadAndWaitMaybeFaulty(LoaderRunner x) {
-    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    x.run(w);
-    w.awaitCompletion();
-    return w.getException();
-  }
-
-  public static <K, V> CacheLoaderTest.CompletionWaiter load(Cache<K, V> c, K... keys) {
-    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.loadAll(asList(keys), w);
-    w.awaitCompletion();
-    return w;
-  }
-
-  public static <K, V> CacheLoaderTest.CompletionWaiter reload(Cache<K, V> c, K... keys) {
-    CacheLoaderTest.CompletionWaiter w = new CacheLoaderTest.CompletionWaiter();
-    c.reloadAll(asList(keys), w);
-    w.awaitCompletion();
-    return w;
-  }
-
-  public interface LoaderRunner {
-    void run(CacheOperationCompletionListener l);
   }
 
 }

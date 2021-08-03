@@ -30,6 +30,9 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.ExecutionException;
+
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -272,7 +275,7 @@ public class WeigherTest extends TestingBase {
   }
 
   @Test
-  public void weightUpdatedWithLoader() {
+  public void weightUpdatedWithLoader() throws ExecutionException, InterruptedException {
     long size = 2;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
@@ -290,9 +293,9 @@ public class WeigherTest extends TestingBase {
     c.get(1);
     c.get(2);
     assertEquals(2, countEntriesViaIteration());
-    reload(2); // 100
+    c.reloadAll(asList(2)).get(); // 100
     assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
-    reload(1);
+    c.reloadAll(asList(1)).get();
     assertEquals(1, countEntriesViaIteration());
     assertFalse("the other entry is removed", c.containsKey(2));
   }

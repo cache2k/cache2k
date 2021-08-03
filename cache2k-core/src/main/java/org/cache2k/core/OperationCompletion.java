@@ -20,11 +20,10 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.CacheException;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.io.CacheLoaderException;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -36,33 +35,47 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * @author Jens Wilke
  */
 public class OperationCompletion<K> {
-  final CacheOperationCompletionListener listener;
-  int initialCount;
-  volatile int countDown;
-  volatile int exceptionCount;
-  volatile Throwable exception;
 
-  public OperationCompletion(Set<K> keys, CacheOperationCompletionListener l) {
+  private final CompletableFuture<Void> future = new CompletableFuture<>();
+  private final int initialCount;
+  private volatile int countDown;
+  private volatile int exceptionCount;
+  private volatile Throwable exception;
+
+  public OperationCompletion(Set<K> keys) {
     initialCount = countDown = keys.size();
-    this.listener = l;
   }
-  public void complete(K key, Throwable t) {
-    if (t != null) {
+
+  /**
+   * Notify that operation for one key has been completed. Calls listeners when
+   * all keys of the bulk operation have been processed.
+   *
+   * @param key key which operation completed. The key is not used internally at the
+   *            moment. May be used at a later time for debugging or error reporting
+   *            purposes.
+   * @param exception exception if completed exceptionally, or null on success
+   */
+  public void complete(K key, Throwable exception) {
+    if (exception != null) {
       BULK_OP_EXCEPTION_COUNT.incrementAndGet(this);
-      BULK_OP_EXCEPTION.compareAndSet(this, null, t);
+      BULK_OP_EXCEPTION.compareAndSet(this, null, exception);
     }
     int i = BULK_OP_COUNT.decrementAndGet(this);
     if (i == 0) { allCompleted(); }
   }
 
+  public CompletableFuture<Void> getFuture() {
+    return future;
+  }
+
   private void allCompleted() {
     if (exceptionCount == 0) {
-      listener.onCompleted();
+      future.complete(null);
       return;
     }
     CacheLoaderException bulkLoaderException =
       BulkResultCollector.createBulkLoaderException(exceptionCount, initialCount, exception);
-    listener.onException(bulkLoaderException);
+    future.completeExceptionally(bulkLoaderException);
   }
 
   static final AtomicIntegerFieldUpdater<OperationCompletion> BULK_OP_COUNT =

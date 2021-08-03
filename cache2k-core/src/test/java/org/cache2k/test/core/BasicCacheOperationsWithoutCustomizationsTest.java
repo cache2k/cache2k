@@ -32,6 +32,7 @@ import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.operation.CacheControl;
+import org.cache2k.pinpoint.ExpectedException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
@@ -407,12 +408,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void computeIfAbsent() {
-    Integer v = cache.computeIfAbsent(KEY, new Callable<Integer>() {
-      @Override
-      public Integer call() {
-        return VALUE;
-      }
-    });
+    Integer v = cache.computeIfAbsent(KEY, key -> VALUE);
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
@@ -424,12 +420,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .getCount.expect(1)
       .expectAllZero();
-    v = cache.computeIfAbsent(KEY, new Callable<Integer>() {
-      @Override
-      public Integer call() {
-        return OTHER_VALUE;
-      }
-    });
+    v = cache.computeIfAbsent(KEY, key -> OTHER_VALUE);
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
@@ -444,12 +435,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void computeIfAbsent_Null() {
-    cache.computeIfAbsent(KEY, new Callable<Integer>() {
-      @Override
-      public Integer call() {
-        return null;
-      }
-    });
+    cache.computeIfAbsent(KEY, key -> null);
     assertTrue(cache.containsKey(KEY));
     assertNull(cache.peek(KEY));
   }
@@ -457,15 +443,11 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void computeIfAbsent_Exception() {
     try {
-      cache.computeIfAbsent(KEY, new Callable<Integer>() {
-        @Override
-        public Integer call() throws Exception {
-          throw new IOException("for testing");
-        }
-      });
-      fail("CacheLoaderException expected");
-    } catch (CacheLoaderException ex) {
-      assertTrue(ex.getCause() instanceof IOException);
+      cache.computeIfAbsent(KEY, key ->  {
+          throw new ExpectedException();
+        });
+      fail("ExpectedException expected");
+    } catch (ExpectedException ex) {
     }
     statistics()
       .getCount.expect(1)
@@ -478,11 +460,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void computeIfAbsent_RuntimeException() {
     try {
-      cache.computeIfAbsent(KEY, new Callable<Integer>() {
-        @Override
-        public Integer call() {
+      cache.computeIfAbsent(KEY, key -> {
           throw new IllegalArgumentException("for testing");
-        }
       });
       fail("RuntimeException expected");
     } catch (RuntimeException ex) {

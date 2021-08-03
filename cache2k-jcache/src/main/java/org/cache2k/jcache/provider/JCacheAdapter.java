@@ -27,7 +27,6 @@ import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.io.CacheWriterException;
 import org.cache2k.processor.EntryProcessingResult;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.core.EntryAction;
 import org.cache2k.core.api.InternalCache;

@@ -31,7 +31,6 @@ import org.cache2k.core.ResiliencePolicyException;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.CacheOperationCompletionListener;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.processor.EntryProcessor;
@@ -251,7 +250,7 @@ public class ExpiryTest extends TestingBase {
   }
 
   @Test
-  public void loadExceptionEntryNullInExpiryPolicy() {
+  public void loadExceptionEntryNullInExpiryPolicy() throws ExecutionException, InterruptedException {
     AtomicBoolean success = new AtomicBoolean();
     IntCountingCacheSource g = new IntCountingCacheSource() {
       @Override
@@ -283,24 +282,24 @@ public class ExpiryTest extends TestingBase {
       fail("exception expected");
     } catch (CacheLoaderException expected) {
     }
-    reload(1);
+    c.reloadAll(asList(1)).get();
     assertTrue(success.get());
   }
 
   @Test
-  public void dontCallAdvancedLoaderWithExceptionEntry_enableExceptioCaching() {
+  public void dontCallAdvancedLoaderWithExceptionEntry_enableExceptionCaching() throws ExecutionException, InterruptedException {
     dontCallAdvancedLoaderWithExceptionEntry(b -> b.
         resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
       );
   }
 
   @Test
-  public void dontCallAdvancedLoaderWithExceptionEntry_keepData() {
+  public void dontCallAdvancedLoaderWithExceptionEntry_keepData() throws ExecutionException, InterruptedException {
     dontCallAdvancedLoaderWithExceptionEntry(b -> b.keepDataAfterExpired(true));
   }
 
   public void dontCallAdvancedLoaderWithExceptionEntry(
-    Consumer<Cache2kBuilder<Integer, Integer>> builderAction) {
+    Consumer<Cache2kBuilder<Integer, Integer>> builderAction) throws ExecutionException, InterruptedException {
     AtomicBoolean success = new AtomicBoolean();
     AtomicInteger loadCount = new AtomicInteger();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
@@ -324,24 +323,24 @@ public class ExpiryTest extends TestingBase {
       fail("exception expected");
     } catch (CacheLoaderException expected) {
     }
-    reload(1);
+    c.reloadAll(asList(1)).get();
     assertTrue(success.get());
   }
 
   @Test
-  public void dontCallAsyncLoaderWithExceptionEntry_keepData() {
+  public void dontCallAsyncLoaderWithExceptionEntry_keepData() throws ExecutionException, InterruptedException {
     dontCallAsyncLoaderWithExceptionEntry(b -> b.keepDataAfterExpired(true));
   }
 
   @Test
-  public void dontCallAsyncLoaderWithExceptionEntry_cacheExceptions() {
+  public void dontCallAsyncLoaderWithExceptionEntry_cacheExceptions() throws ExecutionException, InterruptedException {
     dontCallAsyncLoaderWithExceptionEntry(b -> b.
       resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
     );
   }
 
   public void dontCallAsyncLoaderWithExceptionEntry(
-    Consumer<Cache2kBuilder<Integer, Integer>> builderAction) {
+    Consumer<Cache2kBuilder<Integer, Integer>> builderAction) throws ExecutionException, InterruptedException {
     AtomicBoolean success = new AtomicBoolean();
     AtomicInteger loadCount = new AtomicInteger();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
@@ -364,7 +363,7 @@ public class ExpiryTest extends TestingBase {
       fail("exception expected");
     } catch (CacheLoaderException expected) {
     }
-    reload(1);
+    c.reloadAll(asList(1)).get();
     assertTrue(success.get());
   }
 
@@ -855,7 +854,7 @@ public class ExpiryTest extends TestingBase {
   }
 
   @Test
-  public void testResiliencePolicyLoadExceptionCountWhenSuppressed() {
+  public void testResiliencePolicyLoadExceptionCountWhenSuppressed() throws ExecutionException, InterruptedException {
     final int initial = -4711;
     AtomicInteger cacheRetryCount = new AtomicInteger(initial);
     AtomicInteger suppressRetryCount = new AtomicInteger(initial);
@@ -892,20 +891,10 @@ public class ExpiryTest extends TestingBase {
     assertEquals(0, suppressRetryCount.get());
     assertEquals(initial, cacheRetryCount.get());
     assertEquals(1, getInfo().getSuppressedExceptionCount());
-    loadAndWait(new LoaderRunner() {
-      @Override
-      public void run(CacheOperationCompletionListener l) {
-        c.reloadAll(asList(1), l);
-      }
-    });
+    c.reloadAll(asList(1)).get();
     assertEquals(1, suppressRetryCount.get());
     assertEquals(initial, cacheRetryCount.get());
-    loadAndWait(new LoaderRunner() {
-      @Override
-      public void run(CacheOperationCompletionListener l) {
-        c.reloadAll(asList(1), l);
-      }
-    });
+    c.reloadAll(asList(1)).get();
     assertEquals(2, suppressRetryCount.get());
     assertEquals(initial, cacheRetryCount.get());
   }

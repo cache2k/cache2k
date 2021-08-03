@@ -36,7 +36,6 @@ import org.cache2k.processor.MutableCacheEntry;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -113,8 +112,7 @@ import java.util.function.Function;
  * @see <a href="https://cache2k.org>cache2k homepage</a>
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html">cache2k User Guide</a>
  */
-public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
-  KeyValueSource<K, V>, AutoCloseable {
+public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, AutoCloseable {
 
   /**
    * A configured or generated name of this cache instance. A cache in close state will still
@@ -263,67 +261,7 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *         completely, for example, if an exceptions was thrown
    *         by a {@link CacheWriter}
    */
-  @Override
   void put(K key, V value);
-
-  /**
-   * If the specified key is not already associated with a value (or exception),
-   * call the provided task and associate it with the returned value. This is equivalent to
-   *
-   *  <pre> {@code
-   * if (!cache.containsKey(key)) {
-   *   V value = callable.call();
-   *   cache.put(key, value);
-   *   return value;
-   * } else {
-   *   return cache.peek(key);
-   * }}</pre>
-   *
-   * except that the action is performed atomically.
-   *
-   * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
-   * expiry calculation.
-   *
-   * <p>Statistics: If an entry exists this operation counts as a hit, if the entry
-   * is missing, a miss and put is counted.
-   *
-   * <p>Exceptions: If call throws an exception the cache contents will
-   * not be modified and the exception is propagated. The customized exception propagator is not
-   * used for this method.
-   *
-   * <p>Rationale: The {@code Function} interface that {@code Map.computeIfAbsent} uses is only
-   * available in Java 8. {@code Callable} is a useful fallback and we can use it directly
-   * for the Spring integration. A mismatch is that {@code Callable.call()} declares a checked
-   * exception but the cache access method do not.
-   *
-   * @param key key with which the specified value is to be associated
-   * @param callable task that computes the value
-   * @return the cached value or the result of the compute operation if no mapping is present
-   * @throws CacheLoaderException if a checked exception is thrown it is wrapped into a
-   *         {@code CacheLoaderException}
-   * @throws RuntimeException in case {@link Callable#call} yields a runtime exception,
-   *         this is thrown directly
-   * @throws ClassCastException if the class of the specified key or value
-   *         prevents it from being stored in this cache
-   * @throws NullPointerException if the specified key is {@code null} or the
-   *         value is {@code null} and the cache does not permit {@code null} values
-   * @throws IllegalArgumentException if some property of the specified key
-   *         or value prevents it from being stored in this cache
-   * @deprecated will be removed in version 2.2,
-   *             replaced by {@link #computeIfAbsent(Object, Function)}
-   */
-  @Deprecated
-  default V computeIfAbsent(K key, Callable<V> callable) {
-    return computeIfAbsent(key, k -> {
-      try {
-        return callable.call();
-      } catch (RuntimeException ex) {
-        throw ex;
-      } catch (Exception exception) {
-        throw new CacheLoaderException(exception);
-      }
-    });
-  }
 
   /**
    * If the specified key is not already associated with a value (or exception),
@@ -551,8 +489,12 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *   value</li>
    * </ul>
    *
-   * <p>See {@link KeyValueStore#remove(Object)}, for an explanation why no flag or object is
-   * returned.
+   * <p>Rationale: It is intentional that this method does not return a boolean or the
+   * previous entry. When operating in cache through configuration (which means a
+   * {@link CacheWriter} and {@link CacheLoader} is registered) a boolean could mean
+   * two different things: the value was present in the cache or the value was present
+   * in the system of authority. The purpose of this interface is a reduced
+   * set of methods that cannot be misinterpreted.
    *
    * @param key key which mapping is to be removed from the cache, not null
    * @throws NullPointerException if a specified key is null
@@ -560,7 +502,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *         this map
    * @throws CacheWriterException if the writer call failed
    */
-  @Override
   void remove(K key);
 
   /**
@@ -587,7 +528,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    * @param keys a set of keys to remove
    * @throws NullPointerException if a specified key is null
    */
-  @Override
   void removeAll(Iterable<? extends K> keys);
 
   /**
@@ -662,50 +602,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
   void expireAt(K key, long millis);
 
   /**
-   * Requests to loads the given set of keys into the cache. Only missing or expired
-   * values will be loaded.
-   *
-   * <p>The cache uses multiple threads to load the values in parallel. If thread resources
-   * are not sufficient, meaning the used executor is throwing
-   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
-   * back pressure.
-   *
-   * <p>If no loader is defined, the method will throw an immediate exception.
-   *
-   * <p>After the load is completed, the completion listener will be called, if provided.
-   *
-   * @param keys The keys to be loaded
-   * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
-   *          completion notification is needed.
-   * @throws UnsupportedOperationException if no loader is defined
-   * @deprecated to be removed in 2.2
-   */
-  @Deprecated
-  void loadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
-
-  /**
-   * Asynchronously loads the given set of keys into the cache. Always invokes load for all keys
-   * and replaces values already in the cache.
-   *
-   * <p>The cache uses multiple threads to load the values in parallel. If thread resources
-   * are not sufficient, meaning if the used executor is throwing
-   * {@link java.util.concurrent.RejectedExecutionException} the calling thread is used to produce
-   * back pressure.
-   *
-   * <p>If no loader is defined, the method will throw an immediate exception.
-   *
-   * <p>After the load is completed, the completion listener will be called, if provided.
-   *
-   * @param keys The keys to be loaded
-   * @param listener Listener interface that is invoked upon completion. May be {@code null} if no
-   *          completion notification is needed.
-   * @throws UnsupportedOperationException if no loader is defined
-   * @deprecated to be removed in 2.2
-   */
-  @Deprecated
-  void reloadAll(Iterable<? extends K> keys, CacheOperationCompletionListener listener);
-
-  /**
    * Request to load the given set of keys into the cache. Only missing or expired
    * values will be loaded. The method returns immediately with a {@code CompletableFuture}.
    * If no asynchronous loader is specified, the executor specified by
@@ -775,7 +671,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    * @param mutator processor instance to be invoked
    * @throws EntryProcessingException if an exception happened inside
    *         {@link EntryProcessor#process(MutableCacheEntry)}
-   * @return result provided by the entry processor
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    * @since 2.0
@@ -822,7 +717,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *
    * @param keys the keys of the cache entries that should be processed
    * @param mutator processor instance to be invoked
-   * @return map containing the invocation results for every cache key
    * @see EntryProcessor
    * @see org.cache2k.processor.MutableCacheEntry
    * @since 2.0
@@ -848,12 +742,11 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    *
    * <p>The operation is not performed atomically.
    *
-   * @returns an immutable map with the requested values
+   * @return an immutable map with the requested values
    * @throws NullPointerException if one of the specified keys is null
    * @throws CacheLoaderException in case the loader has permanent failures.
    *            Otherwise the exception is thrown when the key is requested.
    */
-  @Override
   Map<K, V> getAll(Iterable<? extends K> keys);
 
   /**
@@ -885,7 +778,6 @@ public interface Cache<K, V> extends KeyValueStore<K, V>, DataAware<K, V>,
    * @param valueMap Map of keys with associated values to be inserted in the cache
    * @throws NullPointerException if one of the specified keys is null
    */
-    @Override
     void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**

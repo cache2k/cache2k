@@ -317,6 +317,14 @@ public abstract class BulkAction<K, V, R> implements
     bulkOperationCompleted();
   }
 
+  public Throwable getException() {
+    Throwable exceptionToPropagate = getExceptionToPropagate();
+    if (exceptionToPropagate != null) {
+      return exceptionToPropagate;
+    }
+    return getLoaderException();
+  }
+
   public Throwable getExceptionToPropagate() {
     Throwable exceptionToPropagate = null;
     int exceptionCount = 0;

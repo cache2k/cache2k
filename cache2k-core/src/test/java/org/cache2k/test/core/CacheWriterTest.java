@@ -31,9 +31,11 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for the CacheWriter and its exception handling.
@@ -83,7 +85,7 @@ public class CacheWriterTest extends TestingBase {
   }
 
   @Test
-  public void testTriggerLoadWithReloadDoesNotCallWriter() {
+  public void testTriggerLoadWithReloadDoesNotCallWriter() throws ExecutionException, InterruptedException {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .writer(w)
@@ -94,7 +96,7 @@ public class CacheWriterTest extends TestingBase {
         }
       })
       .build();
-    reload(c, 1);
+    c.reloadAll(asList(1)).get();
     assertNull(w.count.get(1));
   }
 
