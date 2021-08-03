@@ -99,11 +99,17 @@ public class SpringCache2kCache implements Cache {
         try {
           return valueLoader.call();
         } catch (Exception ex) {
-          throw new RuntimeException(ex);
+          throw new WrappedException(ex);
         }
       });
-    } catch (RuntimeException ex) {
-      throw new ValueRetrievalException(key, valueLoader, ex);
+    } catch (WrappedException ex) {
+      throw new ValueRetrievalException(key, valueLoader, ex.getCause());
+    }
+  }
+
+  private class WrappedException extends RuntimeException {
+    public WrappedException(Throwable cause) {
+      super(cause);
     }
   }
 
