@@ -68,6 +68,7 @@ public abstract class BulkAction<K, V, R> implements
    * bulk operation start, so its save to read from it from different threads.
    */
   private final Map<K, EntryAction<K, V, R>> key2action;
+  /** Keys that need loading. */
   private final Set<K> toLoad;
   private final AsyncCacheLoader<K, V> loader;
   private Collection<EntryAction<K, V, R>> toStart;
@@ -89,11 +90,12 @@ public abstract class BulkAction<K, V, R> implements
       toStart.add(action);
       key2action.put(key, action);
     }
-    synchronized (this) {
-      startRemaining();
-      if (isSyncMode()) {
-        loopIfSyncAndComplete();
-      }
+  }
+
+  public synchronized void start() {
+    startRemaining();
+    if (isSyncMode()) {
+      loopIfSyncAndComplete();
     }
   }
 
@@ -109,8 +111,8 @@ public abstract class BulkAction<K, V, R> implements
 
   /**
    * Try to start as much entry actions in parallel as possible.
-   * A start may fail, if there is currently processing going on for an
-   * entry. If nothing can be started we queue in our action in only one entry.
+   * A start for an entry may fail, if it is locked for processing.
+   * If nothing can be started we queue in our action in only one entry.
    * Waiting for more than one entry might cause a deadlock.
    */
   private void startRemaining() {

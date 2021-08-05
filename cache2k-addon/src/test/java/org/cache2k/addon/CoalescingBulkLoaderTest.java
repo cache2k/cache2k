@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,8 +147,8 @@ public class CoalescingBulkLoaderTest {
    * expect that the bulk loader is called with more than one key, so coalescing effective.
    */
   @Test
-  public void testDeclarative() {
-    final int maxLoadSize = 17;
+  public void testDeclarative() throws Exception {
+    final int maxLoadSize = 3;
     IdentBulkLoader bulkLoader = new IdentBulkLoader();
     Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
       .bulkLoader(bulkLoader)
@@ -155,8 +156,12 @@ public class CoalescingBulkLoaderTest {
         .maxBatchSize(maxLoadSize)
         .maxDelay(2000, TimeUnit.MILLISECONDS))
       .build();
+    Set<CompletableFuture<Void>> waitSet = new HashSet<>();
     for (int i = 0; i < maxLoadSize; i++) {
-      cache.loadAll(asList(i));
+      waitSet.add(cache.loadAll(asList(i)));
+    }
+    for (CompletableFuture<Void> future : waitSet) {
+      future.get();
     }
     assertTrue(bulkLoader.getMaxBulkRequestSize() > 1);
     cache.close();
@@ -192,7 +197,9 @@ public class CoalescingBulkLoaderTest {
       .bulkLoader((keys, context, callback) -> {
         if (Thread.currentThread() != mainThread) {
           timerThreadCounter.incrementAndGet();
-          assertEquals(1, keys.size());
+          assertEquals(
+            "Batch size 2, when run by timer it is one remaining",
+            1, keys.size());
           assertThat(keys.stream().findFirst().get()).isIn(1, 13);
         }
         bulkLoader.loadAll(keys, context, callback);
@@ -201,12 +208,10 @@ public class CoalescingBulkLoaderTest {
         .maxBatchSize(maxBatchSize)
         .maxDelay(0, TimeUnit.MILLISECONDS))
       .build();
-    CompletableFuture<Void> req1 = cache.loadAll(asList(1));
-    req1.get();
-    req1 = cache.loadAll(asList(11, 12, 13));
+    CompletableFuture<Void> req1 = cache.loadAll(asList(11, 12, 13));
     req1.get();
     assertEquals(maxBatchSize, bulkLoader.getMaxBulkRequestSize());
-    assertEquals("Timer run twice, for key 1 and 13",2, timerThreadCounter.get());
+    assertEquals("Timer run twice, for key 13",1, timerThreadCounter.get());
     cache.close();
   }
 
@@ -257,7 +262,7 @@ public class CoalescingBulkLoaderTest {
       .build();
     cacheRef.set(cache);
     CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2));
-    coalescingLoader.doLoad();
+    coalescingLoader.flush();
     assertTrue(checked.get());
     cache.close();
     release.countDown();
@@ -312,7 +317,7 @@ public class CoalescingBulkLoaderTest {
     assertThat(req2).hasNotFailed();
     assertFalse(req2.isDone());
     assertEquals("requests are queued", 3, coalescingLoader.getQueueSize());
-    coalescingLoader.doLoad();
+    coalescingLoader.flush();
     assertTrue("both client requests are completed",
       req1.isDone() && req2.isDone());
     req1 = cache.loadAll(asList(5, 6));
@@ -329,7 +334,7 @@ public class CoalescingBulkLoaderTest {
     assertThat(req2).hasNotFailed();
     assertTrue("request is forwarded when max size reached", req1.isDone());
     assertFalse("request 2 is not completed yet", req2.isDone());
-    coalescingLoader.doLoad();
+    coalescingLoader.flush();
     assertTrue("both requests are completed", req1.isDone() && req2.isDone());
     req1 = cache.loadAll(asList(31, 32, 33, 34));
     assertEquals("requests are queued", 4, coalescingLoader.getQueueSize());
@@ -343,6 +348,11 @@ public class CoalescingBulkLoaderTest {
     assertTrue("both requests are completed", req1.isDone() && req2.isDone());
     assertFalse("completed w/o exception", req1.isCompletedExceptionally());
     assertTrue("has exception", req2.isCompletedExceptionally());
+    cache.loadAll(asList(51, 52));
+    boolean res = coalescingLoader.forwardRequests(true, false);
+    assertFalse("stop processing", res);
+    res = coalescingLoader.forwardRequests(false, true);
+    assertFalse("stop processing", res);
     cache.close();
     assertTrue("queue emptied", coalescingLoader.getQueueSize() <= 0);
   }

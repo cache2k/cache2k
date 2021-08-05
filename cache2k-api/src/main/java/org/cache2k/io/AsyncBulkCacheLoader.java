@@ -136,9 +136,10 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
   interface BulkCallback<K, V> extends DataAware<K, V> {
 
     /**
-     * The load was successful.
+     * The load was successful. Per bulk request this method can be called multiple times
+     * to transfer partial results to the cache as soon as data is available.
      *
-     * @param data Loaded data, can be partial
+     * @param data loaded data, either representing all requested keys or a partial result
      */
     void onLoadSuccess(Map<? extends K, ? extends V> data);
 
@@ -149,13 +150,14 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
     void onLoadSuccess(K key, V value);
 
     /**
-     * The processing resulted in an exception. The logic for exception
-     * handling, e.g. the `ResiliencePolicy` will be run for each entry
-     * individually. If partial results are returned via {@link #onLoadSuccess(Map)}
-     * the exception is only processed for the remaining keys.
-     * If the bulk operation was started on behalf a user cache operation, e.g.
-     * {@link org.cache2k.Cache#loadAll(Iterable)} the exception will be propagated even
-     * if partially successful.
+     * The processing resulted in an exception. If partial results are returned via
+     * {@link #onLoadSuccess(Map)} the exception is only processed for the remaining keys.
+     *
+     * <p>The logic for exception handling, e.g. the `ResiliencePolicy` will be run for each entry
+     * individually. If the bulk operation was started on behalf a user cache operation, e.g.
+     * {@link org.cache2k.Cache#loadAll(Iterable)} the exception will be propagated although
+     * the operation was partially successful. When called multiple times, only the first
+     * call has an effect and subsequent calls do nothing.
      */
     void onLoadFailure(Throwable exception);
 

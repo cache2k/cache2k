@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -66,7 +65,6 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
   private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
   private final AtomicLong queueSize = new AtomicLong();
   private final Queue<Request<K, V>> pending = new ConcurrentLinkedQueue<>();
-  private ScheduledFuture<?> schedule = null;
 
   /**
    * Constructor using the default time reference {@link TimeReference#DEFAULT}
@@ -96,7 +94,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
   @Override
   public void loadAll(Set<K> keys, BulkLoadContext<K, V> context, BulkCallback<K, V> callback) {
     for (K key : keys) {
-      Request rq = new Request();
+      Request<K, V> rq = new Request<>();
       rq.key = key;
       rq.context = context;
       pending.add(rq);
@@ -104,22 +102,27 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
     int sizeToAdd = keys.size();
     long totalSize = queueSize.addAndGet(sizeToAdd);
     if (totalSize >= maxBatchSize) {
-      doLoad();
+      instantLoadAndScheduleTimer();
     } else if (totalSize == sizeToAdd) {
       startDelay();
     }
   }
 
-  private class Request<K, V> implements DataAware<K, V> {
+  private static class Request<K, V> implements DataAware<K, V> {
     K key;
     BulkLoadContext<K, V> context;
   }
 
+  /**
+   * Send requests to the loader
+   *
+   * @param requestMap concurrent map used to keep track during callbacks
+   */
   private void startLoad(ConcurrentMap<K, BulkLoadContext<K, V>> requestMap) {
     BulkLoadContext<K, V> context = createMergedContext(requestMap);
     try {
       forwardingLoader.loadAll(context.getKeys(), context, context.getCallback());
-    } catch (Exception e) {
+    } catch (Throwable e) {
       context.getCallback().onLoadFailure(e);
     }
   }
@@ -128,7 +131,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
     long startTime = Long.MAX_VALUE;
     Set<K> keys = new HashSet<>();
     Map<K, Context<K, V>> contextMap = new HashMap<>();
-    BulkLoadContext firstContext = null;
+    BulkLoadContext<K, V> firstContext = null;
     for (Map.Entry<K, BulkLoadContext<K, V>> e : requestMap.entrySet()) {
       if (firstContext == null) {
         firstContext = e.getValue();
@@ -137,8 +140,8 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       keys.add(e.getKey());
       contextMap.put(e.getKey(), e.getValue().getContextMap().get(e.getKey()));
     }
-    final long finalStartTime = startTime;
-    final BulkLoadContext finalFirstContext = firstContext;
+    long finalStartTime = startTime;
+    BulkLoadContext<K, V> finalFirstContext = firstContext;
     BulkCallback<K, V> callback = new BulkCallback<K, V>() {
       @Override
       public void onLoadSuccess(Map<? extends K, ? extends V> data) {
@@ -148,11 +151,10 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       }
       @Override
       public void onLoadSuccess(K key, V value) {
-        BulkLoadContext<K, V> ctx = requestMap.get(key);
+        BulkLoadContext<K, V> ctx = requestMap.remove(key);
         if (ctx == null) {
           throw new IllegalStateException("unexpected callback for this key");
         }
-        requestMap.remove(key);
         ctx.getCallback().onLoadSuccess(key, value);
       }
       @Override
@@ -177,51 +179,108 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
     return context;
   }
 
-  private synchronized void startDelay() {
-    if (schedule == null && queueSize.get() > 0) {
-      schedule = timer.schedule(this::timerEvent, maxDelayMillis, TimeUnit.MILLISECONDS);
+  private void startDelay() {
+    scheduleTimer(maxDelayMillis);
+  }
+
+  private void scheduleTimer(long millis) {
+    timer.schedule(this::timerEvent, millis, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Only execute if still scheduled
+   */
+  private void timerEvent() {
+    try {
+      timerEventCheckAndForwardRequests();
+    } catch (Throwable t) {
+      t.printStackTrace();
     }
   }
 
   /**
-   * Only execute
+   * Max batch size reached, forward requests immediately to loader
+   * within calling thread. If more requests are pending, schedule the timer.
+   *
+   * <p>There is no protection against scheduling multiple timer tasks and no
+   * timer task is ever cancelled. Instead, with in the timer we check whether
+   * there is actually work to do. Scheduling and running the timers has no
+   * considerable overhead, since only happening once per maximum bulk request.
    */
-  private synchronized void timerEvent() {
-    if (schedule != null) {
-      schedule.cancel(false);
-      schedule = null;
-      callLoader();
+  private void instantLoadAndScheduleTimer() {
+    do {
+      forwardRequests(false, true);
+    } while (queueSize.get() >= maxBatchSize);
+    Request<K, V> next = pending.peek();
+    if (next == null) {
+      return;
     }
+    long startTime = timeReference.toMillis(next.context.getStartTime());
+    long now = timeReference.toMillis(timeReference.millis());
+    scheduleTimer(startTime + maxDelayMillis - now);
   }
 
-  public synchronized void doLoad() {
-    if (schedule != null) {
-      schedule.cancel(false);
-      schedule = null;
-    }
-    callLoader();
+  /**
+   * Send all pending requests to the loader. This is used for testing.
+   */
+  public void flush() {
+    do {
+      forwardRequests(false, false);
+    } while (queueSize.get() > 0);
   }
 
-  private void callLoader() {
+  /**
+   * Gather requests up to max batch size and forward to the loader
+   *
+   * @param timerEvent true for timer event, don't do anything if not due
+   * @param onlyWhenFull true for queue spill, double check within lock
+   * @return true if there might be more to process
+   */
+  public boolean forwardRequests(boolean timerEvent, boolean onlyWhenFull) {
     long sizeRemaining;
     do {
-      ConcurrentMap<K, BulkLoadContext<K, V>> requestMap = new ConcurrentHashMap<>();
-      for (int i = 0; i < maxBatchSize; i++) {
-        Request<K, V> rq = pending.poll();
-        if (rq == null) {
-          break;
+      ConcurrentMap<K, BulkLoadContext<K, V>> requestMap;
+      synchronized (pending) {
+        if (onlyWhenFull && queueSize.get() < maxBatchSize) {
+          return false;
         }
-        requestMap.put(rq.key, rq.context);
+        if (timerEvent) {
+          Request<K, V> next = pending.peek();
+          if (next == null) {
+            return false;
+          }
+          if (queueSize.get() < maxBatchSize) {
+            long startTime = timeReference.toMillis(next.context.getStartTime());
+            long now = timeReference.toMillis(timeReference.millis());
+            if (now - startTime < maxDelayMillis) {
+              scheduleTimer(startTime + maxDelayMillis - now);
+              return false;
+            }
+          }
+        }
+        requestMap = new ConcurrentHashMap<>();
+        for (int i = 0; i < maxBatchSize; i++) {
+          Request<K, V> rq = pending.poll();
+          if (rq == null) {
+            break;
+          }
+          requestMap.put(rq.key, rq.context);
+        }
+        sizeRemaining = queueSize.addAndGet(-requestMap.size());
       }
-      sizeRemaining = queueSize.addAndGet(-requestMap.size());
-      startLoad(requestMap);
-    } while(sizeRemaining >= maxBatchSize);
-    Request rq = pending.peek();
-    if (rq != null) {
-      long startTime = timeReference.toMillis(rq.context.getStartTime());
-      long now = timeReference.toMillis(timeReference.millis());
-      schedule = timer.schedule(this::timerEvent, startTime + maxDelayMillis - now, TimeUnit.MILLISECONDS);
-    }
+      if (!requestMap.isEmpty()) {
+        startLoad(requestMap);
+      }
+    } while (sizeRemaining >= maxBatchSize);
+    return true;
+  }
+
+  /**
+   * Checks whether pending requests are due to send, then sends as many requests
+   * as possible until maxBatchSize is reached
+   */
+  private void timerEventCheckAndForwardRequests() {
+    while (forwardRequests(true, false)) { }
   }
 
   public long getQueueSize() {
@@ -229,7 +288,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
   }
 
   @Override
-  public synchronized void close() throws Exception {
+  public void close() throws Exception {
     queueSize.set(Long.MIN_VALUE);
     timer.shutdown();
     pending.clear();

@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -287,6 +288,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         };
       }
     };
+    bulkAction.start();
     return bulkAction;
   }
 
@@ -321,6 +323,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         }
       }
     };
+    action.start();
     return future;
   }
 
