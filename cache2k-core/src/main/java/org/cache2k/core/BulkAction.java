@@ -266,10 +266,7 @@ public abstract class BulkAction<K, V, R> implements
 
   private void onLoadSuccessInternal(K key, V value) {
     synchronized (this) {
-      boolean present = toLoad.remove(key);
-      if (!present) {
-        throw new IllegalStateException("Callback key not part of request or already processed");
-      }
+      expectKey(key);
     }
     EntryAction<K, V, R> action = key2action.get(key);
     action.onLoadSuccess(value);
@@ -281,7 +278,7 @@ public abstract class BulkAction<K, V, R> implements
    */
   @Override
   public void onLoadFailure(Throwable exception) {
-    Set<K> toLoadCopy = null;
+    Set<K> toLoadCopy;
     synchronized (this) {
       toLoadCopy = new HashSet<>(toLoad);
       toLoad.clear();
@@ -290,6 +287,38 @@ public abstract class BulkAction<K, V, R> implements
       EntryAction<K, V, R> action = key2action.get(key);
       action.onLoadFailure(exception);
     }
+  }
+
+  @Override
+  public void onLoadFailure(Set<? extends K> keys, Throwable exception) {
+    Set<K> copy = new HashSet<>();
+    synchronized (this) {
+      for (K key : keys) {
+        if (toLoad.remove(key)) { copy.add(key); }
+      }
+    }
+    for (K key : copy) {
+      EntryAction<K, V, R> action = key2action.get(key);
+      action.onLoadFailure(exception);
+    }
+  }
+
+  public void expectKey(K key) {
+    boolean present = toLoad.remove(key);
+    if (!present) {
+      throw new IllegalStateException("Callback key not part of request or already processed");
+    }
+  }
+
+  @Override
+  public void onLoadFailure(K key, Throwable exception) {
+    boolean present;
+    synchronized (this) {
+      present = toLoad.remove(key);
+    }
+    if (!present) { return; }
+    EntryAction<K, V, R> action = key2action.get(key);
+    action.onLoadFailure(exception);
   }
 
   /**
@@ -377,7 +406,6 @@ public abstract class BulkAction<K, V, R> implements
 
     private final Set<K> keys;
     private final AsyncBulkCacheLoader.BulkCallback<K, V> callback;
-    private Set<Context<K, V>> contextSet;
     private Map<K, Context<K, V>> contextMap;
 
     MyBulkLoadContext(Set<K> keys, AsyncBulkCacheLoader.BulkCallback<K, V> callback) {

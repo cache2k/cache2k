@@ -83,6 +83,12 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
       public void onLoadFailure(Throwable exception) {
         callback.onLoadFailure(exception);
       }
+
+      @Override
+      public void onLoadFailure(K key, Throwable exception) {
+        Objects.requireNonNull(key);
+        callback.onLoadFailure(exception);
+      }
     };
     BulkLoadContext<K, V> bulkLoadContext = new BulkLoadContext<K, V>() {
       @Override public Cache<K, V> getCache() { return context.getCache(); }
@@ -150,7 +156,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
     void onLoadSuccess(K key, V value);
 
     /**
-     * The processing resulted in an exception. If partial results are returned via
+     * The load attempt resulted in an exception. If partial results are returned via
      * {@link #onLoadSuccess(Map)} the exception is only processed for the remaining keys.
      *
      * <p>The logic for exception handling, e.g. the `ResiliencePolicy` will be run for each entry
@@ -160,6 +166,23 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
      * call has an effect and subsequent calls do nothing.
      */
     void onLoadFailure(Throwable exception);
+
+    /**
+     * Report exception for a set of keys.  Rationale: An incoming bulk load request might
+     * be split and passed on as separate bulk requests, e.g. to meet some limits. One of these
+     * partial request might result in an error, the other might go through successful.
+     * In this case the exception should be propagated for the corresponding set of keys.
+     *
+     * <p>Multiple calls with the same key have no effect.
+     */
+    default void onLoadFailure(Set<? extends K> keys, Throwable exception) {
+      for (K key : keys) { onLoadFailure(key, exception); }
+    }
+
+    /**
+     * Report exception for a specific key. Multiple calls with the same key have no effect.
+     */
+    void onLoadFailure(K key, Throwable exception);
 
   }
 

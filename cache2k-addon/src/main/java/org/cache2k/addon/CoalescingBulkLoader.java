@@ -159,10 +159,17 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       }
       @Override
       public void onLoadFailure(Throwable exception) {
-        for (BulkLoadContext<K, V> ctx : requestMap.values()) {
-          ctx.getCallback().onLoadFailure(exception);
+        for (Map.Entry<K, BulkLoadContext<K, V>> entry : requestMap.entrySet()) {
+          entry.getValue().getCallback().onLoadFailure(entry.getKey(), exception);
         }
         requestMap.clear();
+      }
+      @Override
+      public void onLoadFailure(K key, Throwable exception) {
+        BulkLoadContext<K, V> ctx = requestMap.remove(key);
+        if (ctx != null) {
+          ctx.getCallback().onLoadFailure(key, exception);
+        }
       }
     };
     BulkLoadContext<K, V> context = new BulkLoadContext<K, V>() {
