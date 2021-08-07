@@ -100,6 +100,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
       @Override public Executor getExecutor() { return context.getExecutor(); }
       @Override public Executor getLoaderExecutor() { return context.getLoaderExecutor(); }
       @Override public BulkCallback<K, V> getCallback() { return bulkCallback; }
+      @Override public boolean isRefreshAhead() { return context.isRefreshAhead(); }
     };
     loadAll(keySet, bulkLoadContext, bulkCallback);
   }
@@ -136,6 +137,11 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
     Executor getLoaderExecutor();
 
     BulkCallback<K, V> getCallback();
+
+    /**
+     * Operation is refresh and not a client request.
+     */
+    boolean isRefreshAhead();
 
   }
 

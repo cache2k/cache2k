@@ -1,3 +1,4 @@
+
 package org.cache2k.addon;
 
 /*
@@ -35,6 +36,7 @@ public class CoalescingBulkLoaderConfig
 
   private long maxDelay = 100;
   private int maxBatchSize = 100;
+  private boolean refreshOnly = true;
 
   public long getMaxDelay() {
     return maxDelay;
@@ -57,6 +59,14 @@ public class CoalescingBulkLoaderConfig
     this.maxBatchSize = maxBatchSize;
   }
 
+  public boolean isRefreshOnly() {
+    return refreshOnly;
+  }
+
+  public void setRefreshOnly(boolean refreshOnly) {
+    this.refreshOnly = refreshOnly;
+  }
+
   @Override
   public Builder builder() {
     return new Builder(this);
@@ -72,6 +82,7 @@ public class CoalescingBulkLoaderConfig
 
     /**
      * Maximum timespan a load request may be delayed before its sent to the loader.
+     * Default is 100 milliseconds.
      */
     public Builder maxDelay(long duration, TimeUnit unit) {
       config.setMaxDelay(unit.toMillis(duration));
@@ -81,9 +92,19 @@ public class CoalescingBulkLoaderConfig
     /**
      * If the number of entries waiting for sending to the loader is reached the
      * loader will be called even the delay timespan is not reached yet.
+     * Default is 100.
      */
     public Builder maxBatchSize(int v) {
       config.setMaxBatchSize(v);
+      return this;
+    }
+
+    /**
+     * Only do coalescing for refresh ahead requests, user requests will be executed
+     * immediately. Default is {@code true}.
+     */
+    public Builder refreshOnly(boolean v) {
+      config.setRefreshOnly(v);
       return this;
     }
 

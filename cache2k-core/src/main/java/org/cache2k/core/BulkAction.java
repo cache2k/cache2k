@@ -459,6 +459,13 @@ public abstract class BulkAction<K, V, R> implements
       return callback;
     }
 
+    /**
+     * The cache is never starting a refresh as bulk operation
+     */
+    @Override
+    public boolean isRefreshAhead() {
+      return false;
+    }
   }
 
 }

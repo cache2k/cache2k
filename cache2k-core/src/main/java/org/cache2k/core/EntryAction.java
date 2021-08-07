@@ -315,6 +315,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   @Override
+  public boolean isRefreshAhead() {
+    return refresh;
+  }
+
+  @Override
   public long getMutationStartTime() {
     if (mutationStartTime > 0) {
       return mutationStartTime;

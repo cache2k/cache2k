@@ -65,7 +65,8 @@ public class CoalescingBulkLoaderTest {
       bulkLoader,
       TimeReference.DEFAULT, // the cache might have a different time reference
       100, // delay milliseconds before sending the request
-      50 // maximum batch size
+      50, // maximum batch size
+      false // refresh only
     );
     AtomicReference<Cache<Integer, Integer>> cacheRef = new AtomicReference<>();
     Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
@@ -113,7 +114,8 @@ public class CoalescingBulkLoaderTest {
     CoalescingBulkLoader<Integer, Integer> coalescingLoader = new CoalescingBulkLoader<>(
       bulkLoader,
       100, // delay milliseconds
-      50 // batch size
+      50, // batch size
+      false // refresh only
     );
     Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
       .bulkLoader(coalescingLoader)
@@ -154,7 +156,9 @@ public class CoalescingBulkLoaderTest {
       .bulkLoader(bulkLoader)
       .enableWith(CoalescingBulkLoaderSupport.class, b -> b
         .maxBatchSize(maxLoadSize)
-        .maxDelay(2000, TimeUnit.MILLISECONDS))
+        .maxDelay(2000, TimeUnit.MILLISECONDS)
+        .refreshOnly(false)
+      )
       .build();
     Set<CompletableFuture<Void>> waitSet = new HashSet<>();
     for (int i = 0; i < maxLoadSize; i++) {
@@ -167,10 +171,33 @@ public class CoalescingBulkLoaderTest {
     cache.close();
   }
 
-  class IdentBulkLoader implements AsyncBulkCacheLoader<Integer, Integer> {
+  @Test
+  public void testDeclarative_refreshOnly() throws Exception {
+    final int maxLoadSize = 3;
+    IdentBulkLoader bulkLoader = new IdentBulkLoader();
+    Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
+      .bulkLoader(bulkLoader)
+      .enableWith(CoalescingBulkLoaderSupport.class, b -> b
+        .maxBatchSize(maxLoadSize)
+        .maxDelay(2000, TimeUnit.MILLISECONDS)
+        .refreshOnly(true)
+      )
+      .build();
+    Set<CompletableFuture<Void>> waitSet = new HashSet<>();
+    for (int i = 0; i < maxLoadSize; i++) {
+      waitSet.add(cache.loadAll(asList(i)));
+    }
+    for (CompletableFuture<Void> future : waitSet) {
+      future.get();
+    }
+    assertEquals(1, bulkLoader.getMaxBulkRequestSize());
+    cache.close();
+  }
+
+  public static class IdentBulkLoader implements AsyncBulkCacheLoader<Integer, Integer> {
     private final AtomicInteger maxBulkRequestSize = new AtomicInteger();
     @Override
-    public void loadAll(Set<Integer> keys, BulkLoadContext<Integer, Integer> context, BulkCallback<Integer, Integer> callback) throws Exception {
+    public void loadAll(Set<Integer> keys, BulkLoadContext<Integer, Integer> context, BulkCallback<Integer, Integer> callback) {
       int currentMax;
       do {
         currentMax = maxBulkRequestSize.get();
@@ -206,7 +233,9 @@ public class CoalescingBulkLoaderTest {
       })
       .enableWith(CoalescingBulkLoaderSupport.class, b -> b
         .maxBatchSize(maxBatchSize)
-        .maxDelay(0, TimeUnit.MILLISECONDS))
+        .maxDelay(0, TimeUnit.MILLISECONDS)
+        .refreshOnly(false)
+      )
       .build();
     CompletableFuture<Void> req1 = cache.loadAll(asList(11, 12, 13));
     req1.get();
@@ -218,7 +247,7 @@ public class CoalescingBulkLoaderTest {
   @Test(expected = NullPointerException.class)
   public void constructor() {
     CoalescingBulkLoader<Integer, Integer> coalescingLoader = new CoalescingBulkLoader<>(
-      null, TimeReference.DEFAULT, Long.MAX_VALUE, 100);
+      null, TimeReference.DEFAULT, Long.MAX_VALUE, 100, false);
   }
 
   @Test
@@ -256,7 +285,7 @@ public class CoalescingBulkLoaderTest {
     };
     final int maxLoadSize = 5;
     CoalescingBulkLoader<Integer, Integer> coalescingLoader =
-      new CoalescingBulkLoader<>(loader, Long.MAX_VALUE, maxLoadSize);
+      new CoalescingBulkLoader<>(loader, Long.MAX_VALUE, maxLoadSize, false);
     Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
       .bulkLoader(coalescingLoader)
       .build();
@@ -306,7 +335,7 @@ public class CoalescingBulkLoaderTest {
     };
     final int maxLoadSize = 5;
     CoalescingBulkLoader<Integer, Integer> coalescingLoader =
-      new CoalescingBulkLoader<>(loader, Long.MAX_VALUE, maxLoadSize);
+      new CoalescingBulkLoader<>(loader, Long.MAX_VALUE, maxLoadSize, false);
     Cache<Integer, Integer> cache = Cache2kBuilder.of(Integer.class, Integer.class)
       .bulkLoader(coalescingLoader)
       .build();

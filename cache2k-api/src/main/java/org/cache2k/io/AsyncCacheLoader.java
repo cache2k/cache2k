@@ -106,6 +106,12 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
      */
     CacheEntry<K, V> getCurrentEntry();
 
+    /**
+     * Operation is refresh and not an immediate client request. This can be used
+     * to execute the operation at a lower priority. The {@code CoalescingBulkLoader}
+     * is using the flag to delay refresh requests and combine them into bulk requests.
+     */
+    boolean isRefreshAhead();
   }
 
   /**

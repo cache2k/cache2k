@@ -50,7 +50,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>Parameters: You may specify how long requests are being delayed and a maximum
  * of loads coalesced into one batch.
  *
- * <p>Usage: Either use the constructor {@link #CoalescingBulkLoader(AsyncBulkCacheLoader, long, int)}
+ * <p>Coalescing by default only happens for refresh ahead requests. This is controlled
+ * via the parameter {@code refreshOnly}. Requests that are not refresh ahead are
+ * client issued and executed immediately, together with any pending refresh ahead requests.
+ *
+ * <p>Usage: Either use the constructor
+ * {@link CoalescingBulkLoader#CoalescingBulkLoader(AsyncBulkCacheLoader, long, int, boolean)}
  * and wrap a loader explicitly, or use the declarative configuration with
  * {@link CoalescingBulkLoaderSupport}. If in doubt check the test cases.
  *
@@ -60,6 +65,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
 
   private final long maxDelayMillis;
   private final int maxBatchSize;
+  private final boolean refreshOnly;
   private final AsyncBulkCacheLoader<K, V> forwardingLoader;
   private final TimeReference timeReference;
   private final ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
@@ -71,10 +77,11 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
    * @param forwardingLoader requests are forwarded to this loader
    * @param maxDelayMillis see {@link CoalescingBulkLoaderConfig.Builder#maxDelay(long, TimeUnit)}                        
    * @param maxBatchSize see {@link CoalescingBulkLoaderConfig.Builder#maxBatchSize(int)}
+   * @param refreshOnly see {@link CoalescingBulkLoaderConfig.Builder#refreshOnly}
    */
   public CoalescingBulkLoader(AsyncBulkCacheLoader<K, V> forwardingLoader, long maxDelayMillis,
-                              int maxBatchSize) {
-    this(forwardingLoader, TimeReference.DEFAULT, maxDelayMillis, maxBatchSize);
+                              int maxBatchSize, boolean refreshOnly) {
+    this(forwardingLoader, TimeReference.DEFAULT, maxDelayMillis, maxBatchSize, refreshOnly);
   }
 
   /**
@@ -83,25 +90,31 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
    *                      used to translate to milli seconds via {@link TimeReference#toMillis(long)}
    */
   public CoalescingBulkLoader(AsyncBulkCacheLoader<K, V> forwardingLoader,
-                              TimeReference timeReference, long maxDelayMillis, int maxBatchSize) {
+                              TimeReference timeReference, long maxDelayMillis, int maxBatchSize,
+                              boolean refreshOnly) {
     Objects.requireNonNull(forwardingLoader, "forwardingLoader");
     this.maxDelayMillis = maxDelayMillis;
     this.maxBatchSize = maxBatchSize;
     this.forwardingLoader = forwardingLoader;
     this.timeReference = timeReference;
+    this.refreshOnly = refreshOnly;
   }
 
   @Override
   public void loadAll(Set<K> keys, BulkLoadContext<K, V> context, BulkCallback<K, V> callback) {
+    boolean flush = false;
     for (K key : keys) {
       Request<K, V> rq = new Request<>();
       rq.key = key;
       rq.context = context;
       pending.add(rq);
+      flush |= !context.isRefreshAhead();
     }
     int sizeToAdd = keys.size();
     long totalSize = queueSize.addAndGet(sizeToAdd);
-    if (totalSize >= maxBatchSize) {
+    if (refreshOnly && flush) {
+      flush();
+    } else if (totalSize >= maxBatchSize) {
       instantLoadAndScheduleTimer();
     } else if (totalSize == sizeToAdd) {
       startDelay();
@@ -182,6 +195,8 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
       @Override public BulkCallback<K, V> getCallback() {
         return callback;
       }
+      /** Always false, since we might have a mixture. */
+      @Override public boolean isRefreshAhead() { return false; }
     };
     return context;
   }

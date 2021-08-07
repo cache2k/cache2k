@@ -767,6 +767,24 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
+  public void asyncLoader_isRefreshAhead() throws ExecutionException, InterruptedException {
+    CountDownLatch waitForRefresh = new CountDownLatch(1);
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .loader((key, ctx, callback) -> {
+        if (ctx.getCurrentEntry() != null) {
+          waitForRefresh.countDown();
+        }
+        callback.onLoadSuccess(key);
+      })
+      .refreshAhead(true)
+      .expireAfterWrite(1, TimeUnit.MILLISECONDS));
+    Integer v = c.get(1);
+    c.loadAll(asList(1, 2, 3, 4, 5)).get();
+    c.invokeAll(asList(2, 3, 4), e -> e.setExpiryTime(ExpiryTimeValues.REFRESH));
+    waitForRefresh.await();
+  }
+
+  @Test
   public void asyncLoaderContextProperties() throws ExecutionException, InterruptedException {
     AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
