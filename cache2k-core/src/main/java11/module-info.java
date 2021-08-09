@@ -34,6 +34,5 @@ module org.cache2k.core {
   uses CacheConfigProvider;
   uses org.cache2k.core.spi.CacheLifeCycleListener;
   uses org.cache2k.core.spi.CacheManagerLifeCycleListener;
-  uses org.cache2k.spi.Cache2kExtensionProvider;
   provides org.cache2k.spi.Cache2kCoreProvider with org.cache2k.core.Cache2kCoreProviderImpl;
 }

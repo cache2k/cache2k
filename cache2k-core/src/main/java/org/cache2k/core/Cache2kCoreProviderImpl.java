@@ -29,11 +29,9 @@ import org.cache2k.core.log.Log;
 import org.cache2k.core.util.TunableConstants;
 import org.cache2k.core.util.TunableFactory;
 import org.cache2k.spi.Cache2kCoreProvider;
-import org.cache2k.spi.Cache2kExtensionProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -58,7 +56,6 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   {
     extractVersionAndGreet();
-    registerExtensions();
   }
 
   private void extractVersionAndGreet() {
@@ -72,23 +69,6 @@ public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
     String message = TunableFactory.get(Tunable.class).message;
     if (message != null) {
       log.info(message);
-    }
-  }
-
-  /**
-   * ignore load errors, so we can remove the serverSide or the xmlConfiguration code
-   * and cache2k core still works
-   */
-  private void registerExtensions() {
-    Iterator<Cache2kExtensionProvider> it =
-      ServiceLoader.load(
-        Cache2kExtensionProvider.class, CacheManager.class.getClassLoader()).iterator();
-    while (it.hasNext()) {
-      try {
-        it.next().registerCache2kExtension();
-      } catch (ServiceConfigurationError ex) {
-        Log.getLog(CacheManager.class.getName()).debug("Error loading cache2k extension", ex);
-      }
     }
   }
 
