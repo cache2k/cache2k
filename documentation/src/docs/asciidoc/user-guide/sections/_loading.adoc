@@ -16,7 +16,7 @@ When caching reads, using the cache in read through operation has several advant
 
 === Defining a Loader
 
-A loader is defined by implementing the abstract class `CacheLoader`.
+A loader is defined by implementing the interface `CacheLoader`.
 See the <<getting-started,Getting Started>> example about read through.
 
 [source,java]
@@ -49,6 +49,21 @@ example is the optimization of HTTP requests and use the request header `If-Modi
 
 The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/io/AdvancedCacheLoader.html[`AdvancedCacheLoader`]
 contains additional details.
+
+=== Asynchronous Loader and Bulk Loader
+
+The additional interface variants `AsyncCacheLoader` and `AsyncBulkCacheLoader` are available to
+implement more efficient loaders. When using the bulk loader and refresh ahead a
+`CoalescingBulkLoader` is can be used to combine single refresh ahead requests into one bulk
+request.
+
+=== Concurrent Load Requests
+
+A `Cache.get` or `Cache.getAll` will start a load and wait until the load is completed and return
+the result. With `Cache.loadAll` and `Cache.reloadAll` it is possible to start a concurrent
+load operation and get notified upon completion. If the configured loader does not support
+async operation, a thread pool (defined by `loaderExecutor`) will be used for the concurrent
+operation.
 
 === Invalidating
 
@@ -86,9 +101,4 @@ cache will often be misinterpreted and present pitfalls. For example, the method
 `Cache.containsKey` will not return true when the value exists in the system of authority,
 but only reflects the cache state.
 
-To prevent pitfalls a reduced set of interfaces is available:
-{api_link}/KeyValueSource.html[`KeyValueSource`],
-{api_link}/AdvancedKeyValueSource.html[`AdvancedKeyValueSource`] and
-{api_link}/KeyValueStore.html[`KeyValueStore]` are available. These interfaces only contain
-methods that act transparently when a loader or writer is defined.
-
+To prevent pitfalls a reduced interface is available: {api_link}/KeyValueSource.html[`KeyValueSource`].
