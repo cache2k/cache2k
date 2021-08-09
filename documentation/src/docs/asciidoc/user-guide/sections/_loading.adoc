@@ -30,7 +30,7 @@ The loader actions may only depend on the input key parameter. In case the load 
 will yield an exception it may be passed on to the cache. How exceptions are handled by the cache
 is defined by the resilience policy and explained in the <<resilience,Resilience chapter>>.
 
-The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/io/CacheLoader.html[`CacheLoader`]
+The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/org/cache2k/io/CacheLoader.html[`CacheLoader`]
 contains additional details.
 
 === Advanced Loader
@@ -47,14 +47,14 @@ interface AdvancedLoader<K, V> {
 The information of the current entry can be used to optimize the data request. A typical
 example is the optimization of HTTP requests and use the request header `If-Modified-Since`.
 
-The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/io/AdvancedCacheLoader.html[`AdvancedCacheLoader`]
+The JavaDoc about the link:{cache2k_docs}/apidocs/cache2k-api/org/cache2k/io/AdvancedCacheLoader.html[`AdvancedCacheLoader`]
 contains additional details.
 
 === Asynchronous Loader and Bulk Loader
 
 The additional interface variants `AsyncCacheLoader` and `AsyncBulkCacheLoader` are available to
-implement more efficient loaders. When using the bulk loader and refresh ahead a
-`CoalescingBulkLoader` is can be used to combine single refresh ahead requests into one bulk
+implement more efficient loaders. When using the bulk loader and refresh ahead the
+`CoalescingBulkLoader` can be used to combine single refresh ahead requests into one bulk
 request.
 
 === Concurrent Load Requests

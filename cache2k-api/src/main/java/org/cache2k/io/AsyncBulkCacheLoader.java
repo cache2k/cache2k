@@ -32,7 +32,29 @@ import java.util.concurrent.Executor;
 /**
  * Extension of {@link AsyncCacheLoader} with bulk load capabilities.
  *
- * <p>See {@link BulkCacheLoader} for more details.
+ * <p>Semantics: A bulk load is issued when the cache client uses a bulk method to retrieve
+ * data, like {@link org.cache2k.Cache#loadAll} or {@link org.cache2k.Cache#getAll}. Not all
+ * keys that the client requests end up in the load request. In case of
+ * {@link org.cache2k.Cache#getAll} mappings that are already present in the cache, will not
+ * loaded again. The cache also may issue partial bulk loads in case requested entries are currently
+ * processing (maybe a concurrent load or another cache operation). The bulk load will be
+ * started with as much entries that can be accessed and locked as possible. There is
+ * no guarantee about atomicity or order how a bulk request is executed.
+ *
+ * <p>Deadlock avoidance: When a load operation is in flight the entry is blocked and no
+ * other operations take place on that entry. When operating on multiple entries, deadlocks
+ * might occur, when one operation is processing and locking one entry and waiting for another
+ * entry. To avoid deadlocks, the cache will only wait for one entry when holding no locks on
+ * another entry. Practically speaking: The cache will issue a bulk request to as many entries
+ * it can lock at once, when that request is completed, it will will try again or wait
+ * for concurrent processing if no more operations can be started.
+ *
+ * <p>Rationale: Other cache products and JCache/JSR107 defines a {@link #loadAll}
+ * on the same interface as the cache loader. The JCache variant does not work as functional
+ * interface because both methods have to be implemented. Other caches implement {@link #loadAll}
+ * as iteration over {@link #load(Object)} by default. With a separate interface the cache "knows"
+ * whether bulk operations can be optimized and its possible to be implemented as lambda function
+ * as well.
  *
  * @author Jens Wilke
  * @see BulkCacheLoader

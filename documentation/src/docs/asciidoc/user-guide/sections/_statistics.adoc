@@ -17,8 +17,8 @@ follows the pattern `org.cache2k:type=CacheManager,name=<managerName>`.
 
 More detailed information can be found in the API documentation:
 
-- link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/jmx/CacheInfoMXBean.html[MXBean for the cache]
-- link:{cache2k_docs}/apidocs/cache2k-api/index.html?org/cache2k/jmx/CacheManagerInfoMXBean.html[MXBean for the cache manager]
+- link:{cache2k_docs}/apidocs/cache2k-api/org/cache2k/jmx/CacheInfoMXBean.html[MXBean for the cache]
+- link:{cache2k_docs}/apidocs/cache2k-api/org/cache2k/jmx/CacheManagerInfoMXBean.html[MXBean for the cache manager]
 
 ==== Conflicting Manager Names in JMX
 
