@@ -225,7 +225,7 @@ public class IntegrationTest {
   /**
    * As of version 2.0 we allow duplicate listeners to simplify the configuration
    */
-  @Test
+  @Test @Ignore
   public void duplicateListener() {
     Cache2kBuilder<String, String> builder =
       new Cache2kBuilder<String, String>() { }
