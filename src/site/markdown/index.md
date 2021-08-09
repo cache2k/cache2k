@@ -49,7 +49,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
-  * **Version 2.1.1.Alpha, 2020-12-24**: Preview release, bulk support, see [Version 2.1.1.Alpha release notes](2/1.1.Alpha.html)
+  * **Version 2.2.0.Final, 2021-08-07**: Bulk loader support, see [Version 2.2.0.Final release notes](2/2.0.Final.html)
   * **Version 2.0.0.Final, 2020-12-15**: Major release, improved Java 8 support, API cleanups, see [Version 2.0.0.Final release notes](2/0.0.Final.html)
   * **Version 1.6.0.Final, 2020-10-09**: Improved timer code for expiry, fixes and cleanup, see [Version 1.6.0.Final release notes](1/6.0.Final.html)
   * **Version 1.4.1.Final, 2020-10-02**: Critical bug fix, see [Version 1.4.1.Final release notes](1/4.1.Final.html)
