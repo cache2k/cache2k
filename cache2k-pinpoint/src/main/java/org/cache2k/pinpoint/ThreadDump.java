@@ -1,8 +1,8 @@
-package org.cache2k.core.util;
+package org.cache2k.pinpoint;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k pinpoint
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
