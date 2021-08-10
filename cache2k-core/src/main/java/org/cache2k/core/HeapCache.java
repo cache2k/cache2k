@@ -483,9 +483,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     public void remove() {
       if (lastEntry == null) {
         throw new IllegalStateException(
-          "Unable to remove, hasNext() / next() not called or end of iteration reached");
+          "Unable to remove, hasNext() not called or previously removed");
       }
       cache.remove(lastEntry.getKey());
+      lastEntry = null;
     }
   }
 
@@ -818,12 +819,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     for (;;) {
       e = lookupOrNewEntry(key);
       if (e.hasFreshData(clock)) {
-        return returnValue(e);
+        V value = returnValue(e);
+        if (value != null) { return value; }
       }
       synchronized (e) {
         e.waitForProcessing();
         if (e.hasFreshData(clock)) {
-          return returnValue(e);
+          V value = returnValue(e);
+          if (value != null) { return value; }
         }
         if (e.isGone()) {
           metrics.goneSpin();
@@ -847,6 +850,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
           t = clock.millis();
         }
       }
+      if (value == null) { return null; }
       synchronized (e) {
         insertOrUpdateAndCalculateExpiry(e, value, t0, t, t0, INSERT_STAT_PUT);
         e.processingDone();

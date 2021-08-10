@@ -22,6 +22,7 @@ package org.cache2k.extra.spring;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
+import org.cache2k.processor.EntryProcessingException;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
 
@@ -95,14 +96,16 @@ public class SpringCache2kCache implements Cache {
   @Override
   public <T> T get(Object key, Callable<T> valueLoader) {
     try {
-      return (T) cache.computeIfAbsent(key, o -> {
-        try {
-          return valueLoader.call();
-        } catch (Exception ex) {
-          throw new WrappedException(ex);
+      return cache.invoke(key, entry -> {
+        if (entry.exists()) {
+          return (T) entry.getValue();
         }
+        entry.setValue(null);
+        T val = valueLoader.call();
+        entry.setValue(val);
+        return val;
       });
-    } catch (WrappedException ex) {
+    } catch (EntryProcessingException ex) {
       throw new ValueRetrievalException(key, valueLoader, ex.getCause());
     }
   }

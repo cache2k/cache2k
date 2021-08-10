@@ -40,7 +40,7 @@ public class ConcurrentMapTest {
 
   ConcurrentMap<Integer, String> map;
 
-    Map<?, ?> untypedMap() {
+  Map<?, ?> untypedMap() {
     return (Map<?, ?>) map;
   }
 

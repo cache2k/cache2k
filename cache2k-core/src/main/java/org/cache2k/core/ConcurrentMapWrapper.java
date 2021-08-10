@@ -22,15 +22,18 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
+import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
@@ -43,7 +46,7 @@ import java.util.function.Function;
  * @author Jens Wilke
  */
 @SuppressWarnings("unchecked")
-public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
+public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
 
   private final boolean permitNull;
   private final Cache<K, V> cache;
@@ -288,7 +291,29 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
 
               @Override
               public V setValue(V value) {
-                throw new UnsupportedOperationException();
+                return cache.peekAndPut(getKey(), value);
+              }
+
+              /**
+               * As defined at {@link Entry#hashCode()}
+               */
+              @Override
+              public int hashCode() {
+                return (e.getKey()==null   ? 0 : e.getKey().hashCode()) ^
+                  (e.getValue()==null ? 0 : e.getValue().hashCode());
+              }
+
+              @Override
+              public String toString() {
+                return getKey() + "=" + getValue();
+              }
+
+              @Override
+              public boolean equals(Object obj) {
+                if (!(obj instanceof Map.Entry)) { return false; }
+                Map.Entry<?, ?> entry = (Map.Entry) obj;
+                return (getKey().equals(entry.getKey()))  &&
+                  (getValue()==null ? entry.getValue()==null : getValue().equals(entry.getValue()));
               }
             };
           }
@@ -303,6 +328,18 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
       @Override
       public int size() {
         return ConcurrentMapWrapper.this.size();
+      }
+
+
+      @Override
+      public boolean contains(Object o) {
+        if (!(o instanceof Entry)) { return false; }
+        Entry<?, ?> entry = (Entry) o;
+        if (!containsKey(entry.getKey())) { return false; }
+        Object val = get(entry.getKey());
+        if (val == entry.getValue()) { return true; }
+        if (val == null) { return false; }
+        return val.equals(entry.getValue());
       }
     };
   }
@@ -319,6 +356,8 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
       V value = null;
       if (entry.exists()) {
         entry.lock();
+        value = entry.getValue();
+        if (value == null) { return value; }
         value = remappingFunction.apply(key, entry.getValue());
         if (value != null) {
           entry.setValue(value);
@@ -348,20 +387,6 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     });
   }
 
-  /** This is the object identity of the cache */
-  @Override
-  public boolean equals(Object o) {
-    if (o instanceof ConcurrentMapWrapper) {
-      return cache.equals(((ConcurrentMapWrapper<?, ?>) o).cache);
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    return cache.hashCode();
-  }
-
   /**
    * Used for compute methods which use the entry processor.
    * Unwrap the exception to comply with ConcurrentMap contract.
@@ -370,8 +395,45 @@ public class ConcurrentMapWrapper<K, V> implements ConcurrentMap<K, V> {
     try {
       return cache.invoke(key, p);
     } catch (EntryProcessingException ex) {
-      throw (RuntimeException) ex.getCause();
+      Throwable cause = ex.getCause();
+      if (cause instanceof Error) {
+        throw (Error) cause;
+      }
+      if (cause instanceof RuntimeException) {
+        throw (RuntimeException) cause;
+      }
+      throw new RuntimeException(cause);
     }
+  }
+
+  /**
+   * Default implementation from ConcurrentMap does not account for null
+   * values.
+   */
+  @Override
+  public V getOrDefault(Object key, V defaultValue) {
+    CacheEntry<K, V> entry = cache.peekEntry((K) key);
+    return entry != null ? entry.getValue() : defaultValue;
+  }
+
+  /**
+   * Default from ConcurrentMap not working because of null values.
+   */
+  @Override
+  public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    Objects.requireNonNull(remappingFunction);
+    Objects.requireNonNull(value);
+    return invokeUnwrapException(key, entry -> {
+      V oldValue = entry.exists() ? entry.getValue() : null;
+      V newValue = (oldValue == null) ? value :
+        remappingFunction.apply(oldValue, value);
+      if (newValue == null) {
+        entry.remove();
+      } else {
+        entry.setValue(newValue);
+      }
+      return newValue;
+    });
   }
 
 }

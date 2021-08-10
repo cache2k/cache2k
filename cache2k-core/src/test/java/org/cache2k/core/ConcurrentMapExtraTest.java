@@ -55,19 +55,4 @@ public class ConcurrentMapExtraTest {
     cache.close();
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void entrySetValueUnsupported() {
-    Cache<Integer, String> cache = Cache2kBuilder.of(Integer.class, String.class)
-      .eternal(true)
-      .permitNullValues(true)
-      .build();
-    try {
-      ConcurrentMap<Integer, String> map = cache.asMap();
-      cache.put(123, "hello");
-      map.entrySet().iterator().next().setValue("boo");
-    } finally {
-      cache.close();
-    }
-  }
-
 }

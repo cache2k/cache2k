@@ -23,7 +23,18 @@ package org.cache2k.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.testing.category.FastTests;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.concurrent.ConcurrentMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test ConcurrentMap methods with cache.
@@ -31,23 +42,34 @@ import org.junit.experimental.categories.Category;
  * @author Jens Wilke
  */
 @Category(FastTests.class)
-public class ConcurrentMapWithCacheTest extends ConcurrentMapTest {
+public class ConcurrentMapWithCacheNullValueTest {
 
   Cache<Integer, String> cache;
+  ConcurrentMap<Integer, String> map;
 
-  @Override
+  @Before
   public void setUp() {
     cache = Cache2kBuilder.of(Integer.class, String.class)
-      .name(this.getClass().getName()).eternal(true)
+      .eternal(true).permitNullValues(true)
       .build();
     map = cache.asMap();
   }
 
-  @Override
+  @After
   public void tearDown() {
     cache.close();
     map = null;
     cache = null;
+  }
+
+  @Test
+  public void getOrDefault() {
+    cache.put(1, null);
+    cache.put(2, "abc");
+    assertEquals("xy", map.getOrDefault(3, "xy"));
+    assertEquals("abc", map.getOrDefault(2, "xy"));
+    assertTrue(map.containsKey(1));
+    assertEquals(null, map.getOrDefault(1, "xy"));
   }
 
 }

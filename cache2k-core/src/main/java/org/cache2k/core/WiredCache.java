@@ -623,9 +623,10 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       @Override
       public void remove() {
         if (entry == null) {
-          throw new IllegalStateException("call next first");
+          throw new IllegalStateException("call to next() missing or double remove()");
         }
         WiredCache.this.remove(entry.getKey());
+        entry = null;
       }
     };
     return adapted;
