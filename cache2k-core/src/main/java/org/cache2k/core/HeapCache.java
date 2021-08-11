@@ -819,14 +819,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     for (;;) {
       e = lookupOrNewEntry(key);
       if (e.hasFreshData(clock)) {
-        V value = returnValue(e);
-        if (value != null) { return value; }
+        return returnValue(e);
       }
       synchronized (e) {
         e.waitForProcessing();
         if (e.hasFreshData(clock)) {
-          V value = returnValue(e);
-          if (value != null) { return value; }
+          return returnValue(e);
         }
         if (e.isGone()) {
           metrics.goneSpin();
@@ -850,7 +848,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
           t = clock.millis();
         }
       }
-      if (value == null) { return null; }
       synchronized (e) {
         insertOrUpdateAndCalculateExpiry(e, value, t0, t, t0, INSERT_STAT_PUT);
         e.processingDone();

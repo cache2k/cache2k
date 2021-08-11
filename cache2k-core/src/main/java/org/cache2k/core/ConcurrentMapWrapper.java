@@ -346,7 +346,18 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
 
   @Override
   public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-    return cache.computeIfAbsent(key, mappingFunction);
+    return invokeUnwrapException(key, entry -> {
+      V oldValue = null;
+      if (!entry.exists() || (oldValue = entry.getValue()) == null) {
+        entry.lock();
+        V value = mappingFunction.apply(key);
+        if (value != null) {
+          entry.setValue(value);
+          return value;
+        }
+      }
+      return oldValue;
+    });
   }
 
   @Override

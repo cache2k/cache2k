@@ -96,16 +96,13 @@ public class SpringCache2kCache implements Cache {
   @Override
   public <T> T get(Object key, Callable<T> valueLoader) {
     try {
-      return cache.invoke(key, entry -> {
-        if (entry.exists()) {
-          return (T) entry.getValue();
-        }
-        entry.setValue(null);
-        T val = valueLoader.call();
-        entry.setValue(val);
-        return val;
-      });
-    } catch (EntryProcessingException ex) {
+      return (T) cache.computeIfAbsent(key, v -> {
+        try {
+          return valueLoader.call();
+        } catch (Throwable ex) {
+          throw new WrappedException(ex);
+        }});
+    } catch (WrappedException ex) {
       throw new ValueRetrievalException(key, valueLoader, ex.getCause());
     }
   }

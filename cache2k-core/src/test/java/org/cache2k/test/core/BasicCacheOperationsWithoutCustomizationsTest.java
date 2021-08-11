@@ -436,7 +436,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void computeIfAbsent_Null() {
     cache.computeIfAbsent(KEY, key -> null);
-    assertFalse(cache.containsKey(KEY));
+    assertTrue(cache.containsKey(KEY));
+    assertNull(cache.peek(KEY));
+    cache.computeIfAbsent(KEY, key -> 123);
     assertNull(cache.peek(KEY));
   }
 

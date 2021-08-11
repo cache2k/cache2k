@@ -252,12 +252,9 @@ public class Operations<K, V> {
       @Override
       public void examine(K key, Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
-          V value = e.getValueOrException();
-          if (value != null) {
-            c.result(e.getValueOrException());
-            c.noMutation();
-            return;
-          }
+          c.result(e.getValueOrException());
+          c.noMutation();
+          return;
         }
         c.wantMutation();
       }
@@ -267,11 +264,7 @@ public class Operations<K, V> {
         try {
           V value = function.apply(e.getKey());
           c.result(value);
-          if (value != null) {
-            c.put(value);
-          } else {
-            c.noMutation();
-          }
+          c.put(value);
         } catch (RuntimeException ex) {
           c.failure(ex);
         }
