@@ -276,7 +276,10 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    *   return cache.peek(key);
    * }}</pre>
    *
-   * except that the action is performed atomically.
+   * except that the action is performed atomically. Attention for pitfalls:
+   * With null values permitted the behavior differs from the
+   * {@link Map#computeIfAbsent(Object, Function)} semantics, which treat a null
+   * value as absent.
    *
    * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
    * expiry calculation.
@@ -312,7 +315,10 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    *   return false;
    * }}</pre>
    *
-   * except that the action is performed atomically.
+   * except that the action is performed atomically. Attention for pitfalls:
+   * With null values permitted the behavior differs from the
+   * {@link Map#putIfAbsent(Object, Object)} semantics, which treat a null
+   * value as absent.
    *
    * <p>See {@link #put(Object, Object)} for the effects on the cache writer and
    * expiry calculation.
