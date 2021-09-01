@@ -22,6 +22,7 @@ package org.cache2k.test.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.cache2k.core.HeapCache;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncBulkCacheLoader;
@@ -59,6 +60,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -414,34 +417,22 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   /**
-   * getAsyncLoadsStarted uses the task count from the executor which is not
-   * exact. We use is since we only want to know whether the loader will
-   * be invoked, testing for the enqueued task is sufficient and faster.
-   * Await the execution of the loader as fallback.
-   */
-  private boolean isLoadStarted(Cache<Integer, Integer> cache) {
-    if (latestInfo(cache).getAsyncLoadsStarted() > 0) {
-      return true;
-    }
-    await("Await loader execution", new Condition() {
-      @Override
-      public boolean check() {
-        return loaderExecutionCount > 0;
-      }
-    });
-    return true;
-  }
-
-  /**
    * We should always have two loader threads.
    */
   @Test
   public void testTwoLoaderThreadsAndPoolInfo() throws Exception {
     CountDownLatch inLoader = new CountDownLatch(2);
     CountDownLatch releaseLoader = new CountDownLatch(1);
+    String namePrefix = CacheLoader.class.getName() + ".testTwoLoaderThreadsAndPoolInfo";
+    ThreadPoolExecutor pool = new ThreadPoolExecutor(0, 10,
+      21, TimeUnit.SECONDS,
+      new SynchronousQueue<Runnable>(),
+      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(namePrefix),
+      new ThreadPoolExecutor.AbortPolicy());
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.loaderExecutor(pool);
         b.loader(new CacheLoader<Integer, Integer>() {
           @Override
           public Integer load(Integer key) throws Exception {
@@ -455,10 +446,16 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(asList(1));
     c.loadAll(asList(2));
     inLoader.await();
+    assertEquals(2, pool.getTaskCount());
+    assertEquals(2, pool.getActiveCount());
+    assertEquals(2, pool.getLargestPoolSize());
+    /* old version
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(2, latestInfo(c).getLoaderThreadsMaxActive());
+    */
     releaseLoader.countDown();
+    pool.shutdown();
   }
 
   /**
@@ -471,10 +468,16 @@ public class CacheLoaderTest extends TestingBase {
     CountDownLatch inLoader = new CountDownLatch(1);
     CountDownLatch releaseLoader = new CountDownLatch(1);
     AtomicInteger asyncCount = new AtomicInteger();
+    String namePrefix = CacheLoader.class.getName() + ".testOneLoaderThreadsAndPoolInfo";
+    ThreadPoolExecutor pool = new ThreadPoolExecutor(0, 1,
+      21, TimeUnit.SECONDS,
+      new SynchronousQueue<Runnable>(),
+      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(namePrefix),
+      new ThreadPoolExecutor.AbortPolicy());
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.loaderThreadCount(1)
+        b .loaderExecutor(pool)
           .loader(new CacheLoader<Integer, Integer>() {
             @Override
             public Integer load(Integer key) throws Exception {
@@ -491,10 +494,16 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(asList(1));
     c.loadAll(asList(2));
     inLoader.await();
+    assertEquals("only one load is separate thread", 1, pool.getTaskCount());
+    assertEquals("only one load is separate thread", 1, asyncCount.get());
+    assertEquals(1, pool.getActiveCount());
+    assertEquals(1, pool.getLargestPoolSize());
+    /* old version
     assertEquals("only one load is separate thread", 1, latestInfo(c).getAsyncLoadsStarted());
     assertEquals("only one load is separate thread", 1, asyncCount.get());
     assertEquals(1, latestInfo(c).getAsyncLoadsInFlight());
     assertEquals(1, latestInfo(c).getLoaderThreadsMaxActive());
+    */
     releaseLoader.countDown();
   }
 

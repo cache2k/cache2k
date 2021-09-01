@@ -56,11 +56,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   private String extraStatistics;
   private final IntegrityState integrityState;
   private final long totalLoadCnt;
-
-  private int loaderThreadsLimit = -1;
-  private long asyncLoadsStarted = -1;
-  private long asyncLoadsInFlight = -1;
-  private int loaderThreadsMaxActive = -1;
   private long evictedWeight;
 
   /*
@@ -112,14 +107,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     heapHitCnt = metrics.getHeapHitCount();
     recordedHitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
-    if (heapCache.getLoaderExecutor() instanceof ExclusiveExecutor) {
-      ThreadPoolExecutor ex =
-        ((ExclusiveExecutor) heapCache.getLoaderExecutor()).getThreadPoolExecutor();
-      asyncLoadsInFlight = ex.getActiveCount();
-      asyncLoadsStarted = ex.getTaskCount();
-      loaderThreadsLimit = ex.getCorePoolSize();
-      loaderThreadsMaxActive = ex.getLargestPoolSize();
-    }
     totalLoadCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getRefreshCount();
   }
@@ -251,26 +238,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     return l;
   }
   @Override
-  public long getAsyncLoadsStarted() {
-    return asyncLoadsStarted;
-  }
-
-  @Override
-  public long getAsyncLoadsInFlight() {
-    return asyncLoadsInFlight;
-  }
-
-  @Override
-  public int getLoaderThreadsLimit() {
-    return loaderThreadsLimit;
-  }
-
-  @Override
-  public int getLoaderThreadsMaxActive() {
-    return loaderThreadsMaxActive;
-  }
-
-  @Override
   public String getExtraStatistics() {
     return extraStatistics;
   }
@@ -327,10 +294,6 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("goneSpin=").append(getGoneSpinCount()).append(", ")
       .append("hitRate=").append(getHitRateString()).append(", ")
       .append("msecs/load=").append(formatMillisPerLoad(getMillisPerLoad())).append(", ")
-      .append("asyncLoadsStarted=").append(asyncLoadsStarted).append(", ")
-      .append("asyncLoadsInFlight=").append(asyncLoadsInFlight).append(", ")
-      .append("loaderThreadsLimit=").append(loaderThreadsLimit).append(", ")
-      .append("loaderThreadsMaxActive=").append(loaderThreadsMaxActive).append(", ")
       .append("created=").append(timestampToString(getStartedTime())).append(", ")
       .append("cleared=").append(timestampToString(getClearedTime())).append(", ")
       .append("infoCreated=").append(timestampToString(getInfoCreatedTime())).append(", ")

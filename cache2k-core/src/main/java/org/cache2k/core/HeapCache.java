@@ -63,6 +63,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -303,7 +306,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   Executor provideDefaultLoaderExecutor(int threadCount) {
-    return new ExclusiveExecutor(threadCount, getThreadNamePrefix());
+    int corePoolThreadSize = 0;
+    return new ThreadPoolExecutor(corePoolThreadSize, threadCount,
+      21, TimeUnit.SECONDS,
+      new SynchronousQueue<Runnable>(),
+      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(getThreadNamePrefix()),
+      new ThreadPoolExecutor.AbortPolicy());
   }
 
   public void setTiming(Timing<K, V> rh) {
