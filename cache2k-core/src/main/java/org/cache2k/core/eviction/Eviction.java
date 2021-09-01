@@ -26,7 +26,7 @@ import org.cache2k.core.IntegrityState;
 import java.util.function.Supplier;
 
 /**
- * Interface to the eviction data structure (replacement list).
+ * Interface to the eviction data structure.
  *
  * @author Jens Wilke
  */
@@ -44,13 +44,13 @@ public interface Eviction {
    * Updates the weight on the entry and recalculates the total weight if needed.
    *
    * <p>Expected not to hold the entry lock, which means, that this does not run
-   * in sync with the actual update. That is okay as long as its runs after every
+   * in sync with the actual update. That is okay as long as it runs after every
    * update.
    *
-   * <p>Since we need to lock the eviction structure, this could happen async in a separate thread.
+   * <p>Since we need to lock the eviction structure, this can happen in a separate thread.
    *
-   * @return hint whether eviction should be run. for bulk operations do eviction once.
-   *         so not do it within this method
+   * @return hint whether eviction should be run. for a bulk operation we want to do
+   *         eviction once, so not do it within this method
    */
   boolean updateWeight(Entry e);
 

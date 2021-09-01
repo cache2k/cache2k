@@ -48,7 +48,10 @@ class CacheBaseInfo implements InternalCacheInfo {
   private final long infoCreatedTime;
   private int infoCreationDeltaMs;
   private final long missCnt;
-  private final long hitCnt;
+  /** Hit count from the statistics */
+  private final long heapHitCnt;
+  /** Hit count from eviction */
+  private final long recordedHitCnt;
   private final long correctedPutCnt;
   private String extraStatistics;
   private final IntegrityState integrityState;
@@ -106,7 +109,8 @@ class CacheBaseInfo implements InternalCacheInfo {
     size = this.heapCache.getLocalSize();
     missCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
-    hitCnt = em.getHitCount();
+    heapHitCnt = metrics.getHeapHitCount();
+    recordedHitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
     if (heapCache.getLoaderExecutor() instanceof ExclusiveExecutor) {
       ThreadPoolExecutor ex =
@@ -162,7 +166,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getGetCount() {
     return
-      hitCnt + metrics.getPeekMissCount()
+      heapHitCnt + metrics.getPeekMissCount()
       + metrics.getReadThroughCount() -  metrics.getHeapHitButNoReadCount();
   }
   @Override
@@ -170,7 +174,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getNewEntryCount() { return newEntryCnt; }
   @Override
-  public long getHeapHitCount() { return hitCnt; }
+  public long getHeapHitCount() { return heapHitCnt; }
   @Override
   public long getLoadCount() { return totalLoadCnt; }
   @Override
@@ -307,6 +311,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("load=").append(getLoadCount()).append(", ")
       .append("reload=").append(getExplicitLoadCount()).append(", ")
       .append("heapHit=").append(getHeapHitCount()).append(", ")
+      .append("recordedHeapHit=").append(recordedHitCnt).append(", ")
       .append("refresh=").append(getRefreshCount()).append(", ")
       .append("refreshRejected=").append(getRefreshRejectedCount()).append(", ")
       .append("refreshedHit=").append(getRefreshedHitCount()).append(", ")

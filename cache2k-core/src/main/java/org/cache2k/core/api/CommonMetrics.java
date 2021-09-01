@@ -27,6 +27,8 @@ package org.cache2k.core.api;
  */
 public interface CommonMetrics {
 
+  long getHeapHitCount();
+
   /**
    * Counted for a put that triggers the insert of a new cache entry.
    *
@@ -147,6 +149,8 @@ public interface CommonMetrics {
 
   interface Updater extends CommonMetrics {
 
+    void heapHit();
+
     void putNewEntry();
 
     void putHit();
@@ -182,79 +186,55 @@ public interface CommonMetrics {
   class BlackHole implements Updater {
 
     @Override
-    public void putNewEntry() {
-
-    }
+    public void heapHit() { }
 
     @Override
-    public void putHit() {
-
-    }
+    public void putNewEntry() { }
 
     @Override
-    public void heapHitButNoRead() {
-
-    }
+    public void putHit() { }
 
     @Override
-    public void timerEvent() {
-
-    }
+    public void heapHitButNoRead() { }
 
     @Override
-    public void readThrough(long millis) {
-
-    }
+    public void timerEvent() { }
 
     @Override
-    public void explicitLoad(long millis) {
-
-    }
+    public void readThrough(long millis) { }
 
     @Override
-    public void refresh(long millis) {
-
-    }
+    public void explicitLoad(long millis) { }
 
     @Override
-    public void loadException() {
-
-    }
+    public void refresh(long millis) { }
 
     @Override
-    public void suppressedException() {
-
-    }
+    public void loadException() { }
 
     @Override
-    public void expiredKept() {
-
-    }
+    public void suppressedException() { }
 
     @Override
-    public void peekMiss() {
-
-    }
+    public void expiredKept() { }
 
     @Override
-    public void peekHitNotFresh() {
-
-    }
+    public void peekMiss() { }
 
     @Override
-    public void refreshedHit() {
-
-    }
+    public void peekHitNotFresh() { }
 
     @Override
-    public void refreshRejected() {
-
-    }
+    public void refreshedHit() { }
 
     @Override
-    public void goneSpin() {
+    public void refreshRejected() { }
 
-    }
+    @Override
+    public void goneSpin() { }
+
+    @Override
+    public long getHeapHitCount() { return 0; }
 
     @Override
     public long getPutNewEntryCount() {

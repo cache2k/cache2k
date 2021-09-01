@@ -529,7 +529,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   /**
-   *
+   * Remove entries from the replacement list without locking the entry itself.
    */
   protected abstract long removeAllFromReplacementList();
 

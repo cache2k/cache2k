@@ -23,6 +23,7 @@ package org.cache2k.core;
 import org.cache2k.core.api.CommonMetrics;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * @author Jens Wilke
@@ -224,6 +225,18 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
   @Override
   public void goneSpin() {
     GONE_SPIN_UPDATER.incrementAndGet(this);
+  }
+
+  private final LongAdder heapHitCount = new LongAdder();
+
+  @Override
+  public long getHeapHitCount() {
+    return heapHitCount.longValue();
+  }
+
+  @Override
+  public void heapHit() {
+    heapHitCount.increment();
   }
 
 }

@@ -507,6 +507,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    */
   protected void recordHit(Entry e) {
     e.hitCnt++;
+    metrics.heapHit();
   }
 
   @Override
