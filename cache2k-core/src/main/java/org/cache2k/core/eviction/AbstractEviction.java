@@ -205,8 +205,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   /**
    * Remove and update statistics if not removed already.
-   * An entry may be removed if we race with {@link #removeAll} which is triggered
-   * by {@link org.cache2k.Cache#clear}
+   * An entry may be removed already if we race with {@link #removeAll}
+   * which is triggered by {@link org.cache2k.Cache#clear}
    */
   private void removeEventually(Entry e) {
     if (!e.isRemovedFromReplacementList()) {

@@ -32,7 +32,7 @@ import org.cache2k.core.Entry;
 public interface HeapCacheForEviction<K, V> {
 
   /**
-   * Hash table entry array, used reaa only by random eviction.
+   * Hash table entry array, used only by random eviction.
    */
   Entry<K, V>[] getHashEntries();
 
