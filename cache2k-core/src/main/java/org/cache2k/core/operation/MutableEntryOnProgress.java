@@ -49,7 +49,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   private boolean customExpiry = false;
   private long expiryTime = NEUTRAL;
   private long refreshTime = NEUTRAL;
-  private V originalOrLoadedValue = null;
+  private Object originalOrLoadedValue = null;
   private boolean dataRead = false;
 
   /**
@@ -139,7 +139,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
     triggerLoadOrInstallationRead();
     dataRead = true;
     checkAndThrowException(originalOrLoadedValue);
-    return originalOrLoadedValue;
+    return (V) originalOrLoadedValue;
   }
 
   @Override
@@ -185,7 +185,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   @SuppressWarnings("unchecked")
-  private void checkAndThrowException(V value) {
+  private void checkAndThrowException(Object value) {
     if (value instanceof ExceptionWrapper) {
       throw ((ExceptionWrapper<K, V>) value).generateExceptionToPropagate();
     }

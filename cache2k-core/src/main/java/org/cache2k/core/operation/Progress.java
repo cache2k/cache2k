@@ -97,6 +97,11 @@ public interface Progress<K, V, R> {
   void result(R result);
 
   /**
+   * Sets the result or a wrapper
+   */
+  void resultOrWrapper(Object result);
+
+  /**
    * Returns a cache entry as result. The entry will be copied before returning.
    */
   void entryResult(ExaminationEntry<K, V> e);

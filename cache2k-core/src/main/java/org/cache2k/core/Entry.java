@@ -57,7 +57,7 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
    */
   @SuppressWarnings("unchecked")
-  private volatile V valueOrException = (V) INITIAL_VALUE;
+  private volatile Object valueOrException = INITIAL_VALUE;
 
   /**
    * Hash implementation: the calculated, modified hash code, retrieved from the key when
@@ -85,7 +85,7 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
     this.hashCode = hashCode;
   }
 
-  public void setValueOrException(V valueOrException) {
+  public void setValueOrException(Object valueOrException) {
     this.valueOrException = valueOrException;
   }
 
@@ -102,10 +102,8 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
   }
 
   public boolean equalsValue(V v) {
-    V ve = valueOrException;
-    if (ve == null) {
-      return v == ve;
-    }
+    Object ve = valueOrException;
+    if (ve == null) { return v == ve; }
     return ve.equals(v);
   }
 
@@ -117,13 +115,13 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
    */
   @Deprecated
   public V getValue() {
-    return valueOrException;
+    return (V) valueOrException;
   }
 
   /**
    * The value of the entry or an {@link ExceptionWrapper}.
    */
-  public V getValueOrException() {
+  public Object getValueOrException() {
     return valueOrException;
   }
 

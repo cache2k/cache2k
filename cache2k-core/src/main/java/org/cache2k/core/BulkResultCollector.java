@@ -35,9 +35,9 @@ public class BulkResultCollector<K, V> {
 
   private int exceptionCount;
   private Throwable anyException;
-  private Map<K, V> map = new HashMap<>();
+  private Map<K, Object> map = new HashMap<>();
 
-  public void put(K key, V value) {
+  public void put(K key, Object value) {
     map.put(key, value);
     if (value instanceof ExceptionWrapper) {
       anyException = ((ExceptionWrapper<?, ?>) value).getException();
@@ -52,9 +52,9 @@ public class BulkResultCollector<K, V> {
     if (exceptionCount > 0 && exceptionCount == map.size()) {
       throw getAnyLoaderException();
     }
-    return new MapValueConverterProxy<K, V, V>(map) {
+    return new MapValueConverterProxy<K, V, Object>(map) {
       @Override
-      protected V convert(V v) {
+      protected V convert(Object v) {
         return HeapCache.returnValue(v);
       }
     };

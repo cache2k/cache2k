@@ -398,7 +398,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return loader != null || asyncLoader != null;
   }
 
-  V returnValue(V v) {
+  V returnValue(Object v) {
     return heapCache.returnValue(v);
   }
 
@@ -561,7 +561,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       EntryProcessingResult<R> singleResult;
       Throwable exception = action.getException();
       if (exception == null) {
-        singleResult = EntryProcessingResultFactory.result(action.getResult());
+        singleResult = EntryProcessingResultFactory.result((R) action.getResult());
       } else {
         singleResult = EntryProcessingResultFactory.exception(exception);
       }
@@ -581,7 +581,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
         if (ex != null) {
           result = EntryProcessingResultFactory.exception(ex);
         } else if (action.isResultAvailable()) {
-          result = EntryProcessingResultFactory.result(action.getResult());
+          result = EntryProcessingResultFactory.result((R) action.getResult());
         }
         if (result != null) {
           resultMap.put(action.getKey(), result);

@@ -56,19 +56,19 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
     return (ExpiryPolicy<K, V>) buildContext.createCustomization(cfg.getExpiryPolicy());
   }
 
-  long calcNextRefreshTime(K key, V newObject, long now, CacheEntry<K, V> entry) {
+  long calcNextRefreshTime(K key, V value, long now, CacheEntry<K, V> entry) {
     return calcNextRefreshTime(
-      key, newObject, now, entry,
+      key, value, now, entry,
       expiryPolicy, expiryMillis, sharpExpiry);
   }
 
-  public long calculateNextRefreshTime(Entry<K, V> entry, V newValue, long loadTime) {
+  public long calculateNextRefreshTime(Entry<K, V> entry, V value, long loadTime) {
     if (entry.isDataAvailable() || entry.isExpiredState()
       || entry.getNextRefreshTime() == Entry.EXPIRED_REFRESH_PENDING) {
-      return calcNextRefreshTime(entry.getKey(), newValue, loadTime,
+      return calcNextRefreshTime(entry.getKey(), value, loadTime,
         entry.getInspectionEntry());
     } else {
-      return calcNextRefreshTime(entry.getKey(), newValue, loadTime, null);
+      return calcNextRefreshTime(entry.getKey(), value, loadTime, null);
     }
   }
 

@@ -549,32 +549,33 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
   }
 
+  /**
+   * Construct a new CacheEntry for the cache client. We cannot return an internal
+   * cache entry object since this it is mutable.
+   */
   @Override
   public CacheEntry<K, V> returnCacheEntry(ExaminationEntry<K, V> entry) {
     return returnCacheEntry(entry.getKey(), entry.getValueOrException());
   }
 
-
+  /**
+   * In case of an exception we can return the wrapper directly since it
+   * implements the CacheEntry interface and is immutable. If it is not a wrapper
+   * we construct a CacheEntry object.
+   */
   @SuppressWarnings("unchecked")
-  public CacheEntry<K, V> returnCacheEntry(K key, V valueOrException) {
+  public CacheEntry<K, V> returnCacheEntry(K key, Object valueOrException) {
     if (valueOrException instanceof ExceptionWrapper) {
       return (ExceptionWrapper<K, V>) valueOrException;
     }
-    return new BaseCacheEntry<K, V>() {
+    return new AbstractCacheEntry<K, V>() {
       @Override public K getKey() {
         return key;
       }
-      @Override public V getValue() { return valueOrException; }
+      @Override public V getValue() { return (V) valueOrException; }
+      @Override public Throwable getException() { return null; }
+      @Override public LoadExceptionInfo getExceptionInfo() { return null; }
     };
-  }
-
-  abstract static class BaseCacheEntry<K, V> extends AbstractCacheEntry<K, V> {
-    @Override
-    public Throwable getException() {
-      return null;
-    }
-    @Override
-    public LoadExceptionInfo getExceptionInfo() { return null; }
   }
 
   @Override
@@ -674,7 +675,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     int hc = modifiedHash(key.hashCode());
     int val = extractIntKeyValue(key, hc);
     boolean hasFreshData;
-    V previousValue = null;
+    Object previousValue = null;
     Entry<K, V> e;
     for (;;) {
       e = lookupOrNewEntry(key, hc, val);
@@ -713,7 +714,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
           continue;
         }
         if (e.hasFreshData(clock)) {
-          V previousValue = e.getValueOrException();
+          Object previousValue = e.getValueOrException();
           putValue(e, value);
           return returnValue(previousValue);
         }
@@ -971,7 +972,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         metrics.peekMiss();
         return null;
       }
-      V value = null;
+      Object value = null;
       boolean f = e.hasFreshData(clock);
       if (f) {
         value = e.getValueOrException();
@@ -1138,20 +1139,20 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   @SuppressWarnings("unchecked")
-  public static <V> V returnValue(V v) {
+  public static <V> V returnValue(Object v) {
     if (v instanceof ExceptionWrapper) {
       throw ((ExceptionWrapper<?, V>) v).generateExceptionToPropagate();
     }
-    return v;
+    return (V) v;
   }
 
   @SuppressWarnings("unchecked")
   protected V returnValue(Entry<K, V> e) {
-    V v = e.getValueOrException();
+    Object v = e.getValueOrException();
     if (v instanceof ExceptionWrapper) {
       throw ((ExceptionWrapper<K, V>) v).generateExceptionToPropagate();
     }
-    return v;
+    return (V) v;
   }
 
   protected Entry<K, V> lookupEntry(K key) {
@@ -1558,7 +1559,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * which has produced an exception is requested from the map.
    */
   public Map<K, V> getAll(Iterable<? extends K> inputKeys) {
-    Map<K, V> map = new HashMap<>();
+    Map<K, Object> map = new HashMap<>();
     for (K k : inputKeys) {
       Entry<K, V> e = getEntryInternal(k);
       if (e != null) {
@@ -1568,10 +1569,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return convertValueMap(map);
   }
 
-  public Map<K, V> convertValueMap(Map<K, V> map) {
-    return new MapValueConverterProxy<K, V, V>(map) {
+  public Map<K, V> convertValueMap(Map<K, Object> map) {
+    return new MapValueConverterProxy<K, V, Object>(map) {
       @Override
-      protected V convert(V v) {
+      protected V convert(Object v) {
         return returnValue(v);
       }
     };
@@ -1587,7 +1588,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public Map<K, V> peekAll(Iterable<? extends K> inputKeys) {
-    Map<K, V> map = new HashMap<>();
+    Map<K, Object> map = new HashMap<>();
     for (K k : inputKeys) {
       ExaminationEntry<K, V> e = peekEntryInternal(k);
       if (e != null) {

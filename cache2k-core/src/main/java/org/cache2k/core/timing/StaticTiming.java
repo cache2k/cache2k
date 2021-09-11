@@ -102,8 +102,8 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
-  public long calculateNextRefreshTime(Entry<K, V> e, V v, long loadTime) {
-    return calcNextRefreshTime(e.getKey(), v, loadTime, e, null, expiryMillis, sharpExpiry);
+  public long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime) {
+    return calcNextRefreshTime(e.getKey(), value, loadTime, e, null, expiryMillis, sharpExpiry);
   }
 
   @Override
@@ -231,13 +231,13 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   static <K, V> long calcNextRefreshTime(
-    K key, V newValue, long now, CacheEntry<K, V> entry,
+    K key, V value, long now, CacheEntry<K, V> entry,
     ExpiryPolicy<K, V> policy, long maxLinger, boolean sharpExpiryEnabled) {
     if (maxLinger == 0) {
       return 0;
     }
     if (policy != null) {
-      long t = policy.calculateExpiryTime(key, newValue, now, entry);
+      long t = policy.calculateExpiryTime(key, value, now, entry);
       return limitExpiryToMaxLinger(now, maxLinger, t, sharpExpiryEnabled);
     }
     if (maxLinger < ExpiryPolicy.ETERNAL) {

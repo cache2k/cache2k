@@ -116,7 +116,7 @@ public abstract class Timing<K, V> implements NeedsClose {
    * @return Point in time when the entry should expire. Meaning identical to
    *         {@link ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)}
    */
-  public abstract long calculateNextRefreshTime(Entry<K, V> e, V v, long loadTime);
+  public abstract long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime);
 
   /**
    * Delegated to the resilience policy

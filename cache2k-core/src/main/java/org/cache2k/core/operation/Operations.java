@@ -217,7 +217,7 @@ public class Operations<K, V> {
       @Override
       public void examine(K key, Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
-          c.result(e.getValueOrException());
+          c.resultOrWrapper(e.getValueOrException());
           c.wantMutation();
           return;
         }
@@ -238,7 +238,7 @@ public class Operations<K, V> {
       @Override
       public void mutate(K key, Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
-          c.result(e.getValueOrException());
+          c.resultOrWrapper(e.getValueOrException());
         }
         c.put(value);
       }
@@ -252,7 +252,7 @@ public class Operations<K, V> {
       @Override
       public void examine(K key, Progress<K, V, V> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss()) {
-          c.result(e.getValueOrException());
+          c.resultOrWrapper(e.getValueOrException());
           c.noMutation();
           return;
         }

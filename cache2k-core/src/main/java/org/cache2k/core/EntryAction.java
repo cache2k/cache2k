@@ -86,7 +86,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   volatile Entry<K, V> heapEntry;
   ExaminationEntry<K, V> heapOrLoadedEntry;
-  V newValueOrException;
+  Object newValueOrException;
 
   /**
    * Only set on request, use getter {@link #getMutationStartTime()}
@@ -188,7 +188,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   private volatile RuntimeException exceptionToPropagate;
   /** @see #isResultAvailable() */
   private volatile boolean resultAvailable;
-  private volatile R result;
+  /** Result or wrapper */
+  private volatile Object result;
 
   /**
    * Called on the processing action to enqueue another action
@@ -767,6 +768,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     result = r;
   }
 
+  @Override
+  public void resultOrWrapper(Object r) {
+    resultAvailable = true;
+    result = (R) r;
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public void entryResult(ExaminationEntry<K, V> e) {
@@ -860,8 +867,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         return;
       }
     } else {
+      V newValue = (V) newValueOrException;
       try {
-        expiry = timing().calculateNextRefreshTime(heapEntry, newValueOrException, lastRefreshTime);
+        expiry = timing().calculateNextRefreshTime(heapEntry, newValue, lastRefreshTime);
         if (newValueOrException == null && heapCache.isRejectNullValues() &&
           expiry != ExpiryTimeValues.NOW) {
           RuntimeException ouch = heapCache.returnNullValueDetectedException();
@@ -964,7 +972,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
 
       @Override
-      public V getValueOrException() {
+      public Object getValueOrException() {
         return newValueOrException;
       }
 
@@ -1014,7 +1022,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
     heapEntry.nextProcessingStep(WRITE);
     try {
-      writer().write(key, newValueOrException);
+      writer().write(key, (V) newValueOrException);
     } catch (Throwable t) {
       onWriteFailure(t);
       return;
@@ -1090,7 +1098,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       return;
     }
     Cache<K, V> userCache = getCache();
-    V oldValueOrException = heapEntry.getValueOrException();
+    Object oldValueOrException = heapEntry.getValueOrException();
     if (expiredImmediately || remove) {
       CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(getKey(), oldValueOrException);
       if (expiredImmediately) {
@@ -1406,7 +1414,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     }
   }
 
-  public R getResult() {
+  public Object getResult() {
     return result;
   }
 

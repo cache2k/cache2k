@@ -164,7 +164,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     if (t != null) {
       throw t;
     }
-    return action.getResult();
+    return (R) action.getResult();
   }
 
   protected abstract <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e,
