@@ -23,6 +23,7 @@ package org.cache2k.testsuite.stress;
 import org.cache2k.Cache2kBuilder;
 import static org.junit.Assert.*;
 
+import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
 import org.cache2k.testing.category.SlowTests;
 import org.cache2k.testsuite.support.StaticUtil;
@@ -256,6 +257,30 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
       assertEquals("compute called once", 1, count.get());
       assertEquals("actor sees computed value of the other", r1, r2);
       assertEquals(r1, value());
+    }
+  }
+
+  /**
+   * Remove and entry and place a new one. Check that an update in the hash structure
+   * is seen my another thread after the cache operation is completed.
+   */
+  static class ReplacedEntryPresent extends CacheKeyActorPair<Integer, Integer, Integer> {
+    final AtomicInteger count = new AtomicInteger(0);
+    public void setup() {
+      cache.put(key, 1);
+    }
+    public Integer actor1() {
+      cache.remove(key);
+      cache.put(key, 2);
+      cache.remove(key);
+      cache.put(key, 3);
+      return 0;
+    }
+    public Integer actor2() { return 0; }
+    public void check(Integer r1, Integer r2) {
+      CacheEntry e = cache.getEntry(key);
+      assertNotNull("Mapping present", e);
+      assertEquals(3, e.getValue());
     }
   }
 

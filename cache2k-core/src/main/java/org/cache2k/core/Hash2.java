@@ -134,14 +134,15 @@ public class Hash2<K, V> {
     int mask = n - 1;
     int idx = hash & (mask);
     e = tab[idx];
-    while (e != null) {
+    for (;;) {
+      if (e == null) {
+        if (l.validate(stamp)) { return null; }
+        break;
+      }
       if (e.hashCode == keyValue && keyObjIsEqual(key, e)) {
         return e;
       }
       e = e.another;
-    }
-    if (l.validate(stamp)) {
-      return null;
     }
     stamp = l.readLock();
     try {

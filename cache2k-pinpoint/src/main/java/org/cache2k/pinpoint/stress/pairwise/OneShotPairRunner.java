@@ -22,6 +22,7 @@ package org.cache2k.pinpoint.stress.pairwise;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -37,6 +38,7 @@ class OneShotPairRunner<R> {
   private AtomicReference<R> result2 = new AtomicReference<R>();
   private AtomicReference<Throwable> exception1 = new AtomicReference<Throwable>();
   private AtomicReference<Throwable> exception2 = new AtomicReference<Throwable>();
+  private AtomicInteger finishLatch = new AtomicInteger();
 
   OneShotPairRunner(final ActorPair<R> actorPair) {
     this.actorPair = actorPair;
@@ -46,8 +48,8 @@ class OneShotPairRunner<R> {
     actorPair.setup();
     exception1.set(null);
     exception2.set(null);
+    finishLatch.set(2);
     final CountDownLatch startLatch = new CountDownLatch(2);
-    final CountDownLatch finishLatch = new CountDownLatch(2);
     Runnable r1 = new Runnable() {
       @Override
       public void run() {
@@ -58,7 +60,7 @@ class OneShotPairRunner<R> {
         } catch (Throwable t) {
           exception1.set(t);
         } finally {
-          finishLatch.countDown();
+          finishLatch.decrementAndGet();
         }
       }
     };
@@ -72,13 +74,13 @@ class OneShotPairRunner<R> {
         } catch (Throwable t) {
           exception2.set(t);
         } finally {
-          finishLatch.countDown();
+          finishLatch.decrementAndGet();
         }
       }
     };
     executor.execute(r1);
     executor.execute(r2);
-    finishLatch.await();
+    while(finishLatch.get() > 0) { }
     if (exception1.get() != null) {
       throw new ExceptionInActorThread(exception1.get());
     }
