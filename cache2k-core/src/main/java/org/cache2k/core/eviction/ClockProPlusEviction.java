@@ -123,6 +123,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   protected void updateHotMax() {
     hotMax = getSize() * HOT_MAX_PERCENTAGE / 100;
     ghostMax = getSize() * GHOST_MAX_PERCENTAGE / 100 + 1;
+    ghostMax = Math.min(3_000, ghostMax);
     trimGhostSize();
   }
 

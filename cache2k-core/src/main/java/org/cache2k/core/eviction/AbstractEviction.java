@@ -301,7 +301,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     int processCount = removeFromHash(chunk);
     synchronized (lock) {
       if (processCount > 0) {
-        removeAllFromReplacementListOnEvict(chunk);
+        removeChunkFromReplacementListOnEvict(chunk);
       }
       evictionRunningCount -= chunk.length;
       evictChunkReuse = chunk;
@@ -376,7 +376,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     return processCount;
   }
 
-  private void removeAllFromReplacementListOnEvict(Entry[] chunk) {
+  private void removeChunkFromReplacementListOnEvict(Entry[] chunk) {
     for (int i = 0; i < chunk.length; i++) {
       Entry e = chunk[i];
       if (e != null) {
