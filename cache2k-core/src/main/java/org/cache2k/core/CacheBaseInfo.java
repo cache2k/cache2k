@@ -46,14 +46,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   private final InternalCache cache;
   private final long size;
   private final long infoCreatedTime;
-  private int infoCreationDeltaMs;
   private final long missCnt;
   /** Hit count from the statistics */
   private final long heapHitCnt;
-  /** Hit count from eviction */
-  private final long recordedHitCnt;
   private final long correctedPutCnt;
-  private String extraStatistics;
+  /** May stay null, if not retrieved under global lock. */
   private final IntegrityState integrityState;
   private final long totalLoadCnt;
   private long evictedWeight;
@@ -75,37 +72,39 @@ class CacheBaseInfo implements InternalCacheInfo {
   private final long internalExceptionCnt;
   private final long maxWeight;
   private final long totalWeight;
+  private final String evictionToString;
 
   CacheBaseInfo(HeapCache heapCache, InternalCache userCache, long now) {
     infoCreatedTime = now;
     cache = userCache;
     this.heapCache = heapCache;
     metrics = heapCache.metrics;
-    EvictionMetrics em = heapCache.eviction.getMetrics();
-    newEntryCnt = em.getNewEntryCount();
-    expiredRemoveCnt = em.getExpiredRemovedCount();
-    evictedCnt = em.getEvictedCount();
-    maxSize = em.getMaxSize();
-    maxWeight = em.getMaxWeight();
-    totalWeight = em.getTotalWeight();
-    evictedWeight = em.getEvictedWeight();
+    EvictionMetrics evictionMetrics = heapCache.eviction.getMetrics();
+    newEntryCnt = evictionMetrics.getNewEntryCount();
+    expiredRemoveCnt = evictionMetrics.getExpiredRemovedCount();
+    evictedCnt = evictionMetrics.getEvictedCount();
+    maxSize = evictionMetrics.getMaxSize();
+    maxWeight = evictionMetrics.getMaxWeight();
+    totalWeight = evictionMetrics.getTotalWeight();
+    evictedWeight = evictionMetrics.getEvictedWeight();
     clearedTime = heapCache.clearedTime;
     keyMutationCnt = heapCache.keyMutationCnt;
-    removedCnt = em.getRemovedCount();
+    removedCnt = evictionMetrics.getRemovedCount();
     clearRemovedCnt = heapCache.clearRemovedCnt;
     clearCnt = heapCache.clearCnt;
     internalExceptionCnt = heapCache.internalExceptionCnt;
-    evictionRunningCnt = em.getEvictionRunningCount();
-    integrityState = heapCache.getIntegrityState();
-    extraStatistics = em.getExtraStatistics();
-    if (extraStatistics.startsWith(", ")) {
-      extraStatistics = extraStatistics.substring(2);
+    evictionRunningCnt = evictionMetrics.getEvictionRunningCount();
+    if (Thread.holdsLock(heapCache.lock)) {
+      evictionToString = heapCache.eviction.toString();
+      integrityState = heapCache.getIntegrityState();
+    } else {
+      integrityState = null;
+      evictionToString = null;
     }
-    size = this.heapCache.getLocalSize();
+    size = evictionMetrics.getSize();
     missCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getPeekHitNotFreshCount() + metrics.getPeekMissCount();
     heapHitCnt = metrics.getHeapHitCount();
-    recordedHitCnt = em.getHitCount();
     correctedPutCnt = metrics.getPutNewEntryCount() + metrics.getPutHitCount();
     totalLoadCnt = metrics.getReadThroughCount() + metrics.getExplicitLoadCount() +
       metrics.getRefreshCount();
@@ -114,10 +113,6 @@ class CacheBaseInfo implements InternalCacheInfo {
   String percentString(double d) {
     String s = Double.toString(d);
     return (s.length() > 5 ? s.substring(0, 5) : s) + "%";
-  }
-
-  public void setInfoCreationDeltaMs(int millis) {
-    infoCreationDeltaMs = millis;
   }
 
   @Override
@@ -210,37 +205,18 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getLoadMillis() { return metrics.getLoadMillis(); }
   @Override
-  public String getIntegrityDescriptor() { return integrityState.getStateDescriptor(); }
+  public String getIntegrityDescriptor() {
+    if (integrityState == null) {
+      return "NO_LOCK";
+    }
+    return integrityState.getStateDescriptor();
+  }
   @Override
   public long getStartedTime() { return heapCache.startedTime; }
   @Override
   public long getClearedTime() { return clearedTime; }
   @Override
   public long getInfoCreatedTime() { return infoCreatedTime; }
-  @Override
-  public int getInfoCreationDeltaMs() { return infoCreationDeltaMs; }
-
-  @Override
-  public Collection<HealthInfoElement> getHealth() {
-    List<HealthInfoElement> l = new ArrayList<HealthInfoElement>();
-    if (integrityState.getStateFlags() > 0) {
-      l.add(new HealthBean(cache, "integrity",
-        HealthInfoElement.FAILURE, "Integrity check error: " + integrityState.getStateFlags()));
-    }
-    if (getKeyMutationCount() > 0) {
-      l.add(new HealthBean(cache, "keyMutation",
-        HealthInfoElement.WARNING, "key mutation detected"));
-    }
-    if (getInternalExceptionCount() > 0) {
-      l.add(new HealthBean(cache, "internalException",
-        HealthInfoElement.WARNING, "internal exception"));
-    }
-    return l;
-  }
-  @Override
-  public String getExtraStatistics() {
-    return extraStatistics;
-  }
 
   private static String timestampToString(long t) {
     if (t == 0) {
@@ -278,7 +254,6 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("load=").append(getLoadCount()).append(", ")
       .append("reload=").append(getExplicitLoadCount()).append(", ")
       .append("heapHit=").append(getHeapHitCount()).append(", ")
-      .append("recordedHeapHit=").append(recordedHitCnt).append(", ")
       .append("refresh=").append(getRefreshCount()).append(", ")
       .append("refreshRejected=").append(getRefreshRejectedCount()).append(", ")
       .append("refreshedHit=").append(getRefreshedHitCount()).append(", ")
@@ -297,14 +272,16 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("created=").append(timestampToString(getStartedTime())).append(", ")
       .append("cleared=").append(timestampToString(getClearedTime())).append(", ")
       .append("infoCreated=").append(timestampToString(getInfoCreatedTime())).append(", ")
-      .append("infoCreationDeltaMs=").append(getInfoCreationDeltaMs()).append(", ")
       .append("impl=").append(getImplementation()).append(", ")
-      .append(getExtraStatistics()).append(", ")
       .append("evictionRunning=").append(getEvictionRunningCount()).append(", ")
       .append("keyMutation=").append(getKeyMutationCount()).append(", ")
       .append("internalException=").append(getInternalExceptionCount()).append(", ")
       .append("integrityState=").append(getIntegrityDescriptor()).append(", ")
       .append("version=").append(cm.getProvider().getVersion());
+    if (evictionToString != null && !evictionToString.isEmpty()) {
+      sb.append(", ");
+      sb.append(evictionToString);
+    }
     sb.append(")");
     return sb.toString();
   }
@@ -315,54 +292,6 @@ class CacheBaseInfo implements InternalCacheInfo {
     }
     DecimalFormat f = new DecimalFormat("#.###");
     return f.format(val);
-  }
-
-  static final double EXPONENT_CONSTANT = -0.011;
-  static final int SLOT_SIZE_MINIMUM = 5;
-
-  static int hashQuality(int noCollisionPercent, int longestSlot) {
-    if (longestSlot == 0) {
-      return 100;
-    }
-    int correctionForOversizeSlot = (int)
-      ((1 - Math.exp(EXPONENT_CONSTANT * Math.max(0, longestSlot - SLOT_SIZE_MINIMUM))) * 100);
-    int quality = noCollisionPercent - correctionForOversizeSlot;
-    return Math.max(0, Math.min(100, quality));
-  }
-
-  static class HealthBean implements HealthInfoElement {
-
-    String id;
-    String message;
-    String level;
-    InternalCache cache;
-
-    HealthBean(InternalCache cache, String id, String level, String message) {
-      this.cache = cache;
-      this.id = id;
-      this.level = level;
-      this.message = message;
-    }
-
-    @Override
-    public InternalCache getCache() {
-      return cache;
-    }
-
-    @Override
-    public String getId() {
-      return id;
-    }
-
-    @Override
-    public String getLevel() {
-      return level;
-    }
-
-    @Override
-    public String getMessage() {
-      return message;
-    }
   }
 
 }

@@ -21,16 +21,16 @@ package org.cache2k.core.api;
  */
 
 import org.cache2k.core.eviction.EvictionMetrics;
+import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.Weigher;
-
-import java.util.Collection;
 
 /**
  * Collection of all metrics of a cache. The data can be retrieved via
- * {@link InternalCache#getInfo()} or {@link InternalCache#getLatestInfo()}.
+ * {@link InternalCache#getInfo()} or {@link InternalCache#getConsistentInfo()}.
  *
- * <p>The interface is not exposed via the public API since it may change dramatically
- * between versions.
+ * <p>The interface is not exposed via the exposed API since it may change
+ * between versions. Exposed metrics are defined in {@link org.cache2k.operation.CacheStatistics}
+ * which can be retrieved via {@link CacheControl#sampleStatistics()}
  *
  * @author Jens Wilke
  * @see EvictionMetrics
@@ -69,8 +69,6 @@ public interface InternalCacheInfo {
   /**
    * Total counted hits on the heap cache data. The counter is increased when an entry is present
    * in the cache, regardless whether the value is valid or not.
-   *
-   * @see EvictionMetrics#getHitCount()
    */
   long getHeapHitCount();
 
@@ -262,15 +260,6 @@ public interface InternalCacheInfo {
    * of the information can be determined by this value.
    */
   long getInfoCreatedTime();
-
-  /**
-   * Time that was needed to collect the information.
-   */
-  int getInfoCreationDeltaMs();
-
-  Collection<HealthInfoElement> getHealth();
-
-  String getExtraStatistics();
 
   long getEvictedWeight();
 

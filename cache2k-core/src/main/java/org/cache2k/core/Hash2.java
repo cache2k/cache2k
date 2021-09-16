@@ -73,8 +73,9 @@ public class Hash2<K, V> {
 
   private Entry<K, V>[] entries;
   private final StampedLock[] locks;
-  private final AtomicLong[] segmentSize;
+  private final long[] segmentSize;
 
+  /** Reference to parent cache, only used for CacheClosedException */
   private final Cache cache;
 
   /**
@@ -90,10 +91,7 @@ public class Hash2<K, V> {
     for (int i = 0; i < LOCK_SEGMENTS; i++) {
       locks[i] = new StampedLock();
     }
-    segmentSize = new AtomicLong[LOCK_SEGMENTS];
-    for (int i = 0; i < LOCK_SEGMENTS; i++) {
-      segmentSize[i] = new AtomicLong();
-    }
+    segmentSize = new long[LOCK_SEGMENTS];
     initArray();
   }
 
@@ -193,7 +191,7 @@ public class Hash2<K, V> {
     }
     e.another = tab[idx];
     tab[idx] = e;
-    segmentSize[si].incrementAndGet();
+    segmentSize[si]++;
     return e;
   }
 
@@ -207,7 +205,7 @@ public class Hash2<K, V> {
    */
   public void checkExpand(int hash) {
     int si = hash & LOCK_MASK;
-    long size = segmentSize[si].get();
+    long size = segmentSize[si];
     if (size > segmentMaxFill) {
       eventuallyExpand(si);
     }
@@ -237,14 +235,14 @@ public class Hash2<K, V> {
       f = tab[idx];
       if (f == e) {
         tab[idx] = f.another;
-        segmentSize[si].decrementAndGet();
+        segmentSize[si]--;
         return true;
       }
       while (f != null) {
         Entry<K, V> another = f.another;
         if (another == e) {
           f.another = another.another;
-          segmentSize[si].decrementAndGet();
+          segmentSize[si]--;
           return true;
         }
         f = another;
@@ -265,14 +263,14 @@ public class Hash2<K, V> {
     f = tab[idx];
     if (f == e) {
       tab[idx] = f.another;
-      segmentSize[si].decrementAndGet();
+      segmentSize[si]--;
       return true;
     }
     while (f != null) {
       Entry<K, V> another = f.another;
       if (another == e) {
         f.another = another.another;
-        segmentSize[si].decrementAndGet();
+        segmentSize[si]--;
         return true;
       }
       f = another;
@@ -287,7 +285,7 @@ public class Hash2<K, V> {
   private void eventuallyExpand(int segmentIndex) {
     long[] stamps = lockAll();
     try {
-      long size = segmentSize[segmentIndex].get();
+      long size = segmentSize[segmentIndex];
       if (size <= segmentMaxFill) {
         return;
       }
@@ -352,10 +350,32 @@ public class Hash2<K, V> {
     calcMaxFill();
   }
 
+  /**
+   * Number of hash table entries. Uses locking to read the latest changes and consistent
+   * long values for 23 bit systems. May not be called when lock is held.
+   */
   public long getSize() {
     long sum = 0;
-    for (AtomicLong al : segmentSize) {
-      sum += al.get();
+    for (int i = 0; i < segmentSize.length; i++) {
+      long stamp = locks[i].tryOptimisticRead();
+      long v = segmentSize[i];
+      if (!locks[i].validate(stamp)) {
+        stamp = locks[i].readLock();
+        v = segmentSize[i];
+        locks[i].unlockRead(stamp);
+      }
+      sum += v;
+    }
+    return sum;
+  }
+
+  /**
+   * Separate version of getSize expected all segments are locked.
+   */
+  public long getSizeWithGlobalLock() {
+    long sum = 0;
+    for (int i = 0; i < segmentSize.length; i++) {
+      sum += segmentSize[i];
     }
     return sum;
   }
@@ -373,8 +393,8 @@ public class Hash2<K, V> {
   }
 
   public void clearWhenLocked() {
-    for (AtomicLong aSegmentSize : segmentSize) {
-      aSegmentSize.set(0);
+    for (int i = 0; i < segmentSize.length; i++) {
+      segmentSize[i] = 0;
     }
     clearOrCloseCount++;
     initArray();

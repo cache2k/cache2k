@@ -24,6 +24,7 @@ import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.EvictionMetrics;
 
+import java.util.Arrays;
 import java.util.function.Supplier;
 
 /**
@@ -32,7 +33,7 @@ import java.util.function.Supplier;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class SegmentedEviction implements Eviction, EvictionMetrics {
+public class SegmentedEviction implements Eviction {
 
   private final Eviction[] segments;
 
@@ -141,142 +142,54 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
 
   @Override
   public EvictionMetrics getMetrics() {
-    return this;
-  }
-
-  @Override
-  public String getExtraStatistics() {
-    StringBuilder sb  = new StringBuilder();
-    for (int i = 0; i < segments.length; i++) {
-      if (i > 0) { sb.append(", "); }
-      sb.append("eviction").append(i).append('(');
-      sb.append(segments[i].getMetrics().getExtraStatistics());
-      sb.append(')');
+    EvictionMetrics[] metrics = new EvictionMetrics[segments.length];
+    for (int i = 0; i < metrics.length; i++) {
+      metrics[i] = segments[i].getMetrics();
     }
-    return sb.toString();
-  }
-
-  @Override
-  public long getHitCount() {
     long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getHitCount();
+    for (EvictionMetrics m : metrics) { sum += m.getSize(); }
+    long size = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getNewEntryCount(); }
+    long newEntryCount = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getRemovedCount(); }
+    long removedCnt = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getVirginRemovedCount(); }
+    long virginRemovedCnt = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getExpiredRemovedCount(); }
+    long expiredRemovedCnt = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getEvictedCount(); }
+    long evictedCount = sum;
+    sum = 0; for (EvictionMetrics m : metrics) {
+      long v = m.getMaxSize();
+      if (v == Long.MAX_VALUE) { sum = v; break; }
+      sum += v;
     }
-    return sum;
-  }
-
-  @Override
-  public long getNewEntryCount() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getNewEntryCount();
+    long maxSize = sum < -1 ? -1 : sum;
+    sum = 0; for (EvictionMetrics m : metrics) {
+      long v = m.getMaxWeight();
+      if (v == Long.MAX_VALUE) { sum = v; break; }
+      sum += v;
     }
-    return sum;
-  }
-
-  @Override
-  public long getRemovedCount() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getRemovedCount();
-    }
-    return sum;
-  }
-
-  @Override
-  public long getExpiredRemovedCount() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getExpiredRemovedCount();
-    }
-    return sum;
-  }
-
-  @Override
-  public long getVirginRemovedCount() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getVirginRemovedCount();
-    }
-    return sum;
-  }
-
-  @Override
-  public long getEvictedCount() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getEvictedCount();
-    }
-    return sum;
-  }
-
-  @Override
-  public long getSize() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getSize();
-    }
-    return sum;
-  }
-
-  @Override
-  public long getMaxSize() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      long l = ev.getMetrics().getMaxSize();
-      if (l == Long.MAX_VALUE) {
-        return Long.MAX_VALUE;
-      }
-      sum += l;
-    }
-    if (sum < 0) {
-      return -1;
-    }
-    return sum;
-  }
-
-  @Override
-  public long getMaxWeight() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      long l = ev.getMetrics().getMaxWeight();
-      if (l == Long.MAX_VALUE) {
-        return Long.MAX_VALUE;
-      }
-      sum += l;
-    }
-    if (sum < 0) {
-      return -1;
-    }
-    return sum;
-  }
-
-  @Override
-  public long getTotalWeight() {
-    long sum = 0;
-    for (Eviction ev : segments) {
-      long l = ev.getMetrics().getTotalWeight();
-      sum += l;
-    }
-    return sum;
-  }
-
-  @Override
-  public int getEvictionRunningCount() {
-    int sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getEvictionRunningCount();
-    }
-    return sum;
-  }
-
-  @Override
-  public long getEvictedWeight() {
-    int sum = 0;
-    for (Eviction ev : segments) {
-      sum += ev.getMetrics().getEvictedWeight();
-    }
-    return sum;
+    long maxWeight = sum < -1 ? -1 : sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getTotalWeight(); }
+    long totalWeight = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getEvictedWeight(); }
+    long evictedWeight = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getEvictionRunningCount(); }
+    int evictionRunningCount = (int) sum;
+    return new EvictionMetrics() {
+      @Override public long getSize() { return size; }
+      @Override public long getNewEntryCount() { return newEntryCount; }
+      @Override public long getRemovedCount() { return removedCnt; }
+      @Override public long getVirginRemovedCount() { return virginRemovedCnt; }
+      @Override public long getExpiredRemovedCount() { return expiredRemovedCnt; }
+      @Override public long getEvictedCount() { return evictedCount; }
+      @Override public long getMaxSize() { return maxSize; }
+      @Override public long getMaxWeight() { return maxWeight; }
+      @Override public long getTotalWeight() { return totalWeight; }
+      @Override public long getEvictedWeight() { return evictedWeight; }
+      @Override public int getEvictionRunningCount() { return evictionRunningCount; }
+    };
   }
 
   @Override
@@ -292,6 +205,18 @@ public class SegmentedEviction implements Eviction, EvictionMetrics {
     for (Eviction ev : segments) {
       ev.changeCapacity(limitPerSegment);
     }
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb  = new StringBuilder();
+    for (int i = 0; i < segments.length; i++) {
+      if (i > 0) { sb.append(", "); }
+      sb.append("eviction").append(i).append('(');
+      sb.append(segments[i].toString());
+      sb.append(')');
+    }
+    return sb.toString();
   }
 
 }

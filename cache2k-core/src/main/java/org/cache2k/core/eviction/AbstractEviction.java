@@ -47,7 +47,7 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings({"WeakerAccess", "SynchronizationOnLocalVariableOrMethodParameter", "unchecked",
   "rawtypes"})
-public abstract class AbstractEviction implements Eviction, EvictionMetrics {
+public abstract class AbstractEviction implements Eviction {
 
   public static final int MINIMAL_CHUNK_SIZE = 4;
   public static final int MAXIMAL_CHUNK_SIZE = 64;
@@ -55,7 +55,7 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
 
   private final Weigher weigher;
   protected final HeapCacheForEviction heapCache;
-  private final Object lock = new Object();
+  protected final Object lock = new Object();
   private final InternalEvictionListener listener;
   private final boolean noListenerCall;
   private final boolean noChunking;
@@ -392,58 +392,33 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
   }
 
   @Override
-  public long getNewEntryCount() {
-    return newEntryCounter;
-  }
-
-  @Override
-  public long getRemovedCount() {
-    return removedCnt;
-  }
-
-  @Override
-  public long getVirginRemovedCount() {
-    return virginRemovedCnt;
-  }
-
-  @Override
-  public long getExpiredRemovedCount() {
-    return expiredRemovedCnt;
-  }
-
-  @Override
-  public long getEvictedCount() {
-    return evictedCount;
-  }
-
-  @Override
-  public long getMaxSize() {
-    return maxSize;
-  }
-
-  @Override
-  public long getMaxWeight() {
-    return maxWeight;
-  }
-
-  @Override
-  public long getTotalWeight() {
-    return totalWeight;
-  }
-
-  @Override
-  public long getEvictedWeight() {
-    return evictedWeight;
-  }
-
-  @Override
-  public int getEvictionRunningCount() {
-    return evictionRunningCount;
-  }
-
-  @Override
   public EvictionMetrics getMetrics() {
-    return this;
+    synchronized (lock) {
+      long size = getSize();
+      long newEntryCounter = this.newEntryCounter;
+      long removedCnt = this.removedCnt;
+      long virginRemovedCnt = this.virginRemovedCnt;
+      long expiredRemovedCnt = this.expiredRemovedCnt;
+      long evictedCount = this.evictedCount;
+      long maxSize = this.maxSize;
+      long maxWeight = this.maxWeight;
+      long totalWeight = this.totalWeight;
+      long evictedWeight = this.evictedWeight;
+      int evictionRunningCount = this.evictionRunningCount;
+      return new EvictionMetrics() {
+        @Override public long getSize() { return size; }
+        @Override public long getNewEntryCount() { return newEntryCounter; }
+        @Override public long getRemovedCount() { return removedCnt; }
+        @Override public long getVirginRemovedCount() { return virginRemovedCnt; }
+        @Override public long getExpiredRemovedCount() { return expiredRemovedCnt; }
+        @Override public long getEvictedCount() { return evictedCount; }
+        @Override public long getMaxSize() { return maxSize; }
+        @Override public long getMaxWeight() { return maxWeight; }
+        @Override public long getTotalWeight() { return totalWeight; }
+        @Override public long getEvictedWeight() { return evictedWeight; }
+        @Override public int getEvictionRunningCount() { return evictionRunningCount; }
+      };
+    }
   }
 
   @Override
@@ -467,21 +442,22 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     }
   }
 
-  @Override
-  public String getExtraStatistics() {
-    String s = "impl=" + this.getClass().getSimpleName() +
-      ", chunkSize=" + chunkSize;
-    if (isWeigherPresent()) {
+  public String toString() {
+    synchronized (lock) {
+      String s = "impl=" + this.getClass().getSimpleName() +
+        ", chunkSize=" + chunkSize;
+      if (isWeigherPresent()) {
+        s +=
+          ", maxWeight=" + maxWeight +
+            ", totalWeight=" + totalWeight;
+      } else {
+        s +=
+          ", maxSize=" + maxSize;
+      }
       s +=
-        ", maxWeight=" + maxWeight +
-        ", totalWeight=" + totalWeight;
-    } else {
-      s +=
-        ", maxSize=" + maxSize;
+        ", size=" + getSize();
+      return s;
     }
-    s +=
-      ", size=" + getSize();
-    return s;
   }
 
   /**
@@ -527,6 +503,8 @@ public abstract class AbstractEviction implements Eviction, EvictionMetrics {
     totalWeight = 0;
     return removedCount;
   }
+
+  protected abstract long getSize();
 
   /**
    * Remove entries from the replacement list without locking the entry itself.

@@ -110,6 +110,10 @@ public interface Eviction {
 
   void checkIntegrity(IntegrityState integrityState);
 
+  /**
+   * Get metrics related to the eviction. No lock is needed before calling this method.
+   * Best efforts are mad to extract consistent statistics and interruption short.
+   */
   EvictionMetrics getMetrics();
 
   boolean isWeigherPresent();

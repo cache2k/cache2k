@@ -153,7 +153,7 @@ public class CacheRule<K, V> implements TestRule {
   }
 
   public InternalCacheInfo info() {
-    return cache.requestInterface(InternalCache.class).getLatestInfo();
+    return cache.requestInterface(InternalCache.class).getConsistentInfo();
   }
 
   public void printStats() {

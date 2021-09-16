@@ -92,16 +92,6 @@ public class RandomEviction extends AbstractEviction {
   }
 
   @Override
-  public String getExtraStatistics() {
-    return "";
-  }
-
-  @Override
-  public long getHitCount() {
-    return 0;
-  }
-
-  @Override
   public long getSize() {
     return size;
   }

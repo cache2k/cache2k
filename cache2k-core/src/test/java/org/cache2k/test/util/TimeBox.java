@@ -23,10 +23,12 @@ package org.cache2k.test.util;
 import org.cache2k.operation.TimeReference;
 
 import java.sql.Timestamp;
+import java.time.Clock;
+import java.util.Date;
 
 /**
  * Execute a piece of work and assertions. The assertions are only
- * respected if everything happens in a given timebox.
+ * respected if everything happens in a given time box.
  *
  * @author Jens Wilke
  */
@@ -126,7 +128,7 @@ public class TimeBox {
   public static class PropagateAssertionError extends AssertionError {
 
     public PropagateAssertionError(long startTime, long delta, Throwable cause) {
-      super("Assertion failed at start time " + (new Timestamp(startTime)) + " + " +  delta, cause);
+      super("Assertion failed at start time " + (new Date(startTime)) + " + " +  delta, cause);
     }
 
   }

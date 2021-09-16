@@ -129,7 +129,6 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals("no internal exceptions", 0, getInfo().getInternalExceptionCount());
     assertTrue("got at least 8 - submitFailedCnt exceptions",
       getInfo().getLoadExceptionCount() >= getInfo().getRefreshRejectedCount());
-    assertTrue("no alert", getInfo().getHealth().isEmpty());
     await("All expired", new Condition() {
       @Override
       public boolean check() {
@@ -187,7 +186,6 @@ public class SlowExpiryTest extends TestingBase {
     assertEquals("no internal exceptions", 0, getInfo().getInternalExceptionCount());
     assertTrue("got at least 8 - submitFailedCnt exceptions",
       getInfo().getLoadExceptionCount() >= getInfo().getRefreshRejectedCount());
-    assertTrue("no alert", getInfo().getHealth().isEmpty());
     await("All expired", new Condition() {
       @Override
       public boolean check() {

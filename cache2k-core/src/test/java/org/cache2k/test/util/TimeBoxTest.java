@@ -1,4 +1,4 @@
-package org.cache2k.core;
+package org.cache2k.test.util;
 
 /*
  * #%L
@@ -20,19 +20,21 @@ package org.cache2k.core;
  * #L%
  */
 
-/**
- * Cache supports checking its internal integrity.
- *
- * @author Jens Wilke; created: 2013-07-11
- */
-public interface CanCheckIntegrity {
+import org.junit.Test;
 
-  /**
-   * Cache checks its internal integrity. This is a expansive operation because it
-   * may traverse all cache entries. Used for testing.
-   *
-   * @throws IllegalStateException if integrity problem is found
-   */
-  void checkIntegrity();
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * @author Jens Wilke
+ */
+public class TimeBoxTest {
+
+  @Test
+  public void testException() {
+    String msg =
+      new TimeBox.PropagateAssertionError(1000, 400, new RuntimeException())
+        .toString();
+    assertThat(msg).contains("Thu Jan 01 01:00:01");
+  }
 
 }

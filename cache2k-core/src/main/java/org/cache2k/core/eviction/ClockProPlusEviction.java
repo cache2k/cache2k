@@ -128,11 +128,6 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   @Override
-  public long getHitCount() {
-    return hotHits + coldHits + sumUpListHits(handCold) + sumUpListHits(handHot);
-  }
-
-  @Override
   protected long removeAllFromReplacementList() {
     Entry e, head;
     int count = 0;
@@ -346,20 +341,22 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   @Override
-  public String getExtraStatistics() {
-    return super.getExtraStatistics() +
-      ", coldSize=" + coldSize +
-      ", hotSize=" + hotSize +
-      ", hotMaxSize=" + getHotMax() +
-      ", ghostSize=" + ghostSize +
-      ", ghostMaxSize=" + getGhostMax() +
-      ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
-      ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
-      ", ghostHits=" + ghostHits +
-      ", coldRunCnt=" + coldRunCnt + // identical to the evictions anyways
-      ", coldScanCnt=" + coldScanCnt +
-      ", hotRunCnt=" + hotRunCnt +
-      ", hotScanCnt=" + hotScanCnt;
+  public String toString() {
+    synchronized (lock) {
+      return super.toString() +
+        ", coldSize=" + coldSize +
+        ", hotSize=" + hotSize +
+        ", hotMaxSize=" + getHotMax() +
+        ", ghostSize=" + ghostSize +
+        ", ghostMaxSize=" + getGhostMax() +
+        ", coldHits=" + (coldHits + sumUpListHits(handCold)) +
+        ", hotHits=" + (hotHits + sumUpListHits(handHot)) +
+        ", ghostHits=" + ghostHits +
+        ", coldRunCnt=" + coldRunCnt + // identical to the evictions anyways
+        ", coldScanCnt=" + coldScanCnt +
+        ", hotRunCnt=" + hotRunCnt +
+        ", hotScanCnt=" + hotScanCnt;
+    }
   }
 
   private Ghost lookupGhost(int hash) {

@@ -108,7 +108,7 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
 
   @Override
   public int size() {
-    return ((InternalCache<?, ?>) cache).getTotalEntryCount();
+    return (int) ((InternalCache<?, ?>) cache).getTotalEntryCount();
   }
 
   @Override

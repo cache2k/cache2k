@@ -29,8 +29,13 @@ import org.cache2k.io.CacheLoader;
  * if disabled via {@link org.cache2k.Cache2kBuilder#disableStatistics(boolean)}.
  * General information about the cache is available via {@link CacheInfo}.
  *
- * <p>For exporting to a monitoring system the separate modes {@code cache2k-jmx}
+ * <p>For exporting to a monitoring system the modules {@code cache2k-jmx}
  * and {@code cache2k-micrometer} are available.
+ *
+ * <p>Statistics are retrieved with minimum effect on the running application
+ * and avoid locks. This may lead to slight inconsistencies within the metrics,
+ * e.g. the two values {@link #getTotalLoadMillis()} and {@link #getLoadCount()}
+ * are not updated atomically.
  *
  * @author Jens Wilke
  */

@@ -868,8 +868,8 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
   /**
    * Returns internal information. This is an expensive operation, since internal statistics are
    * collected. During the call, concurrent operations on the cache may be blocked. This method will
-   * not throw the {@link IllegalStateException} in case the cache is closed, but return the
-   * solely the cache name and no statistics.
+   * not throw the {@link IllegalStateException} in case the cache is closed, but return only
+   * the cache name and no statistics.
    */
   @Override
   String toString();

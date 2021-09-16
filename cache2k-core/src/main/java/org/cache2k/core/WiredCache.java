@@ -57,7 +57,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -533,7 +532,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public int getTotalEntryCount() {
+  public long getTotalEntryCount() {
     return heapCache.getTotalEntryCount();
   }
 
@@ -659,8 +658,8 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public InternalCacheInfo getLatestInfo() {
-    return heapCache.getLatestInfo(this);
+  public InternalCacheInfo getConsistentInfo() {
+    return heapCache.getConsistentInfo(this);
   }
 
   @Override

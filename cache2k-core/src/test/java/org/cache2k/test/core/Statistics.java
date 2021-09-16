@@ -103,7 +103,7 @@ public class Statistics {
 
   /** Get the latest counter values from the cache. */
   public Statistics sample(Cache<?,?> c) {
-    info = c.requestInterface(InternalCache.class).getLatestInfo();
+    info = c.requestInterface(InternalCache.class).getConsistentInfo();
     return this;
   }
 

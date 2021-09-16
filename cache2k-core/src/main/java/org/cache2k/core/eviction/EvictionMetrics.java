@@ -23,7 +23,9 @@ package org.cache2k.core.eviction;
 import org.cache2k.core.api.InternalCacheInfo;
 
 /**
- * Access to eviction metrics. Consistent reads are only possible while inside the eviction lock.
+ * Access to eviction metrics. Eviction counters are separate from
+ * {@link org.cache2k.core.api.CommonMetrics} because its more efficient to implement
+ * these counters within the eviction algorithm and its respective locking.
  *
  * @author Jens Wilke
  */
@@ -33,9 +35,6 @@ public interface EvictionMetrics {
    * @see InternalCacheInfo#getNewEntryCount()
    */
   long getNewEntryCount();
-
-  /** Number of recorded hits. */
-  long getHitCount();
 
   /**
    * @see InternalCacheInfo#getRemoveCount()
@@ -72,9 +71,6 @@ public interface EvictionMetrics {
 
   /** Accumulated weight of all entries currently controlled by eviction. */
   long getTotalWeight();
-
-  /** Fragment that the eviction wants to add to the {@link org.cache2k.Cache#toString()} output. */
-  String getExtraStatistics();
 
   /** Accumulated weight of evicted or deleted entries */
   long getEvictedWeight();

@@ -45,7 +45,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -61,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -214,7 +212,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
    * Use for assertions on absolute values.
    */
   public InternalCacheInfo info() {
-    return cache.requestInterface(InternalCache.class).getLatestInfo();
+    return cache.requestInterface(InternalCache.class).getConsistentInfo();
   }
 
   /**

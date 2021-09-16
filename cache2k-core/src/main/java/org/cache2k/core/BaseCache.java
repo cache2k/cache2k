@@ -89,7 +89,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
       @Override
       public int size() {
-        return getTotalEntryCount();
+        return (int) getTotalEntryCount();
       }
     };
   }
@@ -190,7 +190,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   @Override
   public String toString() {
     try {
-      InternalCacheInfo fo = getLatestInfo();
+      InternalCacheInfo fo = getConsistentInfo();
       return fo.toString();
     } catch (CacheClosedException ex) {
       return "Cache(name=" + BaseCache.nameQualifier(this) + ", closed=true)";

@@ -23,7 +23,6 @@ package org.cache2k.core.api;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.config.CacheType;
-import org.cache2k.core.CanCheckIntegrity;
 import org.cache2k.core.ConcurrentMapWrapper;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
@@ -37,7 +36,7 @@ import org.cache2k.operation.TimeReference;
  * @author Jens Wilke
  */
 public interface InternalCache<K, V>
-  extends Cache<K, V>, CanCheckIntegrity, TimerEventListener<K, V>, InternalCacheCloseContext {
+  extends Cache<K, V>, TimerEventListener<K, V>, InternalCacheCloseContext {
 
   CommonMetrics getCommonMetrics();
 
@@ -52,25 +51,25 @@ public interface InternalCache<K, V>
   void cancelTimerJobs();
 
   /**
-   * Generate cache statistics. Some of the statistic values involve scanning portions
-   * of the cache content. To prevent system stress e.g. monitoring there is a
-   * the compute intensive parts will only be repeated if some time is passed.
+   * Return cache statistic counters. This method is intended for regular statistics polling.
+   * No extensive locking is performed to extract a consistent set of counters.
    */
   InternalCacheInfo getInfo();
 
   /**
-   * Generate fresh statistics. This version is used by internal tests. This method
-   * is not intended to be called at high frequencies or for attaching monitoring or logging.
-   * Use the {@link #getInfo} method for requesting information for monitoring.
+   * Generate fresh statistics within a global cache lock. This version is used by internal
+   * consistency tests. This method is not intended to be called at high frequencies or
+   * for attaching monitoring or logging. Use the {@link #getInfo} method for requesting
+   * information for monitoring.
    */
-  InternalCacheInfo getLatestInfo();
+  InternalCacheInfo getConsistentInfo();
 
   String getEntryState(K key);
 
   /**
    * This method is used for {@link ConcurrentMapWrapper#size()}
    */
-  int getTotalEntryCount();
+  long getTotalEntryCount();
 
   void logAndCountInternalException(String s, Throwable t);
 
@@ -94,5 +93,13 @@ public interface InternalCache<K, V>
    * in case events are send, so only implemented by WiredCache.
    */
   default Cache<K, V> getUserCache() { return null; }
+
+  /**
+   * Cache checks its internal integrity. This is a expansive operation because it
+   * may traverse all cache entries. Used for testing.
+   *
+   * @throws IllegalStateException if integrity problem is found
+   */
+  void checkIntegrity();
 
 }

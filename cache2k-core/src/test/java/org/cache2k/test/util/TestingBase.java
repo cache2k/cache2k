@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
-import org.cache2k.core.CanCheckIntegrity;
 import org.cache2k.core.HeapCache;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
@@ -46,8 +45,6 @@ import org.junit.runners.model.Statement;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
@@ -286,8 +283,8 @@ public class TestingBase {
     assertEquals("fetchesInFlight == 0", 0, statLoadsInFlight(cache, inf));
     assertEquals("exception count = 0", 0, inf.getInternalExceptionCount());
     assertNotNull("cache was tested", cache);
-    if (cache instanceof CanCheckIntegrity) {
-      ((CanCheckIntegrity) cache).checkIntegrity();
+    if (cache instanceof InternalCache) {
+      ((InternalCache) cache).checkIntegrity();
     }
   }
 
@@ -332,8 +329,8 @@ public class TestingBase {
 
   protected void checkIntegrity() {
     provideCache();
-    if (cache instanceof CanCheckIntegrity) {
-      ((CanCheckIntegrity) cache).checkIntegrity();
+    if (cache instanceof InternalCache) {
+      ((InternalCache) cache).checkIntegrity();
     }
   }
 
@@ -352,7 +349,7 @@ public class TestingBase {
   }
 
   protected InternalCacheInfo getInfo() {
-    return getInternalCache().getLatestInfo();
+    return getInternalCache().getConsistentInfo();
   }
 
   protected void debugEntry(Object key) {
@@ -364,7 +361,7 @@ public class TestingBase {
   }
 
   protected void drainEvictionQueue(Cache c) {
-    ((InternalCache) c).getLatestInfo();
+    ((InternalCache) c).getConsistentInfo();
   }
 
   private static String uniqueCounterSuffix() {
@@ -507,7 +504,7 @@ public class TestingBase {
   }
 
   public void checkIntegrity(Cache c) {
-    ((CanCheckIntegrity) c).checkIntegrity();
+    ((InternalCache) c).checkIntegrity();
   }
 
   /**

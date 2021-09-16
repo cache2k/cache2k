@@ -114,7 +114,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   /** Statistics */
 
-  protected CacheBaseInfo info;
   final CommonMetrics.Updater metrics;
 
   /**
@@ -1666,28 +1665,24 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return execute(key, spec().invoke(processor));
   }
 
-  public final long getLocalSize() {
+  public final long getTotalEntryCount() {
     return hash.getSize();
-  }
-
-  public final int getTotalEntryCount() {
-    return executeWithGlobalLock(() -> (int) getLocalSize());
   }
 
   protected IntegrityState getIntegrityState() {
     EvictionMetrics em = eviction.getMetrics();
     IntegrityState is = new IntegrityState()
       .checkEquals("hash.getSize() == hash.calcEntryCount()",
-        hash.getSize(),
+        hash.getSizeWithGlobalLock(),
         hash.calcEntryCount());
     if (em.getEvictionRunningCount() > 0) {
       is.check("eviction running: hash.getSize() == eviction.getSize()", true)
         .check("eviction running: newEntryCnt == hash.getSize() + evictedCnt ....", true);
     } else {
-      is.checkEquals("hash.getSize() == eviction.getSize()", getLocalSize(), em.getSize())
+      is.checkEquals("hash.getSize() == eviction.getSize()", hash.getSizeWithGlobalLock(), em.getSize())
         .checkEquals("newEntryCnt == hash.getSize() + evictedCnt + expiredRemoveCnt + " +
             "removeCnt + clearedCnt + virginRemovedCnt",
-          em.getNewEntryCount(), getLocalSize() + em.getEvictedCount() +
+          em.getNewEntryCount(), hash.getSizeWithGlobalLock() + em.getEvictedCount() +
             em.getExpiredRemovedCount() + em.getRemovedCount() + clearRemovedCnt +
             em.getVirginRemovedCount());
     }
@@ -1706,7 +1701,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         throw new Error(
           "cache2k integrity error: " +
           is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
-            generateInfoUnderLock(HeapCache.this, clock.millis()).toString());
+            generateInfoMaybeLocked(HeapCache.this, clock.millis()).toString());
       }
       return null;
     });
@@ -1718,35 +1713,29 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   @Override
-  public final InternalCacheInfo getLatestInfo() {
-    return getLatestInfo(this);
+  public final InternalCacheInfo getConsistentInfo() {
+    return getConsistentInfo(this);
   }
 
   public final InternalCacheInfo getInfo(InternalCache userCache) {
-    synchronized (lock) {
-      long t = clock.millis();
-      if (info != null &&
-        (info.getInfoCreatedTime() + info.getInfoCreationDeltaMs() *
-          TUNABLE.minimumStatisticsCreationTimeDeltaFactor +
-          TUNABLE.minimumStatisticsCreationDeltaMillis > t)) {
-        return info;
-      }
-      info = generateInfo(userCache, t);
-    }
-    return info;
+    long t = clock.millis();
+    return generateInfoMaybeLocked(userCache, t);
   }
 
-  public final InternalCacheInfo getLatestInfo(InternalCache userCache) {
-    return generateInfo(userCache, clock.millis());
+  public final InternalCacheInfo getConsistentInfo(InternalCache userCache) {
+    return generateInfoWithLock(userCache, clock.millis());
   }
 
-  private CacheBaseInfo generateInfo(InternalCache userCache, long t) {
-    return executeWithGlobalLock(() -> generateInfoUnderLock(userCache, t));
+  private CacheBaseInfo generateInfoWithLock(InternalCache userCache, long t) {
+    return executeWithGlobalLock(() -> generateInfoMaybeLocked(userCache, t));
   }
 
-  private CacheBaseInfo generateInfoUnderLock(InternalCache userCache, long t) {
-    info = new CacheBaseInfo(HeapCache.this, userCache, t);
-    info.setInfoCreationDeltaMs((int) (clock.millis() - t));
+  /**
+   * Generate info, optionally within the global lock. In cache the global
+   * lock is held, an integrity check is performed as well.
+   */
+  private CacheBaseInfo generateInfoMaybeLocked(InternalCache userCache, long t) {
+    CacheBaseInfo info = new CacheBaseInfo(HeapCache.this, userCache, t);
     return info;
   }
 
@@ -1878,19 +1867,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
      * extreme cases, this parameter is set to a high value.
      */
     public long sharpExpirySafetyGapMillis = 27 * 1000 + 127;
-
-     /**
-     * Some statistic values need processing time to gather and compute it. This is a safety
-     * time delta, to ensure that the machine is not busy due to statistics generation.
-      * Default: 333.
-     */
-    public int minimumStatisticsCreationDeltaMillis = 333;
-
-    /**
-     *  Factor of the statistics creation time, that determines the time difference when new
-     *  statistics are generated.
-     */
-    public int minimumStatisticsCreationTimeDeltaFactor = 123;
 
     public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
 

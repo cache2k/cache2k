@@ -36,7 +36,7 @@ import static org.junit.Assert.assertFalse;
 public class StaticUtil {
 
   public static InternalCacheInfo latestInfo(Cache c) {
-    return ((InternalCache) c).getLatestInfo();
+    return ((InternalCache) c).getConsistentInfo();
   }
 
   /**
