@@ -6,12 +6,12 @@
   <parent>
     <groupId>org.cache2k</groupId>
     <artifactId>test-parent</artifactId>
-    <version>2.4-SNAPSHOT</version>
+    <version>2.3.1.Alpha</version>
     <relativePath>../test-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>test-init-java11</artifactId>
-  <version>2.4-SNAPSHOT</version>
+  <version>2.3.1.Alpha</version>
   <name>cache2k initialization tests Java 11</name>
   <description>Test a few things with Java 11 and modules enabled.
   </description>
