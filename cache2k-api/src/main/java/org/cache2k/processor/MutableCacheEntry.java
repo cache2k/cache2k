@@ -68,8 +68,6 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   @SuppressWarnings({"NullAway", "nullness"})
   @Nullable V getValue();
 
-  default @Nullable V getValueOrNull() { return getValue(); }
-
   /**
    * {@inheritDoc}
    *
