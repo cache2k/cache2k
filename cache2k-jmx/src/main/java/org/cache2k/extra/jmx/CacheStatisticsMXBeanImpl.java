@@ -20,6 +20,7 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.common.AbstractCacheStatistics;
@@ -32,15 +33,16 @@ import org.cache2k.core.common.AbstractCacheStatistics;
 public class CacheStatisticsMXBeanImpl
   extends AbstractCacheStatistics implements CacheStatisticsMXBean {
 
-  private InternalCache cache;
+  private final Cache<?, ?> cache;
 
-  public CacheStatisticsMXBeanImpl(InternalCache cache) {
+  public CacheStatisticsMXBeanImpl(Cache<?, ?> cache) {
     this.cache = cache;
   }
 
   /** Request new info all the */
   @Override
   protected InternalCacheInfo info() {
+    InternalCache<?, ?> cache = (InternalCache<?, ?>) this.cache.requestInterface(InternalCache.class);
     return cache.getInfo();
   }
 

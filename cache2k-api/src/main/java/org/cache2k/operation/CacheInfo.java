@@ -51,12 +51,12 @@ public interface CacheInfo {
   /**
    * Type of the cache key.
    */
-  CacheType getKeyType();
+  CacheType<?> getKeyType();
 
   /**
    * Type of the cache value.
    */
-  CacheType getValueType();
+  CacheType<?> getValueType();
 
   /**
    * The current number of entries within the cache, starting with 0. This value is an

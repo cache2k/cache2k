@@ -128,7 +128,7 @@ public class JmxSupportTest {
     checkAttribute("KeyType", "Long");
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
-    checkAttribute("EntryCapacity", 2000L);
+    checkAttribute("EntryCapacity", 1802L);
     checkAttribute("MaximumWeight", -1L);
     checkAttribute("TotalWeight", 0L);
     checkAttribute("Implementation", "HeapCache");

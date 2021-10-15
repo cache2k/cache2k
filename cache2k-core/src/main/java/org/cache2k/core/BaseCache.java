@@ -57,16 +57,24 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     Entry<K, V> e, Semantic<K, V, R> op);
 
   /**
-   *
-   * @see HeapCache#getCompleteName() similar
+   * Produce a qualified cache name.
    */
-  public static String nameQualifier(Cache<?, ?> cache) {
+  private static String nameQualifier(Cache<?, ?> cache) {
     StringBuilder sb = new StringBuilder();
     sb.append('\'').append(cache.getName()).append('\'');
     if (!cache.getCacheManager().isDefaultManager()) {
       sb.append(", manager='").append(cache.getCacheManager().getName()).append('\'');
     }
     return sb.toString();
+  }
+
+  /**
+   * Returns name of the cache with manager name.
+   *
+   * @see BaseCache#nameQualifier(Cache) similar
+   */
+  public String getQualifiedName() {
+    return nameQualifier(this);
   }
 
   protected abstract Iterator<CacheEntry<K, V>> iterator();

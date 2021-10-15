@@ -28,7 +28,6 @@ import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.CacheStatistics;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -39,37 +38,41 @@ import java.util.concurrent.CompletableFuture;
  */
 public class BaseCacheControl implements CacheControl {
 
-  private final InternalCache cache;
+  InternalCache<?, ?> internalCache;
+  String qualifiedCacheName;
 
-  public BaseCacheControl(InternalCache cache) {
-    this.cache = cache;
+  public BaseCacheControl(InternalCache<?, ?> cache) {
+    internalCache = cache;
+    qualifiedCacheName = cache.getQualifiedName();
   }
 
   @Override
-  public CacheType getKeyType() {
-    return cache.getKeyType();
+  public CacheType<?> getKeyType() {
+    return getCache().getKeyType();
   }
 
   @Override
-  public CacheType getValueType() {
-    return cache.getValueType();
+  public CacheType<?> getValueType() {
+    return getCache().getValueType();
   }
 
   @Override
   public String getName() {
-    return cache.getName();
+    return getCache().getName();
   }
 
   @Override
   public String getManagerName() {
-    return cache.getCacheManager().getName();
+    return getCache().getCacheManager().getName();
   }
 
-  private InternalCacheInfo getInfo() { return cache.getInfo(); }
+  private InternalCache<?, ?> getCache() { return internalCache; }
+
+  private InternalCacheInfo getInfo() { return getCache().getInfo(); }
 
   @Override
   public long getSize() {
-    return cache.getTotalEntryCount();
+    return getCache().getTotalEntryCount();
   }
 
   @Override
@@ -113,34 +116,34 @@ public class BaseCacheControl implements CacheControl {
   }
 
   public CompletableFuture<Void> clear() {
-    cache.clear();
+    getCache().clear();
     return CompletableFuture.completedFuture(null);
   }
 
   public CompletableFuture<Void> removeAll() {
-    cache.removeAll();
+    getCache().removeAll();
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> changeCapacity(long entryCountOrWeight) {
-    cache.getEviction().changeCapacity(entryCountOrWeight);
+    getCache().getEviction().changeCapacity(entryCountOrWeight);
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public boolean isLoaderPresent() {
-    return cache.isLoaderPresent();
+    return getCache().isLoaderPresent();
   }
 
   @Override
   public boolean isWeigherPresent() {
-    return cache.isWeigherPresent();
+    return getCache().isWeigherPresent();
   }
 
   @Override
   public boolean isStatisticsEnabled() {
-    return !(cache.getCommonMetrics() instanceof CommonMetrics.BlackHole);
+    return !(getCache().getCommonMetrics() instanceof CommonMetrics.BlackHole);
   }
 
   @Override
@@ -159,13 +162,13 @@ public class BaseCacheControl implements CacheControl {
 
   @Override
   public CompletableFuture<Void> close() {
-    cache.close();
+    getCache().close();
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> destroy() {
-    cache.close();
+    getCache().close();
     return CompletableFuture.completedFuture(null);
   }
 

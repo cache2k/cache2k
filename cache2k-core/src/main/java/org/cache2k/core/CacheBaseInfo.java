@@ -238,7 +238,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     StringBuilder sb = new StringBuilder();
     sb.append("Cache(");
     CacheManagerImpl cm = (CacheManagerImpl) (cache.getCacheManager());
-    sb.append("name=").append(BaseCache.nameQualifier(cache)).append(", ")
+    sb.append("name=").append(cache.getQualifiedName()).append(", ")
       .append("size=").append(getSize()).append(", ");
     if (getHeapCapacity() >= 0) {
       sb.append("capacity=").append(

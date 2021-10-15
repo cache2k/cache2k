@@ -20,9 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
+import org.cache2k.core.api.InternalCache;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Supplier;
 
@@ -75,15 +74,18 @@ public class Hash2<K, V> {
   private final StampedLock[] locks;
   private final long[] segmentSize;
 
-  /** Reference to parent cache, only used for CacheClosedException */
-  private final Cache cache;
+  /** Cache name, only used for CacheClosedException */
+  private final String qualifiedCacheName;
 
   /**
-   *
    * @param cache Cache reference only needed for the cache name in case of an exception
    */
-  public Hash2(Cache cache) {
-    this.cache = cache;
+  public Hash2(InternalCache<?, ?> cache) {
+    qualifiedCacheName = cache.getQualifiedName();
+  }
+
+  public Hash2(String qualifiedCacheName) {
+    this.qualifiedCacheName = qualifiedCacheName;
   }
 
   {
@@ -125,7 +127,7 @@ public class Hash2<K, V> {
     long stamp = l.tryOptimisticRead();
     Entry<K, V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException(cache);
+      throw new CacheClosedException(qualifiedCacheName);
     }
     Entry<K, V> e;
     int n = tab.length;
@@ -146,7 +148,7 @@ public class Hash2<K, V> {
     try {
       tab = entries;
       if (tab == null) {
-        throw new CacheClosedException(cache);
+        throw new CacheClosedException(qualifiedCacheName);
       }
       n = tab.length;
       mask = n - 1;
@@ -179,7 +181,7 @@ public class Hash2<K, V> {
     int si = hash & LOCK_MASK;
     Entry<K, V> f; Object ek; Entry<K, V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException(cache);
+      throw new CacheClosedException(qualifiedCacheName);
     }
     int n = tab.length, mask = n - 1, idx = hash & (mask);
     f = tab[idx];
@@ -229,7 +231,7 @@ public class Hash2<K, V> {
     try {
       Entry<K, V> f; Entry<K, V>[] tab = entries;
       if (tab == null) {
-        throw new CacheClosedException(cache);
+        throw new CacheClosedException(qualifiedCacheName);
       }
       int n = tab.length, mask = n - 1, idx = hash & (mask);
       f = tab[idx];
@@ -257,7 +259,7 @@ public class Hash2<K, V> {
     int si = hash & LOCK_MASK;
     Entry<K, V> f; Entry<K, V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException(cache);
+      throw new CacheClosedException(qualifiedCacheName);
     }
     int n = tab.length, mask = n - 1, idx = hash & (mask);
     f = tab[idx];
@@ -333,7 +335,7 @@ public class Hash2<K, V> {
   void rehash() {
     Entry<K, V>[] src = entries;
     if (src == null) {
-      throw new CacheClosedException(cache);
+      throw new CacheClosedException(qualifiedCacheName);
     }
     int i, sl = src.length, n = sl * 2, mask = n - 1, idx;
     Entry<K, V>[] tab = new Entry[n];

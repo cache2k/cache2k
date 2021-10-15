@@ -25,12 +25,9 @@ import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationReferenceSupplier;
-import org.cache2k.core.api.InternalCache;
-import org.cache2k.core.common.BaseCacheControl;
 import org.cache2k.core.log.Log;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheCreatedListener;
-import org.cache2k.operation.CacheControl;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -55,11 +52,9 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
 
   @Override
   public <K, V> CompletableFuture<Void> onCacheCreated(Cache<K, V> cache,
-                                                                 CacheBuildContext<K, V> ctx) {
+                                                       CacheBuildContext<K, V> ctx) {
     MBeanServer mbs = getPlatformMBeanServer();
-    InternalCache internalCache = cache.requestInterface(InternalCache.class);
-    CacheControlMXBean management =
-      new CacheControlMXBeanImpl(new BaseCacheControl(internalCache));
+    CacheControlMXBean management = new CacheControlMXBeanImpl(cache);
     String name = createCacheControlName(cache.getCacheManager(), cache);
     try {
       mbs.registerMBean(management, new ObjectName(name));
@@ -73,7 +68,7 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
     }
     name = createCacheStatisticsName(cache.getCacheManager(), cache);
     try {
-      mbs.registerMBean(new CacheStatisticsMXBeanImpl(internalCache), new ObjectName(name));
+      mbs.registerMBean(new CacheStatisticsMXBeanImpl(cache), new ObjectName(name));
     } catch (InstanceAlreadyExistsException existing) {
       LOG.debug("register failure, cache: " + cache.getName(), existing);
     } catch (Exception e) {

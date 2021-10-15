@@ -41,7 +41,7 @@ import java.util.NoSuchElementException;
  */
 public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
 
-  private HeapCache<K, V> cache;
+  private final HeapCache<K, V> cache;
   private Entry<K, V> lastEntry = null;
   private Entry<K, V> nextEntry = null;
   private long clearCount;
@@ -104,7 +104,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
     if (needsAbort()) {
       if (hash != null && cache.isClosed()) {
         clearOutReferences();
-        throw new CacheClosedException(cache);
+        throw new CacheClosedException(cache.getQualifiedName());
       }
       clearOutReferences();
       return null;

@@ -878,6 +878,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * Request an alternative interface for this cache instance.
    *
    * @throws UnsupportedOperationException if interface is not available
+   * @throws IllegalStateException if cache is closed
    */
   <T> T requestInterface(Class<T> type);
 

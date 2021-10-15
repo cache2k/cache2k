@@ -181,7 +181,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
   }
 
-  protected final Hash2<K, V> hash = createHashTable();
+  protected final Hash2<K, V> hash;
 
   private volatile boolean closing = true;
 
@@ -227,15 +227,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   /**
-   * Returns name of the cache with manager name.
-   *
-   * @see BaseCache#nameQualifier(Cache) similar
-   */
-  public String getCompleteName() {
-    return manager.getName() + ":" + name;
-  }
-
-  /**
    * Normally a cache itself logs nothing, so just construct when needed.
    * Not requesting the log at startup means that the potential log target
    * is not showing up in some management interfaces. This is intentional,
@@ -245,7 +236,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @Override
   public Log getLog() {
     return
-      Log.getLog(Cache.class.getName() + '/' + getCompleteName());
+      Log.getLog(Cache.class.getName() + '/' + manager.getName() + ":" + name);
   }
 
   /** called from CacheBuilder */
@@ -256,6 +247,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     keyType = cfg.getKeyType();
     name = cfg.getName();
     manager = (CacheManagerImpl) ctx.getCacheManager();
+    hash = createHashTable();
     clock = ctx.getTimeReference();
     featureBits =
       featureBit(KEEP_AFTER_EXPIRED, cfg.isKeepDataAfterExpired()) |
@@ -346,7 +338,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   public void checkClosed() {
     if (closing) {
-      throw new CacheClosedException(this);
+      throw new CacheClosedException(getQualifiedName());
     }
   }
 

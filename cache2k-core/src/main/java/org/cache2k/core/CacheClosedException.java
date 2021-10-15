@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.core.api.InternalCache;
 
 /**
  * Consistently this exception is thrown, when an operation detects that the
@@ -42,8 +43,12 @@ public class CacheClosedException extends IllegalStateException {
   /**
    * Included manager and cache name in the detail message, preferred.
    */
-  public CacheClosedException(Cache cache) {
-    super(BaseCache.nameQualifier(cache));
+  public CacheClosedException(String qualifiedCacheName) {
+    super(qualifiedCacheName);
+  }
+
+  public CacheClosedException(InternalCache<?, ?> cache) {
+    super(cache.getQualifiedName());
   }
 
 }

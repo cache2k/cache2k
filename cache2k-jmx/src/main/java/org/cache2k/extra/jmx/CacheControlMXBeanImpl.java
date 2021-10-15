@@ -20,8 +20,8 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.cache2k.core.common.BaseCacheControl;
-import org.cache2k.operation.CacheStatistics;
+import org.cache2k.Cache;
+import org.cache2k.operation.CacheControl;
 
 import java.time.Instant;
 import java.util.Date;
@@ -34,96 +34,100 @@ import java.util.Date;
  */
 public class CacheControlMXBeanImpl implements CacheControlMXBean {
 
-  private BaseCacheControl cacheControl;
+  private final Cache<?, ?> cache;
 
-  public CacheControlMXBeanImpl(BaseCacheControl cacheControl) {
-    this.cacheControl = cacheControl;
+  public CacheControlMXBeanImpl(Cache<?, ?> cache) {
+    this.cache = cache;
+  }
+
+  public CacheControl getCacheControl() {
+    return CacheControl.of(cache);
   }
 
   @Override
   public String getKeyType() {
-    return cacheControl.getKeyType().getTypeName();
+    return getCacheControl().getKeyType().getTypeName();
   }
 
   @Override
   public String getValueType() {
-    return cacheControl.getValueType().getTypeName();
+    return getCacheControl().getValueType().getTypeName();
   }
 
   @Override
   public String getName() {
-    return cacheControl.getName();
+    return getCacheControl().getName();
   }
 
   @Override
   public String getManagerName() {
-    return cacheControl.getManagerName();
+    return getCacheControl().getManagerName();
   }
 
   @Override
   public long getSize() {
-    return cacheControl.getSize();
+    return getCacheControl().getSize();
   }
 
   @Override
   public long getEntryCapacity() {
-    return cacheControl.getEntryCapacity();
+    return getCacheControl().getEntryCapacity();
   }
 
   @Override
   public long getCapacityLimit() {
-    return cacheControl.getCapacityLimit();
+    return getCacheControl().getCapacityLimit();
   }
 
   @Override
   public long getMaximumWeight() {
-    return cacheControl.getMaximumWeight();
+    return getCacheControl().getMaximumWeight();
   }
 
   @Override
   public long getTotalWeight() {
-    return cacheControl.getTotalWeight();
+    return getCacheControl().getTotalWeight();
   }
 
   @Override
   public Date getCreatedTime() {
-    return Date.from(cacheControl.getCreatedTime());
+    return Date.from(getCacheControl().getCreatedTime());
   }
 
   @Override
   public Date getClearedTime() {
-    Instant v = cacheControl.getClearedTime();
+    Instant v = getCacheControl().getClearedTime();
     return v != null ? Date.from(v) : null;
   }
 
   @Override
   public String getImplementation() {
-    return cacheControl.getImplementation();
+    return getCacheControl().getImplementation();
   }
 
   @Override
   public boolean isLoaderPresent() {
-    return cacheControl.isLoaderPresent();
+    return getCacheControl().isLoaderPresent();
   }
 
   @Override
   public boolean isWeigherPresent() {
-    return cacheControl.isWeigherPresent();
+    return getCacheControl().isWeigherPresent();
   }
 
   @Override
   public boolean isStatisticsEnabled() {
-    return cacheControl.isStatisticsEnabled();
+    return getCacheControl().isStatisticsEnabled();
   }
 
   @Override
   public void clear() {
-    cacheControl.clear();
+    getCacheControl().clear();
   }
 
   @Override
   public void changeCapacity(long entryCountOrWeight) {
-    cacheControl.changeCapacity(entryCountOrWeight);
+    getCacheControl().changeCapacity(entryCountOrWeight);
   }
 
 }

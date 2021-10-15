@@ -40,7 +40,7 @@ public class Hash2Test {
    */
   @Test
   public void testExpansion() {
-    final Hash2 ht = new Hash2(null);
+    final Hash2 ht = new Hash2("test");
     for (int i = 0; i < 20; i++) {
       ht.runTotalLocked(() -> {
         ht.rehash();

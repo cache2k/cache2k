@@ -102,4 +102,6 @@ public interface InternalCache<K, V>
    */
   void checkIntegrity();
 
+  String getQualifiedName();
+
 }
