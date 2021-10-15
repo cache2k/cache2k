@@ -82,6 +82,8 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    */
   public static final Duration EXPIRY_NOT_ETERNAL = Duration.ofMillis(ExpiryTimeValues.ETERNAL - 1);
   public static final long UNSET_LONG = -1;
+  /** Default entry capacity. */
+  public static final long DEFAULT_ENTRY_CAPACITY = 1802;
 
   private boolean storeByReference;
   private @Nullable String name;

@@ -365,8 +365,10 @@ public class Cache2kBuilder<K, V>
    *
    * <p>The value {@code Long.MAX_VALUE} means the capacity is not limited.
    *
-   * <p>The default value is 2000. The default value is conservative, so the application
-   * will usually run stable without tuning or setting a reasonable size.
+   * <p>The default value is {@link Cache2kConfig#DEFAULT_ENTRY_CAPACITY}. The odd value
+   * is intentional, to serve as an indicate for SREs that the cache is running on its default
+   * size. A low capacity default is different to caches like Guava or Caffeine, that create
+   * an unbounded cache by default, which potentially a memory leak.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
     cfg().setEntryCapacity(v);

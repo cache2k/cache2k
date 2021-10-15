@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.Cache;
@@ -317,9 +318,12 @@ public class StatisticsTest extends TestingBase {
       builder(Integer.class, Integer.class)
         .loader(g)
         .eternal(true)
+        .entryCapacity(200)
         .build();
     assertEquals(0, getInfo().getLoadCount());
-    c.toString();
+    assertThat(c.toString())
+      .contains("capacity=200")
+      .contains("coldHits=0");
   }
 
   @Test
@@ -329,12 +333,15 @@ public class StatisticsTest extends TestingBase {
       builder(Integer.class, Integer.class)
         .loader(g)
         .disableStatistics(true)
+        .entryCapacity(200)
         .eternal(true)
         .build();
     c.get(1);
     c.remove(1);
     assertEquals(0, getInfo().getLoadCount());
-    c.toString();
+    assertThat(c.toString())
+      .contains("capacity=200")
+      .contains("coldHits=0");
   }
 
 }

@@ -68,7 +68,7 @@ public class RandomEviction extends AbstractEviction {
     }
     evictionIndex += e.hashCode;
     if (evictionIndex < 0) {
-      evictionIndex = -evictionIndex;
+    evictionIndex = -evictionIndex;
     }
     return e;
   }

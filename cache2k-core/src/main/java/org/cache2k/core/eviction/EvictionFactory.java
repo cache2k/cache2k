@@ -54,7 +54,7 @@ public class EvictionFactory {
       entryCapacity = -1;
     } else {
       if (entryCapacity < 0) {
-        entryCapacity = 2000;
+        entryCapacity = Cache2kConfig.DEFAULT_ENTRY_CAPACITY;
       }
       if (entryCapacity == 0) {
         throw new IllegalArgumentException("entryCapacity of 0 is not supported.");
@@ -105,16 +105,21 @@ public class EvictionFactory {
     return maxWeight;
   }
 
+  /**
+   * Determine number of segments based on the the available processors.
+   * For small cache sizes, no segmentation happens at all.
+   */
   public static int determineSegmentCount(boolean strictEviction, int availableProcessors,
                                           boolean boostConcurrency, long entryCapacity,
                                           long maxWeight, int segmentCountOverride) {
+    long segmentationCutoffCapacity = 1000;
     if (strictEviction) {
       return 1;
     }
-    if (entryCapacity >= 0 && entryCapacity < 1000) {
+    if (entryCapacity >= 0 && entryCapacity < segmentationCutoffCapacity) {
       return 1;
     }
-    if (maxWeight >= 0 && maxWeight < 1000) {
+    if (maxWeight >= 0 && maxWeight < segmentationCutoffCapacity) {
       return 1;
     }
     int segmentCount = 1;
