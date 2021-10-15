@@ -30,7 +30,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
- * Extension of {@link AsyncCacheLoader} with bulk load capabilities.
+ * Extension of {@link AsyncCacheLoader} with bulk load capabilities. Entries with an ongoing
+ * load are blocked for other requests and loads until the load is finished.
  *
  * <p>Semantics: A bulk load is issued when the cache client uses a bulk method to retrieve
  * data, like {@link org.cache2k.Cache#loadAll} or {@link org.cache2k.Cache#getAll}. Not all
@@ -52,9 +53,9 @@ import java.util.concurrent.Executor;
  * <p>Rationale: Other cache products and JCache/JSR107 defines a {@link #loadAll}
  * on the same interface as the cache loader. The JCache variant does not work as functional
  * interface because both methods have to be implemented. Other caches implement {@link #loadAll}
- * as iteration over {@link #load(Object)} by default. With a separate interface the cache "knows"
- * whether bulk operations can be optimized and its possible to be implemented as lambda function
- * as well.
+ * as iteration over {@link CacheLoader#load(Object)} by default. With a separate interface
+ * the cache "knows" whether bulk operations can be optimized and its possible to be
+ * implemented as lambda function as well.
  *
  * @author Jens Wilke
  * @see BulkCacheLoader

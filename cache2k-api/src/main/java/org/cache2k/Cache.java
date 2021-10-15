@@ -623,6 +623,10 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * cached exceptions. Thus, the operation completes successful only if all values were
    * loaded successfully.
    *
+   * <p>When a load is performed each entry is blocked for other requests.
+   * See {@see org.cache2k.io.AsyncBulkCacheLoader} for detailed
+   * description.
+   *
    * @param keys The keys to be loaded
    * @return future getting notified on completion
    * @throws UnsupportedOperationException if no loader is defined
@@ -641,6 +645,10 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * back pressure.
    *
    * <p>If no loader is defined, the method will throw an immediate exception.
+   *
+   * <p>When a load is performed each entry is blocked for other requests.
+   * See {@see org.cache2k.io.AsyncBulkCacheLoader} for detailed
+   * description.
    *
    * @param keys The keys to be loaded
    * @return future getting notified on completion
@@ -736,7 +744,9 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    *
    * <p>Executing the request, the cache may do optimizations like
    * utilizing multiple threads for invoking the loader or using the bulk
-   * methods on the loader.
+   * methods on the loader. When a load is performed each entry is blocked
+   * for other requests. See {@see org.cache2k.io.AsyncBulkCacheLoader} for detailed
+   * description.
    *
    * <p>Exception handling: In case of loader exceptions, the method will throw
    * an immediate exception if the load for all requested keys resulted in an
