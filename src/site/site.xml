@@ -58,6 +58,9 @@
       <item name="Spring Framework Integration API" href="/docs/latest/apidocs/cache2k-spring/index.html" />
       <item name="JCache / JSR107 API - Version 1.1" href="/docs/jcache/1.1.0/apidocs/cache-api/index.html" />
     </menu>
+    <menu name="Benchmarks">
+      <item name="Benchmarks" href="benchmarks.html" />
+    </menu>
     <menu name="Legal">
       <item name="Imprint" href="https://headissue.com/imprint.html" />
       <item name="Privacy Policy" href="https://headissue.com/imprint.html" />
