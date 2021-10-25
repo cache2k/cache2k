@@ -26,17 +26,11 @@ of physical CPU cores.
 
 The metrics we present are:
 
-- operations per second
+- runtime, for one shot benchmarks
+- operations per second, for throughput benchmarks
 - effective hitrate, calculated by the benchmarking framework
-- committed heap size after regular GC, reported by the JVM
 - resident set size high water mark, reported by the Linux OS
 - live objects, via as reported via `jmap -histo:live`
-
-Determining a reasonable value for memory consumption is difficult. But for 
-comparing caching products keeping an eye on the memory consumption is essential.
-A more fair and correct benchmark would limit the available memory only and let the
-cache choose to use the available heap in an optimal way. However, this feature is
-not available.
 
 Every bar chart has a confidence interval associated with it. This interval 
 does not just represent the upper and lower bounds of a measured value, 
@@ -92,18 +86,24 @@ work for generating or loading the value and adding a miss penalty.
 
 [ZipfianLoadingBenchmark.java](https://github.com/cache2k/cache2k-benchmark/blob/master/jmh-suite/src/main/java/org/cache2k/benchmark/jmh/cacheSuite/ZipfianSequenceLoadingBenchmark.java)
 
-First we present the results for operations per seconds with different key ranges:
+First we present the results for operations per seconds with a key range of 110%, meaning the Zipfian distribution generates
+numbers between 0 and 1.100.000.
 
 ![](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx110-notitle.svg)
 
 *ZipfianSequenceLoadingBenchmark, operations per second by thread count with cache size 1M and Zipfian percentage 110 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx110-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx110.dat))*
 
+The resulting cache hit rate is very high and all caches are around 99.2% hit rate.
+
+To produce lower hit rates and force the cache to do more eviction, we do another round of the same benchmark with 500% key range,
+resulting in random numbers between 0 and 5.000.000.
+
 ![](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx500-notitle.svg)
 
 *ZipfianSequenceLoadingBenchmark, operations per second by thread count with cache size 1M and Zipfian percentage 500 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx500-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx500.dat))*
 
-Let's take a look at the resulting hit rates. The hit rate is calculated by the benchmark
-by counting the requests and cache misses.
+Here are the resulting hit rates. The metric is calculated by the benchmark and does not 
+depend on statistics reported by the cache. 
 
 ![](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500-notitle.svg)
 
@@ -112,7 +112,8 @@ by counting the requests and cache misses.
 Note that the hit rates of cache2k become better for more threads, while Caffeines' hit rates
 degrade slightly.
 
-Let us take a look at the memory usage:
+Since caching libraries are used to manage memory resources efficiently it is important to
+keep a close eye on memory usage of the library itself. So let us take a look at the memory usage:
 
 ![](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted-notitle.svg)
 
