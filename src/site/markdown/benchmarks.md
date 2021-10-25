@@ -1,254 +1,208 @@
 # Benchmarks
 
-*Update: Meanwhile these benchmarks are two years old. The benchmarks are currently improved
-and extended. This page will be updated when some useful and complete state is reached.
-The latest development can be found at Jens' blog, starting here:
-[Java Caching Benchmarks 2016 - Part 1](http://cruftex.net/2016/03/16/Java-Caching-Benchmarks-2016-Part-1.html)*
+Last update: October 2021. 
 
-Here are some benchmarks. But let's start with the disclaimer: *There are lies,
-damn lies and benchmarks!* The benchmarks as well as the cache2k cache algorithms
-are still under heavy development. The code to reproduce the benchmarks
-is in the [cache2k-benchmark package](https://github.com/headissue/cache2k-benchmark)
-on GitHub.
+We conducted benchmarks and compared the following cache implementations:
 
-## Comparison with other products
+- EHCache3 version 3.9.6
+- Caffeine version 3.0.4
+- Cache2k version 2.4.0.Final
+  
+Test environment:
 
-### The caches
+- AMD EPYC 7401P 24-Core Processor, with SMT enabled, reporting 48 CPUs
+- 256GB RAM
+- Oracle Java 17 (build 17+35-LTS-2724), with no relevant tuning or limits
+- Ubuntu 20.04
+- JMH 1.33
 
-Besides the current cache2k implementation(s) the following Java caches are used:
+For benchmarking JMH is used. Each benchmark runs with a iteration time of 10 seconds.
+We run 3 iterations in two forks each to detect outliers. 
 
-   * EHCache Version 2.7.2, uses probabilistic LRU eviction
-   * Google Guava Cache 15.0, uses LRU eviction
-   * Infinispan 6.0.0.Final, uses the LIRS eviction by default (see [LIRS])
+Benchmarks are run multiple times with different thread counts, cache sizes and
+key ranges. The Java process is limited to the amount of CPU cores corresponding to
+the thread count. Note that the highest thread count exceeds the number 
+of physical CPU cores. 
 
-The benchmark configuration is with expiry turned off, and binary storage or
-store by value turned off. Everything else is default.
+The metrics we present are:
 
-### cache2k algorithms
+- operations per second
+- effective hitrate, calculated by the benchmarking framework
+- committed heap size after regular GC, reported by the JVM
+- resident set size high water mark, reported by the Linux OS
+- live objects, via as reported via `jmap -histo:live`
 
-Within cache2k conventional and more recent cache eviction algorithms are implemented.
+Determining a reasonable value for memory consumption is difficult. But for 
+comparing caching products keeping an eye on the memory consumption is essential.
+A more fair and correct benchmark would limit the available memory only and let the
+cache choose to use the available heap in an optimal way. However, this feature is
+not available.
 
-ARC is a modern adaptive algorithm (see [ARC]). In case of a cache hit it needs
-the same list operations like LRU or LIRS. The other recent algorithm is CLOCK-Pro
-which needs, as CLOCK does, no data structure operations on a cache hit and can therefore
-be implemented lock free. The cache2k CLOCK-Pro implementation is not exactly as
-presented in the paper (see [CP]), however, it is an adapted version which tries
-to fit best with the needs of a Java object cache. We call this version "CLOCK-Pro Plus"
-or CP+. The CP+ implementation is not finalized yet, but still evolving.
+Every bar chart has a confidence interval associated with it. This interval 
+does not just represent the upper and lower bounds of a measured value, 
+but it shows a range of potential values. Confidence interval is
+calculated by JMH with a level of 99.9% (which means likelihood 
+that the actual value is between the shown interval is 99.9%). A higher iteration time 
+usually results in less result variance. We found that 10 seconds is a good compromise, 
+keeping the runtime low and resulting in acceptable variance.
 
-### The runtime benchmarks
+The benchmark uses integer keys and values, minimizing the memory that is used besides the
+caching data structures. The benchmarks are designed to highlight differences between
+caching implementations.
 
-In the first benchmark we measure the runtime of a specific task and compare the
-different cache implementations. Each task is a run through a synthetic access trace.
-Here is the description of these traces:
+We keep interpretations of the results sparse and only comment on effects that may be 
+overlooked.
 
-   * **Eff90**: Random distribution within 0 and 999, which yields about
-      90% hitrate with LRU on a cache with maximum 500 elements.
-   * **Eff95**: Random distribution within 0 and 999, which yields about
-      95% hitrate with LRU on a cache with maximum 500 elements.
-   * **Miss**: Counting sequence which yields no hits at all.
-   * **Hits**: Repeating sequence between 0 and 499, which yields only hits
-      after the first round.
-   * **Random**: Randomly distributed sequence between 0 and 999.
+## PopulateParallelOnce, One Shot Performance
 
-Each benchmark run does three million cache requests (not concurrently) on a cache
-with 500 maximum elements. There is no penalty to actually provide the cached data in case
-of a cache miss. This benchmark focuses only on the internal cache overhead.
+The benchmark inserts entries in multiple threads up the entry capacity.
+Each time a new cache is created, so potential hash table expansions are
+part of the runtime. Link to the source code: 
+[PopulateParallelOnceBenchmark.java](https://github.com/cache2k/cache2k-benchmark/blob/master/jmh-suite/src/main/java/org/cache2k/benchmark/jmh/cacheSuite/PopulateParallelOnceBenchmark.java)
 
-### Runtime comparison
+The result is the achieved runtime, so a lower result is better. 
 
-The following comparison is with expiry switched off, this means all data may be cached
-for ever.
+![](benchmark-result/PopulateParallelOnceBenchmark-byThreads-4M-notitle.svg)
 
-![Runtime comparison with other cache products](benchmark-result/3ptySpeed.svg)
+*PopulateParallelOnceBenchmark, runtime by thread count for 4M cache size ([Alternative image](benchmark-result/PopulateParallelOnceBenchmark-byThreads-4M-notitle-print.svg), [Data file](benchmark-result/PopulateParallelOnceBenchmark-byThreads-4M.dat))*
 
-For the raw data, see [benchmark-result/3ptySpeed.dat](benchmark-result/3ptySpeed.dat).
+## PopulateParallelTwice, One Shot Performance
 
-### Runtime comparison with expiry enabled
+The benchmark inserts entries in multiple threads stopping at twice of the entry capacity.
+So one part of the benchmark is pure inserting, while the second part is inserting and
+eviction. Link to the source code:
+[PopulateParallelTwiceBenchmark.java](https://github.com/cache2k/cache2k-benchmark/blob/master/jmh-suite/src/main/java/org/cache2k/benchmark/jmh/cacheSuite/PopulateParallelTwiceBenchmark.java)
 
-The following comparison is with expiry configured to five minutes. Actually,
-during the benchmark run not a single element will expire, however, it makes
-a difference because (in the case of cache2k) timer data structures need
-to be updated when an element is inserted or evicted.
+The result is the achieved runtime, so a lower result is better.
 
-![Runtime comparison with other cache products](benchmark-result/3ptySpeedWithExpiry.svg)
+![](benchmark-result/PopulateParallelTwiceBenchmark-byThreads-4M-notitle.svg)
 
-For the raw data, see [benchmark-result/3ptySpeedWithExpiry.dat](benchmark-result/3ptySpeedWithExpiry.dat).
+*PopulateParallelTwiceBenchmark, runtime by thread count for 4M cache size ([Alternative image](benchmark-result/PopulateParallelTwiceBenchmark-byThreads-4M-notitle-print.svg), [Data file](benchmark-result/PopulateParallelTwiceBenchmark-byThreads-4M.dat))*
 
-Within cache2k there is room for improvement, reorganization of the timer
-code is on the todo list.
+## ZipfianSequenceLoading, Throughput Performance
 
-### Hitrate comparison
+The benchmark is doing requests with cache keys based on a Zipfian distribution.
+The Zipfian distribution is a typical artificial skewed access sequence, meaning
+that keys vary in their appearance from very often to very rare.
+The generated key space of the Zipfian distribution is larger than the cache capacity
+(110% and 500% of the cache entry capacity) which will cause evictions and cache misses.
+The cache is operating in read through mode, which means for missing mappings the cache 
+will invoke the loader. Each load operation is consuming some CPU time to simulate 
+work for generating or loading the value and adding a miss penalty.
 
-For completeness here is the hitrate comparison.
+[ZipfianLoadingBenchmark.java](https://github.com/cache2k/cache2k-benchmark/blob/master/jmh-suite/src/main/java/org/cache2k/benchmark/jmh/cacheSuite/ZipfianSequenceLoadingBenchmark.java)
 
-![Runtime comparison with other cache products](benchmark-result/3ptyHitrate.svg)
+First we present the results for operations per seconds with different key ranges:
 
-For the raw data, see [benchmark-result/3ptyHitrate.dat](benchmark-result/3ptyHitrate.dat).
+![](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx110-notitle.svg)
 
-Interestingly there are some differences in the achieved hitrates.
-Infinispan and Guava seem to interpret the maximum count of elements very
-loose, so they yield a low hitrate when it should be 99.9%. See discussion on this below.
+*ZipfianSequenceLoadingBenchmark, operations per second by thread count with cache size 1M and Zipfian percentage 110 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx110-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx110.dat))*
 
+![](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx500-notitle.svg)
 
-### Runtime comparison for hit hits
-
-In the following diagram we look only at the runtime of a trace with mostly cache hits.
-The "HashMap+Counter" is for comparing the results to a simple Java HashMap. This
-"cache" fetches the data from a HashMap and increases a hit counter.
-
-![Runtime comparison of 3 million cache hits](benchmark-result/speedHits.svg)
-
-For the raw data, see [benchmark-result/speedHits.dat](benchmark-result/speedHits.dat).
-
-## Eviction algorithm comparison
-
-Now we compare the efficiency of cache eviction algorithm on real-world traces.
-For reference there are two additional algorithms: OPT is the optimal achievable
-hitrate according to Beladys offline algorithm (See [Belady]). The RAND
-algorithm selects an entry randomly for eviction. To have stable readings a
-pseudo random generator is used. To make sure the random selection does not favor
-a specific trace, the "RAND" value is the average between three runs with different
-random seeds. With OPT and RAND we have a meaningful upper and lower bound to compare
-the cache efficiency of the different implementations.
-
-### Web12 trace
-
-Webserver access trace on detail pages to events (music, theater, etc.) in
-munich. The trace was recorded in december 2012. The trace is a long-tail distribution
-which may be typical for retail shops.
-
-![hitrate comparison for Web12 trace](benchmark-result/traceWeb12hitrate.svg)
-
-### Cpp trace
-
-Reference trace, it was used in the CLOCK-Pro and LIRS papers (see [CP] and [LIRS].
-Short description from CLOCK-Pro paper: cpp is a GNU C compiler pre-processor trace.
-The total size of C source programs used as input is roughly 11 MB. The trace is a
-member of the probabilistic pattern group.
-
-The trace originated from the authors of the paper [UBM] and [LFRU].
-
-![hitrate comparison for Cpp trace](benchmark-result/traceCpphitrate.svg)
-
-### Sprite trace
-
-Reference trace, it was used in the CLOCK-Pro and LIRS papers (see [CP] and [LIRS].
-Short description from CLOCK-Pro paper: Sprite is from the Sprite network file system,
-which contains requests to a file server from client workstations for a two-day period.
-The trace is a member of the temporally-clustered pattern group.
-
-The trace originated from the authors of the paper [UBM] and [LFRU].
-
-![hitrate comparison for Sprite trace](benchmark-result/traceSpritehitrate.svg)
-
-### Multi2 trace
-
-Reference trace, it was used in the CLOCK-Pro and LIRS papers (see [CP] and [LIRS]).
-Short description from CLOCK-Pro paper: multi2 is obtained by executing
-three workloads, cs, cpp, and postgres, together. The trace is a member
-of the mixed pattern group.
-
-The trace originated from the authors of the paper [UBM] and [LFRU].
-
-![hitrate comparison for Multi2 trace](benchmark-result/traceMulti2hitrate.svg)
-
-### Remarks
-
-The bad hitrate of **Google Guava** is caused by the fact that the cache starts evicting
-elements before the maximum size is reached. This behaviour is documented on
-`CacheBuilder.maximumSize()`:
-
-> Note that the cache may evict an entry before this limit is
-exceeded. As the cache size grows close to the maximum, the cache evicts entries that are
-less likely to be used again. For example, the cache may evict an
-entry because it hasn't been used recently or very often.
-
-The test BenchmarkCollection.testSize1000() verifies this behaviour.
-
-**Infinispan** uses an adaptive eviction algorithm (LIRS) by default, but the eviction
-starts too early to really have a comparison for the algorithm itself. The cache, decides
-to evict elements before the maximum cache size is reached.
-The documentation on the parameter `EvictionConfigurationBuilder.maxEntries()` says:
-
-> Maximum number of entries in a cache instance. Cache size is guaranteed not to exceed upper
-limit specified by max entries. However, due to the nature of eviction it is unlikely to ever
-be exactly maximum number of entries specified here.
-
-Having or not having a configuration parameter to control the maximum cache size and how to
-react on it is a lengthy discussion in its own. Anyway, an eviction that evicts entries
-before it needs to, yields a bad caching efficiency.
-
-## About the benchmarks
-
-Here is a little more background on the benchmarks. The ultimate truth
-can be found in the source on GitHub. You can find it in the
-[cache2k-benchmark package](https://github.com/headissue/cache2k-benchmark).
-
-All cache tests are carried out with simple integer values and keys. We
-assume that the overhead for passing the objects is the same within the cache
-implementations. However, more complex key implementations could make a
-difference in runtime depending on how often hashCode() and equals() is called
-by the cache implementation. Copying of values and keys or binary storage
-of them is switched off, because we only want to benchmark the in-memory performance
-not the marshalling and unmarshalling performance.
-
-The runtime is measured with JUnitBenchmarks. The result is in seconds with
-tree digits after comma, giving us a 1 millisecond resolution. Each runtime test
-is carried out in five rounds, two for warmup and three for the benchmark
-measurement.
-
-The accuracy of is not optimal. The runtime of the fastest hit benchmarks is
-within 50 to 70 milliseconds.
-
-The test platform is:
-
-  * Lenovo X220, with Intel(R) Core(TM) i7-2620M CPU @ 2.70GHz
-  * Oracle Java 1.7.0_25 with HotSpot 64-Bit server VM
-
-## Does a faster cache help for my application?
-
-It depends on the cache hitrate and the penalty to fetch the data. The more often
-you need to fetch the data, meaning you have a cache miss, and the more expansive
-it is to do so, the less interesting is the the cache overhead itself.
-
-Application architecture and the cache speed influence each other. To
-meet performance requirements of an application it is possible to
-reduce the cache access count by caching bigger components, such as
-completely rendered HTML pages. So, OTOH with a faster cache more fine
-grained caching is possible, allowing higher
-application complexity and/or lowering the memory demands.
-
-## More benchmarks?
-
-Some ideas what should be covered by additional benchmarks:
-
-  * More traces
-  * Benchmark on server hardware in general
-  * Multithreaded benchmark on a 8 core CPU
-  * Run the benchmarks on different JVMs?
-
-## References
-
-  * [Belady] L. A. Belady, "A Study of Replacement Algorithms for Virtual Storage",
-    *IBM System Journal, 1966.*
-  * [UBM] J. Kim, J. Choi, J. Kim, S. Noh, S. Min, Y. Cho, and C. Kim,
-    "A Low-Overhead, High-Performance Unified Buffer Management Scheme
-    that Exploits Sequential and Looping References",
-    *4th Symposium on Operating System Design & Implementation, October 2000.*
-  * [LFRU] D. Lee, J. Choi, J. Kim, S. Noh, S. Min, Y. Cho and C. Kim,
-    "On the Existence of a Spectrum of Policies that Subsumes the Least Recently Used
-     (LRU) and Least Frequently Used (LFU) Policies", *Proceeding of 1999 ACM
-     SIGMETRICS Conference, May 1999.*
-  * [CP] Song Jiang, Feng Chen, Xiaodong Zhang.
-    "CLOCK-Pro: an effective improvement of the CLOCK replacement",
-    *Proceedings of the annual conference on USENIX Annual Technical Conference (2005)*
-  * [LIRS] Song Jiang, and Xiaodong Zhang,
-    "LIRS: An Efficient Low Inter-Reference Recency Set Replacement Policy to Improve
-     Buffer Cache Performance", in *Proceedings of the ACM SIGMETRICS Conference on Measurement
-     and Modeling of Computer Systems (SIGMETRICS'02)*
-
-
-
-
-
+*ZipfianSequenceLoadingBenchmark, operations per second by thread count with cache size 1M and Zipfian percentage 500 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx500-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmark-byThread-1Mx500.dat))*
+
+Let's take a look at the resulting hit rates. The hit rate is calculated by the benchmark
+by counting the requests and cache misses.
+
+![](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500-notitle.svg)
+
+*ZipfianSequenceLoadingBenchmark, effective hit rate by thread count with cache size 1M  and Zipfian percentage 500 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500.dat))*
+
+Note that the hit rates of cache2k become better for more threads, while Caffeines' hit rates
+degrade slightly.
+
+Let us take a look at the memory usage:
+
+![](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted-notitle.svg)
+
+*ZipfianSequenceLoadingBenchmark, 4 threads, 1M cache entries, Zipfian distribution percentage 500, total bytes of live objects as reported by jmap ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted.dat))*
+
+![](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted-notitle.svg)
+
+*ZipfianSequenceLoadingBenchmark, 4 threads, 1M cache entries, Zipfian distribution percentage 500, peak memory usage reported by the operating system (VmHWM), sorted by best performance ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted.dat))*
+
+The metric *live objects* represents the static view of bytes occupied by live objects in the heap 
+without any additional runtime overhead. The *VmHWM* metric represents the real memory used.
+The bigger differences in real memory are because of dynamic effects, especially higher 
+amount of garbage collection activity.
+
+For a discussion on how to measure memory usage, see: 
+*[The 6 Memory Metrics You Should Track in Your Java Benchmarks](https://cruftex.net/2017/03/28/The-6-Memory-Metrics-You-Should-Track-in-Your-Java-Benchmarks.html)*
+
+Since the used heap of cache2k is significantly lower, maybe a more fair benchmark would
+work with different size limits across cache implementations to level the amount of used memory.
+However, the difference would become much less with relevant application data in the cache.
+
+## PopulateParallelClear, Throughput Performance
+
+Each thread inserts unique keys up to 200% of the cache capacity in count.
+After that, the first thread finishing issues a cache clear. After that the thread
+starts with inserting again. In consequence, this benchmark is covering inserts, 
+inserts and eviction and clear. A higher thread count is causing caches to be 
+filled sooner after the clear, causing a higher ratio of inserts with eviction, 
+so it is not doing an equal amount of work with more threads.
+
+One goal of this benchmark to construct a throughput benchmark which covers inserts, 
+that can run within a constant iteration time, rather than a one shot benchmark doing 
+inserts with a varying runtime.
+
+![](benchmark-result/PopulateParallelClearBenchmark-notitle.svg)
+
+*PopulateParallelClearBenchmark, operations per second (complete) ([Alternative image](benchmark-result/PopulateParallelClearBenchmark-notitle-print.svg), [Data file](benchmark-result/PopulateParallelClearBenchmark.dat))*
+
+## Eviction Performance
+
+To test the eviction performance, we run a set of prerecorded access traces against the
+cache implementations configured to different sizes. The caches use a different eviction algorithms.
+The table shows the hitrate of the well known LRU algorithm in comparison to the hitrate 
+of the cache implementations.
+
+Remarks:
+
+- EHCache3 is missing in this discipline since in this test the runtime is
+  about 100x higher then for the other caches.
+- Caffeine is configured to run the eviction in the same thread
+  via `Caffeine.executor(Runnable::run)`. Otherwise the case size limit would
+  overshoot until the eviction thread runs, leading to false results.
+- Cache2k is configured to not segment eviction data structures.
+  Cache2k would usually split the eviction data structures depending on
+  the CPU count to have better concurrent behavior.
+
+Mind, that the result will differ under concurrent workloads. Our experiments 
+show that (see above), with more active threads hit rates of cache2k improves 
+because it is profiting from overlapping data accesses, while the hitrate 
+of Caffeine degrades because of contended access stream buffers dropping 
+arbitrary cache hits and a less accurate eviction in consequence.
+
+Trace Name | Cache Size | Reference | Hitrate | Best | Hitrate | Diff | 2nd-best | Hitrate | Diff
+---------- | ---------: | --------- | ------: | ---- | ------: | ---: | -------- | ------: | ---------:
+financial1-1M | 12500 | lru | 37.98 | cache2k* | 39.76 | 1.79 | caffeine* | 38.94 | 0.97 |
+financial1-1M | 25000 | lru | 44.63 | cache2k* | 52.64 | 8.01 | caffeine* | 44.68 | 0.04 |
+financial1-1M | 50000 | lru | 45.61 | cache2k* | 54.17 | 8.56 | caffeine* | 49.99 | 4.38 |
+financial1-1M | 100000 | lru | 54.62 | cache2k* | 54.55 | -0.07 | caffeine* | 53.82 | -0.81 |
+financial1-1M | 200000 | lru | 55.48 | cache2k* | 54.79 | -0.69 | caffeine* | 54.39 | -1.09 |
+scarab-recs | 25000 | lru | 67.71 | caffeine* | 69.98 | 2.27 | cache2k* | 68.65 | 0.94 |
+scarab-recs | 50000 | lru | 75.49 | caffeine* | 75.90 | 0.41 | cache2k* | 74.07 | -1.42 |
+scarab-recs | 75000 | lru | 79.42 | caffeine* | 78.38 | -1.04 | cache2k* | 77.13 | -2.29 |
+scarab-recs | 100000 | lru | 81.77 | caffeine* | 80.41 | -1.36 | cache2k* | 79.25 | -2.52 |
+loop | 256 | lru | 0.00 | cache2k* | 24.48 | 24.48 | caffeine* | 23.87 | 23.87 |
+loop | 512 | lru | 0.00 | caffeine* | 49.29 | 49.29 | cache2k* | 48.96 | 48.96 |
+zipf10K-1M | 500 | lru | 58.46 | cache2k* | 67.51 | 9.05 | caffeine* | 66.09 | 7.63 |
+zipf10K-1M | 1000 | lru | 67.25 | cache2k* | 74.46 | 7.21 | caffeine* | 74.05 | 6.80 |
+zipf10K-1M | 2000 | lru | 76.48 | cache2k* | 81.53 | 5.05 | caffeine* | 81.44 | 4.95 |
+web12 | 75 | lru | 33.23 | caffeine* | 33.88 | 0.65 | cache2k* | 31.02 | -2.21 |
+web12 | 300 | lru | 49.01 | cache2k* | 52.35 | 3.34 | caffeine* | 51.41 | 2.40 |
+web12 | 1200 | lru | 66.85 | cache2k* | 70.65 | 3.79 | caffeine* | 68.82 | 1.97 |
+web12 | 3000 | lru | 76.48 | cache2k* | 78.15 | 1.66 | caffeine* | 75.38 | -1.10 |
+oltp | 128 | lru | 10.34 | caffeine* | 16.12 | 5.78 | cache2k* | 12.53 | 2.19 |
+oltp | 256 | lru | 16.69 | caffeine* | 24.68 | 7.99 | cache2k* | 19.52 | 2.82 |
+oltp | 512 | lru | 23.69 | caffeine* | 32.98 | 9.29 | cache2k* | 28.31 | 4.62 |
+
+The resulting hit rates of Caffeine and cache2k are typically better than LRU, but not in every case.
+In some traces Caffeine does better, in other traces cache2k does better. This
+investigation shows that, although the achieved throughput is high, the eviction efficiency does
+not suffer when compared to LRU.
+
+More information about the used traces can be found at: 
+*[Java Caching Benchmarks 2016 - Part 2](https://cruftex.net/2016/05/09/Java-Caching-Benchmarks-2016-Part-2.html)*
