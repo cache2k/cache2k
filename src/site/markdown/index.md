@@ -24,11 +24,11 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 ## Features at a glance
 
  * Small jar file (less than 400k) with no external dependencies
- * Fastest access times, due to non blocking and wait free access of cached values, [Blog article](https://cruftex.net/2017/09/01/Java-Caching-Benchmarks-Part-3.html)
+ * Fastest access times, due to non blocking and wait free access of cached values, see [Benchmarks](benchmarks.html)
  * Pure Java code, no use of `sun.misc.Unsafe`
  * Thread safe, with a complete set of [atomic operations](docs/latest/user-guide.html#atomic-operations)
  * [Resilience and smart exception handling](docs/latest/user-guide.html#resilience-and-exceptions) 
- * Null value support, see [User Guide - Null Values](docs/latest/user-guide.html#null-values)
+ * `Null` value support, see [User Guide - Null Values](docs/latest/user-guide.html#null-values)
  * Automatic [Expiry and Refresh](docs/latest/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/latest/user-guide.html#loading-read-through)
  * CacheWriter
@@ -49,6 +49,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Benchmarks update**: [Updated benchmarks](benchmarks.html) comparing with Caffeine 3.0.4, and EHCache3 3.9.6
   * **Version 2.2.1.Final, 2021-08-11**: Fix `Cache.asMap()` semantics, see [Version 2.2.1.Final release notes](2/2.1.Final.html)
   * **Version 2.2.0.Final, 2021-08-07**: Bulk loader support, see [Version 2.2.0.Final release notes](2/2.0.Final.html)
   * **Version 2.0.0.Final, 2020-12-15**: Major release, improved Java 8 support, API cleanups, see [Version 2.0.0.Final release notes](2/0.0.Final.html)
