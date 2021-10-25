@@ -795,8 +795,9 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
     void putAll(Map<? extends K, ? extends V> valueMap);
 
   /**
-   * A set view of all keys in the cache. The set is not stable but reflecting
-   *
+   * A set view of all keys in the cache. The set is guaranteed containing
+   * all keys present in the cache at the time of calling the method, and may
+   * or may not reflect concurrent inserts or removals.
    *
    * <p>Contract: An iteration or stream is usable while concurrent operations happen on the cache.
    * All entry keys will be iterated when present in the cache at the moment
