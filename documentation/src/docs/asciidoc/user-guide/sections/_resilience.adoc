@@ -1,4 +1,5 @@
-[[resilience-and-exceptions]][[resilience]]
+[[resilience-and-exceptions]]
+[[resilience]]
 == Exceptions and Resilience
 
 This section documents the behavior since cache2k version 2.0.
