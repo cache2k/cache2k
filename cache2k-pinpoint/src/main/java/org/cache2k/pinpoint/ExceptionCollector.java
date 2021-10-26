@@ -24,6 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
+ * Collects exceptions happening in concurrent threads and propagates
+ * them in the main thread. Right now only the first exception is kept.
+ * This may be improved to collect all exceptions.
+ *
  * @author Jens Wilke
  */
 public class ExceptionCollector {
@@ -34,7 +38,7 @@ public class ExceptionCollector {
   /**
    * Collect exception or ignore if null.
    */
-  public void collect(Throwable t) {
+  public void exception(Throwable t) {
     firstException.compareAndSet(null, t);
     if (t != null) {
       exceptionCount.incrementAndGet();

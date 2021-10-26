@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Keeps track on executed tasks and collects exceptions.
  * When testing we may want to use a thread pool for fast execution of
- * parallel tasks, and want to make sure that these tasks a completed without
+ * parallel tasks, and want to make sure that these tasks are completed without
  * exception at the end of the test.
  *
  * @author Jens Wilke
@@ -58,7 +58,7 @@ public class SupervisedExecutor implements Executor, AutoCloseable {
         command.run();
       } catch (Throwable t) {
         t.printStackTrace();
-        exceptionCollector.collect(t);
+        exceptionCollector.exception(t);
       } finally {
         if (notYetFinished.decrementAndGet() == 0) {
           allFinished.release();
