@@ -25,25 +25,26 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
 /**
- * Thread dump generation, inspired from: http://crunchify.com/how-to-generate-java-thread-dump-programmatically/
+ * Generate a thread dump covering the whole VM. Useful for debugging.
+ * Inspired from: http://crunchify.com/how-to-generate-java-thread-dump-programmatically/
  *
  * @author Jens Wilke
  */
-public class ThreadDump {
+public class VmThreadDump {
 
   public static String generateThreadDump() {
-    final StringBuilder sb = new StringBuilder();
-    final ThreadMXBean _threadMXBean = ManagementFactory.getThreadMXBean();
-    final ThreadInfo[] _infos =
-      _threadMXBean.getThreadInfo(_threadMXBean.getAllThreadIds(), Integer.MAX_VALUE);
-    for (ThreadInfo _info : _infos) {
+    StringBuilder sb = new StringBuilder();
+    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+    ThreadInfo[] infos =
+      threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), Integer.MAX_VALUE);
+    for (ThreadInfo info : infos) {
       sb.append("Thread \"");
-      sb.append(_info.getThreadName());
+      sb.append(info.getThreadName());
       sb.append("\" ");
-      final Thread.State _state = _info.getThreadState();
+      Thread.State _state = info.getThreadState();
       sb.append(_state);
-      final StackTraceElement[] stackTraceElements = _info.getStackTrace();
-      for (final StackTraceElement stackTraceElement : stackTraceElements) {
+      StackTraceElement[] stackTraceElements = info.getStackTrace();
+      for (StackTraceElement stackTraceElement : stackTraceElements) {
         sb.append("\n    at ");
         sb.append(stackTraceElement);
       }
