@@ -29,6 +29,8 @@ import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.CaughtInterruptedException;
+import org.cache2k.pinpoint.PinpointParameters;
+import org.cache2k.pinpoint.TaskSuccessGuardian;
 import org.cache2k.pinpoint.ExceptionCollector;
 import org.cache2k.pinpoint.SupervisedExecutor;
 import org.cache2k.processor.EntryProcessingException;
@@ -71,7 +73,6 @@ import java.util.function.Function;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.*;
-import static org.cache2k.test.core.StaticUtil.*;
 
 /**
  * Test the cache loader.
@@ -574,12 +575,12 @@ public class CacheLoaderTest extends TestingBase {
         if (reload) {
           c.reloadAll(Collections.singleton(anyKey))
             .handle((unused, throwable) -> {
-              exceptionCollector.collect(throwable);
+              exceptionCollector.exception(throwable);
               complete.countDown(); return null; });
         } else {
           c.loadAll(Collections.singleton(anyKey))
             .handle((unused, throwable) -> {
-              exceptionCollector.collect(throwable);
+              exceptionCollector.exception(throwable);
               complete.countDown(); return null; });
         }
       };
@@ -693,7 +694,7 @@ public class CacheLoaderTest extends TestingBase {
     ExceptionCollector exceptionCollector = new ExceptionCollector();
     for (int i = 0; i < count; i++) {
       c.loadAll(asList(1 + (i / 2), 2 + (i / 2), 3 + (i / 2))).handle((unused, throwable) -> {
-        exceptionCollector.collect(throwable);
+        exceptionCollector.exception(throwable);
         complete.countDown();
         return null;
       });
@@ -918,7 +919,7 @@ public class CacheLoaderTest extends TestingBase {
    * Check that exception isn't blocking anything
    */
   @Test
-  public void testAsyncLoaderException() {
+  public void asyncLoader_ExceptionInCall() {
     AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
       @Override
@@ -943,7 +944,47 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void testAsyncLoaderWithExecutorWithAsync() throws ExecutionException, InterruptedException {
+  public void asyncLoader_concurrentCacheClose() {
+    TaskSuccessGuardian guardianOnSuccess = new TaskSuccessGuardian();
+    TaskSuccessGuardian guardianOnFailure = new TaskSuccessGuardian();
+    CountDownLatch waitForCloseLatch = new CountDownLatch(1);
+    Cache<Integer, Integer> c = target.cache(b -> b
+      .expireAfterWrite(PinpointParameters.TIMEOUT_SECONDS, TimeUnit.SECONDS)
+      .loader((key, ctx, callback) -> {
+      ctx.getExecutor().execute(() -> {
+        if (key == 1) {
+          try {
+            waitForCloseLatch.await();
+            assertThatCode(() -> {
+              callback.onLoadSuccess(123);
+            }).as("onSuccess()").doesNotThrowAnyException();
+            guardianOnSuccess.success();
+          } catch (Throwable t) {
+            guardianOnSuccess.exception(t);
+          }
+        } else {
+          try {
+            waitForCloseLatch.await();
+            assertThatCode(() -> {
+              callback.onLoadFailure(new RuntimeException());
+            }).as("onLoadFailure()").doesNotThrowAnyException();
+            guardianOnFailure.success();
+          } catch (Throwable t) {
+            guardianOnFailure.exception(t);
+          }
+        }
+      });
+    }));
+    c.loadAll(asList(1));
+    c.loadAll(asList(2));
+    c.close();
+    waitForCloseLatch.countDown();
+    guardianOnSuccess.assertSuccess();
+    guardianOnFailure.assertSuccess();
+  }
+
+  @Test
+  public void asyncLoader_viaExecutor() throws ExecutionException, InterruptedException {
     AtomicInteger loaderCalled = new AtomicInteger();
     AtomicInteger loaderExecuted = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
@@ -987,7 +1028,7 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void testAsyncLoaderDoubleCallback() throws ExecutionException, InterruptedException {
+  public void asyncLoader_doubleCallback_yields_exception() throws ExecutionException, InterruptedException {
     AtomicInteger loaderCalled = new AtomicInteger();
     AtomicInteger loaderExecuted = new AtomicInteger();
     AtomicInteger gotException = new AtomicInteger();

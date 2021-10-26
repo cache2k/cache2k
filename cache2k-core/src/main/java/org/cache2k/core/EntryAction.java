@@ -714,10 +714,26 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     return false;
   }
 
+  /**
+   * Process async call back. Consistently log internal exceptions caused by the
+   * cache. We ignore a CacheClosedException, since the cache might be closed
+   * while the load was in flight. A CacheClosedException is still hard
+   * to trigger in this path, because this usually would only update the cache
+   * entry and touch no global resources.
+   *
+   * @param v the loaded value
+   * @see <a href="https://github.com/cache2k/cache2k/issues/175">Github issue #175</a>
+   */
   @Override
   public void onLoadSuccess(V v) {
     checkEntryStateOnLoadCallback();
-    onLoadSuccessIntern(v);
+    try {
+      onLoadSuccessIntern(v);
+    } catch (CacheClosedException ex) {
+    } catch (Throwable internal) {
+      heapCache.logAndCountInternalException("onLoadFailure async callback", internal);
+      throw internal;
+    }
   }
 
   /**
@@ -726,7 +742,13 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   @Override
   public void onLoadFailure(Throwable t) {
     checkEntryStateOnLoadCallback();
-    onLoadFailureIntern(t);
+    try {
+      onLoadFailureIntern(t);
+    } catch (CacheClosedException ex) {
+    } catch (Throwable internal) {
+      heapCache.logAndCountInternalException("onLoadFailure async callback", internal);
+      throw internal;
+    }
   }
 
   /**
