@@ -258,12 +258,13 @@ The retry interval does not increase, since a maximum timer interval is not spec
       .build();
 ----
 
-=== Debugging
+=== Debugging loader exceptions
 
 The cache has no support for logging exceptions. If this is needed, it can be achieved
 by an adaptor of the `CacheLoader`.
 
-=== Statistics
+=== Available statistics for resilience
 
-The statistics expose counters for the total number of received load exceptions and the number
+The <<statistics,Statistics>> expose counters for the total number of received load exceptions and the number
 of suppressed exceptions.
+
