@@ -60,10 +60,9 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
   private volatile Object valueOrException = INITIAL_VALUE;
 
   /**
-   * Hash implementation: the calculated, modified hash code, retrieved from the key when
-   * the entry is inserted in the cache
+   * Either the spreaded hash code or the integer key in case keys are integers.
    *
-   * @see HeapCache#modifiedHash(int)
+   * @see HeapCache#spreadHash(int)
    */
   public final int hashCode;
 
@@ -585,7 +584,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
       sb.append(hashCode);
     } else {
       sb.append(key);
-      if (c != null && (HeapCache.modifiedHash(key.hashCode()) != hashCode)) {
+      if (c != null && (HeapCache.spreadHash(key.hashCode()) != hashCode)) {
         sb.append(", keyMutation=true");
       }
     }

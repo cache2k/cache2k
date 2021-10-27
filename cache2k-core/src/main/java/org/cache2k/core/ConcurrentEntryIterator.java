@@ -119,7 +119,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
           return e;
         }
       }
-      idx = (cache.extractModifiedHash(lastEntry) & (hashArray.length - 1)) + 1;
+      idx = (cache.spreadedHashFromEntry(lastEntry) & (hashArray.length - 1)) + 1;
     }
     for (;;) {
       if (idx >= hashArray.length) {
@@ -146,10 +146,10 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
 
   private Entry<K, V> checkIteratedOrNext(Entry<K, V> e) {
     do {
-      K key = cache.extractKeyObj(e);
+      K key = cache.keyObjFromEntry(e);
       boolean notYetIterated = !seen.containsKey(key);
       if (notYetIterated) {
-        markIterated(key, cache.extractModifiedHash(e));
+        markIterated(key, cache.spreadedHashFromEntry(e));
         return e;
       }
       e = e.another;

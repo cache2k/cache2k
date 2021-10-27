@@ -35,22 +35,22 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> {
   }
 
   @Override
-  public Integer extractIntKeyObj(Integer key) {
+  public Integer toEntryKey(Integer key) {
     return null;
   }
 
   @Override
-  public int extractIntKeyValue(Integer key, int hc) {
+  public int toStoredHashCodeOrKey(Integer key, int hc) {
     return key;
   }
 
   @Override
-  public int extractModifiedHash(Entry e) {
-    return modifiedHash(e.hashCode);
+  public int spreadedHashFromEntry(Entry e) {
+    return spreadHash(e.hashCode);
   }
 
   @Override
-  public Integer extractKeyObj(Entry<Integer, V> e) {
+  public Integer keyObjFromEntry(Entry<Integer, V> e) {
     return e.hashCode;
   }
 
@@ -62,7 +62,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> {
     return new Hash2<Integer, V>(this) {
       @Override
       protected int modifiedHashCode(int hc) {
-        return modifiedHash(hc);
+        return spreadHash(hc);
       }
 
       @Override

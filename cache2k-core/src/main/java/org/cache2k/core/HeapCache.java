@@ -575,8 +575,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   protected Entry<K, V> getEntryInternal(K key) {
-    int hc = modifiedHash(key.hashCode());
-    return getEntryInternal(key, hc, extractIntKeyValue(key, hc));
+    int hc = spreadHash(key.hashCode());
+    return getEntryInternal(key, hc, toStoredHashCodeOrKey(key, hc));
   }
 
   protected Entry<K, V> getEntryInternal(K key, int hc, int val) {
@@ -643,7 +643,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * entry.
    */
   protected boolean removeEntry(Entry<K, V> e) {
-    int hc = extractModifiedHash(e);
+    int hc = spreadedHashFromEntry(e);
     boolean removed;
     StampedLock l = hash.getSegmentLock(hc);
     long stamp = l.writeLock();
@@ -663,8 +663,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   @Override
   public V peekAndPut(K key, V value) {
-    int hc = modifiedHash(key.hashCode());
-    int val = extractIntKeyValue(key, hc);
+    int hc = spreadHash(key.hashCode());
+    int val = toStoredHashCodeOrKey(key, hc);
     boolean hasFreshData;
     Object previousValue = null;
     Entry<K, V> e;
@@ -770,8 +770,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * cache.
    */
   protected final Entry<K, V> peekEntryInternal(K key) {
-    int hc = modifiedHash(key.hashCode());
-    return peekEntryInternal(key, hc, extractIntKeyValue(key, hc));
+    int hc = spreadHash(key.hashCode());
+    return peekEntryInternal(key, hc, toStoredHashCodeOrKey(key, hc));
   }
 
   protected final Entry<K, V> peekEntryInternal(K key, int hc, int val) {
@@ -1108,8 +1108,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * it for locking within the data fetch.
    */
   protected Entry<K, V> lookupOrNewEntry(K key) {
-    int hc = modifiedHash(key.hashCode());
-    return lookupOrNewEntry(key, hc, extractIntKeyValue(key, hc));
+    int hc = spreadHash(key.hashCode());
+    return lookupOrNewEntry(key, hc, toStoredHashCodeOrKey(key, hc));
   }
 
   protected Entry<K, V> lookupOrNewEntry(K key, int hc, int val) {
@@ -1121,10 +1121,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   protected Entry<K, V> lookupOrNewEntryNoHitRecord(K key) {
-    int hc = modifiedHash(key.hashCode());
-    Entry<K, V> e = lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
+    int hc = spreadHash(key.hashCode());
+    Entry<K, V> e = lookupEntryNoHitRecord(key, hc, toStoredHashCodeOrKey(key, hc));
     if (e == null) {
-      e = insertNewEntry(key, hc, extractIntKeyValue(key, hc));
+      e = insertNewEntry(key, hc, toStoredHashCodeOrKey(key, hc));
     }
     return e;
   }
@@ -1147,13 +1147,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   protected Entry<K, V> lookupEntry(K key) {
-    int hc = modifiedHash(key.hashCode());
-    return lookupEntry(key, hc, extractIntKeyValue(key, hc));
+    int hc = spreadHash(key.hashCode());
+    return lookupEntry(key, hc, toStoredHashCodeOrKey(key, hc));
   }
 
   protected Entry<K, V> lookupEntryNoHitRecord(K key) {
-    int hc = modifiedHash(key.hashCode());
-    return lookupEntryNoHitRecord(key, hc, extractIntKeyValue(key, hc));
+    int hc = spreadHash(key.hashCode());
+    return lookupEntryNoHitRecord(key, hc, toStoredHashCodeOrKey(key, hc));
   }
 
   protected final Entry<K, V> lookupEntry(K key, int hc, int val) {
@@ -1166,7 +1166,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   protected final Entry<K, V> lookupEntryNoHitRecord(K key, int hc, int val) {
-    return hash.lookup(extractIntKeyObj(key), hc, val);
+    return hash.lookup(toEntryKey(key), hc, val);
   }
 
   /**
@@ -1174,7 +1174,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * needs to be done under the same lock, to allow a check of the consistency.
    */
   protected Entry<K, V> insertNewEntry(K key, int hc, int val) {
-    Entry<K, V> e = new Entry<K, V>(extractIntKeyObj(key), val);
+    Entry<K, V> e = new Entry<K, V>(toEntryKey(key), val);
     Entry<K, V> e2;
     eviction.evictEventuallyBeforeInsertOnSegment(hc);
     StampedLock l = hash.getSegmentLock(hc);
@@ -1219,8 +1219,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * the item is evicted very fast.
    */
   private void checkForHashCodeChange(Entry<K, V> e) {
-    K key = extractKeyObj(e);
-    if (extractIntKeyValue(key, modifiedHash(key.hashCode())) != e.hashCode) {
+    K key = keyObjFromEntry(e);
+    if (toStoredHashCodeOrKey(key, spreadHash(key.hashCode())) != e.hashCode) {
       if (keyMutationCnt ==  0) {
         getLog().warn("Key mismatch! Key hashcode changed! keyClass=" +
           e.getKey().getClass().getName());
@@ -1251,9 +1251,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     try {
       checkLoaderPresent();
       if (e.isVirgin()) {
-        v = loader.load(extractKeyObj(e), t0, null);
+        v = loader.load(keyObjFromEntry(e), t0, null);
       } else {
-        v = loader.load(extractKeyObj(e), t0, e);
+        v = loader.load(keyObjFromEntry(e), t0, e);
       }
     } catch (Throwable ouch) {
       long t = t0;
@@ -1292,7 +1292,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @SuppressWarnings("unchecked")
   private void loadGotException(Entry<K, V> e, long t0, long t, Throwable wrappedException) {
     ExceptionWrapper<K, V> value =
-      new ExceptionWrapper(extractKeyObj(e), wrappedException, t0, e, exceptionPropagator);
+      new ExceptionWrapper(keyObjFromEntry(e), wrappedException, t0, e, exceptionPropagator);
     long nextRefreshTime = 0;
     boolean suppressException = false;
     try {
@@ -1331,7 +1331,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @SuppressWarnings("unchecked")
   private void resiliencePolicyException(Entry<K, V> e, long t0, long t, Throwable exception) {
     ExceptionWrapper<K, V> value =
-      new ExceptionWrapper(extractKeyObj(e), exception, t0, e, exceptionPropagator);
+      new ExceptionWrapper(keyObjFromEntry(e), exception, t0, e, exceptionPropagator);
     insert(e, (V) value, t0, t, t0, INSERT_STAT_LOAD, 0);
   }
 
@@ -1554,7 +1554,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     for (K k : inputKeys) {
       Entry<K, V> e = getEntryInternal(k);
       if (e != null) {
-        map.put(extractKeyObj(e), e.getValueOrException());
+        map.put(keyObjFromEntry(e), e.getValueOrException());
       }
     }
     return convertValueMap(map);
@@ -1816,29 +1816,32 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * @see java.util.concurrent.ConcurrentHashMap#spread
    */
   @SuppressWarnings("JavadocReference")
-  public static int modifiedHash(int h) {
+  public static int spreadHash(int h) {
     return h ^ h >>> 16;
   }
 
   /**
-   * Modified hash code or integer value for integer keyed caches
+   * We store either the spreaded hash code or the raw integer key in the hash table
    */
-  public int extractIntKeyValue(K key, int hc) {
+  public int toStoredHashCodeOrKey(K key, int hc) {
     return hc;
   }
 
   /**
    * The key object or null, for integer keyed caches
    */
-  public K extractIntKeyObj(K key) {
+  public K toEntryKey(K key) {
     return key;
   }
 
-  public int extractModifiedHash(Entry e) {
+  public int spreadedHashFromEntry(Entry e) {
     return e.hashCode;
   }
 
-  public K extractKeyObj(Entry<K, V> e) { return e.getKeyObj(); }
+  /**
+   * Either returns the stored key object or the integer object created from the hashCode field.
+   */
+  public K keyObjFromEntry(Entry<K, V> e) { return e.getKeyObj(); }
 
   public Hash2<K, V> createHashTable() {
     return new Hash2<K, V>(this);
