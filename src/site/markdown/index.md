@@ -27,7 +27,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
  * Fastest access times, due to non blocking and wait free access of cached values, see [Benchmarks](benchmarks.html)
  * Pure Java code, no use of `sun.misc.Unsafe`
  * Thread safe, with a complete set of [atomic operations](docs/latest/user-guide.html#atomic-operations)
- * [Resilience and smart exception handling](docs/latest/user-guide.html#resilience-and-exceptions) 
+ * [Resilience and smart exception handling](docs/latest/user-guide.html#resilience) 
  * `Null` value support, see [User Guide - Null Values](docs/latest/user-guide.html#null-values)
  * Automatic [Expiry and Refresh](docs/latest/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](docs/latest/user-guide.html#loading-read-through)

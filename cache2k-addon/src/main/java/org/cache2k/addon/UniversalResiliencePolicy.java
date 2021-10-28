@@ -29,7 +29,7 @@ import org.cache2k.io.ResiliencePolicy;
  * Resilience policy which implements an exponential back off of the retry intervals.
  *
  * @author Jens Wilke
- * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions">
+ * @see <a href="https://cache2k.org/docs/latest/user-guide.html#resilience">
  *      cache2k user guide - Exceptions and Resilience</a>
  */
 public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {

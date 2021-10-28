@@ -28,7 +28,7 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
  * Fastest access times, due to non blocking and wait free access of cached values, [Blog article](https://cruftex.net/2017/09/01/Java-Caching-Benchmarks-Part-3.html)
  * Pure Java code, no use of `sun.misc.Unsafe`
  * Thread safe, with a complete set of [atomic operations](https://cache2k.org/docs/latest/user-guide.html#atomic-operations)
- * [Resilience and smart exception handling](https://cache2k.org/docs/latest/user-guide.html#resilience-and-exceptions) 
+ * [Resilience and smart exception handling](https://cache2k.org/docs/latest/user-guide.html#resilience) 
  * Null value support, see [User Guide - Null Values](https://cache2k.org/docs/latest/user-guide.html#null-values)
  * Automatic [Expiry and Refresh](https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh): duration or point in time, variable expiry per entry, delta calculations
  * CacheLoader with blocking read through, see [User Guide - Loading and Read Through](https://cache2k.org/docs/latest/user-guide.html#loading-read-through)

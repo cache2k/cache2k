@@ -1,4 +1,3 @@
-[[resilience-and-exceptions]]
 [[resilience]]
 == Exceptions and Resilience
 

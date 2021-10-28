@@ -146,7 +146,7 @@ mode has various advantages:
 - No boilerplate code as in cache aside
 - Protection against the cache stampede (See https://en.wikipedia.org/wiki/Cache_stampede[Wikipedia: Cache Stampede])
 - Automatic refreshing of expired values is possible (<<refresh-ahead,Refresh Ahead>>)
-- Built-in exception handling like suppression and retries (see <<resilience-and-exceptions,Resilience and Exceptions>> chapter)
+- Built-in exception handling like suppression and retries (see <<resilience,Resilience and Exceptions>> chapter)
 
 === Using Null Values
 
