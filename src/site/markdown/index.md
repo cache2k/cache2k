@@ -49,6 +49,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 2.4.1.Final, 2021-10-28**: Minor fixes, see [Version 2.4.1.Final release notes](2/4.1.Final.html)
   * **Version 2.4.0.Final, 2021-10-25**: Performance improvements for big caches, see [Version 2.4.0.Final release notes](2/4.0.Final.html)
   * **Benchmarks update, 2021-10-25**: [Updated benchmarks](benchmarks.html) comparing with Caffeine 3.0.4, and EHCache3 3.9.6
   * **Version 2.2.0.Final, 2021-08-07**: Bulk loader support, see [Version 2.2.0.Final release notes](2/2.0.Final.html)
