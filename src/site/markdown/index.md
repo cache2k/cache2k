@@ -59,10 +59,12 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
   * **Version 1.4.0.Final, 2020-09-12**: Eviction listener, GraalVM support, async loading, see [Version 1.4.0.Final release notes](1/4.0.Final.html)
   * **Version 1.2.4.Final, 2019-09-04**: Service release for stable version, See [Version 1.2.4.Final release notes](1/2.4.Final.html)
 
-## Feedback
+## Feedback and Contribute
 
 Please use the [GitHub issue tracker](https://github.com/cache2k/cache2k) for bugs and wishes you step upon. We also monitor the stackoverflow.com tag
 **cache2k** for general usage questions.
+
+See also the [Contributor Guide](https://github.com/cache2k/cache2k/blob/master/CONTRIBUTING.md).
 
 ## License
 

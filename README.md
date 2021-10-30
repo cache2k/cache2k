@@ -46,8 +46,11 @@ For a detailed introduction continue with [Getting Started](https://cache2k.org/
  * [Scala Cache](https://github.com/cb372/scalacache)
  * Datanucleus (via JCache)
  * Hibernate (via JCache)
- * .... and probably more, please raise an issue and get it listed! 
 
 ## More...
 
 For more documentation and latest news, see the [cache2k homepage](https://cache2k.org).
+
+## Contributing
+
+See the [Contributor Guide](CONTRIBUTING.md).
