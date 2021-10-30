@@ -31,7 +31,7 @@ import org.junit.experimental.categories.Category;
  */
 @SuppressWarnings("rawtypes")
 @Category(FastTests.class)
-public class Hash2Test {
+public class StampedHashTest {
 
   /**
    * Test expansion and possible integer overflow when calculating maxfill
@@ -40,7 +40,7 @@ public class Hash2Test {
    */
   @Test
   public void testExpansion() {
-    final Hash2 ht = new Hash2("test");
+    final StampedHash ht = new StampedHash("test");
     for (int i = 0; i < 20; i++) {
       ht.runTotalLocked(() -> {
         ht.rehash();

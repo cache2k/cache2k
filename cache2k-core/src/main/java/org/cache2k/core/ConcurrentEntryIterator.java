@@ -45,7 +45,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
   private Entry<K, V> lastEntry = null;
   private Entry<K, V> nextEntry = null;
   private long clearCount;
-  private Hash2<K, V> hash;
+  private StampedHash<K, V> hash;
   private Entry<K, V>[] hashArray;
   private HashMap<K, K> seen = new HashMap<K, K>();
 

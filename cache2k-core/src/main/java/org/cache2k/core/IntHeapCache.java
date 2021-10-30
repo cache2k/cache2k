@@ -58,10 +58,10 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> {
    * Modified hash table implementation. Rehash needs to calculate the correct hash code again.
    */
   @Override
-  public Hash2<Integer, V> createHashTable() {
-    return new Hash2<Integer, V>(this) {
+  public StampedHash<Integer, V> createHashTable() {
+    return new StampedHash<Integer, V>(this) {
       @Override
-      protected int modifiedHashCode(int hc) {
+      protected int spreadedHashFromEntry(int hc) {
         return spreadHash(hc);
       }
 

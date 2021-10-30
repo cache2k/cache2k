@@ -27,12 +27,12 @@ import java.util.function.Supplier;
 
 /**
  * Simple concurrent hash table implementation using optimistic locking
- * for the segments locks.
+ * via StampedLock for the segments locks.
  *
  * @author Jens Wilke
  */
 @SuppressWarnings({"WeakerAccess", "rawtypes"})
-public class Hash2<K, V> {
+public class StampedHash<K, V> {
 
   /**
    * Size of the hash table before inserting the first entry. Must be power
@@ -80,11 +80,11 @@ public class Hash2<K, V> {
   /**
    * @param cache Cache reference only needed for the cache name in case of an exception
    */
-  public Hash2(InternalCache<?, ?> cache) {
+  public StampedHash(InternalCache<?, ?> cache) {
     qualifiedCacheName = cache.getQualifiedName();
   }
 
-  public Hash2(String qualifiedCacheName) {
+  public StampedHash(String qualifiedCacheName) {
     this.qualifiedCacheName = qualifiedCacheName;
   }
 
@@ -223,7 +223,7 @@ public class Hash2<K, V> {
    * @return true, if entry was found and removed.
    */
   public boolean remove(Entry<K, V> e) {
-    int hash = modifiedHashCode(e.hashCode);
+    int hash = spreadedHashFromEntry(e.hashCode);
     StampedLock[] locks = this.locks;
     int si = hash & LOCK_MASK;
     StampedLock l = locks[si];
@@ -324,7 +324,12 @@ public class Hash2<K, V> {
     }
   }
 
-  protected int modifiedHashCode(int hc) {
+  /**
+   * Return the spreaded hash code from the hash code that is stored in the entry.
+   * For integer keys we store the key directly, so we need to calculate the spread
+   * again.
+   */
+  protected int spreadedHashFromEntry(int hc) {
     return hc;
   }
 
@@ -343,7 +348,7 @@ public class Hash2<K, V> {
     for (i = 0; i < sl; i++) {
       e = src[i];
       while (e != null) {
-        count++; next = e.another; idx = modifiedHashCode(e.hashCode) & mask;
+        count++; next = e.another; idx = spreadedHashFromEntry(e.hashCode) & mask;
         e.another = tab[idx]; tab[idx] = e;
         e = next;
       }

@@ -181,7 +181,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
   }
 
-  protected final Hash2<K, V> hash;
+  protected final StampedHash<K, V> hash;
 
   private volatile boolean closing = true;
 
@@ -1843,8 +1843,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    */
   public K keyObjFromEntry(Entry<K, V> e) { return e.getKeyObj(); }
 
-  public Hash2<K, V> createHashTable() {
-    return new Hash2<K, V>(this);
+  public StampedHash<K, V> createHashTable() {
+    return new StampedHash<K, V>(this);
   }
 
   public static class Tunable extends TunableConstants {
