@@ -17,7 +17,7 @@ Test environment:
 - JMH 1.33
 
 For benchmarking JMH is used. Each benchmark runs with a iteration time of 10 seconds.
-We run 3 iterations in two forks each to detect outliers. 
+We run two iterations in three forks each to detect outliers. 
 
 Benchmarks are run multiple times with different thread counts, cache sizes and
 key ranges. The Java process is limited to the amount of CPU cores corresponding to
@@ -124,8 +124,9 @@ keep a close eye on memory usage of the library itself. So let us take a look at
 *ZipfianSequenceLoadingBenchmark, 4 threads, 1M cache entries, Zipfian distribution percentage 500, peak memory usage reported by the operating system (VmHWM), sorted by best performance ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted.dat))*
 
 The metric *live objects* represents the static view of bytes occupied by live objects in the heap 
-without any additional runtime overhead. The *VmHWM* metric represents the real memory used.
-The bigger differences in real memory are because of dynamic effects, especially higher 
+without any additional runtime overhead, gathered via `jmap -histo:live`. 
+The *VmHWM* metric represents the real memory used as reported by the Linux OS. 
+The bigger differences in real memory usage are because of dynamic effects, especially higher 
 amount of garbage collection activity.
 
 For a discussion on how to measure memory usage, see: 
@@ -133,7 +134,8 @@ For a discussion on how to measure memory usage, see:
 
 Since the used heap of cache2k is significantly lower, maybe a more fair benchmark would
 work with different size limits across cache implementations to level the amount of used memory.
-However, the difference would become much less with relevant application data in the cache.
+However, the difference would become less with relevant application data in the cache. The benchmark 
+intentionally just uses integer objects.
 
 ## PopulateParallelClear, Throughput Performance
 
@@ -164,7 +166,7 @@ Remarks:
 - EHCache3 is missing in this discipline since in this test the runtime is
   about 100x higher then for the other caches.
 - Caffeine is configured to run the eviction in the same thread
-  via `Caffeine.executor(Runnable::run)`. Otherwise the case size limit would
+  via `Caffeine.executor(Runnable::run)`. Otherwise the cache size limit would
   overshoot until the eviction thread runs, leading to false results.
 - Cache2k is configured to not segment eviction data structures.
   Cache2k would usually split the eviction data structures depending on
