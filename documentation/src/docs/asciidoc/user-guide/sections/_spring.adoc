@@ -29,6 +29,8 @@ To use cache2k in you Spring project, add the following libraries:
     </dependency>
 ----
 
+The dependency to `cache2k-spring` also adds `cache2k-micrometer`.
+
 To enable your application to use caching via cache2k, typically define a `CachingConfig` class
 which makes the `SpringCache2kCacheManager` available:
 
@@ -83,8 +85,9 @@ the order of application is:
 - `SpringCache2kCacheManager.addCaches`
 - XML setup cache section
 
-Cache2k supports multiple cache managers. Caches used within the Spring DI context, could be separated into
-another cache manager, e.g. with `new SpringCache2kCacheManager("spring")`.
+Cache2k supports multiple cache managers. Caches used within the Spring DI context can be separated into
+another cache manager, e.g. with `new SpringCache2kCacheManager("spring")`. Separating caches
+into different cache managers helps avoid naming conflicts and makes setup and monitoring easier.
 
 For further details, see link:{cache2k_docs}/apidocs/cache2k-spring/org/cache2k/extra/spring/SpringCache2kCacheManager.html[`SpringCache2kCacheManager API documentation`].
 

@@ -45,7 +45,7 @@ is available.
 [NOTE]
 Combining sharp expiry, lagging expiry and refresh ahead, leads to an operation mode that
 cannot guarantee the sharp expiry contract under all circumstances. If an ongoing load operation
-is not finished before a sharp expiry point in time, non fresh data will become visible.
+is not finished before a sharp expiry point in time, non-fresh data will become visible.
 
 Sharp timeout can also applied on a dynamic per entry basis only when needed.
 
@@ -58,6 +58,7 @@ switch. Refreshing and expiring are two sides of the same coin: When expired, we
 
 === Future Outlook
 
-More options to control refreshing and the trail period are added in the next releases.
+We plan several improvements for refresh ahead support, see the
+[issue tracker](https://github.com/cache2k/cache2k/issues?q=is%3Aissue+is%3Aopen+refresh+ahead)
 
 The effects on the event listeners and statistics when refreshing may change in the future.
