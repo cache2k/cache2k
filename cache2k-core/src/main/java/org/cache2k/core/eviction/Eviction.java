@@ -79,26 +79,6 @@ public interface Eviction {
   long removeAll();
 
   /**
-   * Drain eviction queue and do updates in the eviction data structures.
-   * Does no eviction when size limit is reached.
-   *
-   * @return true, if eviction is needed
-   */
-  boolean drain();
-
-  /**
-   * Start concurrent eviction threads.
-   */
-  void start();
-
-  /**
-   * Stop concurrent threads that may access the eviction data structures.
-   * Needs to be called before checkIntegrity or accessing the counter
-   * values.
-   */
-  void stop();
-
-  /**
    * Free resources, for example thread pool or queue.
    */
   void close();

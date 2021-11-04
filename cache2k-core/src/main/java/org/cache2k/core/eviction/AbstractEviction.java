@@ -422,17 +422,6 @@ public abstract class AbstractEviction implements Eviction {
   }
 
   @Override
-  public void start() { }
-
-  @Override
-  public void stop() { }
-
-  @Override
-  public boolean drain() {
-    return false;
-  }
-
-  @Override
   public void close() { }
 
   @Override

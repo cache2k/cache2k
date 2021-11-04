@@ -1736,9 +1736,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return metrics;
   }
 
-  /** Internal marker object */
-  private static final Object RESTART_AFTER_EVICTION = new Object();
-
   /**
    * Execute job while making sure that no other operations are going on.
    * In case the eviction is connected via a queue we need to stop the queue processing.
@@ -1766,28 +1763,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   private <T> T executeWithGlobalLock(Supplier<T> job, boolean checkClosed) {
     synchronized (lock) {
       if (checkClosed) { checkClosed(); }
-      eviction.stop();
-      try {
-        T result = hash.runTotalLocked(() -> {
-          if (checkClosed) { checkClosed(); }
-          boolean f = eviction.drain();
-          if (f) {
-            return (T) RESTART_AFTER_EVICTION;
-          }
-          return eviction.runLocked(() -> job.get());
-        });
-        if (result == RESTART_AFTER_EVICTION) {
-          eviction.evictEventuallyBeforeInsert();
-          result = hash.runTotalLocked(() -> {
-            if (checkClosed) { checkClosed(); }
-            eviction.drain();
-            return eviction.runLocked(() -> job.get());
-          });
-        }
-        return result;
-      } finally {
-        eviction.start();
-      }
+      T result = hash.runTotalLocked(() -> eviction.runLocked(() -> job.get()));
+      return result;
     }
   }
 

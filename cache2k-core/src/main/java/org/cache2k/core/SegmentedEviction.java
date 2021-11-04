@@ -91,33 +91,10 @@ public class SegmentedEviction implements Eviction {
   }
 
   @Override
-  public void start() {
-    for (Eviction ev : segments) {
-      ev.start();
-    }
-  }
-
-  @Override
-  public void stop() {
-    for (Eviction ev : segments) {
-      ev.stop();
-    }
-  }
-
-  @Override
   public void close() {
     for (Eviction ev : segments) {
       ev.close();
     }
-  }
-
-  @Override
-  public boolean drain() {
-    boolean f = false;
-    for (Eviction ev : segments) {
-      f |= ev.drain();
-    }
-    return f;
   }
 
   @Override
