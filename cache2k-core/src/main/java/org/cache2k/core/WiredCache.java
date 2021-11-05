@@ -397,6 +397,16 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return loader != null || asyncLoader != null;
   }
 
+  @Override
+  public boolean isDisabled() {
+    return heapCache.isDisabled();
+  }
+
+  @Override
+  public void setDisabled(boolean f) {
+    heapCache.setDisabled(f);
+  }
+
   V returnValue(Object v) {
     return heapCache.returnValue(v);
   }

@@ -30,7 +30,7 @@ import org.cache2k.core.common.AbstractCacheStatistics;
  *
  * @author Jens Wilke
  */
-public class CacheStatisticsMXBeanImpl
+class CacheStatisticsMXBeanImpl
   extends AbstractCacheStatistics implements CacheStatisticsMXBean {
 
   private final Cache<?, ?> cache;

@@ -144,6 +144,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   private volatile Executor loaderExecutor = new LazyLoaderExecutor();
 
+  private volatile boolean disabled;
+
   public Executor getLoaderExecutor() {
     return loaderExecutor;
   }
@@ -631,7 +633,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   private void checkIfImmediatelyExpired(Entry<K, V> e) {
-    if (e.isExpiredState()) {
+    if (e.isExpiredState() || disabled) {
       expireAndRemoveEventuallyAfterProcessing(e);
     }
   }
@@ -1775,6 +1777,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   @Override
   public final Eviction getEviction() { return eviction; }
+
+  public boolean isDisabled() {
+    return disabled;
+  }
+
+  public void setDisabled(boolean disabled) {
+    this.disabled = disabled;
+  }
 
   @Override
   public CacheManager getCacheManager() {

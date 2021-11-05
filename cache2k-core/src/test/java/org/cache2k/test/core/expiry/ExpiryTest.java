@@ -23,6 +23,7 @@ package org.cache2k.test.core.expiry;
 import org.assertj.core.api.Assertions;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
+import org.cache2k.operation.CacheControl;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.core.Constants;
 import org.cache2k.test.util.TestingBase;
@@ -628,6 +629,26 @@ public class ExpiryTest extends TestingBase {
     c.put(3, 3);
     assertEquals(0, getInfo().getSize());
     assertEquals(0, getInfo().getPutCount());
+  }
+
+  @Test
+  public void testImmediateExpireWhenCacheDisabled() {
+    Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
+      .loader(new IntCountingCacheSource())
+      .keepDataAfterExpired(false)
+      .build();
+    c.get(1);
+    assertEquals(1, getInfo().getSize());
+    CacheControl.of(c).changeCapacity(0);
+    assertEquals(0, getInfo().getSize());
+    c.put(3, 3);
+    assertEquals(0, getInfo().getSize());
+    c.get(2);
+    assertEquals(0, getInfo().getSize());
+    assertEquals(2, getInfo().getGetCount());
+    CacheControl.of(c).changeCapacity(123);
+    c.get(4);
+    assertEquals(1, getInfo().getSize());
   }
 
   @Test

@@ -276,7 +276,7 @@ public class JmxSupportTest {
   }
 
   @Test(expected = InstanceNotFoundException.class)
-  public void testEnableDisable() throws Exception {
+  public void testEnableDisableJmxSupport() throws Exception {
     String name = getClass().getName() + ".testEnableDisable";
     Cache c = Cache2kBuilder.of(Object.class, Object.class)
       .name(name)

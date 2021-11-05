@@ -77,7 +77,13 @@ public interface CacheOperation {
   /**
    * Change the maximum capacity of the cache. If a weigher is present
    * this is the maximum weight of all cache entries, otherwise the maximum count
-   * of cache entries. The capacity is not allowed to be 0.
+   * of cache entries.
+   *
+   * <p>The value of {@code 0} has the special function to disable the cache.
+   * Disabling the cache is only useful in development or if no concurrent
+   * access is happening. When the cache is disabled an cache entries will still
+   * be inserted and subsequent load requests on the same entry will block.
+   * After every cache operation the entry is immediately expired.
    *
    * @see Weigher
    * @param entryCountOrWeight either maximum number of entries or maximum weight

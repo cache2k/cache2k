@@ -125,9 +125,19 @@ public class BaseCacheControl implements CacheControl {
     return CompletableFuture.completedFuture(null);
   }
 
+  /**
+   * Change the capacity. The special value 0 means cache disabled.
+   */
   @Override
   public CompletableFuture<Void> changeCapacity(long entryCountOrWeight) {
-    getCache().getEviction().changeCapacity(entryCountOrWeight);
+    if (entryCountOrWeight == 0) {
+      getCache().setDisabled(true);
+      getCache().getEviction().changeCapacity(1);
+      getCache().removeAll();
+    } else {
+      getCache().getEviction().changeCapacity(entryCountOrWeight);
+      getCache().setDisabled(false);
+    }
     return CompletableFuture.completedFuture(null);
   }
 

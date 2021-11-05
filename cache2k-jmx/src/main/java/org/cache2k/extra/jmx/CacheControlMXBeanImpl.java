@@ -32,7 +32,7 @@ import java.util.Date;
  *
  * @author Jens Wilke
  */
-public class CacheControlMXBeanImpl implements CacheControlMXBean {
+class CacheControlMXBeanImpl implements CacheControlMXBean {
 
   private final Cache<?, ?> cache;
 

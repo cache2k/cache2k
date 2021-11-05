@@ -860,6 +860,10 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void mutationCalculateExpiry() {
     heapEntry.nextProcessingStep(EXPIRY);
+    if (heapCache.isDisabled()) {
+      cacheDisabledExpireImmediately();
+      return;
+    }
     if (newValueOrException instanceof ExceptionWrapper) {
       try {
         expiry = 0;
@@ -961,6 +965,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   public void expiryCalculationException(Throwable t) {
     mutationAbort(new ExpiryPolicyException(t));
+  }
+
+  public void cacheDisabledExpireImmediately() {
+    expiry = ExpiryTimeValues.NOW;
+    expiryCalculated();
   }
 
   public void expiryCalculated() {
