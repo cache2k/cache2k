@@ -167,7 +167,9 @@ public class ClockProPlusEviction extends AbstractEviction {
    */
   @Override
   public void removeFromReplacementListOnEvict(Entry e) {
-    insertCopyIntoGhosts(e);
+    if (!e.isHot()) {
+      insertCopyIntoGhosts(e);
+    }
     removeFromReplacementList(e);
   }
 
