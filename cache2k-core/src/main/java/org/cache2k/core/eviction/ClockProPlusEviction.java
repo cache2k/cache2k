@@ -33,8 +33,10 @@ import org.cache2k.core.util.TunableFactory;
  * optimization is done yet. However, the hit rate for all measured access traces is better
  * then LRU and it is resistant to scans.
  *
- * <p>From cache2k version 1.2 to version 1.4 the implementation was simplefied and the
- * demotion of hot entries removed. The result achieves similar or better hitrates.
+ * <p>From cache2k version 1.2 to version 1.4 the implementation was simplified and the
+ * demotion of hot entries removed. The result achieves similar or better hit rates.
+ * Version 2.4 limits the ghost size to 3000 elements. Version 2.6 stops inserting
+ * evicted hot entries into ghosts.
  *
  * <p>The Clock-Pro algorithm is explained by the authors in
  * <a href="http://www.ece.eng.wayne.edu/~sjiang/pubs/papers/jiang05_CLOCK-Pro.pdf">CLOCK-Pro:
