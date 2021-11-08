@@ -37,7 +37,7 @@ public interface TimeReference {
   /**
    * Default implementation using {@link System#currentTimeMillis()} as time reference.
    */
-  final TimeReference DEFAULT = new TimeReference() {
+  TimeReference DEFAULT = new TimeReference() {
     @Override
     public long millis() {
       return System.currentTimeMillis();

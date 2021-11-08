@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
  * in case cache2k is used with separate classloaders.
  *
  * @author Jens Wilke
+ * @see Scheduler
  */
 public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler> {
 

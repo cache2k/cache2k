@@ -43,7 +43,7 @@ public interface InternalCacheCloseContext {
   CacheManager getCacheManager();
 
   /**
-   * Call close on the customization if the {@link java.io.Closeable} interface
+   * Call close on the customization if the {@link AutoCloseable} interface
    * is implemented
    *
    * @param name Name of customization like "expiryPolicy". This is used when an exception
