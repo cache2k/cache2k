@@ -24,6 +24,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 
 import java.util.concurrent.Executor;
@@ -43,6 +44,11 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext<K, V>
 
   @Override
   Executor getExecutor();
+
+  /**
+   * Create a new scheduler instance which must be closed.
+   */
+  Scheduler createScheduler();
 
   /**
    * Cache configuration.

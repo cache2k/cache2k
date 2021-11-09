@@ -28,6 +28,7 @@ import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.testing.category.FastTests;
@@ -85,6 +86,11 @@ public class TimingUnitTest {
         } catch (Exception e) {
           return null;
         }
+      }
+
+      @Override
+      public Scheduler createScheduler() {
+        return null;
       }
     });
   }

@@ -28,8 +28,10 @@ import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.InternalEvictionListener;
+import org.cache2k.core.timing.DefaultSchedulerProvider;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.io.BulkCacheLoader;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.event.CacheCreatedListener;
@@ -140,6 +142,17 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     } catch (Exception ex) {
       throw new CustomizationException("Initialization of customization failed", ex);
     }
+  }
+
+  @Override
+  public Scheduler createScheduler() {
+     if (getConfig().getScheduler() != null) {
+      return createCustomization(getConfig().getScheduler());
+    }
+    if (clock instanceof Scheduler) {
+      return (Scheduler) clock;
+    }
+    return createCustomization(DefaultSchedulerProvider.INSTANCE);
   }
 
   /**

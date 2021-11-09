@@ -71,17 +71,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     } else {
       lagMillis = cfg.getTimerLag().toMillis();
     }
-    Scheduler scheduler;
-    if (cfg.getScheduler() != null) {
-      scheduler = buildContext.createCustomization(cfg.getScheduler());
-    } else {
-      if (clock instanceof Scheduler)  {
-        scheduler = (Scheduler) clock;
-      } else {
-        scheduler = buildContext.createCustomization(DefaultSchedulerProvider.INSTANCE);
-      }
-    }
-    timer = new DefaultTimer(clock, scheduler, lagMillis);
+    timer = new DefaultTimer(clock, buildContext.createScheduler(), lagMillis);
     this.resiliencePolicy = resiliencePolicy;
   }
 
