@@ -49,7 +49,7 @@ public abstract class Timing<K, V> implements NeedsClose {
     new ExpiryPolicy<Object, ValueWithExpiryTime>() {
       @Override
       public long calculateExpiryTime(
-        Object key, ValueWithExpiryTime value, long loadTime,
+        Object key, ValueWithExpiryTime value, long startTime,
         CacheEntry<Object, ValueWithExpiryTime> currentEntry) {
         return value.getCacheExpiryTime();
       }

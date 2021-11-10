@@ -91,8 +91,8 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    * @param key the cache key used for inserting or loading
    * @param value the value to be cached. May be {@code null} if the loader returns {@code null},
    *              regardless of the {@link Cache2kBuilder#permitNullValues} setting.
-   * @param loadTime The time the entry was inserted or loaded. If a loader was used,
-   *                 this is the time before the loader was called.
+   * @param startTime The time the operation started. If the cache used the loader to retrieve the
+   *                  value this is the time before the load was started
    * @param currentEntry entry representing the current mapping, if there is a value present.
    *                     {@code null} if there is no current mapping, or, if the previous load
    *                     operation had thrown an exception. This can be used for adapting the
@@ -110,6 +110,6 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */
-  long calculateExpiryTime(K key, V value, long loadTime, @Nullable CacheEntry<K, V> currentEntry);
+  long calculateExpiryTime(K key, V value, long startTime, @Nullable CacheEntry<K, V> currentEntry);
 
 }

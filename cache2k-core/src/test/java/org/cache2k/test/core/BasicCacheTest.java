@@ -315,7 +315,7 @@ public class BasicCacheTest extends TestingBase {
     public final Map<String, AtomicInteger> key2count = new HashMap<String, AtomicInteger>();
     public final AtomicInteger oldEntrySeen = new AtomicInteger();
     @Override
-    public long calculateExpiryTime(String _key, String _value, long _loadTime,
+    public long calculateExpiryTime(String _key, String _value, long startTime,
                                     CacheEntry<String, String> currentEntry) {
       AtomicInteger _count;
       synchronized (key2count) {
@@ -337,7 +337,7 @@ public class BasicCacheTest extends TestingBase {
       if (_key.startsWith("eternal")) {
         return Long.MAX_VALUE;
       }
-      return _loadTime + Integer.parseInt(_key);
+      return startTime + Integer.parseInt(_key);
     }
   }
 
@@ -684,7 +684,7 @@ public class BasicCacheTest extends TestingBase {
 
   public static class ExpiryPolicyThrowsException implements ExpiryPolicy<String, String> {
     @Override
-    public long calculateExpiryTime(String _key, String _value, long _loadTime, CacheEntry<String, String> currentEntry) {
+    public long calculateExpiryTime(String _key, String _value, long startTime, CacheEntry<String, String> currentEntry) {
       if (_value != null && _value.startsWith("boo")) {
         throw new RuntimeException("got value: " + _value);
       }

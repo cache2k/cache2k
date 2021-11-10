@@ -547,7 +547,7 @@ public class ListenerTest {
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
             public long calculateExpiryTime(Integer key, Integer value,
-                                            long loadTime,
+                                            long startTime,
                                             CacheEntry<Integer, Integer> currentEntry) {
               if (currentEntry != null) {
                 return 0;
@@ -589,9 +589,9 @@ public class ListenerTest {
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
             public long calculateExpiryTime(Integer key, Integer value,
-                                            long loadTime, CacheEntry<Integer, Integer> currentEntry) {
+                                            long startTime, CacheEntry<Integer, Integer> currentEntry) {
               if (currentEntry != null) {
-                return loadTime;
+                return startTime;
               }
               return ETERNAL;
             }
@@ -631,9 +631,9 @@ public class ListenerTest {
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
             public long calculateExpiryTime(Integer key, Integer value,
-                                            long loadTime, CacheEntry<Integer, Integer> currentEntry) {
+                                            long startTime, CacheEntry<Integer, Integer> currentEntry) {
               if (currentEntry != null) {
-                return loadTime;
+                return startTime;
               }
               return ETERNAL;
             }

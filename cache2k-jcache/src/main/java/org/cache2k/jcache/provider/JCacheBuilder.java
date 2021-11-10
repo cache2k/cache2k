@@ -284,7 +284,7 @@ public class JCacheBuilder<K, V> {
         new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
+        public long calculateExpiryTime(K key, V value, long startTime, CacheEntry<K, V> currentEntry) {
           if (value == null) {
             return NOW;
           }
@@ -302,7 +302,7 @@ public class JCacheBuilder<K, V> {
             new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(
-            K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
+            K key, V value, long startTime, CacheEntry<K, V> currentEntry) {
             return NOW;
           }
         }));
@@ -312,11 +312,11 @@ public class JCacheBuilder<K, V> {
         new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
+        public long calculateExpiryTime(K key, V value, long startTime, CacheEntry<K, V> currentEntry) {
           if (value == null) {
             return NOW;
           }
-          return loadTime + millisDuration;
+          return startTime + millisDuration;
         }
       }));
       return;
@@ -331,7 +331,7 @@ public class JCacheBuilder<K, V> {
             new org.cache2k.expiry.ExpiryPolicy<K, V>() {
           @Override
           public long calculateExpiryTime(
-            K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
+            K key, V value, long startTime, CacheEntry<K, V> currentEntry) {
             return NOW;
           }
         }));
@@ -341,12 +341,12 @@ public class JCacheBuilder<K, V> {
         new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
           new org.cache2k.expiry.ExpiryPolicy<K, V>() {
         @Override
-        public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
+        public long calculateExpiryTime(K key, V value, long startTime, CacheEntry<K, V> currentEntry) {
           if (value == null) {
             return NOW;
           }
           if (currentEntry == null) {
-            return loadTime + millisDuration;
+            return startTime + millisDuration;
           } else {
             return NEUTRAL;
           }

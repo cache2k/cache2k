@@ -647,12 +647,12 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(keepData)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (expiryTime.get() == 0) {
-            expiryTime.set(loadTime + tickTime);
+            expiryTime.set(startTime + tickTime);
           }
-          return loadTime + tickTime;
+          return startTime + tickTime;
         }
       })
       .loader(loader)
@@ -775,12 +775,12 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry != null) {
-            return loadTime + maxFinishWaitMillis;
+            return startTime + maxFinishWaitMillis;
           }
-          return loadTime + expiry;
+          return startTime + expiry;
         }
       })
       .loader(loader)
@@ -847,12 +847,12 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry != null) {
-            return loadTime + TestingParameters.MAX_FINISH_WAIT_MILLIS;
+            return startTime + TestingParameters.MAX_FINISH_WAIT_MILLIS;
           }
-          return loadTime + TestingParameters.MINIMAL_TICK_MILLIS;
+          return startTime + TestingParameters.MINIMAL_TICK_MILLIS;
         }
       })
       .loader(loader)
@@ -913,7 +913,7 @@ public class SlowExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry != null) {
             return ETERNAL;
@@ -1173,10 +1173,10 @@ public class SlowExpiryTest extends TestingBase {
       .sharpExpiry(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry == null) {
-            return loadTime + expiry;
+            return startTime + expiry;
           }
           return NEUTRAL;
         }
@@ -1207,7 +1207,7 @@ public class SlowExpiryTest extends TestingBase {
       .sharpExpiry(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return NEUTRAL;
         }

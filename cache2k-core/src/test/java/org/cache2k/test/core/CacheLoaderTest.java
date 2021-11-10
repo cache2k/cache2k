@@ -343,7 +343,7 @@ public class CacheLoaderTest extends TestingBase {
         })
           .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
             @Override
-            public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+            public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                             CacheEntry<Integer, Integer> currentEntry) {
               return NOW;
             }

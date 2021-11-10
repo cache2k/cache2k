@@ -102,7 +102,7 @@ public class CustomizationClosedTest extends TestingBase {
 
   class MyExpiryPolicy extends Common implements ExpiryPolicy {
     @Override
-    public long calculateExpiryTime(Object key, Object value, long loadTime,
+    public long calculateExpiryTime(Object key, Object value, long startTime,
                                     @Nullable CacheEntry currentEntry) {
       return 0;
     }

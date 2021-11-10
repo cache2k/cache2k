@@ -118,9 +118,9 @@ public class AllMutatorsExpireTest extends TestingBase {
       .name(getAndSetCacheName("putExpiresSharply"))
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return loadTime + expiryTime;
+          return startTime + expiryTime;
         }
       })
       .sharpExpiry(true)

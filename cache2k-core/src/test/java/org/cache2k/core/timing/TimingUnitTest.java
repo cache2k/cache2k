@@ -150,7 +150,7 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
-          public long calculateExpiryTime(Object key, Object value, long loadTime,
+          public long calculateExpiryTime(Object key, Object value, long startTime,
                                           CacheEntry currentEntry) {
             return ETERNAL;
           }
@@ -174,9 +174,9 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
-          public long calculateExpiryTime(Object key, Object value, long loadTime,
+          public long calculateExpiryTime(Object key, Object value, long startTime,
                                           CacheEntry currentEntry) {
-            return loadTime + 1;
+            return startTime + 1;
           }
         })
         .sharpExpiry(true)
@@ -197,7 +197,7 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
-          public long calculateExpiryTime(Object key, Object value, long loadTime,
+          public long calculateExpiryTime(Object key, Object value, long startTime,
                                           CacheEntry currentEntry) {
             return ETERNAL;
           }
@@ -225,7 +225,7 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
-          public long calculateExpiryTime(Object key, Object value, long loadTime,
+          public long calculateExpiryTime(Object key, Object value, long startTime,
                                           CacheEntry currentEntry) {
             return -sharpPointInTime;
           }
@@ -259,7 +259,7 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
-          public long calculateExpiryTime(Object key, Object value, long loadTime,
+          public long calculateExpiryTime(Object key, Object value, long startTime,
                                           CacheEntry currentEntry) {
             return pointInTime;
           }
@@ -297,7 +297,7 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .expiryPolicy(new ExpiryPolicy() {
           @Override
-          public long calculateExpiryTime(Object key, Object value, long loadTime,
+          public long calculateExpiryTime(Object key, Object value, long startTime,
                                           CacheEntry currentEntry) {
             return -sharpPointInTime;
           }

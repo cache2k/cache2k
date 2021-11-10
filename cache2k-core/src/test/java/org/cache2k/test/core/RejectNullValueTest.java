@@ -72,7 +72,7 @@ public class RejectNullValueTest {
     });
     b.expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
       @Override
-      public long calculateExpiryTime(final Integer key, final Integer value, final long loadTime, final CacheEntry<Integer, Integer> currentEntry) {
+      public long calculateExpiryTime(final Integer key, final Integer value, final long startTime, final CacheEntry<Integer, Integer> currentEntry) {
         if (key >= 8) {
         throw new RuntimeException("exception in the expiry policy");
       }

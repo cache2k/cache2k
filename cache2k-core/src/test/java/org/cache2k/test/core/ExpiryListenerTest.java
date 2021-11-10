@@ -78,9 +78,9 @@ public class ExpiryListenerTest extends TestingBase {
       })
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return loadTime + expiryMillis;
+          return startTime + expiryMillis;
         }
       })
       .sharpExpiry(true)
@@ -150,9 +150,9 @@ public class ExpiryListenerTest extends TestingBase {
       })
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return loadTime + expiryMillis;
+          return startTime + expiryMillis;
         }
       })
       .sharpExpiry(true)
@@ -245,9 +245,9 @@ public class ExpiryListenerTest extends TestingBase {
     if (sharpExpiry) {
       builder.expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return loadTime + expiryMillis;
+          return startTime + expiryMillis;
           }
         })
         .sharpExpiry(true);

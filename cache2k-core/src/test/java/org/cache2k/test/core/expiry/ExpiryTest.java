@@ -83,7 +83,7 @@ public class ExpiryTest extends TestingBase {
   public void notEternal_policy() {
     builder().eternal(false).expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
       @Override
-      public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+      public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                       CacheEntry<Integer, Integer> currentEntry) {
         return 0;
       }
@@ -123,7 +123,7 @@ public class ExpiryTest extends TestingBase {
       .loader(g)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -139,7 +139,7 @@ public class ExpiryTest extends TestingBase {
       .loader(g)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 1234567;
         }
@@ -155,10 +155,10 @@ public class ExpiryTest extends TestingBase {
       .loader(g)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           sleep(3);
-          return loadTime + 1;
+          return startTime + 1;
         }
       })
       .expireAfterWrite(0, TimeUnit.SECONDS).build();
@@ -268,7 +268,7 @@ public class ExpiryTest extends TestingBase {
       .resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (g.getLoaderCalledCount() == 2) {
             assertNull(currentEntry);
@@ -657,7 +657,7 @@ public class ExpiryTest extends TestingBase {
       .loader(new IntCountingCacheSource())
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -677,7 +677,7 @@ public class ExpiryTest extends TestingBase {
       .loader(new IntCountingCacheSource())
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry == null) {
             return ETERNAL;
@@ -700,7 +700,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           if (currentEntry == null) {
             return ETERNAL;
@@ -725,7 +725,7 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -761,7 +761,7 @@ public class ExpiryTest extends TestingBase {
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -823,7 +823,7 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -884,7 +884,7 @@ public class ExpiryTest extends TestingBase {
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -956,7 +956,7 @@ public class ExpiryTest extends TestingBase {
       .loader(new BasicCacheTest.AlwaysExceptionSource())
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return 0;
         }
@@ -993,7 +993,7 @@ public class ExpiryTest extends TestingBase {
       .keepDataAfterExpired(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return NOW;
         }
@@ -1048,7 +1048,7 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return NOW;
         }
@@ -1083,7 +1083,7 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return NOW;
         }
@@ -1119,7 +1119,7 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
           return NOW;
         }
@@ -1148,9 +1148,9 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
         @Override
-        public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+        public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                         CacheEntry<Integer, Integer> currentEntry) {
-          return loadTime;
+          return startTime;
         }
       })
       .loader(new IdentIntSource())
@@ -1584,7 +1584,7 @@ public class ExpiryTest extends TestingBase {
         })
         .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
           @Override
-          public long calculateExpiryTime(Integer key, Integer value, long loadTime,
+          public long calculateExpiryTime(Integer key, Integer value, long startTime,
                                           CacheEntry<Integer, Integer> currentEntry) {
             return value == null ? NOW : ETERNAL;
           }
@@ -1630,7 +1630,7 @@ public class ExpiryTest extends TestingBase {
     }
 
     @Override
-    public long calculateExpiryTime(K key, V value, long loadTime, CacheEntry<K, V> currentEntry) {
+    public long calculateExpiryTime(K key, V value, long startTime, CacheEntry<K, V> currentEntry) {
       return 0;
     }
   }
