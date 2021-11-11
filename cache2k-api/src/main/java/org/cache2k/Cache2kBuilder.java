@@ -423,6 +423,9 @@ public class Cache2kBuilder<K, V>
   /**
    * Change the maximum lag time for timer events. Timer events are used for
    * expiry and refresh operations. The default is approximately one second.
+   *
+   * <p>If an application needs exact, point in time expiry {@link #sharpExpiry(boolean)} or
+   * {@link org.cache2k.expiry.Expiry#toSharpTime(long)} need to be used.
    */
   public final Cache2kBuilder<K, V> timerLag(long v, TimeUnit u) {
     cfg().setTimerLag(toDuration(v, u));
@@ -574,11 +577,15 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * By default the expiry time is not exact, which means, a value might be visible for up to
+   * By default the time of expiry is not exact, which means, a value might be visible for up to
    * a second longer after the requested time of expiry. The time lag depends on the system load
    * and the parameter {@link #timerLag(long, TimeUnit)}
-   * Switching to {@code true}, means that values will not be visible when the time is reached that
-   * {@link ExpiryPolicy} returned. This has no effect on {@link #expireAfterWrite(long, TimeUnit)}.
+   * Switching to {@code true}, means that values will not be visible when the entry is reached past
+   * its expiry time which set by the {@link ExpiryPolicy}. This has no
+   * effect on {@link #expireAfterWrite(long, TimeUnit)}.
+   *
+   * <p>Alternatively, sharp expiry can be requested on a per entry basis in the
+   * {@link ExpiryPolicy} via {@link org.cache2k.expiry.Expiry#toSharpTime(long)}
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
     cfg().setSharpExpiry(f);
