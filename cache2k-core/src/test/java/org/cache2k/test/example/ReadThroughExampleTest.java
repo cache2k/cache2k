@@ -22,11 +22,13 @@ package org.cache2k.test.example;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.io.CacheLoader;
 import org.junit.After;
 import org.junit.Test;
 
 /**
+ * Example of read through operation with a composite key constructed by
+ * string concatenation.
+ *
  * @author Jens Wilke
  */
 public class ReadThroughExampleTest {
@@ -34,12 +36,9 @@ public class ReadThroughExampleTest {
   Cache<String, String> routeToAirline = new Cache2kBuilder<String, String>() { }
     .name(this + "-routeToAirline")
     .eternal(true)
-    .loader(new CacheLoader<String, String>() {
-      @Override
-      public String load(String key) {
-        String[] port = key.split("-");
-        return findFavoriteAirline(port[0], port[1]);
-      }
+    .loader(key -> {
+      String[] port = key.split("-");
+      return findFavoriteAirline(port[0], port[1]);
     })
     .build();
 
@@ -48,18 +47,22 @@ public class ReadThroughExampleTest {
     routeToAirline.close();
   }
 
+  /**
+   * expansive operation to find the best airline for this route
+   * for example, ask all friends...
+   */
   private String findFavoriteAirline(String origin, String destination) {
     return "People Air";
   }
 
-  public String lookupFavoirteAirline(String origin, String destination) {
+  public String lookupFavoriteAirline(String origin, String destination) {
     String route = origin + "-" + destination;
     return routeToAirline.get(route);
   }
 
   @Test
   public void test() {
-    lookupFavoirteAirline("MUC", "JFK");
+    lookupFavoriteAirline("MUC", "JFK");
   }
 
 }
