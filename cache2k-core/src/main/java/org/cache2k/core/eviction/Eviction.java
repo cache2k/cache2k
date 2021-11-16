@@ -22,6 +22,7 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.core.Entry;
 import org.cache2k.core.IntegrityState;
+import org.cache2k.core.api.NeedsClose;
 
 import java.util.function.Supplier;
 
@@ -31,7 +32,13 @@ import java.util.function.Supplier;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public interface Eviction {
+public interface Eviction extends NeedsClose {
+
+  /**
+   * Start new idle scan round and return current scan counter
+   * @see IdleProcessing
+   */
+  long startNewIdleScanRound();
 
   /**
    * Submit to eviction for inserting or removing from the replacement list.
@@ -72,16 +79,19 @@ public interface Eviction {
   void evictEventually();
 
   /**
+   * Scan for idle (no access count since last scan) entries and evict them.
+   *
+   * @return number of evicted entries
+   * @see IdleProcessing
+   */
+  long evictIdleEntries(int maxScan);
+
+  /**
    * Remove all entries from the eviction data structure.
    *
    * @return entry count
    */
   long removeAll();
-
-  /**
-   * Free resources, for example thread pool or queue.
-   */
-  void close();
 
   /**
    * Runs job making sure concurrent evictions operations pause.

@@ -37,7 +37,7 @@ public class EvictionFactory {
    * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
    * there is no effect on read performance.
    */
-  public Eviction constructEviction(InternalCacheBuildContext customizationContext,
+  public Eviction constructEviction(InternalCacheBuildContext ctx,
                                     HeapCacheForEviction hc, InternalEvictionListener l,
                                     Cache2kConfig config, int availableProcessors) {
     boolean strictEviction = config.isStrictEviction();
@@ -46,7 +46,7 @@ public class EvictionFactory {
     long entryCapacity = config.getEntryCapacity();
     Weigher weigher = null;
     if (config.getWeigher() != null) {
-      weigher = (Weigher) customizationContext.createCustomization(config.getWeigher());
+      weigher = (Weigher) ctx.createCustomization(config.getWeigher());
       if (maximumWeight <= 0) {
         throw new IllegalArgumentException(
           "maximumWeight > 0 expected. Weigher requires to set maximumWeight");
@@ -69,13 +69,16 @@ public class EvictionFactory {
     long maxSize = EvictionFactory.determineMaxSize(entryCapacity, segmentCount);
     long maxWeight = EvictionFactory.determineMaxWeight(maximumWeight, segmentCount);
     for (int i = 0; i < segments.length; i++) {
-      Eviction ev = new ClockProPlusEviction(hc, l, maxSize, weigher, maxWeight, strictEviction);
-      segments[i] = ev;
+      segments[i]= new ClockProPlusEviction(hc, l, maxSize, weigher, maxWeight, strictEviction);
     }
-    if (segmentCount == 1) {
-      return segments[0];
+    Eviction eviction = segmentCount == 1 ? segments[0] : new SegmentedEviction(segments);
+    if (config.getIdleScanTime() != null) {
+      IdleProcessing idleProcessing =
+        new IdleProcessing(ctx.getTimeReference(), ctx.createScheduler(),
+          eviction, config.getIdleScanTime().toMillis());
+      eviction = new IdleProcessingEviction(eviction, idleProcessing);
     }
-    return new SegmentedEviction(segments);
+    return eviction;
   }
 
   public static long determineMaxSize(long entryCapacity, int segmentCount) {

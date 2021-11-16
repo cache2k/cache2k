@@ -96,4 +96,13 @@ public class RandomEviction extends AbstractEviction {
     return size;
   }
 
+  @Override
+  protected Entry findIdleCandidate(int maxScan) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  protected long getScanCount() {
+    return 0;
+  }
 }

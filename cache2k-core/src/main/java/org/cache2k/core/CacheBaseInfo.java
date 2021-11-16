@@ -54,6 +54,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   private final IntegrityState integrityState;
   private final long totalLoadCnt;
   private long evictedWeight;
+  private EvictionMetrics evictionMetrics;
 
   /*
    * Consistent copies from heap cache. for 32 bit machines the access
@@ -79,7 +80,7 @@ class CacheBaseInfo implements InternalCacheInfo {
     cache = userCache;
     this.heapCache = heapCache;
     metrics = heapCache.metrics;
-    EvictionMetrics evictionMetrics = heapCache.eviction.getMetrics();
+    evictionMetrics = heapCache.eviction.getMetrics();
     newEntryCnt = evictionMetrics.getNewEntryCount();
     expiredRemoveCnt = evictionMetrics.getExpiredRemovedCount();
     evictedCnt = evictionMetrics.getEvictedCount();
@@ -143,6 +144,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getEvictedWeight() {
     return evictedWeight;
+  }
+
+  @Override
+  public long getScanCount() {
+    return evictionMetrics.getScanCount();
   }
 
   @Override

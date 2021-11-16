@@ -20,11 +20,11 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.EvictionMetrics;
 
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 /**
@@ -39,6 +39,15 @@ public class SegmentedEviction implements Eviction {
 
   public SegmentedEviction(Eviction[] segments) {
     this.segments = segments;
+  }
+
+  @Override
+  public long startNewIdleScanRound() {
+    long sum = 0;
+    for (Eviction ev : segments) {
+      sum += ev.startNewIdleScanRound();
+    }
+    return sum;
   }
 
   @Override
@@ -81,6 +90,20 @@ public class SegmentedEviction implements Eviction {
     }
   }
 
+  /**
+   * Scan all segments for idlers. Maybe a round robin approach is more
+   * efficient.
+   */
+  @Override
+  public long evictIdleEntries(int maxScan) {
+    int maxScanPerSegment = maxScan / segments.length + 1;
+    long evictedCount = 0;
+    for (Eviction ev : segments) {
+      evictedCount += ev.evictIdleEntries(maxScanPerSegment);
+    }
+    return evictedCount;
+  }
+
   @Override
   public long removeAll() {
     long count = 0;
@@ -91,9 +114,9 @@ public class SegmentedEviction implements Eviction {
   }
 
   @Override
-  public void close() {
+  public void close(InternalCacheCloseContext closeContext) {
     for (Eviction ev : segments) {
-      ev.close();
+      ev.close(closeContext);
     }
   }
 
@@ -152,8 +175,12 @@ public class SegmentedEviction implements Eviction {
     long totalWeight = sum;
     sum = 0; for (EvictionMetrics m : metrics) { sum += m.getEvictedWeight(); }
     long evictedWeight = sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getScanCount(); }
+    long scanCount = sum;
     sum = 0; for (EvictionMetrics m : metrics) { sum += m.getEvictionRunningCount(); }
     int evictionRunningCount = (int) sum;
+    sum = 0; for (EvictionMetrics m : metrics) { sum += m.getIdleNonEvictDrainCount(); }
+    long removeAfterScanCount = sum;
     return new EvictionMetrics() {
       @Override public long getSize() { return size; }
       @Override public long getNewEntryCount() { return newEntryCount; }
@@ -166,6 +193,8 @@ public class SegmentedEviction implements Eviction {
       @Override public long getTotalWeight() { return totalWeight; }
       @Override public long getEvictedWeight() { return evictedWeight; }
       @Override public int getEvictionRunningCount() { return evictionRunningCount; }
+      @Override public long getScanCount() { return scanCount; }
+      @Override public long getIdleNonEvictDrainCount() { return removeAfterScanCount; }
     };
   }
 

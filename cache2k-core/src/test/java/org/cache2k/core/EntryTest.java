@@ -142,4 +142,15 @@ public class EntryTest {
     assertEquals("LAST", Entry.num2processingStateText(Entry.ProcessingState.LAST));
   }
 
+  @Test
+  public void scanRound() {
+    Entry e = new Entry();
+    assertEquals(0, e.getScanRound());
+    e.setScanRound(15);
+    assertEquals(15, e.getScanRound());
+    e.setHot(true);
+    e.setCompressedWeight(4711);
+    assertEquals(15, e.getScanRound());
+  }
+
 }

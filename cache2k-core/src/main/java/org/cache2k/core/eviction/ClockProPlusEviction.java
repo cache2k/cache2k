@@ -243,6 +243,7 @@ public class ClockProPlusEviction extends AbstractEviction {
        */
       ghostHits++;
     }
+    e.setScanRound(idleScanRound);
     if (g != null || (coldSize == 0 && hotSize < getHotMax())) {
       e.setHot(true);
       hotSize++;
@@ -251,6 +252,50 @@ public class ClockProPlusEviction extends AbstractEviction {
     }
     coldSize++;
     handCold = Entry.insertIntoTailCyclicList(handCold, e);
+  }
+
+  /**
+   * Find idle candidate.
+   *
+   * Idle eviction takes does scan on the bigger clock first, which is typically
+   * the hot clock, because entries are sitting in the cache for the longest time.
+   */
+  protected Entry findIdleCandidate(int maxScan) {
+    if (hotSize > coldSize) {
+      Entry e = findIdleInHot(maxScan);
+      return e.hitCnt == 0 ? e : null;
+    }
+    if (coldSize > 0) {
+      return findEvictionCandidate();
+    }
+    return null;
+  }
+
+  /**
+   * Entry has hits, reset hit counter and mark
+   */
+  private void stepOver(Entry e, long hits) {
+    e.hitCnt = hits;
+    e.setScanRound(idleScanRound);
+  }
+
+  protected Entry findIdleInHot(int maxScan) {
+    hotRunCnt++;
+    int initialMaxScan = maxScan;
+    Entry hand = handHot;
+    while (maxScan-- > 0) {
+      long hitCnt = hand.hitCnt;
+      if (hitCnt == 0) {
+        handHot = hand.next;
+        hotScanCnt += initialMaxScan - maxScan;
+        return hand;
+      }
+      stepOver(hand, 0);
+      hand = hand.next;
+    }
+    hotScanCnt += initialMaxScan - maxScan;
+    handHot = hand;
+    return hand;
   }
 
   private Entry runHandHot() {
@@ -275,9 +320,10 @@ public class ClockProPlusEviction extends AbstractEviction {
       }
       if (hitCnt < decrease) {
         hand.hitCnt = 0;
+        stepOver(hand, 0);
         hotHits += hitCnt;
       } else {
-        hand.hitCnt = hitCnt - decrease;
+        stepOver(hand, hitCnt - decrease);
         hotHits += decrease;
       }
       hand = hand.next;
@@ -290,7 +336,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   }
 
   /**
-   * Runs cold hand an in turn hot hand to find eviction candidate.
+   * Runs cold hand and in turn hot hand to find eviction candidate.
    */
   @Override
   protected Entry findEvictionCandidate() {
@@ -311,7 +357,7 @@ public class ClockProPlusEviction extends AbstractEviction {
         hand = Entry.removeFromCyclicList(e);
         coldSize--;
         e.setHot(true);
-        e.hitCnt = 0;
+        stepOver(e, 0);
         hotSize++;
         handHot = Entry.insertIntoTailCyclicList(handHot, e);
         if (evictFromHot != null) {
@@ -329,6 +375,11 @@ public class ClockProPlusEviction extends AbstractEviction {
     }
     handCold = hand.next;
     return hand;
+  }
+
+  @Override
+  protected long getScanCount() {
+    return coldScanCnt + hotScanCnt;
   }
 
   @Override

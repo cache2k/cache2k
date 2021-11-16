@@ -553,11 +553,22 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * Store weight as 16 bit floating point number.
    */
   public void setCompressedWeight(int v) {
-    hotAndWeight = hotAndWeight & 0x80000000 | v;
+    hotAndWeight = hotAndWeight & 0xffff0000 | v;
   }
 
   public int getCompressedWeight() {
-    return hotAndWeight & 0x7fffffff;
+    return hotAndWeight & 0x0000ffff;
+  }
+
+  public static final int SCAN_ROUND_BITS = 4;
+  public static final int SCAN_ROUND_POS = 16;
+  /** Mask and max value for scan round */
+  public static final int SCAN_ROUND_MASK = (1 << SCAN_ROUND_BITS) - 1;
+  public void setScanRound(int v) {
+    hotAndWeight = hotAndWeight & ~(SCAN_ROUND_MASK << SCAN_ROUND_POS) | v << SCAN_ROUND_POS;
+  }
+  public int getScanRound() {
+    return hotAndWeight >> SCAN_ROUND_POS & SCAN_ROUND_MASK;
   }
 
 

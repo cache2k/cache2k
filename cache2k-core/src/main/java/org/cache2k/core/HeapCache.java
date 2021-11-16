@@ -402,7 +402,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   public void closePart2(InternalCache userCache) {
     executeWithGlobalLock((Supplier<Void>) () -> {
-      eviction.close();
+      eviction.close(HeapCache.this);
       timing.close(HeapCache.this);
       hash.close();
       closeCustomization(loader, "loader");

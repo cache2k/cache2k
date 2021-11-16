@@ -263,4 +263,6 @@ public interface InternalCacheInfo {
 
   long getEvictedWeight();
 
+  long getScanCount();
+
 }

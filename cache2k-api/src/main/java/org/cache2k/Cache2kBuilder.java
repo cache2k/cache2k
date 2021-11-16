@@ -432,6 +432,24 @@ public class Cache2kBuilder<K, V>
     return this;
   }
 
+  /**
+   * Sets the time for regular scan round of all cache contents which evicts
+   * idle cache entries that are not accessed since the last scan round.
+   * The effect is similar then the setting time to idle or expire after access
+   * in other caches when set to about half of the time to idle time. In contract
+   * to the typical time to idle implementation there is no additional access
+   * overhead. This is intended to shrink the cache size in case entries are unused.
+   * Since coupled with the eviction algorithm the efficiency is better than
+   * a typical time to idle implementation.
+   *
+   * @since 2.6
+   * @see <a href="https://github.com/cache2k/cache2k/issues/39">Github issue #39</a>
+   */
+  public final Cache2kBuilder<K, V> idleScanTime(long v, TimeUnit u) {
+    cfg().setIdleScanTime(toDuration(v, u));
+    return this;
+  }
+
   private static Duration toDuration(long v, TimeUnit u) {
     return Duration.ofMillis(u.toMillis(v));
   }
@@ -679,8 +697,9 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Enables that time of an refresh (means update or freshness check of a value) is
+   * Enables that time of an update (e.g. load or put) is
    * available at {@link MutableCacheEntry#getModificationTime()}.
+   * Default is {@code false}.
    *
    * @see MutableCacheEntry#getModificationTime()
    */

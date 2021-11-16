@@ -75,4 +75,22 @@ public interface EvictionMetrics {
   /** Accumulated weight of evicted or deleted entries */
   long getEvictedWeight();
 
+  /**
+   * Count of entries scanned for eviction. Used to evict idle entries.
+   *
+   * @see IdleProcessing
+   */
+  long getScanCount();
+
+  /**
+   * Entries removed from the cache which have either expired or are removed
+   * programmatically, or in other words, they were removed but not evicted.
+   * Reset at the start of each idle scan round. This is used to compensate
+   * scan rates for idle scanning rounds.
+   *
+   * @return number of entries actively removed since scan round start.
+   * @see IdleProcessing
+   */
+  long getIdleNonEvictDrainCount();
+
 }

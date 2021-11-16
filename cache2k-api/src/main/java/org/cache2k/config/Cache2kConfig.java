@@ -92,6 +92,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   private @Nullable CacheType<V> valueType;
   private long entryCapacity = UNSET_LONG;
   private @Nullable Duration expireAfterWrite = null;
+  private @Nullable Duration idleScanTime = null;
   private @Nullable Duration timerLag = null;
   private long maximumWeight = UNSET_LONG;
   private int loaderThreadCount;
@@ -264,6 +265,27 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    */
   public void setExpireAfterWrite(@Nullable Duration v) {
     this.expireAfterWrite = durationCheckAndSanitize(v);
+  }
+
+  public Duration getIdleScanTime() {
+    return idleScanTime;
+  }
+
+  /**
+   * Sets the time for regular scan round of all cache contents which evicts
+   * idle cache entries that are not accessed since the last scan round.
+   * The effect is similar then the setting time to idle or expire after access
+   * in other caches when set to about half of the time to idle time. In contract
+   * to the typical time to idle implementation there is no additional access
+   * overhead. This is intended to shrink the cache size in case entries are unused.
+   * Since coupled with the eviction algorithm the efficiency is better than
+   * a typical time to idle implementation.
+   *
+   * @since 2.6
+   * @see <a href="https://github.com/cache2k/cache2k/issues/39">Github issue #39</a>
+   */
+  public void setIdleScanTime(@Nullable Duration v) {
+    this.idleScanTime = durationCheckAndSanitize(v);
   }
 
   public boolean isEternal() {

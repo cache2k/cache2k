@@ -24,6 +24,7 @@ import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.IntegerTo16BitFloatingPoint;
+import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.operation.Weigher;
 
 import java.util.function.Supplier;
@@ -96,8 +97,17 @@ public abstract class AbstractEviction implements Eviction {
   private long evictedCount;
   private long totalWeight;
   private long evictedWeight;
+   /**
+    * Incremented at start of new idle scan round to account for removals.
+    * Only a few bits used, max value is {@link Entry#SCAN_ROUND_MASK}.
+    */
+   protected int idleScanRound;
+   /**
+    * @see EvictionMetrics#getIdleNonEvictDrainCount()
+    */
+   protected long idleNonEvictDrainCount;
 
-  public AbstractEviction(HeapCacheForEviction heapCache, InternalEvictionListener listener,
+   public AbstractEviction(HeapCacheForEviction heapCache, InternalEvictionListener listener,
                           long maxSize, Weigher weigher, long maxWeight,
                           boolean noChunking) {
     this.weigher = weigher;
@@ -110,7 +120,16 @@ public abstract class AbstractEviction implements Eviction {
     this.maxWeight = maxWeight;
   }
 
-  @Override
+   @Override
+   public long startNewIdleScanRound() {
+    synchronized (lock) {
+      idleNonEvictDrainCount = 0;
+      idleScanRound = (idleScanRound + 1) & Entry.SCAN_ROUND_MASK;
+      return getScanCount();
+    }
+   }
+
+   @Override
   public boolean submitWithoutTriggeringEviction(Entry e) {
     synchronized (lock) {
       if (e.isNotYetInsertedInReplacementList()) {
@@ -220,6 +239,9 @@ public abstract class AbstractEviction implements Eviction {
       } else {
         removedCnt++;
       }
+      if (e.getScanRound() != idleScanRound) {
+        idleNonEvictDrainCount++;
+      }
     }
   }
 
@@ -261,7 +283,7 @@ public abstract class AbstractEviction implements Eviction {
       chunk = fillEvictionChunk(spaceNeeded);
     }
     if (chunk == null) { return; }
-    boolean needsEviction = evictChunk(chunk, spaceNeeded);
+    boolean needsEviction = (evictChunk(chunk, spaceNeeded) & 1) > 0;
     if (!needsEviction) { return; }
     long loop = 1;
     if (weigher != null) {
@@ -273,7 +295,7 @@ public abstract class AbstractEviction implements Eviction {
       synchronized (lock) {
         chunk = fillEvictionChunk(spaceNeeded);
       }
-      needsEviction = evictChunk(chunk, spaceNeeded);
+      needsEviction = (evictChunk(chunk, spaceNeeded) & 1) > 0;
     }
   }
 
@@ -296,8 +318,8 @@ public abstract class AbstractEviction implements Eviction {
     return chunk;
   }
 
-  private boolean evictChunk(Entry[] chunk, int spaceNeeded) {
-    if (chunk == null) { return false; }
+  private int evictChunk(Entry[] chunk, int spaceNeeded) {
+    if (chunk == null) { return 0; }
     int processCount = removeFromHash(chunk);
     synchronized (lock) {
       if (processCount > 0) {
@@ -305,8 +327,47 @@ public abstract class AbstractEviction implements Eviction {
       }
       evictionRunningCount -= chunk.length;
       evictChunkReuse = chunk;
-      return isEvictionNeeded(spaceNeeded);
+      return (processCount << 1) + (isEvictionNeeded(spaceNeeded) ? 1 : 0);
     }
+  }
+
+   public long evictIdleEntries(int maxScan) {
+     Entry[] chunk;
+     long maxScanCount = 0;
+     long evictedCount = 0;
+     do {
+       synchronized (lock) {
+         long scanCount = getScanCount();
+         if (scanCount >= maxScanCount) {
+           if (maxScanCount > 0) {
+             break;
+           }
+           maxScanCount = scanCount + maxScan;
+         }
+         chunk = fillEvictChunkWithIdlers(maxScan);
+       }
+       evictedCount += evictChunk(chunk, 0) >> 1;
+     } while (chunk != null);
+     return evictedCount;
+   }
+
+  private Entry[] fillEvictChunkWithIdlers(int maxScan) {
+    Entry[] chunk = evictChunkReuse;
+    evictChunkReuse = null;
+    if (chunk == null) { chunk = new Entry[chunkSize]; }
+    int i = 0;
+    long stopScanCount = getScanCount() + maxScan;
+    while (i < chunk.length && getScanCount() < stopScanCount) {
+      chunk[i] = findIdleCandidate((int) (stopScanCount - getScanCount()));
+      if (chunk[i] == null) { break; }
+      i++;
+    }
+    if (i > 0) {
+      evictionRunningCount += chunk.length;
+      return chunk;
+    }
+    evictChunkReuse = chunk;
+    return null;
   }
 
   /**
@@ -317,14 +378,18 @@ public abstract class AbstractEviction implements Eviction {
   private void updatesSizesAfterLimitReached() {
     estimatedEntryCapacity = getSize();
     updateHotMax();
-    int targetChunkSize = calculateChunkSize(noChunking, getSize());
-    if (targetChunkSize != chunkSize) {
-      chunkSize = targetChunkSize;
-      evictChunkReuse = null;
-    }
+    resetChunkSize();
   }
 
-  private int removeFromHash(Entry[] chunk) {
+   private void resetChunkSize() {
+     int targetChunkSize = calculateChunkSize(noChunking, getSize());
+     if (targetChunkSize != chunkSize) {
+       chunkSize = targetChunkSize;
+       evictChunkReuse = null;
+     }
+   }
+
+   private int removeFromHash(Entry[] chunk) {
     if (noListenerCall) {
       return removeFromHashWithoutListener(chunk);
     }
@@ -339,6 +404,7 @@ public abstract class AbstractEviction implements Eviction {
     int processCount = 0;
     for (int i = 0; i < chunk.length; i++) {
       Entry e = chunk[i];
+      if (e == null) { continue; }
       synchronized (e) {
         if (e.isGone() || e.isProcessing()) {
           chunk[i] = null;
@@ -405,6 +471,8 @@ public abstract class AbstractEviction implements Eviction {
       long totalWeight = this.totalWeight;
       long evictedWeight = this.evictedWeight;
       int evictionRunningCount = this.evictionRunningCount;
+      long scanCount = getScanCount();
+      long idleNonEvictDrainCount = this.idleNonEvictDrainCount;
       return new EvictionMetrics() {
         @Override public long getSize() { return size; }
         @Override public long getNewEntryCount() { return newEntryCounter; }
@@ -417,14 +485,16 @@ public abstract class AbstractEviction implements Eviction {
         @Override public long getTotalWeight() { return totalWeight; }
         @Override public long getEvictedWeight() { return evictedWeight; }
         @Override public int getEvictionRunningCount() { return evictionRunningCount; }
+        @Override public long getScanCount() { return scanCount; }
+        @Override public long getIdleNonEvictDrainCount() { return idleNonEvictDrainCount; }
       };
     }
   }
 
   @Override
-  public void close() { }
+  public void close(InternalCacheCloseContext closeContext) { }
 
-  @Override
+   @Override
   public <T> T runLocked(Supplier<T> j) {
     synchronized (lock) {
       return j.get();
@@ -512,6 +582,8 @@ public abstract class AbstractEviction implements Eviction {
    */
   protected abstract Entry findEvictionCandidate();
 
+  protected abstract Entry findIdleCandidate(int maxScan);
+
   /**
    * Identical to {@link #removeFromReplacementList(Entry)} by default but
    * allows the eviction algorithm to do additional bookkeeping of eviction history.
@@ -528,5 +600,7 @@ public abstract class AbstractEviction implements Eviction {
    * the clock sizes.
    */
   protected void updateHotMax() { }
+
+  protected abstract long getScanCount();
 
 }
