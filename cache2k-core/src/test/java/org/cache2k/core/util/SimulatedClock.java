@@ -166,9 +166,8 @@ public class SimulatedClock implements TimeReference, Scheduler {
   }
 
   /**
-   * A sleep of {@code 0} waits an undefined amount of time.
-   * . A value greater then {@code 0}s
-   * advances the time just by the specified amount.
+   * A sleep of {@code 0} waits an undefined amount of time, running scheduled tasks.
+   * A value greater then {@code 0}s advances the time just by the specified amount.
    */
   @Override
   public void sleep(long millis) throws InterruptedException {
