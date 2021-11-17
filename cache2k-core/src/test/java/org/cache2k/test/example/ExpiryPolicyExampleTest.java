@@ -122,8 +122,8 @@ public class ExpiryPolicyExampleTest {
   /**
    * Although we know that data needs to updated at a certain point in time, we might still
    * want to update it in a regular interval. Instead of enabling sharp timing globally
-   * the expiry policy can return exact times, or times that may have lag which are based
-   * on durations.
+   * the expiry policy can return exact times, or times that are based on duration and may
+   * have a lag
    */
   @Test
   public void pointInTimeAndDurationExample() {
@@ -186,10 +186,10 @@ public class ExpiryPolicyExampleTest {
    * In case there are a lot of seats available, we can update the data less frequently.
    */
   static class ValueWithGauge {
-    int seatAvailable = 4711;
-    boolean isNoAvailability() { return seatAvailable == 0; }
-    boolean isLimitedAvailability() { return seatAvailable > 0 && seatAvailable < 10; }
-    boolean isFullAvailable() { return seatAvailable >= 10; }
+    int seatsAvailable = 4711;
+    boolean isNoAvailability() { return seatsAvailable == 0; }
+    boolean isLimitedAvailability() { return seatsAvailable > 0 && seatsAvailable < 10; }
+    boolean isFullAvailable() { return seatsAvailable >= 10; }
   }
 
   /**
@@ -200,10 +200,54 @@ public class ExpiryPolicyExampleTest {
     int threshold = 20;
     long relaxedMillis = TimeUnit.MINUTES.toMillis(5);
     long frequentMillis = TimeUnit.SECONDS.toMillis(27);
+    Cache<Key, ValueWithGauge> cache = new Cache2kBuilder<Key, ValueWithGauge>() { }
+      .loader(k -> new ValueWithGauge())
+      .expiryPolicy((key, value, startTime, currentEntry) -> {
+        if (value.seatsAvailable == 0 || value.seatsAvailable >= threshold) {
+          return startTime + relaxedMillis;
+        }
+        return startTime + frequentMillis;
+      })
+      .build();
+    Key key1 = new Key();
+    ValueWithGauge value = cache.get(key1);
+    cache.close();
+  }
+
+  /**
+   * A good and fine adaption of refresh times (same as expiry) can save bandwidth and
+   * system load, while still updating frequently enough in case it is needed.
+   * The idea of delta expiry is to use the previous entry data to calculate a delta value
+   * to determine how the expiry should be adjusted. In case of our example:
+   * If the available seats drop from 50 to 25, we should already update more frequently since
+   * the data will be in the critical range for uses soon. Only looking on the last data
+   * value to adapt the expiry value would not be ideal.
+   *
+   * <p>The example is simple to illustrate the idea. A better solution could do a floating
+   * calculation based on the time difference, data delta and tripping points.
+   */
+  @Test
+  public void gaugeWithDeltaApproach() {
+    int threshold = 10;
+    long relaxedMillis = TimeUnit.MINUTES.toMillis(5);
+    long frequentMillis = TimeUnit.SECONDS.toMillis(27);
     Cache<Key, ValueWithGauge> cache = new Cache2kBuilder<Key, ValueWithGauge>() {}
       .loader(k -> new ValueWithGauge())
-      .expiryPolicy((key, value, startTime, currentEntry) ->
-        startTime + (value.seatAvailable < threshold ? frequentMillis : relaxedMillis))
+      .keepDataAfterExpired(true)
+      .refreshAhead(true)
+      .expiryPolicy((key, value, startTime, currentEntry) -> {
+        if (currentEntry == null || value.seatsAvailable == 0) {
+          if (value.seatsAvailable == 0 || value.seatsAvailable >= threshold) {
+            return startTime + relaxedMillis;
+          }
+          return startTime + frequentMillis;
+        }
+        int deltaSeats = currentEntry.getValue().seatsAvailable - value.seatsAvailable;
+        if ((value.seatsAvailable - deltaSeats) >= threshold) {
+          return startTime + relaxedMillis;
+        }
+        return startTime + frequentMillis;
+      })
       .build();
     Key key1 = new Key();
     ValueWithGauge value = cache.get(key1);
