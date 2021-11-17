@@ -23,13 +23,14 @@ package org.cache2k;
 import org.cache2k.annotation.NonNull;
 
 /**
- * Parent for all interfaces dealing with cached data.
- * This is used to establish a common contract for the
- * K and V type parameter.
+ * Parent for all interfaces dealing with cached data. This is used to establish a common
+ * contract for the K and V type parameter.
  *
  * @author Jens Wilke
  * @param <K> non null type for the cache key
- * @param <V> non null type for the cache value
+ * @param <V> non null type for the cache value. Although cache2k support null values
+ *           by {@link Cache2kBuilder#permitNullValues(boolean)} this is not the common
+ *           use case
  * @since 2.0
  */
 public interface DataAware<@NonNull K, @NonNull V> { }

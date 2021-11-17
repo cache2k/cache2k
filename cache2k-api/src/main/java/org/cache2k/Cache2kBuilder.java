@@ -433,7 +433,7 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Sets the time for regular scan round of all cache contents which evicts
+   * Sets the time for a regular scan round of all cache entries which evicts
    * idle cache entries that are not accessed since the last scan round.
    * The effect is similar then the setting time to idle or expire after access
    * in other caches when set to about half of the time to idle time. In contract
