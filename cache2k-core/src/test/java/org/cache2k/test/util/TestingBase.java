@@ -30,7 +30,7 @@ import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.util.TunableFactory;
-import org.cache2k.core.util.SimulatedClock;
+import org.cache2k.testing.SimulatedClock;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.pinpoint.SupervisedExecutor;
 import org.cache2k.test.core.Statistics;

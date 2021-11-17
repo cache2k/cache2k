@@ -1,8 +1,8 @@
-package org.cache2k.core.util;
+package org.cache2k.testing;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testing
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
@@ -20,8 +20,8 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.Scheduler;
+import org.cache2k.operation.TimeReference;
 
 import java.util.Map;
 import java.util.TreeMap;

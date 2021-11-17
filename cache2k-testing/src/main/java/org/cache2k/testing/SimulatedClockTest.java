@@ -1,8 +1,8 @@
-package org.cache2k.core.util;
+package org.cache2k.testing;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testing
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
@@ -20,11 +20,12 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Jens Wilke

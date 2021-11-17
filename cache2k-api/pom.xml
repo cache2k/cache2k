@@ -35,13 +35,6 @@
       <version>1.4.10</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-testing</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
 
   <build>

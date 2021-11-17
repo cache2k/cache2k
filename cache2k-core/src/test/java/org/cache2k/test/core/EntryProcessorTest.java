@@ -23,7 +23,7 @@ package org.cache2k.test.core;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.util.SimulatedClock;
+import org.cache2k.testing.SimulatedClock;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.io.CacheLoader;

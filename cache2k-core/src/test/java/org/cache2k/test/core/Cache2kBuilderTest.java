@@ -28,7 +28,7 @@ import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.StandardExceptionPropagator;
 import org.cache2k.core.log.Log;
-import org.cache2k.core.util.SimulatedClock;
+import org.cache2k.testing.SimulatedClock;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.testing.category.FastTests;
 import static org.cache2k.test.core.StaticUtil.*;
