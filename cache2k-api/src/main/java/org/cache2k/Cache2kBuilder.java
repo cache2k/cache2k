@@ -442,6 +442,9 @@ public class Cache2kBuilder<K, V>
    * Since coupled with the eviction algorithm the efficiency is better than
    * a typical time to idle implementation.
    *
+   * <p>For entries removed by the idle scanner an eviction event is sent and
+   * it is counted as eviction in the cache statistics.
+   *
    * @since 2.6
    * @see <a href="https://github.com/cache2k/cache2k/issues/39">Github issue #39</a>
    */
