@@ -281,6 +281,7 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("impl=").append(getImplementation()).append(", ")
       .append("evictionRunning=").append(getEvictionRunningCount()).append(", ")
       .append("keyMutation=").append(getKeyMutationCount()).append(", ")
+      .append("evictionScanCount=").append(evictionMetrics.getScanCount()).append(", ")
       .append("internalException=").append(getInternalExceptionCount()).append(", ")
       .append("integrityState=").append(getIntegrityDescriptor()).append(", ")
       .append("version=").append(cm.getProvider().getVersion());

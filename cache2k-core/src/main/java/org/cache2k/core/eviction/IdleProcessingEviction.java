@@ -50,7 +50,7 @@ public class IdleProcessingEviction extends DelegatingEviction {
 
   @Override
   public String toString() {
-    return idleProcessing.toString() + super.toString();
+    return idleProcessing.toString() + ", " + super.toString();
   }
 
 }

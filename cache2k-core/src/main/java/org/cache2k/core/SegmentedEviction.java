@@ -218,7 +218,7 @@ public class SegmentedEviction implements Eviction {
     StringBuilder sb  = new StringBuilder();
     for (int i = 0; i < segments.length; i++) {
       if (i > 0) { sb.append(", "); }
-      sb.append("eviction").append(i).append('(');
+      sb.append("eviction").append(i).append("=(");
       sb.append(segments[i].toString());
       sb.append(')');
     }
