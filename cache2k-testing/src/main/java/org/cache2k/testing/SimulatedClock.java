@@ -97,7 +97,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
    * That is to simulate that time passes during execution and that it is not possible
    * to exactly execute at a point in time. Randomized by default.
    */
-  private final int jobExecutionLagMillis = (int) (System.currentTimeMillis() % 2);
+  private final int jobExecutionLagMillis;
 
   /**
    * Executor used to move the clock. If millis() moves the clock, we need
@@ -112,13 +112,25 @@ public class SimulatedClock implements TimeReference, Scheduler {
    */
   private int eventSequenceCount;
 
+  private final boolean deterministic;
+
   /**
    * Create a clock with the initial time.
    *
    * @param initialMillis initial time in millis since epoch, can start 0 for easy debugging
    */
-  public SimulatedClock(long initialMillis) {
+  public SimulatedClock(boolean deterministic, long initialMillis) {
     now = new AtomicLong(initialMillis);
+    this.deterministic = deterministic;
+    if (deterministic) {
+      jobExecutionLagMillis = 0;
+    } else {
+      jobExecutionLagMillis = (int) (System.currentTimeMillis() % 2);
+    }
+  }
+
+  public SimulatedClock(long initialMillis) {
+    this(false, initialMillis);
   }
 
   public SimulatedClock() {
@@ -159,7 +171,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
    */
   @Override
   public long millis() {
-    if (clockReadingCounter.incrementAndGet() % CLOCK_READING_PROGRESS == 0) {
+    if (!deterministic && clockReadingCounter.incrementAndGet() % CLOCK_READING_PROGRESS == 0) {
       advanceExecutor.execute(advance);
     }
     return now.get();
