@@ -433,14 +433,15 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Sets the time for a regular scan round of all cache entries which evicts
-   * idle cache entries that are not accessed since the last scan round.
+   * Sets the time for a regular scan of all cache entries which evicts
+   * idle entries that are not accessed since the last scan.
    * The effect is similar then the setting time to idle or expire after access
-   * in other caches when set to about half of the time to idle time. In contract
-   * to the typical time to idle implementation there is no additional access
-   * overhead. This is intended to shrink the cache size in case entries are unused.
-   * Since coupled with the eviction algorithm the efficiency is better than
-   * a typical time to idle implementation.
+   * in other caches when set to about half of the time value. The actual eviction
+   * of an idle entry will approximately happen between one or three times the
+   * configured idle scan time.
+   *
+   * <p>In contrast to the typical time to idle implementation there is no additional access
+   * overhead.
    *
    * <p>For entries removed by the idle scanner an eviction event is sent and
    * it is counted as eviction in the cache statistics.
