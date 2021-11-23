@@ -132,11 +132,11 @@ public class TimeTracePlaybackTest {
   }
 
   public static PlaybackResult runWithCache2k(long entryCapacity, long scanTimeSeconds, int[] trace) {
-    SimulatedClock clock = new SimulatedClock(START_OFFSET_MILLIS);
+    SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
     Cache<Integer, Data> cache =
       Cache2kBuilder.of(Integer.class, Data.class)
         .timeReference(clock)
-        .executor(clock.wrapExecutor(ForkJoinPool.commonPool()))
+        .executor(clock.wrapExecutor(Runnable::run))
         .idleScanTime(scanTimeSeconds, TimeUnit.SECONDS)
         .entryCapacity(entryCapacity)
         .strictEviction(true)

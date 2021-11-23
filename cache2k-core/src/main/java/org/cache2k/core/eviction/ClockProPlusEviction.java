@@ -257,7 +257,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   /**
    * Find idle candidate.
    *
-   * Idle eviction takes does scan on the bigger clock first, which is typically
+   * Idle scanning does scan on the bigger clock first, which is typically
    * the hot clock, because entries are sitting in the cache for the longest time.
    */
   protected Entry findIdleCandidate(int maxScan) {

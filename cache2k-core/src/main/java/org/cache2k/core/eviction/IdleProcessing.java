@@ -41,8 +41,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class IdleProcessing implements NeedsClose {
 
-  private static final int MIN_SCAN_INTERVAL_MILLIS = 1_321;
-  private static final int MIN_SCAN_PER_WAKEUP = 10;
   private static final long IDLE = -1;
 
   private final long roundTicks;
@@ -56,6 +54,7 @@ public class IdleProcessing implements NeedsClose {
   private long roundStartScans;
   /** Size at round start. */
   private long scansPerRound;
+  private long wakeupInterval;
   /** Entries evicted via idle eviction. */
   private long evictedCount = 0;
   private long lastScanCount = 0;
@@ -79,29 +78,38 @@ public class IdleProcessing implements NeedsClose {
     synchronized (this) {
       long now = clock.millis();
       EvictionMetrics metrics = eviction.getMetrics();
-      if (now >= roundStartTicks + roundTicks) { startNewScanRound(now, metrics); return; }
+      if (roundStartTicks == IDLE) { startNewScanRound(now, metrics); return; }
       long expectedScans =
         scansPerRound * (now - roundStartTicks) / roundTicks +
           roundStartScans - metrics.getIdleNonEvictDrainCount();
       long remainingScans = roundStartScans + scansPerRound - expectedScans;
       extraScan = (int) (expectedScans - metrics.getScanCount());
       if (extraScan < -remainingScans) { roundAbortCount++; scheduleIdleWakeup(now, metrics); return; }
-      if (extraScan <= 0) { scheduleWakeup(now, calculateWakeupInterval()); return; }
-      scheduleNextWakeup(now, eviction.getMetrics(), calculateWakeupInterval());
+      if (extraScan <= 0) { scheduleWakeup(now, wakeupInterval); return; }
+      if (now >= roundStartTicks + roundTicks) {
+        startNewScanRound(now, metrics);
+      } else {
+        scheduleNextWakeup(now, eviction.getMetrics(), wakeupInterval);
+      }
     }
     long count = eviction.evictIdleEntries(extraScan);
     synchronized (this) { evictedCount += count; }
   }
 
-  private long calculateWakeupInterval() {
-    long intervalMillis = clock.toMillis(roundTicks * MIN_SCAN_PER_WAKEUP / scansPerRound);
-    return Math.max(intervalMillis, MIN_SCAN_INTERVAL_MILLIS);
+  static final int MAX_SCAN_PER_WAKEUP = 50;
+  static final int PRECISION_SIZE_THRESHOLD = 100;
+
+  static long calculateWakeupTicks(long roundTicks, long scansPerRound) {
+    if (scansPerRound <= PRECISION_SIZE_THRESHOLD) {
+      return roundTicks / scansPerRound;
+    }
+    long ticksThroughput = roundTicks / PRECISION_SIZE_THRESHOLD;
+    long ticksLimited = roundTicks / (scansPerRound / MAX_SCAN_PER_WAKEUP);
+    return Math.min(ticksThroughput, ticksLimited);
   }
 
   private void startNewScanRound(long now, EvictionMetrics metrics) {
-    if (roundStartTicks != IDLE) {
-      roundCompleteCount++;
-    }
+    if (roundStartTicks != IDLE) { roundCompleteCount++; }
     long size = metrics.getSize();
     scansPerRound = size;
     boolean empty = size == 0;
@@ -111,7 +119,8 @@ public class IdleProcessing implements NeedsClose {
     roundStartCount++;
     roundStartTicks = now;
     roundStartScans = eviction.startNewIdleScanRound();
-    scheduleNextWakeup(now, metrics, calculateWakeupInterval());
+    wakeupInterval = clock.toMillis(calculateWakeupTicks(roundTicks, scansPerRound));
+    scheduleNextWakeup(now, metrics, wakeupInterval);
   }
 
   private void scheduleIdleWakeup(long now, EvictionMetrics metrics) {

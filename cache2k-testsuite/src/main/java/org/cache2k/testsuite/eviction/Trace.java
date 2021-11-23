@@ -36,12 +36,12 @@ public class Trace implements Supplier<int[]> {
 
   /**
    * Access trace on the product catalog on an eCommerce website of 24 hours starting from
-   * 4am to 4am the next morning. All requests of robots (web spiders from search engines
+   * 4am going to 4am the next morning. All requests of robots (web spiders from search engines
    * like Google or Bing) were removed, so the trace contains mostly user activity.
-   * The requests were reduced by removing a random selection of keys. The first integer of
-   * the trace is the time in seconds, the second one the accessed key. Both integers are
-   * normalized starting at 0. The trace characteristics are: request count: 66319,
-   * unique keys: 8810, maximum hitrate: 86.72
+   * The requests were reduced by removing a random selection of keys, to have a more compact
+   * size for inclusion in the project. The first integer of the trace is the time in seconds,
+   * the second one the accessed key. Both integers are normalized starting at 0.
+   * The trace characteristics are: request count: 66319, unique keys: 8810, maximum hitrate: 86.72
    */
   public final static Trace WEBLOG424_NOROBOTS = new Trace("weblog-424-norobots.slt.gz");
 
