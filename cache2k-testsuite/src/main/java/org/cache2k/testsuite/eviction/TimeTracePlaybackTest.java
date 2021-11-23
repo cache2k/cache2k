@@ -22,14 +22,18 @@ package org.cache2k.testsuite.eviction;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.event.CacheEntryEvictedListener;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.testing.category.TimingTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ForkJoinPool;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,6 +47,7 @@ public class TimeTracePlaybackTest {
 
   static final boolean STAT_OUTPUT = true;
   static final boolean DEBUG_OUTPUT = false;
+  static final int TRACE_KEY = 10095;
 
   /** Run with unbounded cache to get trace statistics */
   @Test
@@ -74,10 +79,22 @@ public class TimeTracePlaybackTest {
     System.out.println("| Scan round time/Minutes | Maximum cache size | Average cache size | Hitrate |");
     System.out.println("|---:|---:|---:|---:|");
     int[] trace = Trace.WEBLOG424_NOROBOTS.get();
-    for (int i = 25; i <= 35; i++) {
+    for (int i = 40; i <= 50; i++) {
       PlaybackResult res = runWithCache2k(Long.MAX_VALUE, i * 60, trace);
       markdownRow(i, res);
     }
+  }
+
+  @Test
+  public void cache2kIdleScanTab45() {
+    System.out.println("_Time To Idle emulation via scanning in cache2k 2.6_");
+    System.out.println("| Scan round time/Minutes | Maximum cache size | Average cache size | Hitrate |");
+    System.out.println("|---:|---:|---:|---:|");
+    int[] trace = Trace.WEBLOG424_NOROBOTS.get();
+    int i = 45;
+    PlaybackResult res = runWithCache2k(true, Long.MAX_VALUE, i * 60, trace);
+    markdownRow(i, res);
+    res.histogram.print();
   }
 
   @Test
@@ -85,7 +102,7 @@ public class TimeTracePlaybackTest {
     System.out.println("_Time To Idle emulation via scanning in cache2k 2.6 with capacity limit of 2000 entries_");
     System.out.println("| Scan round time/Minutes | Maximum cache size | Average cache size | Hitrate |");
     int[] trace = Trace.WEBLOG424_NOROBOTS.get();
-    for (int i = 25; i <= 35; i++) {
+    for (int i = 40; i <= 50; i++) {
       PlaybackResult res = runWithCache2k(2000, i * 60, trace);
       markdownRow(i, res);
     }
@@ -94,7 +111,7 @@ public class TimeTracePlaybackTest {
   @Test
   public void cache2kIdleScanTab1000Cap() {
     int[] trace = Trace.WEBLOG424_NOROBOTS.get();
-    for (int i = 25; i <= 35; i++) {
+    for (int i = 40; i <= 50; i++) {
       PlaybackResult res = runWithCache2k(1000, i * 60, trace);
       markdownRow(i, res);
     }
@@ -108,6 +125,9 @@ public class TimeTracePlaybackTest {
       boolean hit = cache.access(time, key);
       result.record(hit, cache.getSize());
       if (DEBUG_OUTPUT) {
+        if (key == TRACE_KEY) {
+          System.err.println(hit ? "HIT" : "INSERT");
+        }
         if (i % (trace.length / 1000) == 0) {
           System.err.println(cache);
         }
@@ -132,16 +152,25 @@ public class TimeTracePlaybackTest {
   }
 
   public static PlaybackResult runWithCache2k(long entryCapacity, long scanTimeSeconds, int[] trace) {
+    return runWithCache2k(false, entryCapacity, scanTimeSeconds, trace);
+  }
+
+  public static PlaybackResult runWithCache2k(boolean histogram, long entryCapacity, long scanTimeSeconds, int[] trace) {
     SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
-    Cache<Integer, Data> cache =
-      Cache2kBuilder.of(Integer.class, Data.class)
-        .timeReference(clock)
-        .executor(clock.wrapExecutor(Runnable::run))
-        .idleScanTime(scanTimeSeconds, TimeUnit.SECONDS)
-        .entryCapacity(entryCapacity)
-        .strictEviction(true)
-        .build();
+    DurationHistogram histo = histogram ? new DurationHistogram(clock) : null;
+    final Cache2kBuilder<Integer, Data> builder = Cache2kBuilder.of(Integer.class, Data.class)
+      .timeReference(clock)
+      .executor(clock.wrapExecutor(Runnable::run))
+      .idleScanTime(scanTimeSeconds, TimeUnit.SECONDS)
+      .entryCapacity(entryCapacity)
+      .strictEviction(true);
+    if (histo != null) {
+      builder.addListener((CacheEntryEvictedListener<Integer, Data>) (x, entry)
+        -> histo.recordEviction(entry.getValue()));
+    }
+    Cache<Integer, Data> cache = builder.build();
     PlaybackResult res = playback(new Cache2kCache(clock, cache), trace);
+    res.histogram = histo;
     if (DEBUG_OUTPUT) {
       long scans = extractScanCount(cache);
       System.out.println("Scan count: " + scans);
@@ -153,11 +182,51 @@ public class TimeTracePlaybackTest {
     return res;
   }
 
+  static class DurationHistogram {
+    static final long UNIT = 1000 * 60;
+    static final long RESOLUTION = 5;
+    final TreeMap<Long, List<Data>> map = new TreeMap<>();
+    final TimeReference clock;
+    public DurationHistogram(TimeReference clock) {
+      this.clock = clock;
+    }
+    public void recordEviction(Data d) {
+      if (DEBUG_OUTPUT && d.key == TRACE_KEY) {
+        System.err.println("EVICT");
+      }
+      long delta = (clock.millis() - seconds2millis(d.lastAccess)) / UNIT;
+      delta -= delta % RESOLUTION;
+      List<Data> l = map.computeIfAbsent(delta, k -> new ArrayList<>());
+      l.add(d);
+    }
+    public void print() {
+      int maxSize = 0;
+      for (List<Data> l : map.values()) {
+        maxSize = Math.max(maxSize, l.size());
+      }
+      for (Map.Entry<Long, List<Data>> e : map.entrySet()) {
+        if (RESOLUTION == 1) {
+          System.out.println("| " + e.getKey() + " | " + e.getValue().size() + " | " + e.getValue().get(0));
+        } else {
+          System.out.println("| " + e.getKey() + " | " + e.getValue().size() + " | "
+            + bar(maxSize, e.getValue().size()) + " | ");
+        }
+      }
+    }
+  }
+
+  static String bar(int max, int size) {
+    final String bar =
+      "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::";
+    return bar.substring(0, size * (bar.length()) / max);
+  }
+
   static class PlaybackResult {
     long hitCount;
     long accumulatedSize;
     long requestCount;
     int maxSize = 0;
+    DurationHistogram histogram;
 
     public void record(boolean hit, int size) {
       requestCount++;
@@ -206,6 +275,10 @@ public class TimeTracePlaybackTest {
       next.prev = this;
       head.next = this;
     }
+    @Override
+    public String toString() {
+      return lastAccess + "," + key;
+    }
   }
 
   final static long START_OFFSET_MILLIS = 1000;
@@ -223,7 +296,8 @@ public class TimeTracePlaybackTest {
 
     @Override
     public boolean access(int time, int key) {
-      advanceClock(time);
+      long now = seconds2millis(time);
+      advanceClock(now);
       Data d = cache.get(key);
       boolean hit = true;
       if (d == null) {
@@ -236,9 +310,9 @@ public class TimeTracePlaybackTest {
       return hit;
     }
 
-    private void advanceClock(int now) {
+    private void advanceClock(long now) {
       if (now != lastNow) {
-        long moveClock = (now * 1000 + START_OFFSET_MILLIS) - clock.millis();
+        long moveClock = now - clock.millis();
         if (moveClock > 0) {
           try {
             clock.sleep(moveClock);
@@ -260,6 +334,10 @@ public class TimeTracePlaybackTest {
       return extractColdSizeHotSize(cache);
     }
 
+  }
+
+  private static long seconds2millis(int time) {
+    return time * 1000 + START_OFFSET_MILLIS;
   }
 
   /**

@@ -35,23 +35,23 @@ import static org.junit.Assert.assertEquals;
 public class IdleScanPlaybackTest {
 
   @Test
-  public void testUnbounded() {
+  public void testUnbounded46() {
     int[] trace = Trace.WEBLOG424_NOROBOTS.get();
     TimeTracePlaybackTest.PlaybackResult res =
-      TimeTracePlaybackTest.runWithCache2k(Long.MAX_VALUE, 29 * 60, trace);
-    assertEquals(47671, res.hitCount);
-    assertEquals(3851, res.maxSize);
-    assertEquals(1398, res.getAverageSize());
+      TimeTracePlaybackTest.runWithCache2k(Long.MAX_VALUE, 46 * 60, trace);
+    assertEquals(47108, res.hitCount);
+    assertEquals(3483, res.maxSize);
+    assertEquals(1373, res.getAverageSize());
   }
 
   @Test
   public void testCap1000() {
     int[] trace = Trace.WEBLOG424_NOROBOTS.get();
     TimeTracePlaybackTest.PlaybackResult res =
-      TimeTracePlaybackTest.runWithCache2k(1000, 29 * 60, trace);
-    assertEquals(46116, res.hitCount);
+      TimeTracePlaybackTest.runWithCache2k(1000, 46 * 60, trace);
+    assertEquals(46899, res.hitCount);
     assertEquals(1000, res.maxSize);
-    assertEquals(946, res.getAverageSize());
+    assertEquals(954, res.getAverageSize());
   }
 
 }
