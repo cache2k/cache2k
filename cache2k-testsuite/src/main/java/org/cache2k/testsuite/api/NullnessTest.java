@@ -23,22 +23,20 @@ package org.cache2k.testsuite.api;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
-import org.cache2k.processor.EntryProcessor;
 import org.cache2k.annotation.NonNull;
 import org.cache2k.annotation.Nullable;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.cache2k.processor.MutableCacheEntry;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings("StringConcatenationInLoop")
 public class NullnessTest {
-
-  Cache<Integer, String> cache =
-    new Cache2kBuilder<Integer, String>() { }
-      .build();
 
   /**
    * Specify value as nullable by type annotation. NullAway does not
@@ -53,6 +51,7 @@ public class NullnessTest {
       .build();
     cache.put(123, null);
     cache.put(125, "abc");
+    cache.close();
   }
 
   @Test
@@ -65,8 +64,11 @@ public class NullnessTest {
 
   @Test
   public void iteration_GetAll() {
+    Cache<Integer, String> cache =
+      new Cache2kBuilder<Integer, String>() { }
+        .build();
     cache.put(125, "abc");
-    cache.put(345, "Paluma");
+    cache.put(345, "Paloma");
     cache.put(543, "Fraser Island");
     String txt = "";
     for (CacheEntry<Integer, String> e : cache.entries()) {
@@ -79,14 +81,16 @@ public class NullnessTest {
       txt += s.length();
     }
     assertEquals("61336133", txt);
-    String s = cache.invoke(345, (EntryProcessor<Integer, String, @Nullable String>)
-      entry -> entry.getValue());
+    String s = cache.invoke(345, MutableCacheEntry::getValue);
   }
 
   @SuppressWarnings("nullness")
   @Test
   public void invoke_get() {
-    String s = cache.invoke(345, entry -> entry.getValue());
+    Cache<Integer, String> cache =
+      new Cache2kBuilder<Integer, String>() { }
+        .build();
+    cache.invoke(345, MutableCacheEntry::getValue);
   }
 
   <T> @NonNull T nonNull(@Nullable T obj) {

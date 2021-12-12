@@ -30,15 +30,25 @@
       <version>3.17.2</version>
     </dependency>
     <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-testing</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-core</artifactId>
       <version>${project.version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.6.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>5.6.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-testing</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

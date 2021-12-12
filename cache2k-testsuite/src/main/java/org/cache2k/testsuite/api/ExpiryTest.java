@@ -21,23 +21,21 @@ package org.cache2k.testsuite.api;
  */
 
 import static org.cache2k.expiry.Expiry.*;
-
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.cache2k.expiry.Expiry;
-import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class)
+@Tag("org.cache2k.testing.category.FastTests")
 public class ExpiryTest {
 
   @Test
   public void toSharp_PassEternal() {
-    assertEquals(ETERNAL, toSharpTime(ETERNAL));
+    assertEquals(ETERNAL, toSharpTime(ETERNAL)) ;
   }
 
   @Test
