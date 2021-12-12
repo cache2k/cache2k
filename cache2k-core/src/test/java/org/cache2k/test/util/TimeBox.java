@@ -128,7 +128,7 @@ public class TimeBox {
   public static class PropagateAssertionError extends AssertionError {
 
     public PropagateAssertionError(long startTime, long delta, Throwable cause) {
-      super("Assertion failed at start time " + (new Date(startTime)) + " + " +  delta, cause);
+      super("Assertion failed at start time " + (new Date(startTime)) + " after " +  delta + "ms", cause);
     }
 
   }
