@@ -2,47 +2,31 @@
 == Android
 
 cache2k version 1 is compatible with Java 6 and Android. Regular testing is done against API level 16.
-Version 2 was not yet tested with Android. See [GH#143](https://github.com/cache2k/cache2k/issues/143).
+cache2k version 2 is compatible with API level 26. Regular testing with Android is
+currently implemented, see [GH#143](https://github.com/cache2k/cache2k/issues/143).
 
 === Usage
 
 For cache2k version 1.1 and above, include the following dependency:
 
-[source,xml,subs="attributes+"]
+[source,groovy,subs="attributes+"]
 ----
-    <!--
-         Include cache2k via the bill of materials POM, that depends on the relevant artifacts
-         for the base functionality (currently cache2k-api and cache2k-core)
-    -->
-    <dependency>
-      <groupId>org.cache2k</groupId>
-      <artifactId>cache2k-base-bom</artifactId>
-      <version>{cache2k_version}</version>
-      <scope>pom</scope>
-    </dependency>
+    implementation 'org.cache2k:cache2k-api:{cache2k_version}'
+    runtimeOnly 'org.cache2k:cache2k-core:{cache2k_version}'
 ----
-
-=== XML Configuration
-
-XML configuration is usable in Android as well. The build-in XML Pull Parser is
-used instead of Stax. The XML configuration code will be removed via Proguard, if not used. See below.
 
 === Proguard Rules
 
-The `cache2k-core` contains code relevant for server based software or enterprise software that is
-usually not needed within Android. One example is the exposure of statistics via JMX. The code base is
-modular so that code unneeded is not loaded whithin Android applications.
 To minimize the footprint of the application the unused code can be removed via Proguard rules.
 
 [source]
 ----
 # mandatory proguard rules for cache2k to keep the core implementation
 -dontwarn org.slf4j.**
+# TODO: the following -dontwarn are probably not needed any more
 -dontwarn javax.cache.**
 -dontwarn javax.management.**
 -dontwarn javax.naming.**
--dontwarn org.cache2k.impl.xmlConfiguration.**
--dontwarn org.cache2k.impl.serverSide.**
 -keep interface org.cache2k.spi.Cache2kCoreProvider
 -keep public class * extends org.cache2k.spi.Cache2kCoreProvider
 
