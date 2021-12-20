@@ -628,7 +628,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   private void restartTimer(Entry<K, V> e, long nextRefreshTime) {
-    e.setNextRefreshTime(timing.stopStartTimer(nextRefreshTime, e));
+      e.setNextRefreshTime(timing.stopStartTimer(nextRefreshTime, e));
     checkIfImmediatelyExpired(e);
   }
 

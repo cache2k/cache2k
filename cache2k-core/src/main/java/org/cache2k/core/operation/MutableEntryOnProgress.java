@@ -46,7 +46,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   private boolean mutate = false;
   private boolean remove = false;
   private V value = null;
-  private boolean customExpiry = false;
+  private boolean setExpiry = false;
   private long expiryTime = NEUTRAL;
   private long refreshTime = NEUTRAL;
   private Object originalOrLoadedValue = null;
@@ -107,9 +107,11 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
 
   @Override
   public MutableCacheEntry<K, V> setExpiryTime(long t) {
-    if (entry != null) { lock(); }
-    customExpiry = true;
+    triggerInstallationRead();
     expiryTime = t;
+    if (isEntryValid()) {
+      setExpiry = true;
+    }
     return this;
   }
 
@@ -231,7 +233,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
   }
 
   public boolean isMutationNeeded() {
-    return mutate || customExpiry;
+    return mutate || setExpiry;
   }
 
   public void sendMutationCommand() {
@@ -244,7 +246,7 @@ class MutableEntryOnProgress<K, V> implements MutableCacheEntry<K, V> {
         progress.remove();
         return;
       }
-      if (customExpiry || refreshTime != NEUTRAL) {
+      if (expiryTime != NEUTRAL || refreshTime != NEUTRAL) {
         progress.putAndSetExpiry(value, expiryTime, refreshTime);
         return;
       }

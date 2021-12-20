@@ -830,6 +830,42 @@ public class EntryProcessorTest {
     assertFalse("expires immediately", wl.cache.containsKey(KEY));
   }
 
+  /**
+   * If the mapping is not existing setExpiry does not have an effect.
+   * We also test combinations with get, since this is the usual use case
+   * for TTI.
+   */
+  @Test
+  public void setExpiry_notExistent_entry() {
+    Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
+      @Override
+      public void extend(Cache2kBuilder<Integer, Integer> b) {
+        b.expireAfterWrite(Long.MAX_VALUE - 1, TimeUnit.MILLISECONDS);
+      }
+    });
+    c.invoke(123, entry -> {
+      entry.setExpiryTime(entry.getStartTime() + TimeUnit.DAYS.toMillis(5));
+      return null;
+    });
+    assertFalse(c.containsKey(123));
+    assertEquals(0, c.asMap().size());
+    Integer v = c.invoke(124, entry -> {
+      entry.setExpiryTime(entry.getStartTime() + TimeUnit.DAYS.toMillis(5));
+      return entry.getValue();
+    });
+    assertFalse(c.containsKey(124));
+    assertEquals(0, c.asMap().size());
+    assertNull(v);
+    v = c.invoke(125, entry -> {
+      Integer x = entry.getValue();
+      entry.setExpiryTime(entry.getStartTime() + TimeUnit.DAYS.toMillis(5));
+      return x;
+    });
+    assertFalse(c.containsKey(124));
+    assertEquals(0, c.asMap().size());
+    assertNull(v);
+  }
+
   static class CountingWriter implements CacheWriter<Integer, Integer> {
 
     AtomicLong writeCalled = new AtomicLong();
