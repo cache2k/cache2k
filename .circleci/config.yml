@@ -59,10 +59,12 @@ workflows:
     jobs:
       - maven-test
       - android-test:
-          matrix:
-            alias: android-test-all
-            parameters:
-              api-level:
-                - 26 # Android 8.0
-                - 30 # Android 11
-          name: android-api-<< matrix.api-level >>-test
+          name: android-test-26
+          api-level: 26
+          requires:
+            - maven-test
+      - android-test:
+          name: android-test-30
+          api-level: 30
+          requires:
+            - android-test-26
