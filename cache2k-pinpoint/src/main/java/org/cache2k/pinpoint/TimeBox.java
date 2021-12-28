@@ -1,8 +1,8 @@
-package org.cache2k.test.util;
+package org.cache2k.pinpoint;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k pinpoint
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
@@ -20,10 +20,6 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.operation.TimeReference;
-
-import java.sql.Timestamp;
-import java.time.Clock;
 import java.util.Date;
 
 /**
@@ -34,22 +30,13 @@ import java.util.Date;
  */
 public class TimeBox {
 
-  private final TimeReference clock;
+  private final PinpointClock clock;
   private final long startTime;
   private final long timeBox;
 
-  public static TimeBox millis(long t) {
-    TimeBox b = new TimeBox(TimeReference.DEFAULT, t);
-    return b;
-  }
-
-  public static TimeBox seconds(long t) {
-    return millis(t * 1000);
-  }
-
-  public TimeBox(TimeReference clock, long timeBox) {
+  public TimeBox(PinpointClock clock, long timeBox) {
     this.clock = clock;
-    startTime = clock.millis();
+    startTime = clock.ticks();
     this.timeBox = timeBox;
   }
 
@@ -73,8 +60,8 @@ public class TimeBox {
     } catch (AssertionError ex) {
       failedAssertion = ex;
     }
-    long ms = clock.millis();
-    long delta = ms - startTime;
+    long now = clock.ticks();
+    long delta = now - startTime;
     boolean withinTimeBox = delta < timeBox;
     if (!withinTimeBox) {
       return new Noop();
@@ -88,13 +75,6 @@ public class TimeBox {
   public class Chain {
 
     /**
-     * Executes block if previous time box was met and no exception occurred.
-     */
-    public void concludesMaybe(Runnable r) {
-      r.run();
-    }
-
-    /**
      * Span new time box, if previous time box was met and no exception occurred.
      */
     public TimeBox within(long timeBox) {
@@ -103,15 +83,11 @@ public class TimeBox {
 
   }
 
-  public class Noop extends Chain {
-
-    @Override
-    public void concludesMaybe(Runnable r) {
-    }
+  private class Noop extends Chain {
 
     @Override
     public TimeBox within(long timeBox) {
-      return new TimeBox(TimeReference.DEFAULT, 0) {
+      return new TimeBox(clock, 0) {
         @Override
         public TimeBox perform(Runnable r) {
           return this;

@@ -81,7 +81,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    * operation.
    *
    * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
-   * entry object. Using a cache entry is desirable for API design reasons to have less parameter.
+   * entry object. Using a cache entry is desirable for API design reasons to have less parameters.
    * But the "real" entry can only be filled after the expiry policy has been run, passing
    * in an entry object would mean to build a temporary object, increasing GC load. Second, the
    * properties that are needed by the implementation are available directly. The downside, OTOH,

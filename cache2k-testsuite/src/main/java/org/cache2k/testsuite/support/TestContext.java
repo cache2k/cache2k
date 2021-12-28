@@ -1,8 +1,8 @@
-package org.cache2k.test.util;
+package org.cache2k.testsuite.support;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
@@ -20,26 +20,28 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.pinpoint.TimeBox;
-import org.junit.Test;
-
-import java.util.TimeZone;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Jens Wilke
  */
-public class TimeBoxTest {
+public class TestContext<K, V> {
 
-  @Test
-  public void testException() {
-    long startTime = 1000;
-    int offset = TimeZone.getDefault().getOffset(startTime);
-    String msg =
-      new TimeBox.PropagateAssertionError(1000 - offset, 400, new RuntimeException())
-        .toString();
-    assertThat(msg).contains("Thu Jan 01 00:00:01");
+  public static final TestContext<Integer, Integer> DEFAULT =
+    new TestContext<>(DataType.INT_KEYS, DataType.INT_VALUES);
+
+  private DataType<K> keys;
+  private DataType<V> values;
+
+  public TestContext(DataType<K> keys, DataType<V> values) {
+    this.keys = keys;
+    this.values = values;
+  }
+
+  public DataType<K> getKeys() {
+    return keys;
+  }
+
+  public DataType<V> getValues() {
+    return values;
   }
 
 }

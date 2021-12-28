@@ -376,8 +376,10 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * When set to {@code true}, cached values do not expire by time. Entries will need to be removed
-   * from the cache explicitly or will be evicted if capacity constraints are reached.
+   * When set to {@code true}, cached values do not expire and do not need refreshing.
+   * Entries will need to be removed from the cache explicitly, will be evicted if capacity
+   * constraints are reached, or can be evicted after no use via
+   * {@link #idleScanTime(long, TimeUnit)}
    *
    * <p>Setting eternal to {@code false} signals that the data should expire, but there is no
    * predefined expiry value at programmatic level. This value needs to be set by other
@@ -395,21 +397,27 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Time duration after insert or updated an cache entry expires.
-   * To switch off time based expiry use {@link #eternal(boolean)}. The expiry
-   * happens via a timer event and may lag approximately one second by default, see
-   * {@link #timerLag(long, TimeUnit)}. For exact expiry specify an
-   * {@link ExpiryPolicy} and enable {@link #sharpExpiry(boolean)}.
+   * Time duration a cache entry expires after an insert or update.
+   *
+   * <p>The expiry happens via a timer event and may lag approximately
+   * one second by default, see {@link #timerLag(long, TimeUnit)}.
+   * For exact expiry specify an {@link ExpiryPolicy} and enable {@link #sharpExpiry(boolean)}.
    *
    * <p>If an {@link ExpiryPolicy} is specified in combination to this value,
    * the maximum expiry duration is capped to the value specified here.
    *
    * <p>A value of {@code 0} or {@link org.cache2k.expiry.ExpiryTimeValues#NOW} means
-   * every entry should expire immediately. This can be useful to disable caching via
+   * every entry should expire immediately. This can be useful to disable caching by
    * configuration.
    *
-   * <p>A value of {@code Long.MAX_VALUE} milliseconds or more is treated as
-   * eternal expiry.
+   * <p>To switch off time based expiry use {@link #eternal(boolean)}.
+   *
+   * <p>A value of {@code Long.MAX_VALUE} milliseconds or more (if another unit is used)
+   * is treated as eternal expiry.
+   *
+   * <p>For removing cache entries based on the last access time and therefor shrinking
+   * the cache at times of low activity, the parameter {@link #idleScanTime(long, TimeUnit)}
+   * can be used.
    *
    * @throws IllegalArgumentException if {@link #eternal(boolean)} was set to true
    * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">
@@ -436,8 +444,8 @@ public class Cache2kBuilder<K, V>
    * Sets the time for a regular scan of all cache entries which evicts
    * idle entries that are not accessed since the last scan.
    * The effect is similar then the setting time to idle or expire after access
-   * in other caches when set to about half of the time value. The actual eviction
-   * of an idle entry will approximately happen between one or three times the
+   * in other caches when set to about two thirds of the time value. The actual eviction
+   * of an idle entry will approximately happen between one or two times the
    * configured idle scan time.
    *
    * <p>In contrast to the typical time to idle implementation there is no additional access
@@ -445,6 +453,8 @@ public class Cache2kBuilder<K, V>
    *
    * <p>For entries removed by the idle scanner an eviction event is sent and
    * it is counted as eviction in the cache statistics.
+   *
+   * <p>Idle scanning works in combination with a cache size limit and expiry.
    *
    * @since 2.6
    * @see <a href="https://github.com/cache2k/cache2k/issues/39">Github issue #39</a>

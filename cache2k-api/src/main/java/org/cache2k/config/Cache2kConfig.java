@@ -292,6 +292,9 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     return eternal;
   }
 
+  /**
+   * @see Cache2kBuilder#eternal
+   */
   public void setEternal(boolean v) {
     this.eternal = v;
   }

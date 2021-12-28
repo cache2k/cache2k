@@ -190,7 +190,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   /**
    * Set a new expiry time for the entry. If combined with {@link #setValue} the entry
    * will be updated or inserted with this expiry time, otherwise just the expiry time
-   * will be updated.
+   * will be updated. Using this method on a not existent entry, will not have any effect.
    *
    * <p>Special time values are defined and described at {@link org.cache2k.expiry.ExpiryTimeValues}
    *
@@ -205,8 +205,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * Returns the effective expiry time of the current cache entry in case {@link #exists()}
    * is false it returns{@link org.cache2k.expiry.ExpiryTimeValues#NOW}. If the entry
    * was loaded, it returns the calculated expiry time from {@link org.cache2k.expiry.ExpiryPolicy}
-   * or {@link ResiliencePolicy}. A negative value means sharp expiry as described in the expiry
-   * policy.
+   * or {@link ResiliencePolicy}. The value is always positive.
+   *
    * @see org.cache2k.expiry.ExpiryPolicy
    */
   long getExpiryTime();

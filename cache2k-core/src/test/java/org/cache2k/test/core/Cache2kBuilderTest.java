@@ -442,6 +442,7 @@ public class Cache2kBuilderTest {
     assertTrue(_builder.config().isStoreByReference());
   }
 
+  /** No loader present */
   @Test(expected = IllegalArgumentException.class)
   public void refreshAheadButNoLoader() {
     Cache c = Cache2kBuilder.forUnknownTypes()
@@ -451,7 +452,8 @@ public class Cache2kBuilderTest {
     c.close();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  /** No expiry time configured. Refresh could still be used with setExpiry */
+  @Test
   public void refreshAheadButNoExpiry() {
     Cache c = Cache2kBuilder.forUnknownTypes()
       .loader(key -> null)

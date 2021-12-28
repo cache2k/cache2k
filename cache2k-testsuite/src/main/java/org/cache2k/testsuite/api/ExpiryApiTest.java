@@ -28,10 +28,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
+ * Test functionality in API package.
+ *
  * @author Jens Wilke
  */
 @Tag("org.cache2k.testing.category.FastTests")
-public class ExpiryTest {
+public class ExpiryApiTest {
 
   @Test
   public void toSharp_PassEternal() {

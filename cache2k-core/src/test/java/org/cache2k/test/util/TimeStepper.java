@@ -21,6 +21,7 @@ package org.cache2k.test.util;
  */
 
 import org.cache2k.operation.TimeReference;
+import org.cache2k.pinpoint.TimeBox;
 import org.cache2k.test.core.TestingParameters;
 
 /**

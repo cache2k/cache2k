@@ -44,7 +44,7 @@ public interface ExpiryTimeValues {
   /**
    * Don't change the expiry of the entry. This can be used for an update.
    * This is also used for an undefined / not applicable expiry time value
-   * in {@link MutableCacheEntry#getExpiryTime()}. The value is {@value #NEUTRAL}, it is
+   * in {@link MutableCacheEntry#getExpiryTime()}. The value is
    * identical to {@link Cache2kConfig#UNSET_LONG}
    */
   long NEUTRAL = Cache2kConfig.UNSET_LONG;

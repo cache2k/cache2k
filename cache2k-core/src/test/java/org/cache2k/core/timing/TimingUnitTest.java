@@ -113,7 +113,7 @@ public class TimingUnitTest {
       Cache2kBuilder.forUnknownTypes()
         .config()
     );
-    assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+    assertEquals(StaticTiming.class, h.getClass());
   }
 
   @Test
@@ -124,7 +124,7 @@ public class TimingUnitTest {
         .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.SECONDS)
         .config()
     );
-    assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+    assertEquals(StaticTiming.class, h.getClass());
   }
 
   @Test

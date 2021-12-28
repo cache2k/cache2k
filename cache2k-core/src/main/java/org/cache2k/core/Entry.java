@@ -370,9 +370,12 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return nextRefreshTime;
   }
 
+  /**
+   * Expiry time / refresh time, always positive.
+   */
   @Override
   public long getExpiryTime() {
-    return isDataAvailable() ? nextRefreshTime : ExpiryTimeValues.NEUTRAL;
+    return isDataAvailable() ? Math.abs(nextRefreshTime) : ExpiryTimeValues.NEUTRAL;
   }
 
   public void setNextRefreshTime(long nextRefreshTime) {

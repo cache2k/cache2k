@@ -1,8 +1,8 @@
-package org.cache2k.test.util;
+package org.cache2k.testsuite.support;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
@@ -20,26 +20,14 @@ package org.cache2k.test.util;
  * #L%
  */
 
-import org.cache2k.pinpoint.TimeBox;
-import org.junit.Test;
-
-import java.util.TimeZone;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Jens Wilke
  */
-public class TimeBoxTest {
+public interface CommonValues {
 
-  @Test
-  public void testException() {
-    long startTime = 1000;
-    int offset = TimeZone.getDefault().getOffset(startTime);
-    String msg =
-      new TimeBox.PropagateAssertionError(1000 - offset, 400, new RuntimeException())
-        .toString();
-    assertThat(msg).contains("Thu Jan 01 00:00:01");
-  }
+  /**
+   * Highest time in the future we expect to work.
+   */
+  long TIME_MAX_MILLIS = Long.MAX_VALUE / 1000;
 
 }

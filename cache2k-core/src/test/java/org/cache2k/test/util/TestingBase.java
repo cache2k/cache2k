@@ -30,6 +30,7 @@ import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.util.TunableFactory;
+import org.cache2k.pinpoint.TimeBox;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.pinpoint.SupervisedExecutor;
@@ -432,7 +433,7 @@ public class TestingBase {
   }
 
   public TimeBox within(long millis) {
-    return new TimeBox(clock, millis);
+    return new TimeBox(() -> clock.millis(), millis);
   }
 
   public void await(long timeoutMillis, Condition condition) {

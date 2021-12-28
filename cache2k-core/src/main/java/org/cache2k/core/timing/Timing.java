@@ -85,7 +85,7 @@ public abstract class Timing<K, V> implements NeedsClose {
       DynamicTiming<K, V> h = new DynamicTiming<K, V>(ctx, resiliencePolicy);
       return h;
     }
-    if (realDuration(cfg.getExpireAfterWrite())) {
+    if (realDuration(cfg.getExpireAfterWrite()) || !cfg.isEternal()) {
       StaticTiming<K, V> h = new StaticTiming<K, V>(ctx, resiliencePolicy);
       return h;
     }
@@ -141,7 +141,7 @@ public abstract class Timing<K, V> implements NeedsClose {
    */
   public long stopStartTimer(long expiryTime, Entry<K, V> e) {
     if ((expiryTime > 0 && expiryTime < Long.MAX_VALUE) || expiryTime < 0) {
-      throw new IllegalArgumentException("Cache is not configured for variable expiry");
+      throw new IllegalArgumentException("Cache is not configured for expiry");
     }
     return expiryTime == 0 ? Entry.EXPIRED : expiryTime;
   }
