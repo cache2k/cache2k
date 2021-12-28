@@ -68,6 +68,19 @@
           <testClassesDirectory>${project.build.outputDirectory}</testClassesDirectory>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <!-- Override deactivation of JAR creation
+                 defined in test-parent's POM file
+                 (needed as dependency for Android testing) -->
+            <id>default-jar</id>
+            <phase>package</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
