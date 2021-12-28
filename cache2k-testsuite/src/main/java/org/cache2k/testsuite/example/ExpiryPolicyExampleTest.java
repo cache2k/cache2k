@@ -1,8 +1,8 @@
-package org.cache2k.test.example;
+package org.cache2k.testsuite.example;
 
 /*
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2021 headissue GmbH, Munich
  * %%
@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ValueWithExpiryTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +35,34 @@ import java.util.concurrent.TimeUnit;
  * @author Jens Wilke
  */
 public class ExpiryPolicyExampleTest {
+
+  static class Data { }
+
+  /** No expiry policy, just constant */
+  @Test
+  public void staticExample() {
+    Cache<Key, Data> cache = new Cache2kBuilder<Key, Data>() {}
+      .loader(k -> new Data())
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .build();
+    Key key1 = new Key();
+    Data value = cache.get(key1);
+    cache.close();
+  }
+
+  /** Sharp expiry with expiry policy */
+  @Test
+  public void sharpStaticExample() {
+    Cache<Key, Data> cache = new Cache2kBuilder<Key, Data>() {}
+      .loader(k -> new Data())
+      .sharpExpiry(true)
+      .expiryPolicy((key, value, startTime, currentEntry)
+        -> startTime + TimeUnit.MINUTES.toMillis(5))
+      .build();
+    Key key1 = new Key();
+    Data value = cache.get(key1);
+    cache.close();
+  }
 
   /**
    * Opaque key class just to make the example look batter and don't

@@ -59,6 +59,6 @@ switch. Refreshing and expiring are two sides of the same coin: When expired, we
 === Future Outlook
 
 We plan several improvements for refresh ahead support, see the
-[issue tracker](https://github.com/cache2k/cache2k/issues?q=is%3Aissue+is%3Aopen+refresh+ahead)
+https://github.com/cache2k/cache2k/issues?q=is%3Aissue+is%3Aopen+refresh+ahead[issue tracker]
 
 The effects on the event listeners and statistics when refreshing may change in the future.

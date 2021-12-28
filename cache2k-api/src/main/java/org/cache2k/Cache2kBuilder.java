@@ -378,16 +378,16 @@ public class Cache2kBuilder<K, V>
   /**
    * When set to {@code true}, cached values do not expire and do not need refreshing.
    * Entries will need to be removed from the cache explicitly, will be evicted if capacity
-   * constraints are reached, or can be evicted after no use via
-   * {@link #idleScanTime(long, TimeUnit)}
+   * constraints are reached, or can be evicted after a period of no usage via
+   * {@link #idleScanTime(long, TimeUnit)}. It also means that no expiry functions are
+   * available and {@link MutableCacheEntry#setExpiryTime(long)}` cannot be used.
+   * If no expiry is needed it is a good idea to enable eternal, which safes resources used
+   * for the timer data structures. Changing when data is considered eteranl, will lead to
+   * and error.
    *
-   * <p>Setting eternal to {@code false} signals that the data should expire, but there is no
+   * <p>Setting eternal to {@code false} signals that the data might expire, but there is no
    * predefined expiry value at programmatic level. This value needs to be set by other
-   * means, e.g. within a configuration file.
-   *
-   * <p>The default behavior of the cache is identical to the setting of eternal. Entries will
-   * not expire. When eternal was set explicitly it cannot be reset to another value afterwards.
-   * This should protect against misconfiguration.
+   * means, e.g. within a configuration file. This is the default setting.
    *
    * @throws IllegalArgumentException in case a previous setting is reset
    */

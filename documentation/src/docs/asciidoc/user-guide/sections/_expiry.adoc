@@ -6,40 +6,93 @@ returned by the cache any more. The cache may be instructed to do an automatic
 reload of an expired value, this is called _refresh ahead_.
 
 Expiry does not mean that a cache entry is removed from the cache. The actual
-removal from the cache may lag behind the time of expiry.
+removal and notification of event listeners from the cache may lag behind the time of expiry.
 
-=== Specifying an Expiry Duration
+=== Parameter and Feature Overview
+
+This section contains a brief overview of available features and configuration parameters.
+
+==== Eternal
+
+If the cached data does not need to be updated it is logically never expiring.
+A simple example would be a cache that contains formatted time stamps `Cache<Date,String>`.
+Generating or loading the value again, would always lead to the same result.
+If that is the case, it is a good idea to set `eternal(true)`. Since no expiry
+is the default this will not alter the cache semantics, however, setting eternal documents that
+expiry is never needed. The cache will not initialize any timer data structures.
+
+==== Expiry after write / time to live
 
 Expiry after an entry is created or modified can be specified via the `expireAfterWrite` parameter.
 This is also known as _time to live_. It is possible to specify different expiry values for
-created or modification with a custom `ExpiryPolicy`.
+creation and modification with a custom `ExpiryPolicy`. More about `ExpiryPolicy` is explained
+below.
 
-[NOTE]
-_Expiry after access_ or _time to idle_ is not supported, since it would compromise the high performance
-of cache2k. There is seldom a functional requirement for TTI, but it is used
-very often to minimize memory consumption in times of low activity. How a similar feature can be
-constructed that, at the same time, is not counter productive for performance needs further research.
-For discussion, see: https://github.com/cache2k/cache2k/issues/39[GH 39]
+*Lag time:* Expiry is lagging by default, meaning that the mapping disappears shortly after the
+configured duration. If an entry needs to expire at an exact point in time, this can be achieved
+with the `ExpiryPolicy` and the `sharpExpiry` parameter, see <<_sharp_expiry,Sharp Expiry>>.
+The parameter `timerLag` is available to configure the lag of timer event processing.
 
-=== Variable Expiry
+*Exceptions:* When an expiry duration is specified via `expireAfterWrite`, resilience features
+are automatically active. See the <<resilience,Resilience and Exceptions>> chapter.
+
+==== Expiry after access / time to idle
+
+There is no `expireAfterAccess` parameter in cache2k as it can be found in other caches.
+As an alternative, the <<idle-scan,Idle Scan>> feature can be used, which is typically faster and
+more effective.
+
+If needed, it is possible to realize exact TTI semantics by updating the expiry time with every cache
+operation. This also allows variable expiry after access. However, this is consuming more resources
+then idle scanning. See <<tti-example,Time To Idle Example>>.
+
+[[idle-scan]]
+==== Idle Scan - an Expiry After Access Alternative
+
+_Expiry after access_ or _time to idle_ is a feature often found in
+caches and means that the entry will be removed after a period of no activity.
+Typically this is used to shrink or grow the cache size depending on the activity.
+
+cache2k does not provide the _Expiry after access_ or _time to idle_ feature, because its
+implementation would slow down cache access times dramatically.
+The parameter `idleScanTime` can be used to achieve similar effects, without any extra overhead
+for a cache access. This is achieved by coupling the feature with the eviction logic
+and reusing tracking data for the eviction that we have anyways.
+
+More information can be found in the JavaDoc of and in the
+https://github.com/cache2k/cache2k/issues/39[Github issue #39]
+
+If the application needs exact "Expiry After Access" semantics this can be achieved
+by updating the expiry time on each access via `Cache.expireAt` or
+`MutableCacheEntry.setExpiryTime`.
+
+==== Variable Expiry
 
 Each entry may have a different expiry time. This can be achieved by specifying an `ExpiryPolicy`.
 The `ExpiryPolicy` calculates a point in time, when a value expires. The configuration parameter
 `expireAfterWrite` is used as a maximum value.
 
-=== Lagging Expiry
+==== Variable Expiry for Exceptions
 
-In standard operation time checks when accessing the entry are saved and the actual expiry of an entry
-may lag behind, meaning that entries that should expire are visible some milliseconds longer.
+If the loader yields an exception `ExpiryPolicy` is not called. Its possible
+to set a variable expiry for exceptions via the `ResiliencePolicy`. See
+the <<resilience,Resilience and Exceptions>> chapter.
 
-=== Sharp Expiry
+==== Sharp Expiry
+
+In default operation mode, the cache does not check the time when an entry is accessed.
+An entry expires when the timer event is processed, which usually lags behind up
+to a second.
 
 In case there is a business requirement that data becomes invalid or needs refreshed at a defined point
 in time the parameter `sharpExpiry` can be enabled. This will cause that the expiry happens exactly at
 the point in time determined by the expiry policy. For more details see the JavaDoc or
 `Cache2kBuilder.sharpExpiry` and `ExpiryPolicy`.
 
-If _sharp expiry and refresh ahead_ is both enabled, the contract of refresh ahead is relaxed.
+The actual removal of an expired entry from the cache and the notification of expiry listeners will
+always lag behind the expiry time.
+
+If _sharp expiry and refresh ahead_ is both enabled, the contract of refresh ahead is stricter.
 The resulting semantics will be:
 
  - Entries will expire exactly at the specified time
@@ -53,12 +106,7 @@ time calculated by the `ExpiryPolicy`, but the duration in `expireAfterWrite` is
 If the expiry is result of a duration calculation via `expireAfterWrite` sharp expiry of the entry will not be
 enabled.
 
-=== Loader Exceptions and Expiry
-
-When an expiry duration is specified via `expireAfterWrite`, resilience features are automatically
-active. See the resilience chapter for details.
-
-=== Resetting the Expiry of a Cache Value
+==== Resetting the Expiry of a Cache Value
 
 The expiry value can be reset with the method `Cache.expireAt(key, time)`. Some special values exist:
 
@@ -74,7 +122,7 @@ constant,meaning
 It is possible to atomically examine a cached entry and update its expiry with the `EntryProcessor` and
 `MutableCacheEntry.setExpiry()`.
 
-=== Wall Clock and Clock Skew
+==== Wall Clock and Clock Skew
 
 For timing reference the Java `System.currentTimeMillis()` is used. As with any application that relies on
 time, it is good practice that the system clock is synchronized with a time reference. When the system time
@@ -84,3 +132,86 @@ In case a clock skew happens regularly a premature or late cache expiry may caus
 to do some countermeasures. If the time decreases, entries may expire more early. This can be detected and with the
 `AdvancedCacheLoader` the previously loaded value can be reused. If there is a time skew forward, expiry can
 be triggered programmatically with `expireAt()`.
+
+=== Examples
+
+==== Expiry after a constant time span
+
+All values will expire after 5 minutes with a lag time of around a second.
+
+[source,java]
+----
+    Cache<Key, Data> cache = new Cache2kBuilder<Key, Data>() {}
+      .loader(k -> new Data())
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .build();
+----
+
+==== Expiry after an exact constant time span
+
+If needed, it is also possible to expire without lag. Values will expire
+exactly after 5 minutes:
+
+[source,java]
+----
+    Cache<Key, Data> cache = new Cache2kBuilder<Key, Data>() {}
+      .loader(k -> new Data())
+      .sharpExpiry(true)
+      .expiryPolicy((key, value, startTime, currentEntry)
+        -> startTime + TimeUnit.MINUTES.toMillis(5))
+      .build();
+----
+
+Data older than 5 minutes will not be returned by the cache, however, the
+actual removal or execution of expiry listeners will still lag.
+
+==== Variable Expiry Based on Value
+
+The maximum a value is allowed to be cached can be extracted from the cached
+value, for example:
+
+[source,java]
+----
+  class DataWithMaxAge {
+    long getMaxAgeMillis() { return ... }
+  }
+----
+
+To instruct the cache to use it, an expiry policy can be specified:
+
+[source,java]
+----
+    Cache<Key, DataWithMaxAge> cache = new Cache2kBuilder<Key, DataWithMaxAge>() {}
+      .loader(k -> ... )
+      .expiryPolicy((key, value, startTime, currentEntry) -> startTime + value.getMaxAgeMillis())
+      .build();
+----
+
+[[tti-example]]
+==== Time To Idle Example
+
+Semantics of time to idle can be replicated by setting the a new expiry value
+upon every cache access.
+
+[source,java]
+----
+    private Cache<K, V> cache;
+
+    public void put(K key, V value) {
+      cache.mutate(key, entry -> {
+        entry.setValue(value);
+        entry.setExpiryTime(entry.getStartTime() + expireAfterAccess);
+      });
+    }
+
+    public V get(K key) {
+      return cache.invoke(key, entry -> {
+        entry.setExpiryTime(entry.getStartTime() + expireAfterAccess);
+        return entry.getValue();
+      });
+    }
+----
+
+==== More Examples
+
+Please look for the file `ExpiryPolicyExampleTest` in the code repository.
