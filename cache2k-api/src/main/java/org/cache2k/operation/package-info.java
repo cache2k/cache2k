@@ -7,7 +7,7 @@
 @NonNullApi
 package org.cache2k.operation;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

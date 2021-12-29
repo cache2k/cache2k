@@ -1,6 +1,6 @@
 package org.cache2k.extra.spring;
 
-/*
+/*-
  * #%L
  * cache2k Spring framework support
  * %%

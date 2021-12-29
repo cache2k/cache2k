@@ -1,6 +1,6 @@
 package org.cache2k.extra.config.generic;
 
-/*
+/*-
  * #%L
  * cache2k config file support
  * %%

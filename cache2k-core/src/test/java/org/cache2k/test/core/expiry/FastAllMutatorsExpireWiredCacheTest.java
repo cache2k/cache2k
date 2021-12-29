@@ -1,6 +1,6 @@
 package org.cache2k.test.core.expiry;
 
-/*
+/*-
  * #%L
  * cache2k core implementation
  * %%

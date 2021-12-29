@@ -5,7 +5,7 @@
  */
 package org.cache2k.test;
 
-/*
+/*-
  * #%L
  * cache2k core implementation
  * %%

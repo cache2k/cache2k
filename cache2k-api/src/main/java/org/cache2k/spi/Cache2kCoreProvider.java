@@ -1,6 +1,6 @@
 package org.cache2k.spi;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

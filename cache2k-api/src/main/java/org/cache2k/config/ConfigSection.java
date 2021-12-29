@@ -1,6 +1,6 @@
 package org.cache2k.config;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

@@ -1,6 +1,6 @@
 package org.cache2k.annotation;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

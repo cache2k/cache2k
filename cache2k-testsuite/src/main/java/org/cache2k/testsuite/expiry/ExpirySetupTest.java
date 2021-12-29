@@ -1,6 +1,6 @@
 package org.cache2k.testsuite.expiry;
 
-/*
+/*-
  * #%L
  * cache2k testsuite on public API
  * %%

@@ -1,6 +1,6 @@
 package org.cache2k.testsuite.regression;
 
-/*
+/*-
  * #%L
  * cache2k testsuite on public API
  * %%

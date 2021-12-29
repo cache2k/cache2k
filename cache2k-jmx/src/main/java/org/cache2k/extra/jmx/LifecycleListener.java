@@ -1,6 +1,6 @@
 package org.cache2k.extra.jmx;
 
-/*
+/*-
  * #%L
  * cache2k JMX support
  * %%

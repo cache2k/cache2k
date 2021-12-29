@@ -1,6 +1,6 @@
 package org.cache2k.jcache.provider.event;
 
-/*
+/*-
  * #%L
  * cache2k JCache provider
  * %%

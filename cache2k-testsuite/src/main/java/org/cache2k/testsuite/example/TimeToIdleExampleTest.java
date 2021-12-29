@@ -1,6 +1,6 @@
 package org.cache2k.testsuite.example;
 
-/*
+/*-
  * #%L
  * cache2k testsuite on public API
  * %%

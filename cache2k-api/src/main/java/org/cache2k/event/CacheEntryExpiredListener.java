@@ -1,6 +1,6 @@
 package org.cache2k.event;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

@@ -1,6 +1,6 @@
 package org.cache2k.core.event;
 
-/*
+/*-
  * #%L
  * cache2k core implementation
  * %%

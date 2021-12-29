@@ -1,6 +1,6 @@
 package org.cache2k.core.util;
 
-/*
+/*-
  * #%L
  * cache2k core implementation
  * %%

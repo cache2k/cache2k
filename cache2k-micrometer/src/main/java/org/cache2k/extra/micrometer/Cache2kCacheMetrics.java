@@ -1,6 +1,6 @@
 package org.cache2k.extra.micrometer;
 
-/*
+/*-
  * #%L
  * cache2k micrometer monitoring support
  * %%

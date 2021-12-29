@@ -1,4 +1,4 @@
-/*
+/*-
  * #%L
  * cache2k micrometer monitoring support
  * %%

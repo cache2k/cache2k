@@ -6,7 +6,7 @@
 @NonNullApi
 package org.cache2k.expiry;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

@@ -1,6 +1,6 @@
 package org.cache2k.extra.config.test;
 
-/*
+/*-
  * #%L
  * cache2k JCache provider
  * %%

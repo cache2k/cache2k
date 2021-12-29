@@ -1,6 +1,6 @@
 package org.cache2k.processor;
 
-/*
+/*-
  * #%L
  * cache2k API
  * %%

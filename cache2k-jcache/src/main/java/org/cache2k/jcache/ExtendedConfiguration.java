@@ -1,6 +1,6 @@
 package org.cache2k.jcache;
 
-/*
+/*-
  * #%L
  * cache2k JCache provider
  * %%

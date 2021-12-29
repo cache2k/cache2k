@@ -1,6 +1,6 @@
 package org.cache2k.testsuite.eviction;
 
-/*
+/*-
  * #%L
  * cache2k testsuite on public API
  * %%

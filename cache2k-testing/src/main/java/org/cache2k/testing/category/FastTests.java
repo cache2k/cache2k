@@ -1,6 +1,6 @@
 package org.cache2k.testing.category;
 
-/*
+/*-
  * #%L
  * cache2k testing
  * %%

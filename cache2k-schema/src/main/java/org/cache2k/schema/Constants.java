@@ -1,6 +1,6 @@
 package org.cache2k.schema;
 
-/*
+/*-
  * #%L
  * cache2k XSD schema
  * %%

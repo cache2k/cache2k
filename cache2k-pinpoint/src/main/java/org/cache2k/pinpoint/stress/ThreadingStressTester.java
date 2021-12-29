@@ -1,6 +1,6 @@
 package org.cache2k.pinpoint.stress;
 
-/*
+/*-
  * #%L
  * cache2k pinpoint
  * %%

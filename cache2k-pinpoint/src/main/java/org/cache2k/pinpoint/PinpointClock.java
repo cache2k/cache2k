@@ -1,6 +1,6 @@
 package org.cache2k.pinpoint;
 
-/*
+/*-
  * #%L
  * cache2k pinpoint
  * %%

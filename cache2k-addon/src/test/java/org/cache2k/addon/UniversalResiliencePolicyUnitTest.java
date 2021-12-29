@@ -1,6 +1,6 @@
 package org.cache2k.addon;
 
-/*
+/*-
  * #%L
  * cache2k addon
  * %%

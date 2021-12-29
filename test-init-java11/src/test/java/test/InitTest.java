@@ -1,6 +1,6 @@
 package test;
 
-/*
+/*-
  * #%L
  * cache2k initialization tests Java 11
  * %%
