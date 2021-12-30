@@ -1,12 +1,12 @@
 # Benchmarks
 
-Last update: October 2021. 
+Last update: December 2021. 
 
 We conducted benchmarks and compared the following cache implementations:
 
 - EHCache3 version 3.9.6
-- Caffeine version 3.0.4
-- Cache2k version 2.4.0.Final
+- Caffeine version 3.0.5
+- Cache2k version 2.6.0.Final
   
 Test environment:
 
@@ -105,9 +105,9 @@ resulting in random numbers between 0 and 5.000.000.
 Here are the resulting hit rates. The metric is calculated by the benchmark and does not 
 depend on statistics reported by the cache. 
 
-![](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500-notitle.svg)
+![](benchmark-result/ZipfianSequenceLoadingBenchmark-EffectiveHitrate-byThread-1Mx500-notitle.svg)
 
-*ZipfianSequenceLoadingBenchmark, effective hit rate by thread count with cache size 1M  and Zipfian percentage 500 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkEffectiveHitrate-byThread-1Mx500.dat))*
+*ZipfianSequenceLoadingBenchmark, effective hit rate by thread count with cache size 1M  and Zipfian percentage 500 ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmark-EffectiveHitrate-byThread-1Mx500-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmark-EffectiveHitrate-byThread-1Mx500.dat))*
 
 Note that the hit rates of cache2k become better for more threads, while Caffeines' hit rates
 degrade slightly.
@@ -115,11 +115,11 @@ degrade slightly.
 Since caching libraries are used to manage memory resources efficiently it is important to
 keep a close eye on memory usage of the library itself. So let us take a look at the memory usage:
 
-![](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted-notitle.svg)
+![](benchmark-result/ZipfianSequenceLoadingBenchmark-Memory-4-1M-500-liveObjects-sorted-notitle.svg)
 
 *ZipfianSequenceLoadingBenchmark, 4 threads, 1M cache entries, Zipfian distribution percentage 500, total bytes of live objects as reported by jmap ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-liveObjects-sorted.dat))*
 
-![](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted-notitle.svg)
+![](benchmark-result/ZipfianSequenceLoadingBenchmark-Memory-4-1M-500-VmHWM-sorted-notitle.svg)
 
 *ZipfianSequenceLoadingBenchmark, 4 threads, 1M cache entries, Zipfian distribution percentage 500, peak memory usage reported by the operating system (VmHWM), sorted by best performance ([Alternative image](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted-notitle-print.svg), [Data file](benchmark-result/ZipfianSequenceLoadingBenchmarkMemory4-1M-500-VmHWM-sorted.dat))*
 
@@ -180,32 +180,35 @@ arbitrary cache hits and a less accurate eviction in consequence.
 
 Trace Name | Cache Size | Reference | Hitrate | Best | Hitrate | Diff | 2nd-best | Hitrate | Diff
 ---------- | ---------: | --------- | ------: | ---- | ------: | ---: | -------- | ------: | ---------:
-financial1-1M | 12500 | lru | 37.98 | cache2k* | 39.76 | 1.79 | caffeine* | 38.94 | 0.97 |
-financial1-1M | 25000 | lru | 44.63 | cache2k* | 52.64 | 8.01 | caffeine* | 44.68 | 0.04 |
-financial1-1M | 50000 | lru | 45.61 | cache2k* | 54.17 | 8.56 | caffeine* | 49.99 | 4.38 |
-financial1-1M | 100000 | lru | 54.62 | cache2k* | 54.55 | -0.07 | caffeine* | 53.82 | -0.81 |
-financial1-1M | 200000 | lru | 55.48 | cache2k* | 54.79 | -0.69 | caffeine* | 54.39 | -1.09 |
-scarab-recs | 25000 | lru | 67.71 | caffeine* | 69.98 | 2.27 | cache2k* | 68.65 | 0.94 |
-scarab-recs | 50000 | lru | 75.49 | caffeine* | 75.90 | 0.41 | cache2k* | 74.07 | -1.42 |
-scarab-recs | 75000 | lru | 79.42 | caffeine* | 78.38 | -1.04 | cache2k* | 77.13 | -2.29 |
-scarab-recs | 100000 | lru | 81.77 | caffeine* | 80.41 | -1.36 | cache2k* | 79.25 | -2.52 |
-loop | 256 | lru | 0.00 | cache2k* | 24.48 | 24.48 | caffeine* | 23.87 | 23.87 |
-loop | 512 | lru | 0.00 | caffeine* | 49.29 | 49.29 | cache2k* | 48.96 | 48.96 |
-zipf10K-1M | 500 | lru | 58.46 | cache2k* | 67.51 | 9.05 | caffeine* | 66.09 | 7.63 |
-zipf10K-1M | 1000 | lru | 67.25 | cache2k* | 74.46 | 7.21 | caffeine* | 74.05 | 6.80 |
-zipf10K-1M | 2000 | lru | 76.48 | cache2k* | 81.53 | 5.05 | caffeine* | 81.44 | 4.95 |
-web12 | 75 | lru | 33.23 | caffeine* | 33.88 | 0.65 | cache2k* | 31.02 | -2.21 |
-web12 | 300 | lru | 49.01 | cache2k* | 52.35 | 3.34 | caffeine* | 51.41 | 2.40 |
-web12 | 1200 | lru | 66.85 | cache2k* | 70.65 | 3.79 | caffeine* | 68.82 | 1.97 |
-web12 | 3000 | lru | 76.48 | cache2k* | 78.15 | 1.66 | caffeine* | 75.38 | -1.10 |
-oltp | 128 | lru | 10.34 | caffeine* | 16.12 | 5.78 | cache2k* | 12.53 | 2.19 |
-oltp | 256 | lru | 16.69 | caffeine* | 24.68 | 7.99 | cache2k* | 19.52 | 2.82 |
-oltp | 512 | lru | 23.69 | caffeine* | 32.98 | 9.29 | cache2k* | 28.31 | 4.62 |
+financial1-1M | 12500 | lru | 37.98 | cache2k* | 40.04 | 2.06 | caffeine* | 39.04 | 1.06 |
+financial1-1M | 25000 | lru | 44.63 | cache2k* | 52.64 | 8.01 | caffeine* | 44.62 | -0.01 |
+financial1-1M | 50000 | lru | 45.61 | cache2k* | 54.35 | 8.74 | caffeine* | 49.92 | 4.31 |
+financial1-1M | 100000 | lru | 54.62 | cache2k* | 54.59 | -0.03 | caffeine* | 53.84 | -0.79 |
+financial1-1M | 200000 | lru | 55.48 | cache2k* | 54.79 | -0.69 | caffeine* | 54.39 | -1.08 |
+scarab-recs | 25000 | lru | 67.71 | caffeine* | 69.97 | 2.26 | cache2k* | 68.78 | 1.07 |
+scarab-recs | 50000 | lru | 75.49 | caffeine* | 75.76 | 0.28 | cache2k* | 74.23 | -1.25 |
+scarab-recs | 75000 | lru | 79.42 | caffeine* | 78.81 | -0.61 | cache2k* | 77.31 | -2.11 |
+scarab-recs | 100000 | lru | 81.77 | caffeine* | 80.41 | -1.36 | cache2k* | 79.42 | -2.35 |
+loop | 256 | lru | 0.00 | cache2k* | 24.48 | 24.48 | caffeine* | 24.33 | 24.33 |
+loop | 512 | lru | 0.00 | caffeine* | 49.47 | 49.47 | cache2k* | 48.96 | 48.96 |
+zipf10K-1M | 500 | lru | 58.46 | cache2k* | 67.49 | 9.03 | caffeine* | 66.30 | 7.84 |
+zipf10K-1M | 1000 | lru | 67.25 | cache2k* | 74.39 | 7.14 | caffeine* | 74.20 | 6.95 |
+zipf10K-1M | 2000 | lru | 76.48 | caffeine* | 81.45 | 4.97 | cache2k* | 81.43 | 4.94 |
+web12 | 200 | lru | 44.04 | caffeine* | 47.29 | 3.25 | cache2k* | 45.37 | 1.33 |
+web12 | 300 | lru | 49.01 | cache2k* | 52.24 | 3.22 | caffeine* | 50.67 | 1.66 |
+web12 | 400 | lru | 52.83 | caffeine* | 57.48 | 4.65 | cache2k* | 56.85 | 4.02 |
+web12 | 800 | lru | 61.95 | cache2k* | 66.51 | 4.56 | caffeine* | 64.55 | 2.60 |
+web12 | 1200 | lru | 66.85 | cache2k* | 70.55 | 3.70 | caffeine* | 68.84 | 1.99 |
+web12 | 3000 | lru | 76.48 | cache2k* | 78.07 | 1.58 | caffeine* | 75.67 | -0.81 |
+oltp | 2500 | lru | 45.07 | caffeine* | 48.62 | 3.55 | cache2k* | 46.71 | 1.64 |
+oltp | 5000 | lru | 53.65 | caffeine* | 55.46 | 1.81 | cache2k* | 53.41 | -0.24 |
+oltp | 10000 | lru | 60.70 | cache2k* | 60.64 | -0.07 | caffeine* | 59.40 | -1.31 |
+
 
 The resulting hit rates of Caffeine and cache2k are typically better than LRU, but not in every case.
 In some traces Caffeine does better, in other traces cache2k does better. This
-investigation shows that, although the achieved throughput is high, the eviction efficiency does
-not suffer when compared to LRU.
+investigation shows that, although the achieved throughput by cache2k is high, 
+the eviction efficiency does not suffer when compared to LRU.
 
 More information about the used traces can be found at: 
 *[Java Caching Benchmarks 2016 - Part 2](https://cruftex.net/2016/05/09/Java-Caching-Benchmarks-2016-Part-2.html)*

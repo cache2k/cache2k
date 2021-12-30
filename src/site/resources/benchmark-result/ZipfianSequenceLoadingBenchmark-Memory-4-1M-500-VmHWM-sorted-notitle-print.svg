@@ -576,19 +576,19 @@
 		</pattern>
 	</defs>
 	<g stroke='none' shape-rendering='crispEdges'>
-		<polygon  fill = 'url(#gpPat2)' points = '213.1,513.5 257.1,513.5 257.1,439.4 213.1,439.4 '/>
+		<polygon  fill = 'url(#gpPat2)' points = '213.1,513.5 257.1,513.5 257.1,441.9 213.1,441.9 '/>
 	</g>
-	<path stroke='rgb(  0, 158, 115)'  d='M213.1,513.5 L213.1,439.5 L257.0,439.5 L257.0,513.5 L213.1,513.5 Z  '/>	<g stroke='none' shape-rendering='crispEdges'>
-		<polygon  fill = 'url(#gpPat2)' points = '359.6,513.5 403.7,513.5 403.7,341.0 359.6,341.0 '/>
+	<path stroke='rgb(  0, 158, 115)'  d='M213.1,513.5 L213.1,442.0 L257.0,442.0 L257.0,513.5 L213.1,513.5 Z  '/>	<g stroke='none' shape-rendering='crispEdges'>
+		<polygon  fill = 'url(#gpPat2)' points = '359.6,513.5 403.7,513.5 403.7,319.4 359.6,319.4 '/>
 	</g>
-	<path stroke='rgb(  0, 158, 115)'  d='M359.6,513.5 L359.6,341.1 L403.6,341.1 L403.6,513.5 L359.6,513.5 Z  '/>	<g stroke='none' shape-rendering='crispEdges'>
-		<polygon  fill = 'url(#gpPat2)' points = '506.2,513.5 550.2,513.5 550.2,120.5 506.2,120.5 '/>
+	<path stroke='rgb(  0, 158, 115)'  d='M359.6,513.5 L359.6,319.5 L403.6,319.5 L403.6,513.5 L359.6,513.5 Z  '/>	<g stroke='none' shape-rendering='crispEdges'>
+		<polygon  fill = 'url(#gpPat2)' points = '506.2,513.5 550.2,513.5 550.2,155.9 506.2,155.9 '/>
 	</g>
-	<path stroke='rgb(  0, 158, 115)'  d='M506.2,513.5 L506.2,120.6 L550.1,120.6 L550.1,513.5 L506.2,513.5 Z  '/></g>
+	<path stroke='rgb(  0, 158, 115)'  d='M506.2,513.5 L506.2,156.0 L550.1,156.0 L550.1,513.5 L506.2,513.5 Z  '/></g>
 <g fill="none" color="black" stroke="rgb(  0, 158, 115)" stroke-width="0.50" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='rgb(  0, 158, 115)'  d='M235.1,456.9 L235.1,422.2 M230.6,456.9 L239.6,456.9 M230.6,422.2 L239.6,422.2 M381.6,372.9 L381.6,309.2
-		M377.1,372.9 L386.1,372.9 M377.1,309.2 L386.1,309.2 M528.2,184.2 L528.2,57.0 M523.7,184.2 L532.7,184.2
-		M523.7,57.0 L532.7,57.0  '/></g>
+	<path stroke='rgb(  0, 158, 115)'  d='M235.1,467.8 L235.1,416.3 M230.6,467.8 L239.6,467.8 M230.6,416.3 L239.6,416.3 M381.6,413.1 L381.6,225.9
+		M377.1,413.1 L386.1,413.1 M377.1,225.9 L386.1,225.9 M528.2,256.1 L528.2,55.9 M523.7,256.1 L532.7,256.1
+		M523.7,55.9 L532.7,55.9  '/></g>
 <g fill="none" color="black" stroke="rgb(  0, 158, 115)" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
