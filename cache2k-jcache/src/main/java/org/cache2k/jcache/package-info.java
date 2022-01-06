@@ -9,7 +9,7 @@ package org.cache2k.jcache;
  * #%L
  * cache2k JCache provider
  * %%
- * Copyright (C) 2000 - 2021 headissue GmbH, Munich
+ * Copyright (C) 2000 - 2022 headissue GmbH, Munich
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
