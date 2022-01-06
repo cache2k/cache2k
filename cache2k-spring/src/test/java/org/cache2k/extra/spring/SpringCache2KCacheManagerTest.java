@@ -110,12 +110,26 @@ public class SpringCache2KCacheManagerTest {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(
         SpringCache2KCacheManagerTest.class.getSimpleName() + "defaultSetup");
-    m.defaultSetup(b -> b.entryCapacity(1802));
+    m.defaultSetup(b -> b.entryCapacity(1234));
     m.addCaches(b -> b.name("cache1"));
-    assertEquals(1802,
+    assertEquals(1234,
       CacheControl.of(m.getCache("cache1").getNativeCache()).getEntryCapacity());
-    assertEquals(1802,
+    assertEquals(1234,
       CacheControl.of(m.getCache("cache2").getNativeCache()).getEntryCapacity());
+  }
+
+  @Test
+  public void testDefaultSetup2() {
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(
+        SpringCache2KCacheManagerTest.class.getSimpleName() + "defaultSetup2");
+    m.defaultSetup(b -> b.entryCapacity(1234).valueType(String.class).loader(key -> "default"));
+    m.addCaches(b -> b.name("cache1"));
+    assertEquals(1234,
+      CacheControl.of(m.getCache("cache1").getNativeCache()).getEntryCapacity());
+    assertEquals(1234,
+      CacheControl.of(m.getCache("cache2").getNativeCache()).getEntryCapacity());
+    assertEquals("default", m.getCache("cache2").get(123).get());
   }
 
   @Test

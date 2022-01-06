@@ -69,12 +69,18 @@ public class SpringCache2kCache implements Cache {
     if (entry == null) {
       return null;
     }
-    return returnWrappedValue(entry);
+    return new WrappedValue(entry);
   }
 
-  private ValueWrapper returnWrappedValue(CacheEntry<Object, Object> entry) {
-    Object v = entry.getValue();
-    return () -> v;
+  static class WrappedValue implements ValueWrapper {
+    Object value;
+    public WrappedValue(CacheEntry<Object, Object> entry) {
+      this.value = entry.getValue();
+    }
+    @Override
+    public Object get() {
+      return value;
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -122,7 +128,7 @@ public class SpringCache2kCache implements Cache {
   public ValueWrapper putIfAbsent(Object key, Object value) {
     return cache.invoke(key, e -> {
       if (e.exists()) {
-        return returnWrappedValue(e);
+        return new WrappedValue(e);
       }
       e.setValue(value);
       return null;
