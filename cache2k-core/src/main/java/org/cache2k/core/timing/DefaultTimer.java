@@ -43,7 +43,11 @@ public class DefaultTimer implements Timer {
    * @see org.cache2k.Cache2kBuilder#timerLag(long, TimeUnit)
    */
   public static final long DEFAULT_TIMER_LAG_MILLIS = 1003;
-  public static final int DEFAULT_SLOTS_PER_WHEEL = 876;
+  /**
+   * Expecting that expiry values between 0 and 15 minutes are very
+   * common, we cover these on the first level.
+   */
+  public static final int DEFAULT_SLOTS_PER_WHEEL = 921;
 
   private final Lock lock = new ReentrantLock();
   private final TimeReference clock;
@@ -53,7 +57,7 @@ public class DefaultTimer implements Timer {
   /**
    * Lag time to gather timer tasks for more efficient execution.
    */
-  private long lagMillis;
+  private final long lagMillis;
 
   private final Runnable timerAction = new Runnable() {
     @Override
@@ -93,7 +97,6 @@ public class DefaultTimer implements Timer {
       executeImmediately(task);
       return;
     }
-    long schedulerTime;
     lock.lock();
     try {
       if (structure.schedule(task, time)) {
