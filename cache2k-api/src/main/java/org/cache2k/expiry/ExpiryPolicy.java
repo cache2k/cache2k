@@ -93,10 +93,10 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    *              regardless of the {@link Cache2kBuilder#permitNullValues} setting.
    * @param startTime The time the operation started. If the cache used the loader to retrieve the
    *                  value this is the time before the load was started
-   * @param currentEntry entry representing the current mapping, if there is a value present.
-   *                     {@code null} if there is no current mapping, or, if the previous load
-   *                     operation had thrown an exception. This can be used for adapting the
-   *                     expiry time to the amount of data changes.
+   * @param currentEntry entry representing the current mapping. {@code null} if there is no
+   *                     current mapping, or, if the previous load operation had thrown an
+   *                     exception. This can be used for adapting the expiry time to the amount
+   *                     of data changes.
    * @return the time of expiry in millis since epoch. {@link #NOW} if it should not
    *         cached. If {@link Cache2kBuilder#refreshAhead} is enabled the return value
    *         {@link #NOW} will trigger an immediate refresh.

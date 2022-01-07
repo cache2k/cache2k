@@ -20,8 +20,6 @@ package org.cache2k.testsuite.expiry;
  * #L%
  */
 
-import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.testsuite.support.DataType;
@@ -31,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,14 +57,30 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
     put(k0, v0);
   }
 
-	// at org.cache2k.core.timing.TimerWheels$Wheel.atNoon(TimerWheels.java:68)
   @Test
   public void beyondMaxExpireAfterWrite() {
     init(b -> {
       b.expireAfterWrite(Long.MAX_VALUE / 5, TimeUnit.MILLISECONDS);
     });
-    assertThatCode(() -> put(k0, v0))
-      .isInstanceOf(IllegalArgumentException.class);
+    put(k0, v0);
+  }
+
+  @Test
+  public void setExpiryTime_maxMinusOne() {
+    init();
+    mutate(k0, entry -> {
+      entry.setExpiryTime(Long.MAX_VALUE - 1);
+      entry.setValue(v0);
+    });
+  }
+
+  @Test
+  public void setExpiryTime_max() {
+    init();
+    mutate(k0, entry -> {
+      entry.setExpiryTime(Long.MAX_VALUE);
+      entry.setValue(v0);
+    });
   }
 
   /**
@@ -92,28 +107,35 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
     setExpiryComplete(Long.MAX_VALUE);
   }
 
+  @Test
+  public void expiryAfterWrite_setExpiryTime() {
+    long durationCapMillis = 1234 * 1000;
+    init(b -> b.expireAfterWrite(durationCapMillis, TimeUnit.MILLISECONDS));
+    setExpiryComplete(durationCapMillis);
+  }
+
   private void setExpiryComplete(long durationCapMillis) {
     invoke(k0, entry -> entry.setExpiryTime(123));
     put(k0, v0);
     invoke(k0, entry -> entry.setExpiryTime(ExpiryTimeValues.ETERNAL));
     invoke(k0, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
-    assertFalse(containsKey(k0));
+    assertThat(containsKey(k0)).isFalse();
     put(k0, v0);
     invoke(k0, entry -> entry.setExpiryTime(123));
+    assertFalse(containsKey(k0));
     invoke(k0, entry -> entry.setValue(v0).setExpiryTime(TIME_MAX_MILLIS));
-    long time = invoke(k0, entry -> entry.getExpiryTime());
-    assertEquals(TIME_MAX_MILLIS, time);
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(TIME_MAX_MILLIS);
     long delta = 123;
     within(delta)
       .expectMaybe(() -> {
         long t1 = now() + delta;
         invoke(k0, entry -> entry.setValue(v0).setExpiryTime(-t1));
-        assertEquals(t1, (long) invoke(k0, entry -> entry.getExpiryTime()));
+        assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(t1);
         invoke(k0, entry -> entry.setValue(v0).setExpiryTime(t1));
-        assertEquals(t1, (long) invoke(k0, entry -> entry.getExpiryTime()));
+        assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(t1);
       });
     invoke(k0, entry -> entry.setValue(v0).setExpiryTime(-TIME_MAX_MILLIS));
-    assertEquals(TIME_MAX_MILLIS, (long) invoke(k0, entry -> entry.getExpiryTime()));
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(TIME_MAX_MILLIS);
   }
 
   public static class ExpirySetupTestWithObjects extends ExpirySetupTest<Object, Object> {

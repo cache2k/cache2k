@@ -81,8 +81,8 @@ public class TimerWheels implements TimerStructure {
       index = 0;
       noon = time;
       oneBeforeNextNoon = time + delta * slots.length - 1;
-      if (time < 0) {
-        throw new IllegalArgumentException("maximum reached");
+      if (oneBeforeNextNoon < 0) {
+        oneBeforeNextNoon = Long.MAX_VALUE;
       }
     }
 

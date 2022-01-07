@@ -1863,7 +1863,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
      */
     public int segmentCountOverride = 0;
 
-    public long timerLagMillis = 1003;
   }
 
 }

@@ -279,7 +279,7 @@ public class TimerTest {
     test2_2_x(2);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void scheduleMax() {
     init(100, 10, 2);
     schedule(Long.MAX_VALUE);

@@ -25,6 +25,7 @@ import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.Scheduler;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,6 +38,13 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DefaultTimer implements Timer {
 
+  /**
+   * Default for timer lag in milliseconds
+   * @see org.cache2k.Cache2kBuilder#timerLag(long, TimeUnit)
+   */
+  public static final long DEFAULT_TIMER_LAG_MILLIS = 1003;
+  public static final int DEFAULT_SLOTS_PER_WHEEL = 876;
+
   private final Lock lock = new ReentrantLock();
   private final TimeReference clock;
   private final Scheduler scheduler;
@@ -44,7 +52,6 @@ public class DefaultTimer implements Timer {
   private long nextScheduled = Long.MAX_VALUE;
   /**
    * Lag time to gather timer tasks for more efficient execution.
-   * Default timer lag defined at {@link org.cache2k.core.HeapCache.Tunable#timerLagMillis}
    */
   private long lagMillis;
 
@@ -55,8 +62,12 @@ public class DefaultTimer implements Timer {
     }
   };
 
+  public DefaultTimer(TimeReference clock, Scheduler scheduler) {
+    this(clock, scheduler, DEFAULT_TIMER_LAG_MILLIS);
+  }
+
   public DefaultTimer(TimeReference clock, Scheduler scheduler, long lagMillis) {
-    this(clock, scheduler, lagMillis, 876);
+    this(clock, scheduler, lagMillis, DEFAULT_SLOTS_PER_WHEEL);
   }
 
   public DefaultTimer(TimeReference c, Scheduler scheduler, long lagMillis, int steps) {

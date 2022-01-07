@@ -21,6 +21,7 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.timing.DefaultTimer;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
@@ -1147,7 +1148,7 @@ public class SlowExpiryTest extends TestingBase {
    */
   @Test
   public void timerLag_raisedLag() {
-    long lagMillis = HeapCache.TUNABLE.timerLagMillis + 74;
+    long lagMillis = DefaultTimer.DEFAULT_TIMER_LAG_MILLIS + 74;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(1, TimeUnit.MILLISECONDS)
       .timerLag(lagMillis, TimeUnit.MILLISECONDS)

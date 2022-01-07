@@ -49,7 +49,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final boolean sharpExpiry;
   protected final boolean refreshAhead;
   protected final long expiryMillis;
-  protected final long lagMillis;
   private final Timer timer;
 
   private TimerEventListener<K, V> target;
@@ -67,11 +66,10 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     refreshAhead = cfg.isRefreshAhead();
     sharpExpiry = cfg.isSharpExpiry();
     if (cfg.getTimerLag() == null) {
-      lagMillis = HeapCache.TUNABLE.timerLagMillis;
+      timer = new DefaultTimer(clock, buildContext.createScheduler());
     } else {
-      lagMillis = cfg.getTimerLag().toMillis();
+      timer = new DefaultTimer(clock, buildContext.createScheduler(), cfg.getTimerLag().toMillis());
     }
-    timer = new DefaultTimer(clock, buildContext.createScheduler(), lagMillis);
     this.resiliencePolicy = resiliencePolicy;
   }
 
