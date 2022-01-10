@@ -31,10 +31,15 @@ import org.cache2k.io.ExceptionPropagator;
  *
  * @author Jens Wilke
  */
-public final class StandardExceptionPropagator implements ExceptionPropagator {
+public final class DefaultExceptionPropagator<K, V> implements ExceptionPropagator<K, V> {
+
+  public static final DefaultExceptionPropagator<Object, Object> SINGLETON =
+    new DefaultExceptionPropagator<>();
+
+  private DefaultExceptionPropagator() { }
 
   @Override
-  public RuntimeException propagateException(LoadExceptionInfo loadExceptionInfo) {
+  public RuntimeException propagateException(LoadExceptionInfo<K, V> loadExceptionInfo) {
     long expiry = loadExceptionInfo.getUntil();
     String txt = "";
     if (expiry > 0) {

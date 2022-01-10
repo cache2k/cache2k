@@ -35,12 +35,12 @@ import static org.junit.Assert.assertTrue;
  * Check all variants the standard propagator supports
  *
  * @author Jens Wilke
- * @see StandardExceptionPropagator
+ * @see DefaultExceptionPropagator
  */
 @SuppressWarnings("unchecked")
-public class StandardExceptionPropagatorTest {
+public class DefaultExceptionPropagatorTest {
 
-  static final ExceptionPropagator STANDARD_PROPAGATOR = new StandardExceptionPropagator();
+  static final ExceptionPropagator DEFAULT_PROPAGATOR = DefaultExceptionPropagator.SINGLETON;
   static final String TIME_STRING = "2016-05-25T09:30:12.123";
   static final long SOME_TIME = LocalDateTime.parse(TIME_STRING)
     .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -48,21 +48,21 @@ public class StandardExceptionPropagatorTest {
   @Test
   public void propagate_eternal() {
     System.currentTimeMillis();
-    RuntimeException t = STANDARD_PROPAGATOR.propagateException(
+    RuntimeException t = DEFAULT_PROPAGATOR.propagateException(
       toInfo(new RuntimeException("serious thing"), Long.MAX_VALUE));
     assertTrue(t.toString().contains("expiry=ETERNAL"));
   }
 
   @Test
   public void propagate_sometime() {
-    RuntimeException t = STANDARD_PROPAGATOR.propagateException(
+    RuntimeException t = DEFAULT_PROPAGATOR.propagateException(
       toInfo(new RuntimeException("serious thing"), SOME_TIME));
     assertThat(t.toString()).contains(("expiry=2016-05-25T09:30:12.123"));
   }
 
   @Test
   public void propagate_notime() {
-    RuntimeException t = STANDARD_PROPAGATOR.propagateException(
+    RuntimeException t = DEFAULT_PROPAGATOR.propagateException(
       toInfo(new RuntimeException("serious thing"), 0));
     assertFalse(t.toString().contains("expiry="));
   }

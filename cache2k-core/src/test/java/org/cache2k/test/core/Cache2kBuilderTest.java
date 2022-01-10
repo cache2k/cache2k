@@ -26,7 +26,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheTypeCapture;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.core.StandardExceptionPropagator;
+import org.cache2k.core.DefaultExceptionPropagator;
 import org.cache2k.core.log.Log;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.operation.CacheControl;
@@ -268,9 +268,9 @@ public class Cache2kBuilderTest {
 
   @Test
   public void duplicateCacheName() {
-    String _managerName = getClass().getName() + ".duplicateCacheName";
-    Log.registerSuppression(CacheManager.class.getName() + ":" + _managerName, new Log.SuppressionCounter());
-    CacheManager mgr = CacheManager.getInstance(_managerName);
+    String managerName = getClass().getName() + ".duplicateCacheName";
+    Log.registerSuppression(CacheManager.class.getName() + ":" + managerName, new Log.SuppressionCounter());
+    CacheManager mgr = CacheManager.getInstance(managerName);
     try {
       Cache c0 = Cache2kBuilder.forUnknownTypes()
         .manager(mgr)
@@ -317,10 +317,10 @@ public class Cache2kBuilderTest {
   public void illegalCharacterInCacheName_unsafeSet() {
     for (char c : ILLEGAL_CHARACTERS_IN_NAME.toCharArray()) {
       try {
-        Cache _cache = Cache2kBuilder.forUnknownTypes()
+        Cache cache = Cache2kBuilder.forUnknownTypes()
           .name("illegalCharName" + c)
           .build();
-        _cache.close();
+        cache.close();
         fail("Expect exception for illegal name in character '" + c + "', code " + ((int) c));
       } catch (IllegalArgumentException ex) {
       }
@@ -329,10 +329,10 @@ public class Cache2kBuilderTest {
 
   @Test
   public void legalCharacterInCacheName() {
-    String _legalChars = ".~,@ ()";
-    _legalChars += "$-_abcABC0123";
+    String legalChars = ".~,@ ()";
+    legalChars += "$-_abcABC0123";
     Cache c = Cache2kBuilder.forUnknownTypes()
-      .name(_legalChars)
+      .name(legalChars)
       .build();
     c.close();
   }
@@ -358,11 +358,11 @@ public class Cache2kBuilderTest {
 
   @Test
   public void cacheRemovedAfterClose() {
-    final String _NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterClose";
-    CacheManager cm = CacheManager.getInstance(_NAME);
+    final String NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterClose";
+    CacheManager cm = CacheManager.getInstance(NAME);
     Cache c = Cache2kBuilder.forUnknownTypes()
       .manager(cm)
-      .name(_NAME)
+      .name(NAME)
       .build();
     assertEquals(c, cm.getActiveCaches().iterator().next());
     c.close();
@@ -371,31 +371,31 @@ public class Cache2kBuilderTest {
 
   @Test
   public void cacheRemovedAfterClose_WiredCache() {
-    final String _NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterCloseWiredCache";
-    CacheManager cm = CacheManager.getInstance(_NAME);
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes()
+    final String NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterCloseWiredCache";
+    CacheManager cm = CacheManager.getInstance(NAME);
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes()
       .manager(cm)
-      .name(_NAME);
-    StaticUtil.enforceWiredCache(_builder);
-    Cache c = _builder.build();
+      .name(NAME);
+    StaticUtil.enforceWiredCache(builder);
+    Cache c = builder.build();
     assertEquals(c, cm.getActiveCaches().iterator().next());
     c.close();
     assertFalse(cm.getActiveCaches().iterator().hasNext());
   }
 
   private void cacheClosedEventFired(boolean _wiredCache) {
-    final AtomicBoolean _FIRED = new AtomicBoolean();
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder = _builder.addCacheClosedListener(cache -> {
-      _FIRED.set(true);
+    final AtomicBoolean FIRED = new AtomicBoolean();
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
+    builder = builder.addCacheClosedListener(cache -> {
+      FIRED.set(true);
       return CompletableFuture.completedFuture(null);
     });
     if (_wiredCache) {
-     StaticUtil.enforceWiredCache(_builder);
+     StaticUtil.enforceWiredCache(builder);
     }
-    Cache c = _builder.build();
+    Cache c = builder.build();
     c.close();
-    assertTrue(_FIRED.get());
+    assertTrue(FIRED.get());
   }
 
   @Test
@@ -410,36 +410,36 @@ public class Cache2kBuilderTest {
 
   @Test
   public void cacheNameUnique() {
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.name("hello", this.getClass(), "field");
-    assertEquals("hello~org.cache2k.test.core.Cache2kBuilderTest.field", _builder.config().getName());
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
+    builder.name("hello", this.getClass(), "field");
+    assertEquals("hello~org.cache2k.test.core.Cache2kBuilderTest.field", builder.config().getName());
   }
 
   @Test
   public void cacheNameUniqueNull() {
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.name(null, this.getClass(), "field");
-    assertEquals("org.cache2k.test.core.Cache2kBuilderTest.field", _builder.config().getName());
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
+    builder.name(null, this.getClass(), "field");
+    assertEquals("org.cache2k.test.core.Cache2kBuilderTest.field", builder.config().getName());
   }
 
   @Test(expected = NullPointerException.class)
   public void cacheNameException() {
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.name(this.getClass(), null);
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
+    builder.name(this.getClass(), null);
   }
 
   @Test
   public void set_ExceptionPropagator() {
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.exceptionPropagator(new StandardExceptionPropagator());
-    assertNotNull(_builder.config().getExceptionPropagator());
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
+    builder.exceptionPropagator(DefaultExceptionPropagator.SINGLETON);
+    assertNotNull(builder.config().getExceptionPropagator());
   }
 
   @Test
   public void set_storeByReference() {
-    Cache2kBuilder _builder = Cache2kBuilder.forUnknownTypes();
-    _builder.storeByReference(true);
-    assertTrue(_builder.config().isStoreByReference());
+    Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
+    builder.storeByReference(true);
+    assertTrue(builder.config().isStoreByReference());
   }
 
   /** No loader present */

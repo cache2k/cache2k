@@ -89,9 +89,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
-  public static final ExceptionPropagator DEFAULT_EXCEPTION_PROPAGATOR =
-    TUNABLE.exceptionPropagator;
-
   protected final String name;
   public final CacheManagerImpl manager;
   protected final AdvancedCacheLoader<K, V> loader;
@@ -192,7 +189,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected CacheType valueType;
 
   @SuppressWarnings("unchecked")
-  protected final ExceptionPropagator<K, V> exceptionPropagator;
+  protected final ExceptionPropagator<? super K, ? super V> exceptionPropagator;
 
   Collection<CacheClosedListener> cacheClosedListeners = Collections.emptyList();
 
@@ -269,7 +266,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       loader = null;
     }
     exceptionPropagator =
-      ctx.createCustomization(cfg.getExceptionPropagator(), DEFAULT_EXCEPTION_PROPAGATOR);
+      ctx.createCustomization(cfg.getExceptionPropagator(), DefaultExceptionPropagator.SINGLETON);
     metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
       @Override
       public boolean isDisabled() {
@@ -1854,8 +1851,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
     public StandardCommonMetricsFactory commonMetricsFactory =
       new StandardCommonMetricsFactory();
-
-    public ExceptionPropagator exceptionPropagator = new StandardExceptionPropagator();
 
     /**
      * Override parameter for segment count. Has to be power of two, e.g. 2, 4, 8, etc.

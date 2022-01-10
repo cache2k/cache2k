@@ -20,9 +20,7 @@ package org.cache2k.io;
  * #L%
  */
 
-import org.cache2k.Customization;
 import org.cache2k.DataAwareCustomization;
-import org.cache2k.annotation.Nullable;
 
 /**
  * In read through mode exceptions are cached. Every time an entry is requested from the

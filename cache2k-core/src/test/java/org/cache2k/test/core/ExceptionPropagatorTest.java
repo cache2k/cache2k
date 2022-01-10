@@ -22,7 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.core.StandardExceptionPropagatorTest;
+import org.cache2k.core.DefaultExceptionPropagatorTest;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.test.util.CacheRule;
@@ -35,15 +35,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.*;
 
 /**
  * Test various places where an exception must be thrown when an entry is accessed.
  *
  * @author Jens Wilke
- * @see StandardExceptionPropagatorTest
+ * @see DefaultExceptionPropagatorTest
  */
 @Category(FastTests.class)
 public class ExceptionPropagatorTest {

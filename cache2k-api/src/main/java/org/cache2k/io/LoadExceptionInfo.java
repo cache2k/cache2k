@@ -21,6 +21,7 @@ package org.cache2k.io;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.NonNull;
 
 /**
  * Relevant information of a load attempt that generated an exception.
@@ -65,7 +66,7 @@ public interface LoadExceptionInfo<K, V> extends CacheEntry<K, V> {
    * Inherited from {@link CacheEntry}
    */
   @Override
-  Throwable getException();
+  @NonNull Throwable getException();
 
   /**
    * Returns ourselves. Useful because this implements {@link CacheEntry}
