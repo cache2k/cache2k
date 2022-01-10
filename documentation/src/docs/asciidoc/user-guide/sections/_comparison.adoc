@@ -1,0 +1,220 @@
+== Java Caches Compared
+
+TODO:
+- async
+- API
+- event listeners
+- loader and writer
+- exceptions and resilience
+- jar file size
+- memory footprint
+
+== Caffeine vs. cache2k
+
+Managed
+
+Time
+
+API: Caffeines' `Cache` interface has only a few methods. For many operations users need to
+use the provided `Map` interface. For read through operations Caffeine provides an
+extended interface `LoadingCache`.
+Caffeines' API is perfectly modeled for a heap only cache. The cache2k API is modeled with future
+extensions in mind, e.g. persistence.
+
+Throughput performance:
+
+Memory efficiency and hash table implementation: Caffeine integrates the `ConcurrentHashMap`
+and uses its compute methods for its locking and blocking (e.g. for read through) purposes.
+cache2k its own hash table. While `ConcurrentHashMap` is considered mature and robust,
+the hash table of cache2k is very simple to be considered equally robust. `ConcurrentHashMap`
+is around 6500 lines of code, while the cache2k hash table is 430 lines of code.
+Caffeine needs at least two objects per cache mapping, the hash table entry and the cache entry,
+while cache2k only needs one object per cache mapping, combining the cache entry and the
+hash table entry. THe cache2k approach leads to faster access times and lower memory overhead.
+On the other hand, an advantage of `ConcurrentHashMap` is its better worst case behavior
+when hash collisions happen and faster iteration capabilities.
+
+
+
+Write lock contention in Caffeine: In rare situations, a blocking load or using a map compute method
+might block writes to other entries. This is described in the Caffeine FAQ. In cache2k hash table
+locking is separate from entry locking.
+
+`Cache.clear()`: In Caffeine a cache clear waits until entry processing is finished.
+(TODO)
+This keeps entry operations serializale, however it stalls up the `Cache.clear()` and
+blocks operations for the whole cache. In cache2k the `clear()` operation works
+independently of entry locks and is guaranteed to finish instantly. This
+sacrifies serializable operations on entries, meaning that two operations can happen on
+the entry at the same time, the operation starting before `clear()` was issued and the operation
+after `clear()` was issued. If serializability is needed, in cache2k `Cache.removeAll()` can
+be used.
+TODO: clear may be used by operations, e.g. via JMX, we should have a configuration
+parameter, whether the application needs a serializable clear.
+
+Eviction efficiency:
+
+The eviction algorithm of Caffeine runs in separate threads. Each cache entry for a cache hit is
+put in a queue and this queue is later processed by the Tiny-LFU eviction algorithm. When multiple
+threads access the cache, cache requests will be dropped and not processed by the eviction
+algorithm, if the queue inserting is contended or the queue is full and awaiting that
+the drain task gets CPU time. In cache2k a counter per cache entry is
+incremented. No additional processing happens when the cache entries are just hit, the
+entry counters are only analysed when eviction needs to happen. The Caffeine approach
+works well in interactive applications with spare CPU resources available. With throughput
+oriented workloads the eviction processing is in concurrence with the workload.
+Caffeines' eviction, under concurrent workload, basically randomly samples the access sequence and
+will fail to take arbitrary hits into account and therefore misses rare hits. The approach of
+cache2k uses dirty counters and will not miss rare hits but only multiple hits on the same entry.
+
+
+====
+
+====
+
+
+
+Cleanup: ....
+
+Non blocking bulk:
+
+Default cache capacity:
+
+
+
+=== General
+
+[%autowidth]
+|===
+|Feature | EHCache3 | Caffeine | cache2k
+
+| Atomic operations | * | * | *
+| Listeners | * | partial | *
+| Size | TODO | TODO | TODO
+| Read through CacheLoader | * | * | *
+| Write through CacheWriter | * | * | *
+| Configuration framework | * | - | *
+| JMX support | * | - | *
+| micrometer support | * | (*)/see text | *
+| JCache | * | * | *
+| Spring framework support | * | (*)/see text | *
+| Cache manager | * | - | *
+| Persistence / Off heap | * | - | -
+| Uses ConcurrentHashMap | ? | * | -
+|===
+
+*Default entry capacity* If no capacity limit is set cache2k is creating a cache with
+a capacity of around 2000 entries, in Caffeine a cache with unlimited capacity would
+be created.
+
+*Configuration concept*
+
+
+
+=== API
+
+[%autowidth]
+|===
+|Feature | EHCache3 | Caffeine | cache2k
+
+| Map view | ? | * | *
+| Separate API | - | - | *
+| JCache | * | * | *
+|===
+
+=== I/O
+
+[%autowidth]
+|===
+|Feature | EHCache3 | Caffeine | cache2k
+
+| Loader / read through | * | * | *
+| Async loader | ? | */see text | *
+| Bulk loader | ? | * | *
+| Blocking bulk loader | ? | - | *
+| Async bulk loader | ? | */see text | *
+| Coalescing bulk loader | ? | -/see text | *
+| Loader can access current entry | - | - | *
+| Cache writer / write through| * | - | *
+|===
+
+In Caffeine the bulk loader is only non-blocking, causing redundant loads as well as a problematic
+cache stampede when expiry is used. A blocking bulk loader is complex to implement, for example,
+it needs to have a deadlock mitigation.
+
+=== Listeners
+
+
+
+
+=== Monitoring
+
+[%autowidth]
+|===
+|Feature | EHCache3 | Caffeine | cache2k
+
+| JMX | * | - | *
+| micrometer | ? | */see text | *
+|===
+
+In cache2k JMX and micrometer support is integrated and can be switched on
+by a configuration option for individual or all caches. Micrometer support is available for Caffeine
+but extra glue code is needed.
+
+=== Eviction
+
+[%autowidth]
+|===
+|Feature | EHCache3 | Caffeine | cache2k
+
+| Limit by entry number| * | * | *
+| Weigher| - | * | *
+| Limit by size| * | - | -
+| Online capacity change| ? | * | *
+|===
+
+=== Expiry
+
+[%autowidth]
+|===
+|Feature | EHCache3 | Caffeine | cache2k
+| Expiry after write / TTL| * | * | *
+| Expiry after access / TTI| * | * | */idle scan
+| Variable expiry after update| ? | * | *
+| Variable expiry after access| ? | * | -
+| Delta expiry | - | - | *
+| Refresh ahead | -/addon | -/dissimilar | *
+| Update expiry time  | - | * | *
+| Atomically update expiry time and value  | - | - | *
+| Keep data after expiry | - | - | *
+| More effective lagging expiry ? | - | - | *
+| Point in time expiry | - | - | *
+| Configurable time reference | ? | * | *
+|===
+
+*Expiry after write / time to live*: A fixed timespan parameter after the entry is expired.
+
+*Expiry after access / time to idle*:
+
+*Keep data after expiry*: After expiry the entry is not removed from the cache.
+The expired entry can be used inside to loader to avoid another data transfer if
+the data did not change, e.g. with an `if-modified-since` HTTP request.
+
+*Sharp or lagging expiry*: Traditionally caches implement expiry exactly by the millisecond.
+This requires a clock lookup on every cache request and creates additional overhead. However, exact
+expiry is rarely needed. A design principle of cache2k is to minimize the overhead of a cache
+access, so cache2k supports both variants.
+
+*Point in time expiry*: Expiry can be based on the wall clock, e.g. causing a reload of
+exactly at 10am in the morning.
+
+*Refresh ahead*: Automatically refreshes an entry when the expiry (TTL) is reached.
+In cache2k refresh ahead is a switch option and it integrates with the other variants
+that determine the expiry (e.g. variable expiry via `ExpiryPolicy` or explicit set).
+
+Caffeine is using separate time parameters for refreshing and expiry. For example if an entry
+is valid  for one minute, without refresh ahead it would be configured as `expireAfterWrite`,
+with refresh ahead it is now configured as `refreshAfterWrite` and `expireAfterWrite` is configured
+to a larger value. The refresh is triggered by one request, which means Caffeine serves
+at least one entry value that is past the actual refresh time.
+
