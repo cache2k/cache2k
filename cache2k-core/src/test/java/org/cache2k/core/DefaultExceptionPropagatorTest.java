@@ -67,7 +67,7 @@ public class DefaultExceptionPropagatorTest {
     assertFalse(t.toString().contains("expiry="));
   }
 
-  private LoadExceptionInfo toInfo(final Throwable ex, final long t) {
+  private LoadExceptionInfo toInfo(Throwable ex, long t) {
     return new LoadExceptionInfo() {
       @Override
       public Object getKey() { return null; }

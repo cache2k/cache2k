@@ -32,8 +32,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class GlobalThreadFactory implements ThreadFactory {
 
-  private static final ConcurrentMap<String, String> NAMES_RUNNING =
-    new ConcurrentHashMap<String, String>();
+  private static final ConcurrentMap<String, String> NAMES_RUNNING = new ConcurrentHashMap<>();
 
   private final String prefix;
 
@@ -46,7 +45,7 @@ public class GlobalThreadFactory implements ThreadFactory {
   }
 
   @Override
-  public Thread newThread(final Runnable r) {
+  public Thread newThread(Runnable r) {
     String name;
     int id = 1;
     for (;;) {
@@ -56,15 +55,12 @@ public class GlobalThreadFactory implements ThreadFactory {
       }
       id++;
     }
-    final String finalName = name;
-    Runnable myRunnable = new Runnable() {
-      @Override
-      public void run() {
-        try {
-          r.run();
-        } finally {
-          NAMES_RUNNING.remove(finalName);
-        }
+    String finalName = name;
+    Runnable myRunnable = () -> {
+      try {
+        r.run();
+      } finally {
+        NAMES_RUNNING.remove(finalName);
       }
     };
     Thread thr = new Thread(myRunnable);

@@ -160,7 +160,7 @@ public class BasicCacheTest extends TestingBase {
   @Test
   public void testBulkGetAllReadThrough() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, new IdentIntSource(), 100, -1);
-    Set<Integer> _requestedKeys = new HashSet<Integer>(Arrays.asList(2, 3));
+    Set<Integer> _requestedKeys = new HashSet<>(Arrays.asList(2, 3));
     Map<Integer, Integer> m = c.getAll(_requestedKeys);
     assertEquals(2, m.size());
     assertEquals(2, (int) m.get(2));
@@ -173,7 +173,7 @@ public class BasicCacheTest extends TestingBase {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(1, 1);
     c.put(2, 2);
-    Set<Integer> _requestedKeys = new HashSet<Integer>(Arrays.asList(2, 3));
+    Set<Integer> _requestedKeys = new HashSet<>(Arrays.asList(2, 3));
     Map<Integer, Integer> m = c.peekAll(_requestedKeys);
     assertEquals(1, m.size());
     assertEquals(2, (int) m.get(2));
@@ -218,12 +218,7 @@ public class BasicCacheTest extends TestingBase {
 
   @Test
   public void testClear1() {
-    CacheLoader<String, String> cs = new CacheLoader<String, String>() {
-      @Override
-      public String load(String o) {
-        return o;
-      }
-    };
+    CacheLoader<String, String> cs = o -> o;
     Cache<String, String> c =
       freshCache(String.class, String.class, cs, 100, -1);
     c.get("xy");
@@ -312,7 +307,7 @@ public class BasicCacheTest extends TestingBase {
   }
 
   public static class MyExpiryPolicy implements ExpiryPolicy<String, String> {
-    public final Map<String, AtomicInteger> key2count = new HashMap<String, AtomicInteger>();
+    public final Map<String, AtomicInteger> key2count = new HashMap<>();
     public final AtomicInteger oldEntrySeen = new AtomicInteger();
     @Override
     public long calculateExpiryTime(String _key, String _value, long startTime,
@@ -479,16 +474,13 @@ public class BasicCacheTest extends TestingBase {
         getRefreshedTimeViaEntryProcessor(c, 2));
       sleep(3);
       c.get(2);
-      c.invoke(2, new EntryProcessor<Integer, Integer, Long>() {
-        @Override
-        public Long process(MutableCacheEntry<Integer, Integer> e) {
-          assertNull("exception suppressed", e.getException());
-          assertTrue("entry present", e.exists());
-          assertThat("modification time of entry, not when exception happened",
-            e.getModificationTime(),
-            lessThanOrEqualTo(refreshedBefore));
-          return null;
-        }
+      c.invoke(2, (EntryProcessor<Integer, Integer, Long>) e -> {
+        assertNull("exception suppressed", e.getException());
+        assertTrue("entry present", e.exists());
+        assertThat("modification time of entry, not when exception happened",
+          e.getModificationTime(),
+          lessThanOrEqualTo(refreshedBefore));
+        return null;
       });
 
     } catch (CacheLoaderException e) {
@@ -503,23 +495,15 @@ public class BasicCacheTest extends TestingBase {
 
   void checkExistingAndTimeStampGreaterOrEquals(Cache<Integer, Integer> c, int key, long t) {
     assertTrue(c.containsKey(key));
-    c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
-      @Override
-      public Long process(MutableCacheEntry<Integer, Integer> e) throws Exception {
-        assertTrue("entry present", e.exists());
-        assertThat(e.getModificationTime(), greaterThanOrEqualTo(t));
-        return null;
-      }
+    c.invoke(key, (EntryProcessor<Integer, Integer, Long>) e -> {
+      assertTrue("entry present", e.exists());
+      assertThat(e.getModificationTime(), greaterThanOrEqualTo(t));
+      return null;
     });
   }
 
   long getRefreshedTimeViaEntryProcessor(Cache<Integer, Integer> c, int key) {
-    return c.invoke(key, new EntryProcessor<Integer, Integer, Long>() {
-      @Override
-      public Long process(MutableCacheEntry<Integer, Integer> e) throws Exception {
-        return e.getModificationTime();
-      }
-    });
+    return c.invoke(key, MutableCacheEntry::getModificationTime);
   }
 
   @Test
@@ -556,7 +540,7 @@ public class BasicCacheTest extends TestingBase {
 
   public static class MyResiliencePolicy implements ResiliencePolicy<String, String> {
 
-    public final Map<String, AtomicInteger> key2count = new HashMap<String, AtomicInteger>();
+    public final Map<String, AtomicInteger> key2count = new HashMap<>();
 
     public long calculateExpiryTime(String key, Throwable _throwable, long _fetchTime) {
       AtomicInteger _count;
@@ -631,7 +615,7 @@ public class BasicCacheTest extends TestingBase {
    */
   public static class OccasionalExceptionSource implements CacheLoader<Integer, Integer> {
 
-    public final Map<Integer, AtomicInteger> key2count = new HashMap<Integer, AtomicInteger>();
+    public final Map<Integer, AtomicInteger> key2count = new HashMap<>();
 
     protected void maybeThrowException(Integer _key, int _count) {
       if (_count % _key == 0) {

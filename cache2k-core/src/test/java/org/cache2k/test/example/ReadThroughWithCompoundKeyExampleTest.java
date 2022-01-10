@@ -23,7 +23,6 @@ package org.cache2k.test.example;
 import net.jcip.annotations.NotThreadSafe;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.io.CacheLoader;
 import org.junit.After;
 import org.junit.Test;
 
@@ -36,12 +35,7 @@ public class ReadThroughWithCompoundKeyExampleTest {
   Cache<Route, String> routeToAirline = new Cache2kBuilder<Route, String>() { }
     .name(this + "-routeToAirline")
     .eternal(true)
-    .loader(new CacheLoader<Route, String>() {
-      @Override
-      public String load(Route key) {
-        return findFavoriteAirline(key.getOrigin(), key.getDestination());
-      }
-    })
+    .loader(key -> findFavoriteAirline(key.getOrigin(), key.getDestination()))
     .build();
 
   @After

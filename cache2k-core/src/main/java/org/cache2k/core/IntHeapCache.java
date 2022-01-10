@@ -45,7 +45,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> {
   }
 
   @Override
-  public int spreadedHashFromEntry(Entry e) {
+  public int spreadHashFromEntry(Entry e) {
     return spreadHash(e.hashCode);
   }
 
@@ -61,7 +61,7 @@ public class IntHeapCache<V> extends HeapCache<Integer, V> {
   public StampedHash<Integer, V> createHashTable() {
     return new StampedHash<Integer, V>(this) {
       @Override
-      protected int spreadedHashFromEntry(int hc) {
+      protected int spreadHashFromEntry(int hc) {
         return spreadHash(hc);
       }
 

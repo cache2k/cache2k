@@ -62,11 +62,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   public static final Entry NON_FRESH_DUMMY = new Entry();
 
   @SuppressWarnings("rawtypes")
-  static final CompletedCallback NOOP_CALLBACK = new CompletedCallback() {
-    @Override
-    public void entryActionCompleted(EntryAction ea) {
-    }
-  };
+  static final CompletedCallback NOOP_CALLBACK = ea -> { };
 
   /**
    * Effective internal cache, either HeapCache or WiredCache.
@@ -956,9 +952,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (newValueOrException instanceof ExceptionWrapper) {
       ExceptionWrapper<K, V> ew = (ExceptionWrapper<K, V>) newValueOrException;
       if (expiry < 0) {
-        newValueOrException = (V) new ExceptionWrapper<K, V>(ew, -expiry);
+        newValueOrException = (V) new ExceptionWrapper<>(ew, -expiry);
       } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
-        newValueOrException = (V) new ExceptionWrapper<K, V>(ew, expiry);
+        newValueOrException = (V) new ExceptionWrapper<>(ew, expiry);
       }
     }
   }

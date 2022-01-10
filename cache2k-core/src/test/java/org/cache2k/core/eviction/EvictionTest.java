@@ -20,7 +20,6 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
-import org.cache2k.operation.Weigher;
 import org.cache2k.test.util.TestingBase;
 import org.junit.Test;
 
@@ -39,12 +38,7 @@ public class EvictionTest extends TestingBase  {
   @Test(expected = IllegalArgumentException.class)
   public void missingMaximumWeight() {
     builder(Integer.class, Integer.class)
-      .weigher(new Weigher<Integer, Integer>() {
-        @Override
-        public int weigh(Integer key, Integer value) {
-          return 123;
-        }
-      })
+      .weigher((key, value) -> 123)
       .build();
   }
 

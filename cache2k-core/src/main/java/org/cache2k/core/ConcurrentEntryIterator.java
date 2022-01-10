@@ -47,7 +47,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
   private long clearCount;
   private StampedHash<K, V> hash;
   private Entry<K, V>[] hashArray;
-  private HashMap<K, K> seen = new HashMap<K, K>();
+  private HashMap<K, K> seen = new HashMap<>();
 
   public ConcurrentEntryIterator(HeapCache<K, V> cache) {
     this.cache = cache;
@@ -119,7 +119,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
           return e;
         }
       }
-      idx = (cache.spreadedHashFromEntry(lastEntry) & (hashArray.length - 1)) + 1;
+      idx = (cache.spreadHashFromEntry(lastEntry) & (hashArray.length - 1)) + 1;
     }
     for (;;) {
       if (idx >= hashArray.length) {
@@ -149,7 +149,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
       K key = cache.keyObjFromEntry(e);
       boolean notYetIterated = !seen.containsKey(key);
       if (notYetIterated) {
-        markIterated(key, cache.spreadedHashFromEntry(e));
+        markIterated(key, cache.spreadHashFromEntry(e));
         return e;
       }
       e = e.another;
@@ -166,7 +166,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
     if (Thread.holdsLock(cache.lock)) {
       return switchCheckAndAbortLocked();
     }
-    return cache.executeWithGlobalLock(() -> switchCheckAndAbortLocked());
+    return cache.executeWithGlobalLock(this::switchCheckAndAbortLocked);
   }
 
   /**

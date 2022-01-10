@@ -43,45 +43,39 @@ public class ChangeCapacityStressTest extends TestingBase {
 
   @Test
   public void test() {
-    final Random random = new Random(1802);
+    Random random = new Random(1802);
     final int count = 10000;
     final long maximumSize = count / 2;
     final int threads = 4;
     final int perThread = count / threads;
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
       builder()
         .entryCapacity(maximumSize)
       .build();
-    final AtomicInteger offset = new AtomicInteger();
-    final AtomicLong shrinkCount = new AtomicLong();
+    AtomicInteger offset = new AtomicInteger();
+    AtomicLong shrinkCount = new AtomicLong();
     for (int i = 0; i < maximumSize + 123; i++) {
       c.put(i, 1);
     }
-    Runnable putAndCheck = new Runnable() {
-      @Override
-      public void run() {
-        int start = offset.getAndAdd(perThread);
-        int end = start + perThread;
-        for (int i = start; i < end; i++) {
-          c.put(i, 1);
-          c.containsKey(i);
-        }
+    Runnable putAndCheck = () -> {
+      int start = offset.getAndAdd(perThread);
+      int end = start + perThread;
+      for (int i = start; i < end; i++) {
+        c.put(i, 1);
+        c.containsKey(i);
       }
     };
-    Runnable changeCapacity = new Runnable() {
-      @Override
-      public void run() {
-        long currentCapacity = CacheInfo.of(c).getEntryCapacity();
-        long newCapacity = currentCapacity
-          + maximumSize / 5 - random.nextInt((int) maximumSize / 2);
-        newCapacity = Math.max(maximumSize / 4, newCapacity);
-        if (newCapacity < currentCapacity) {
-          shrinkCount.incrementAndGet();
-        }
-        long sizeBeforeCapacityChange = c.asMap().size();
-        getInternalCache().getEviction().changeCapacity(newCapacity);
-        long effectiveCapacity = getInfo().getHeapCapacity();
+    Runnable changeCapacity = () -> {
+      long currentCapacity = CacheInfo.of(c).getEntryCapacity();
+      long newCapacity = currentCapacity
+        + maximumSize / 5 - random.nextInt((int) maximumSize / 2);
+      newCapacity = Math.max(maximumSize / 4, newCapacity);
+      if (newCapacity < currentCapacity) {
+        shrinkCount.incrementAndGet();
       }
+      long sizeBeforeCapacityChange = c.asMap().size();
+      getInternalCache().getEviction().changeCapacity(newCapacity);
+      long effectiveCapacity = getInfo().getHeapCapacity();
     };
     ThreadingStressTester tst = new ThreadingStressTester();
     tst.addTask(4, putAndCheck);

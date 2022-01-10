@@ -32,7 +32,7 @@ import java.util.ServiceLoader;
  */
 public class SingleProviderResolver {
 
-  private static final Map<Class, Object> PROVIDERS = new HashMap<Class, Object>();
+  private static final Map<Class, Object> PROVIDERS = new HashMap<>();
 
   /**
    * Return a provider for this interface.

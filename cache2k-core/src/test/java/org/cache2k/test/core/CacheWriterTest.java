@@ -22,10 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheWriter;
-import org.cache2k.processor.EntryProcessor;
-import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -73,12 +70,7 @@ public class CacheWriterTest extends TestingBase {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .writer(w)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return key;
-        }
-      })
+      .loader(key -> key)
       .build();
     c.get(1);
     assertNull(w.count.get(1));
@@ -89,12 +81,7 @@ public class CacheWriterTest extends TestingBase {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .writer(w)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return key;
-        }
-      })
+      .loader(key -> key)
       .build();
     c.reloadAll(asList(1)).get();
     assertNull(w.count.get(1));
@@ -105,19 +92,11 @@ public class CacheWriterTest extends TestingBase {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .writer(w)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return key;
-        }
-      })
+      .loader(key -> key)
       .build();
-    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(MutableCacheEntry<Integer, Integer> entry) {
-        entry.getValue();
-        return null;
-      }
+    c.invoke(1, entry -> {
+      entry.getValue();
+      return null;
     });
     assertNull(w.count.get(1));
   }
@@ -127,20 +106,12 @@ public class CacheWriterTest extends TestingBase {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .writer(w)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return key;
-        }
-      })
+      .loader(key -> key)
       .build();
-    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(MutableCacheEntry<Integer, Integer> entry) {
-        entry.getValue();
-        entry.setValue(123);
-        return null;
-      }
+    c.invoke(1, entry -> {
+      entry.getValue();
+      entry.setValue(123);
+      return null;
     });
     assertEquals(1, (int) w.count.get(1));
   }
@@ -256,7 +227,7 @@ public class CacheWriterTest extends TestingBase {
   public void testPutAllWriterException() {
     Cache<Integer, Integer> c = prepCacheForExceptionTest();
     try {
-      HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+      HashMap<Integer, Integer> map = new HashMap<>();
       map.put(12, 477);
       map.put(13, 7777);
       c.putAll(map);
@@ -295,7 +266,7 @@ public class CacheWriterTest extends TestingBase {
     } catch (Exception ignore) { }
     checkState(c);
     try {
-      HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+      HashMap<Integer, Integer> map = new HashMap<>();
       map.put(12, 477);
       map.put(13, 7777);
       c.putAll(map);
@@ -303,7 +274,7 @@ public class CacheWriterTest extends TestingBase {
     } catch (Exception ignore) { }
     checkState(c);
     try {
-      HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+      HashMap<Integer, Integer> map = new HashMap<>();
       map.put(12, 477);
       map.put(7777, 7777);
       c.putAll(map);
@@ -338,9 +309,9 @@ public class CacheWriterTest extends TestingBase {
 
   public static class MyWriter implements CacheWriter<Integer, Integer> {
 
-    final HashMap<Integer, Integer> deletedCount = new HashMap<Integer, Integer>();
-    final HashMap<Integer, Integer> count = new HashMap<Integer, Integer>();
-    final HashMap<Integer, Integer> content = new HashMap<Integer, Integer>();
+    final HashMap<Integer, Integer> deletedCount = new HashMap<>();
+    final HashMap<Integer, Integer> count = new HashMap<>();
+    final HashMap<Integer, Integer> content = new HashMap<>();
 
     @Override
     public synchronized void write(Integer key, Integer v) throws Exception {

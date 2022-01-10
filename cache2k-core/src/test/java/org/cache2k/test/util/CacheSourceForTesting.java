@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class CacheSourceForTesting<K, V> implements CacheLoader<K, V> {
 
-  private AtomicInteger callCount = new AtomicInteger();
+  private final AtomicInteger callCount = new AtomicInteger();
 
   protected final void incrementLoadCalledCount() {
     callCount.incrementAndGet();

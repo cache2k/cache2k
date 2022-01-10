@@ -21,7 +21,6 @@ package org.cache2k.core.operation;
  */
 
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.io.CacheLoaderException;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.RestartException;
@@ -84,6 +83,7 @@ public class Operations<K, V> {
     }
   };
 
+  @SuppressWarnings("Convert2Diamond") // needs Java 9
   public final Semantic<K, V, Void> refresh = new Semantic.MightUpdate<K, V, Void>() {
 
     /**
@@ -317,7 +317,7 @@ public class Operations<K, V> {
    * @see org.cache2k.Cache#replace(Object, Object)
    */
   public Semantic<K, V, Boolean> replace(K key, V value) {
-    return new Semantic.MightUpdate<K, V, Boolean>() {
+    return new Semantic.MightUpdate<K , V, Boolean>() {
 
       @Override
       public void examine(K key, Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
@@ -344,7 +344,7 @@ public class Operations<K, V> {
       @Override
       public void examine(K key, Progress<K, V, Boolean> c, ExaminationEntry<K, V> e) {
         if (c.isDataFreshOrMiss() &&
-          ((value ==  e.getValueOrException()) ||
+          ((value == e.getValueOrException()) ||
             (value != null && value.equals(e.getValueOrException())))) {
           c.result(true);
           c.wantMutation();
@@ -391,13 +391,15 @@ public class Operations<K, V> {
 
       private MutableEntryOnProgress<K, V> mutableEntryResult;
       private boolean needsLoad;
-      /** Triggers wantData and wantMutate which leads to a lock */
+      /**
+       * Triggers wantData and wantMutate which leads to a lock
+       */
       private boolean needsLock;
 
       @Override
       public void start(K key, Progress<K, V, R> c) {
         MutableEntryOnProgress<K, V> mutableEntry =
-          new MutableEntryOnProgress<K, V>(key, c, null, false);
+          new MutableEntryOnProgress<>(key, c, null, false);
         try {
           R result = processor.process(mutableEntry);
           c.result(result);
@@ -422,7 +424,7 @@ public class Operations<K, V> {
           return;
         }
         MutableEntryOnProgress<K, V> mutableEntry =
-          new MutableEntryOnProgress<K, V>(key, c, e, false);
+          new MutableEntryOnProgress<>(key, c, e, false);
         try {
           R result = processor.process(mutableEntry);
           c.result(result);
@@ -458,7 +460,7 @@ public class Operations<K, V> {
         }
         if (mutableEntryResult == null) {
           mutableEntryResult =
-            new MutableEntryOnProgress<K, V>(key, c, e, true);
+            new MutableEntryOnProgress<>(key, c, e, true);
           try {
             R result = processor.process(mutableEntryResult);
             c.result(result);
@@ -470,9 +472,12 @@ public class Operations<K, V> {
         mutableEntryResult.sendMutationCommand();
       }
 
-      /** No operation, result is set by the entry processor */
+      /**
+       * No operation, result is set by the entry processor
+       */
       @Override
-      public void loaded(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) { }
+      public void loaded(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) {
+      }
     };
   }
 
@@ -511,7 +516,7 @@ public class Operations<K, V> {
     };
   }
 
-  public final Semantic<K, V, Void> expireEvent = new ExpireEvent<K, V>();
+  public final Semantic<K, V, Void> expireEvent = new ExpireEvent<>();
 
   public static class ExpireEvent<K, V> extends Semantic.MightUpdate<K, V, Void> {
 

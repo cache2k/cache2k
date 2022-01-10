@@ -21,8 +21,6 @@ package org.cache2k.test.core.expiry;
  */
 
 import org.assertj.core.api.Assertions;
-import org.cache2k.io.AdvancedCacheLoader;
-import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.core.Constants;
@@ -34,10 +32,8 @@ import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
-import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.core.TestingParameters;
-import org.cache2k.test.util.Condition;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
@@ -66,8 +62,6 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
-import static org.cache2k.test.core.StaticUtil.*;
-
 /**
  * @author Jens Wilke
  */
@@ -81,13 +75,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void notEternal_policy() {
-    builder().eternal(false).expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-      @Override
-      public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                      CacheEntry<Integer, Integer> currentEntry) {
-        return 0;
-      }
-    }).build();
+    builder().eternal(false).expiryPolicy((key, value, startTime, currentEntry) -> 0).build();
   }
 
   @Test
@@ -121,13 +109,7 @@ public class ExpiryTest extends TestingBase {
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .expireAfterWrite(0, TimeUnit.SECONDS).build();
     checkAlwaysLoaded(g, c);
   }
@@ -137,13 +119,7 @@ public class ExpiryTest extends TestingBase {
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 1234567;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 1234567)
       .expireAfterWrite(0, TimeUnit.SECONDS).build();
     checkAlwaysLoaded(g, c);
   }
@@ -153,13 +129,9 @@ public class ExpiryTest extends TestingBase {
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c = cache = Cache2kBuilder.of(Integer.class, Integer.class)
       .loader(g)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          sleep(3);
-          return startTime + 1;
-        }
+      .expiryPolicy((key, value, startTime, currentEntry) -> {
+        sleep(3);
+        return startTime + 1;
       })
       .expireAfterWrite(0, TimeUnit.SECONDS).build();
     checkAlwaysLoaded(g, c);
@@ -266,16 +238,12 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          if (g.getLoaderCalledCount() == 2) {
-            assertNull(currentEntry);
-            success.set(true);
-          }
-          return 0;
+      .expiryPolicy((key, value, startTime, currentEntry) -> {
+        if (g.getLoaderCalledCount() == 2) {
+          assertNull(currentEntry);
+          success.set(true);
         }
+        return 0;
       })
       .build();
     try {
@@ -304,18 +272,14 @@ public class ExpiryTest extends TestingBase {
     AtomicBoolean success = new AtomicBoolean();
     AtomicInteger loadCount = new AtomicInteger();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .loader(new AdvancedCacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key, long startTime,
-                            CacheEntry<Integer, Integer> currentEntry) {
-          if (loadCount.incrementAndGet() == 1) {
-            assertNull(currentEntry);
-            throw new RuntimeException("ouch");
-          }
-          assertNull("entry is null, if exception happened previously", currentEntry);
-          success.set(true);
-          return key;
+      .loader((key, startTime, currentEntry) -> {
+        if (loadCount.incrementAndGet() == 1) {
+          assertNull(currentEntry);
+          throw new RuntimeException("ouch");
         }
+        assertNull("entry is null, if exception happened previously", currentEntry);
+        success.set(true);
+        return key;
       })
       .setup(builderAction)
       .build();
@@ -345,17 +309,14 @@ public class ExpiryTest extends TestingBase {
     AtomicBoolean success = new AtomicBoolean();
     AtomicInteger loadCount = new AtomicInteger();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .loader(new AsyncCacheLoader<Integer, Integer>() {
-        @Override
-        public void load(Integer key, Context<Integer, Integer> context, Callback<Integer> callback) throws Exception {
-          if (loadCount.incrementAndGet() == 1) {
-            assertNull(context.getCurrentEntry());
-            throw new RuntimeException("ouch");
-          }
-          assertNull("entry is null, if exception happened previously", context.getCurrentEntry());
-          success.set(true);
-          callback.onLoadSuccess(key);
+      .loader((key, context, callback) -> {
+        if (loadCount.incrementAndGet() == 1) {
+          assertNull(context.getCurrentEntry());
+          throw new RuntimeException("ouch");
         }
+        assertNull("entry is null, if exception happened previously", context.getCurrentEntry());
+        success.set(true);
+        callback.onLoadSuccess(key);
       })
       .setup(builderAction)
       .build();
@@ -434,16 +395,13 @@ public class ExpiryTest extends TestingBase {
       assertTrue("expiry on exception", ex.toString().contains(EXPIRY_MARKER));
       assertTrue(ex.getCause() instanceof RuntimeException);
     }
-    await(new Condition() {
-      @Override
-      public boolean check() {
-        if (getInfo().getExpiredCount() > 0) {
-          c.getEntry(99);
-          assertTrue(g.getLoaderCalledCount() > 1);
-          return true;
-        }
-        return false;
+    await(() -> {
+      if (getInfo().getExpiredCount() > 0) {
+        c.getEntry(99);
+        assertTrue(g.getLoaderCalledCount() > 1);
+        return true;
       }
+      return false;
     });
   }
 
@@ -497,26 +455,18 @@ public class ExpiryTest extends TestingBase {
     int v = c.peek(99);
     assertEquals(1, v);
     within(TestingParameters.MINIMAL_TICK_MILLIS)
-      .perform(new Runnable() {
-        @Override
-        public void run() {
-          Assertions.assertThatCode(() -> c.reloadAll(asList(99)).get())
-            .isInstanceOf(ExecutionException.class)
-            .getCause()
-            .isInstanceOf(CacheLoaderException.class);
-        }
-      })
-      .expectMaybe(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            c.get(99);
-            fail("exception expected");
-          } catch (Exception ex) {
-            assertTrue(ex instanceof CacheLoaderException);
-            assertTrue("expiry on exception", ex.toString().contains(EXPIRY_MARKER));
-            assertTrue(ex.getCause() instanceof RuntimeException);
-          }
+      .perform(() -> Assertions.assertThatCode(() -> c.reloadAll(asList(99)).get())
+        .isInstanceOf(ExecutionException.class)
+        .getCause()
+        .isInstanceOf(CacheLoaderException.class))
+      .expectMaybe(() -> {
+        try {
+          c.get(99);
+          fail("exception expected");
+        } catch (Exception ex) {
+          assertTrue(ex instanceof CacheLoaderException);
+          assertTrue("expiry on exception", ex.toString().contains(EXPIRY_MARKER));
+          assertTrue(ex.getCause() instanceof RuntimeException);
         }
       });
     assertTrue(g.getLoaderCalledCount() > 0);
@@ -602,7 +552,7 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.get(1);
     long loadTime = c.invoke(1, entry -> { entry.load(); return entry.getStartTime(); });
-    long expiryTime = c.invoke(1, entry -> entry.getExpiryTime());
+    long expiryTime = c.invoke(1, MutableCacheEntry::getExpiryTime);
     assertEquals("two loads", 2, g.getLoaderCalledCount());
     assertEquals(loadTime + expiryMillis, expiryTime);
   }
@@ -655,13 +605,7 @@ public class ExpiryTest extends TestingBase {
   public void testImmediateExpireWithExpiryCalculator() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
@@ -675,15 +619,11 @@ public class ExpiryTest extends TestingBase {
   public void testImmediateExpireAfterUpdate() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          if (currentEntry == null) {
-            return ETERNAL;
-          }
-          return NOW;
+      .expiryPolicy((key, value, startTime, currentEntry) -> {
+        if (currentEntry == null) {
+          return ExpiryTimeValues.ETERNAL;
         }
+        return ExpiryTimeValues.NOW;
       })
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
@@ -698,15 +638,11 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void testImmediateExpireAfterPut() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          if (currentEntry == null) {
-            return ETERNAL;
-          }
-          return NOW;
+      .expiryPolicy((key, value, startTime, currentEntry) -> {
+        if (currentEntry == null) {
+          return ExpiryTimeValues.ETERNAL;
         }
+        return ExpiryTimeValues.NOW;
       })
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
@@ -723,13 +659,7 @@ public class ExpiryTest extends TestingBase {
   public void testResiliencePolicyException() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .eternal(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key,
@@ -738,6 +668,7 @@ public class ExpiryTest extends TestingBase {
           fail("not reached");
           return 0;
         }
+
         @Override
         public long retryLoadAfter(Integer key, LoadExceptionInfo<Integer, Integer> exceptionInformation) {
           throw new NullPointerException("test");
@@ -759,13 +690,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .eternal(true)
       .keepDataAfterExpired(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
@@ -821,13 +746,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .keepDataAfterExpired(false)
       .eternal(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
@@ -882,13 +801,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .eternal(true)
       .keepDataAfterExpired(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
@@ -954,13 +867,7 @@ public class ExpiryTest extends TestingBase {
     AtomicLong policyCalled = new AtomicLong();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new BasicCacheTest.AlwaysExceptionSource())
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return 0;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .keepDataAfterExpired(true)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
@@ -991,13 +898,7 @@ public class ExpiryTest extends TestingBase {
     AtomicInteger suppressRetryCount = new AtomicInteger(initial);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .keepDataAfterExpired(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return NOW;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
@@ -1046,24 +947,13 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return NOW;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
       .loader(countingLoader)
       .build();
     c.get(1);
     c.get(2);
     c.get(3);
-    await("All expired", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getExpiredCount() >= count;
-      }
-    });
+    await("All expired", () -> getInfo().getExpiredCount() >= count);
     assertEquals(0, getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount());
     assertEquals(count, countingLoader.getLoaderCalledCount());
     assertEquals(count, getInfo().getExpiredCount());
@@ -1081,25 +971,14 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return NOW;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
       .loader(countingLoader)
       .keepDataAfterExpired(false)
       .build();
     c.get(1);
     c.get(2);
     c.get(3);
-    await("All expired", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getExpiredCount() >= count;
-      }
-    });
+    await("All expired", () -> getInfo().getExpiredCount() >= count);
     assertEquals(0,
       getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount());
     assertEquals(count, countingLoader.getLoaderCalledCount());
@@ -1117,13 +996,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return NOW;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
       .loader(countingLoader)
       .build();
     c.get(1);
@@ -1146,30 +1019,14 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-        @Override
-        public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                        CacheEntry<Integer, Integer> currentEntry) {
-          return startTime;
-        }
-      })
+      .expiryPolicy((key, value, startTime, currentEntry) -> startTime)
       .loader(new IdentIntSource())
       .build();
     c.get(1);
     c.get(2);
     c.get(3);
-    await("All refreshed", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount() >= count;
-      }
-    });
-    await("All expired", new Condition() {
-      @Override
-      public boolean check() {
-        return getInfo().getExpiredCount() >= count;
-      }
-    });
+    await("All refreshed", () -> getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount() >= count);
+    await("All expired", () -> getInfo().getExpiredCount() >= count);
   }
 
   static final long FUTURE_TIME =
@@ -1228,12 +1085,7 @@ public class ExpiryTest extends TestingBase {
     }
 
     protected void addLoader(Cache2kBuilder<Integer, Integer> b) {
-      b.loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) throws Exception {
-          return waitForSemaphoreAndLoad();
-        }
-      });
+      b.loader(key -> waitForSemaphoreAndLoad());
     }
 
     protected Integer waitForSemaphoreAndLoad() throws Exception {
@@ -1248,18 +1100,8 @@ public class ExpiryTest extends TestingBase {
       assertTrue(cache.containsKey(1));
       assertEquals(0, count.get());
       sem.release();
-      await("loader called", new Condition() {
-        @Override
-        public boolean check() {
-          return count.get() == 1;
-        }
-      });
-      await("load complete", new Condition() {
-        @Override
-        public boolean check() {
-          return !cache.containsKey(1);
-        }
-      });
+      await("loader called", () -> count.get() == 1);
+      await("load complete", () -> !cache.containsKey(1));
       try {
         assertEquals(1, getInfo().getSize());
       } catch (AssertionError e) {
@@ -1331,22 +1173,15 @@ public class ExpiryTest extends TestingBase {
     new ManualExpireFixture() {
       @Override
       protected void addLoader(Cache2kBuilder<Integer, Integer> b) {
-        b.loader(new AsyncCacheLoader<Integer, Integer>() {
-          @Override
-          public void load(Integer key, Context<Integer, Integer> context,
-                           Callback<Integer> callback) {
-            Executor executor = context.getLoaderExecutor();
-              executor.execute(new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  callback.onLoadSuccess(waitForSemaphoreAndLoad());
-                } catch (Exception ex) {
-                  callback.onLoadFailure(ex);
-                }
-              }
-            });
-          }
+        b.loader((key, context, callback) -> {
+          Executor executor = context.getLoaderExecutor();
+          executor.execute(() -> {
+            try {
+              callback.onLoadSuccess(waitForSemaphoreAndLoad());
+            } catch (Exception ex) {
+              callback.onLoadFailure(ex);
+            }
+          });
         });
       }
 
@@ -1394,12 +1229,7 @@ public class ExpiryTest extends TestingBase {
   public void manualExpire_sharp() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return 4711;
-        }
-      })
+      .loader(key -> 4711)
       .build();
     c.put(1, 2);
     c.expireAt(1, -millis());
@@ -1412,31 +1242,15 @@ public class ExpiryTest extends TestingBase {
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
       .keepDataAfterExpired(false)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return 4711;
-        }
-      })
+      .loader(key -> 4711)
       .build();
-    within(LONG_DELTA).perform(new Runnable() {
-      @Override
-      public void run() {
-        c.put(1, 2);
-        c.expireAt(1, -millis());
-      }
-    }).expectMaybe(new Runnable() {
-      @Override
-      public void run() {
-        assertFalse(c.containsKey(1));
-        await(new Condition() {
-          @Override
-          public boolean check() {
-            return getInfo().getRefreshCount() > 0;
-          }
-        });
-        assertEquals("in cache if within delta time", 1, getInfo().getSize());
-      }
+    within(LONG_DELTA).perform(() -> {
+      c.put(1, 2);
+      c.expireAt(1, -millis());
+    }).expectMaybe(() -> {
+      assertFalse(c.containsKey(1));
+      await(() -> getInfo().getRefreshCount() > 0);
+      assertEquals("in cache if within delta time", 1, getInfo().getSize());
     });
     c.expireAt(1, ExpiryTimeValues.NOW);
     assertEquals("empty after expired immediately", 0, getInfo().getSize());
@@ -1480,20 +1294,12 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return 4711;
-        }
-      })
+      .loader(key -> 4711)
       .build();
-    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(MutableCacheEntry<Integer, Integer> e) {
-        e.setExpiryTime(millis() + LONG_DELTA);
-        e.setValue(7);
-        return null;
-      }
+    c.invoke(1, e -> {
+      e.setExpiryTime(millis() + LONG_DELTA);
+      e.setValue(7);
+      return null;
     });
     assertTrue(c.containsKey(1));
     assertEquals((Integer) 7, c.peek(1));
@@ -1504,20 +1310,12 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
       .refreshAhead(true)
-      .loader(new CacheLoader<Integer, Integer>() {
-        @Override
-        public Integer load(Integer key) {
-          return 4711;
-        }
-      })
+      .loader(key -> 4711)
       .build();
     c.put(1, 2);
-    c.invoke(1, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(MutableCacheEntry<Integer, Integer> e) {
-        e.setExpiryTime(-millis());
-        return null;
-      }
+    c.invoke(1, e -> {
+      e.setExpiryTime(-millis());
+      return null;
     });
     assertFalse(c.containsKey(1));
   }
@@ -1544,21 +1342,15 @@ public class ExpiryTest extends TestingBase {
       .timerLag(TestingParameters.MINIMAL_TICK_MILLIS * 2, TimeUnit.MILLISECONDS)
       .build();
     within(TestingParameters.MINIMAL_TICK_MILLIS * 2 - 1)
-      .perform(new Runnable() {
-      @Override
-      public void run() {
+      .perform(() -> {
         for (int i = 0; i < 3; i++) {
           c.put(i, i);
         }
-      }
-    }).expectMaybe(new Runnable() {
-      @Override
-      public void run() {
+      }).expectMaybe(() -> {
         assertEquals(3, getCache().asMap().size());
         sleep(TestingParameters.MINIMAL_TICK_MILLIS);
         assertEquals(3, getCache().asMap().size());
-      }
-    });
+      });
   }
 
   /** Checks that nothing breaks here. */
@@ -1576,25 +1368,14 @@ public class ExpiryTest extends TestingBase {
         .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
         .keepDataAfterExpired(false)
         .permitNullValues(false)
-        .loader(new CacheLoader<Integer, Integer>() {
-          @Override
-          public Integer load(Integer key) {
-            return null;
-          }
-        })
-        .expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-          @Override
-          public long calculateExpiryTime(Integer key, Integer value, long startTime,
-                                          CacheEntry<Integer, Integer> currentEntry) {
-            return value == null ? NOW : ETERNAL;
-          }
-        })
+        .loader(key -> null)
+        .expiryPolicy((key, value, startTime, currentEntry) -> value == null ? ExpiryTimeValues.NOW : ExpiryTimeValues.ETERNAL)
         .build();
   }
 
   public static class Every1ExceptionLoader implements CacheLoader<Integer, Integer> {
 
-    public final Map<Integer, AtomicInteger> key2count = new HashMap<Integer, AtomicInteger>();
+    public final Map<Integer, AtomicInteger> key2count = new HashMap<>();
 
     protected void maybeThrowException(Integer key, int count) {
       if ((key & (1 << count)) != 0) {

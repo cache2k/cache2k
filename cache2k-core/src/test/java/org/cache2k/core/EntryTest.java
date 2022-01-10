@@ -20,7 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

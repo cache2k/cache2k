@@ -22,11 +22,8 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.io.AsyncCacheLoader;
-import org.cache2k.io.CacheLoader;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
 import org.junit.Test;
@@ -53,24 +50,9 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
 
   @Test
   public void testLoaderWithListener() {
-    final AtomicInteger _countCreated =  new AtomicInteger();
-    Cache<Integer, Integer> c = target.cache(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b .loader(new CacheLoader<Integer, Integer>() {
-            @Override
-            public Integer load(final Integer key) throws Exception {
-              return key * 2;
-            }
-          })
-          .addListener(new CacheEntryCreatedListener<Integer, Integer>() {
-            @Override
-            public void onEntryCreated(final Cache<Integer, Integer> c, final CacheEntry<Integer, Integer> e) {
-              _countCreated.incrementAndGet();
-            }
-          });
-      }
-    });
+    AtomicInteger _countCreated =  new AtomicInteger();
+    Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> key * 2)
+      .addListener((CacheEntryCreatedListener<Integer, Integer>) (c1, e) -> _countCreated.incrementAndGet()));
     assertEquals(0, _countCreated.get());
     assertEquals((Integer) 10, c.get(5));
     assertEquals(1, _countCreated.get());
@@ -88,13 +70,9 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
     Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
-        b.loader(new AsyncCacheLoader<Integer, Integer>() {
-          @Override
-          public void load(Integer key, Context<Integer, Integer> context,
-                           Callback<Integer> callback) {
-            assertNull(context.getCurrentEntry());
-            callback.onLoadSuccess(key);
-          }
+        b.loader((key, context, callback) -> {
+          assertNull(context.getCurrentEntry());
+          callback.onLoadSuccess(key);
         });
       }
     });
@@ -108,22 +86,18 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
    */
   @Test
   public void asyncLoaderEntrySetIfExpiredWithKeepData() {
-    final AtomicBoolean expectEntry = new AtomicBoolean();
+    AtomicBoolean expectEntry = new AtomicBoolean();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.keepDataAfterExpired(true);
-        b.loader(new AsyncCacheLoader<Integer, Integer>() {
-          @Override
-          public void load(Integer key, Context<Integer, Integer> context,
-                           Callback<Integer> callback) {
-            if (expectEntry.get()) {
-              assertNotNull(context.getCurrentEntry());
-            } else {
-              assertNull(context.getCurrentEntry());
-            }
-            callback.onLoadSuccess(key);
+        b.loader((key, context, callback) -> {
+          if (expectEntry.get()) {
+            assertNotNull(context.getCurrentEntry());
+          } else {
+            assertNull(context.getCurrentEntry());
           }
+          callback.onLoadSuccess(key);
         });
       }
     });

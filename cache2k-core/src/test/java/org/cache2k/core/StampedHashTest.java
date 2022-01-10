@@ -40,7 +40,7 @@ public class StampedHashTest {
    */
   @Test
   public void testExpansion() {
-    final StampedHash ht = new StampedHash("test");
+    StampedHash ht = new StampedHash("test");
     for (int i = 0; i < 20; i++) {
       ht.runTotalLocked(() -> {
         ht.rehash();

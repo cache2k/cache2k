@@ -28,7 +28,6 @@ import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.HeapCache;
 import org.cache2k.operation.TimeReference;
-import org.cache2k.operation.Scheduler;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;

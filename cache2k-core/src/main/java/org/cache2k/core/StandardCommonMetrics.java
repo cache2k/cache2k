@@ -95,7 +95,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return REFRESH_UPDATER.get(this);
   }
   @Override
-  public void refresh(final long millis) {
+  public void refresh(long millis) {
     REFRESH_UPDATER.incrementAndGet(this);
     LOAD_MILLIS_UPDATER.addAndGet(this, millis);
   }
@@ -108,7 +108,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return READ_THROUGH_UPDATER.get(this);
   }
   @Override
-  public void readThrough(final long millis) {
+  public void readThrough(long millis) {
     READ_THROUGH_UPDATER.incrementAndGet(this);
     LOAD_MILLIS_UPDATER.addAndGet(this, millis);
   }
@@ -121,7 +121,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     return RELOAD_UPDATER.get(this);
   }
   @Override
-  public void explicitLoad(final long millis) {
+  public void explicitLoad(long millis) {
     RELOAD_UPDATER.incrementAndGet(this);
     LOAD_MILLIS_UPDATER.addAndGet(this, millis);
   }

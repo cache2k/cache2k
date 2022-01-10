@@ -22,7 +22,6 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.core.api.InternalCache;
@@ -44,9 +43,7 @@ public class StaticUtil {
    */
   @SuppressWarnings("unchecked")
   public static <K, V> Cache2kBuilder<K, V> enforceWiredCache(Cache2kBuilder<K, V> b) {
-    return b.addListener(new CacheEntryRemovedListener<K, V>() {
-      @Override
-      public void onEntryRemoved(Cache<K, V> cache, CacheEntry<K, V> entry) { }
+    return b.addListener((CacheEntryRemovedListener<K, V>) (cache, entry) -> {
     });
   }
 

@@ -68,7 +68,7 @@ public class CacheManagerImpl extends CacheManager {
   @SuppressWarnings("unchecked")
   private static <S> Iterable<S> constructAllServiceImplementations(Class<S> service) {
     ClassLoader cl = CacheManagerImpl.class.getClassLoader();
-    ArrayList<S> li = new ArrayList<S>();
+    ArrayList<S> li = new ArrayList<>();
     Iterator<S> it = ServiceLoader.load(service, cl).iterator();
     while (it.hasNext()) {
       try {
@@ -80,20 +80,19 @@ public class CacheManagerImpl extends CacheManager {
     }
     S[] a = (S[]) Array.newInstance(service, li.size());
     li.toArray(a);
-    return new Iterable<S>() {
-      public Iterator<S> iterator() {
-        return new Iterator<S>() {
-          private int pos = 0;
-          public boolean hasNext() {
-            return pos < a.length;
-          }
-          public S next() {
-            return a[pos++];
-          }
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-        };
+    return () -> new Iterator<S>() {
+      private int pos = 0;
+
+      public boolean hasNext() {
+        return pos < a.length;
+      }
+
+      public S next() {
+        return a[pos++];
+      }
+
+      public void remove() {
+        throw new UnsupportedOperationException();
       }
     };
   }
@@ -119,10 +118,6 @@ public class CacheManagerImpl extends CacheManager {
       lc.managerCreated(this);
     }
     logPhase("open");
-  }
-
-  public static Iterable<CacheLifeCycleListener> getCacheLifeCycleListeners() {
-    return CACHE_LIFE_CYCLE_LISTENERS;
   }
 
   public <K, V> void sendCreatedEvent(Cache c, InternalCacheBuildContext<K, V> ctx) {
@@ -202,12 +197,12 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   @Override
-  public Iterable<Cache> getActiveCaches() {
+  public Iterable<Cache<?, ?>> getActiveCaches() {
     return cachesCopy();
   }
 
-  private Iterable<Cache> cachesCopy() {
-    Set<Cache> caches = new HashSet<Cache>();
+  private Iterable<Cache<?, ?>> cachesCopy() {
+    Set<Cache<?, ?>> caches = new HashSet<>();
     synchronized (lock) {
       if (!isClosed()) {
         for (Cache c : cacheNames.values()) {
@@ -221,7 +216,7 @@ public class CacheManagerImpl extends CacheManager {
   }
 
   private Collection<String> getActiveCacheNames() {
-    Set<String> caches = new HashSet<String>();
+    Set<String> caches = new HashSet<>();
     synchronized (lock) {
       if (!isClosed()) {
         for (Cache c : cacheNames.values()) {
@@ -281,7 +276,7 @@ public class CacheManagerImpl extends CacheManager {
     if (isDefaultManager() && getClass().getClassLoader() == classLoader) {
       log.info("Closing default CacheManager");
     }
-    Iterable<Cache> caches;
+    Iterable<Cache<?, ?>> caches;
     synchronized (lock) {
       if (closing) {
         return;
@@ -290,7 +285,7 @@ public class CacheManagerImpl extends CacheManager {
       closing = true;
     }
     logPhase("close");
-    List<Throwable> suppressedExceptions = new ArrayList<Throwable>();
+    List<Throwable> suppressedExceptions = new ArrayList<>();
     for (Cache c : caches) {
       ((InternalCache) c).cancelTimerJobs();
     }

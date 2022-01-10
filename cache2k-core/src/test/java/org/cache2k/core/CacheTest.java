@@ -54,12 +54,7 @@ public class CacheTest {
 
   @Test
   public void testGetWithLoader() {
-    CacheLoader<String, Integer> lengthCountingSource = new CacheLoader<String, Integer>() {
-      @Override
-      public Integer load(String o) {
-        return o.length();
-      }
-    };
+    CacheLoader<String, Integer> lengthCountingSource = String::length;
     Cache<String, Integer> c =
       Cache2kBuilder.of(String.class, Integer.class)
         .loader(lengthCountingSource)

@@ -31,7 +31,7 @@ import org.junit.experimental.categories.Category;
 public class StatisticsWiredCacheTest extends StatisticsTest {
 
   @Override
-  protected void applyAdditionalOptions(final Cache2kBuilder b) {
+  protected void applyAdditionalOptions(Cache2kBuilder b) {
     super.applyAdditionalOptions(b);
     StaticUtil.enforceWiredCache(b);
   }

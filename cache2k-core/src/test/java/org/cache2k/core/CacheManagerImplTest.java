@@ -39,13 +39,13 @@ public class CacheManagerImplTest {
 
   @Test
   public void eventuallyThrowException_empty() {
-    List<Throwable> li = new ArrayList<Throwable>();
+    List<Throwable> li = new ArrayList<>();
     CacheManagerImpl.eventuallyThrowException(li);
   }
 
   @Test(expected = CacheException.class)
   public void eventuallyThrowException_normalException() {
-    List<Throwable> li = new ArrayList<Throwable>();
+    List<Throwable> li = new ArrayList<>();
     li.add(new IllegalArgumentException());
     CacheManagerImpl.eventuallyThrowException(li);
     fail("exception expected");
@@ -53,7 +53,7 @@ public class CacheManagerImplTest {
 
   @Test(expected = CacheInternalError.class)
   public void eventuallyThrowException_error() {
-    List<Throwable> li = new ArrayList<Throwable>();
+    List<Throwable> li = new ArrayList<>();
     li.add(new LinkageError());
     CacheManagerImpl.eventuallyThrowException(li);
     fail("exception expected");
@@ -61,7 +61,7 @@ public class CacheManagerImplTest {
 
   @Test(expected = CacheInternalError.class)
   public void eventuallyThrowException_ExecutionExceptionWithEWrror() {
-    List<Throwable> li = new ArrayList<Throwable>();
+    List<Throwable> li = new ArrayList<>();
     li.add(new ExecutionException(new LinkageError()));
     CacheManagerImpl.eventuallyThrowException(li);
     fail("exception expected");
@@ -69,7 +69,7 @@ public class CacheManagerImplTest {
 
   @Test(expected = CacheInternalError.class)
   public void eventuallyThrowException_ExceptionAndError() {
-    List<Throwable> li = new ArrayList<Throwable>();
+    List<Throwable> li = new ArrayList<>();
     li.add(new IllegalArgumentException());
     li.add(new LinkageError());
     CacheManagerImpl.eventuallyThrowException(li);

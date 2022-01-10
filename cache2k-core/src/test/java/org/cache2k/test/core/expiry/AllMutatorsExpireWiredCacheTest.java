@@ -34,11 +34,11 @@ import org.junit.experimental.categories.Category;
 public class AllMutatorsExpireWiredCacheTest extends AllMutatorsExpireTest {
 
   @Override
-  protected <K, T> Cache2kBuilder<K, T> builder(final Class<K> k, final Class<T> t) {
+  protected <K, T> Cache2kBuilder<K, T> builder(Class<K> k, Class<T> t) {
     return StaticUtil.enforceWiredCache(super.builder(k, t));
   }
 
-  public AllMutatorsExpireWiredCacheTest(final Pars p) {
+  public AllMutatorsExpireWiredCacheTest(Pars p) {
     super(p);
   }
 

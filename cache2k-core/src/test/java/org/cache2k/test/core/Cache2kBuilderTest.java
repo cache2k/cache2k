@@ -154,7 +154,8 @@ public class Cache2kBuilderTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void anonymousWithObjectObject() {
-    Cache c = new Cache2kBuilder<Object,Object>(){}.eternal(true).build();
+    Cache c = new Cache2kBuilder<Object, Object>() {
+    }.eternal(true).build();
     c.clear();
   }
 
@@ -176,7 +177,7 @@ public class Cache2kBuilderTest {
   public void collectionValueClass() {
     Cache<Long, List<String>> c =
       (Cache<Long, List<String>>) (Object) Cache2kBuilder.of(Long.class, List.class).eternal(true).build();
-    c.put(123L, new ArrayList<String>());
+    c.put(123L, new ArrayList<>());
     c.close();
   }
 
@@ -191,7 +192,7 @@ public class Cache2kBuilderTest {
         .valueType(new CacheTypeCapture<List<String>>() {})
         .eternal(true)
         .build();
-    c.put(123L, new ArrayList<String>());
+    c.put(123L, new ArrayList<>());
     c.close();
   }
 
@@ -306,7 +307,7 @@ public class Cache2kBuilderTest {
     c0.close();
   }
 
-  final static String ILLEGAL_CHARACTERS_IN_NAME =
+  static final String ILLEGAL_CHARACTERS_IN_NAME =
     "{}|\\^&=\";:<>*?/" +
       ((char) 27) +
       ((char) 127) +
@@ -358,7 +359,7 @@ public class Cache2kBuilderTest {
 
   @Test
   public void cacheRemovedAfterClose() {
-    final String NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterClose";
+    String NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterClose";
     CacheManager cm = CacheManager.getInstance(NAME);
     Cache c = Cache2kBuilder.forUnknownTypes()
       .manager(cm)
@@ -371,7 +372,7 @@ public class Cache2kBuilderTest {
 
   @Test
   public void cacheRemovedAfterClose_WiredCache() {
-    final String NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterCloseWiredCache";
+    String NAME = this.getClass().getSimpleName() + "-cacheRemovedAfterCloseWiredCache";
     CacheManager cm = CacheManager.getInstance(NAME);
     Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes()
       .manager(cm)
@@ -384,7 +385,7 @@ public class Cache2kBuilderTest {
   }
 
   private void cacheClosedEventFired(boolean _wiredCache) {
-    final AtomicBoolean FIRED = new AtomicBoolean();
+    AtomicBoolean FIRED = new AtomicBoolean();
     Cache2kBuilder builder = Cache2kBuilder.forUnknownTypes();
     builder = builder.addCacheClosedListener(cache -> {
       FIRED.set(true);

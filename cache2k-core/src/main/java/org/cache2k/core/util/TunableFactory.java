@@ -74,7 +74,7 @@ public final class TunableFactory {
    * and the configuration file.
    */
   private static void load() {
-    map = new HashMap<Class<?>, Object>();
+    map = new HashMap<>();
     customProperties = loadFile(CUSTOM_TUNING_FILE_NAME);
     if (isGraalVMNativeImage()) {
       defaultProperties = loadFile(DEFAULT_TUNING_GRAALVM_FILE_NAME);

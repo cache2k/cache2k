@@ -29,6 +29,7 @@ import org.cache2k.io.ResiliencePolicy;
  */
 public interface Constants {
 
+  @SuppressWarnings("Convert2Diamond") // needs Java 9
   ResiliencePolicy<?, ?> RESILIENCE_CACHE_AND_SUPPRESS_EXCEPTIONS = new ResiliencePolicy<Object, Object>() {
     @Override
     public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo,
@@ -46,6 +47,7 @@ public interface Constants {
     return (ResiliencePolicy<K, V>) RESILIENCE_CACHE_AND_SUPPRESS_EXCEPTIONS;
   }
 
+  @SuppressWarnings("Convert2Diamond") // needs Java 9
   ResiliencePolicy<?, ?> RESILIENCE_CACHE_EXCEPTIONS = new ResiliencePolicy<Object, Object>() {
     @Override
     public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo,

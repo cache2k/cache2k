@@ -35,7 +35,7 @@ public class BulkResultCollector<K, V> {
 
   private int exceptionCount;
   private Throwable anyException;
-  private Map<K, Object> map = new HashMap<>();
+  private final Map<K, Object> map = new HashMap<>();
 
   public void put(K key, Object value) {
     map.put(key, value);

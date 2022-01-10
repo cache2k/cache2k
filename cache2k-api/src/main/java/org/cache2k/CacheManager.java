@@ -176,7 +176,7 @@ public abstract class CacheManager implements AutoCloseable {
    * was created via {@link #createCache(Cache2kConfig)} or
    * {@link Cache2kBuilder#build()} and is not closed yet.
    */
-  public abstract Iterable<Cache> getActiveCaches();
+  public abstract Iterable<Cache<?, ?>> getActiveCaches();
 
   /**
    * Returns a list of caches that are found in the XML based configuration.

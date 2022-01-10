@@ -20,13 +20,9 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.test.core.expiry.ExpiryTest;
 import org.cache2k.testing.category.FastTests;
-import org.cache2k.test.util.CacheRule;
 import org.junit.experimental.categories.Category;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke
@@ -35,12 +31,9 @@ import java.util.concurrent.TimeUnit;
 public class ExceptionPropagatorWiredCacheTest extends ExceptionPropagatorTest {
 
   {
-    target.config(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        StaticUtil.enforceWiredCache(b);
-        b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
-      }
+    target.config(b -> {
+      StaticUtil.enforceWiredCache(b);
+      b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
     });
   }
 

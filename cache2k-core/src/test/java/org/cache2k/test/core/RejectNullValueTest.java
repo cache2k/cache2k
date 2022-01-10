@@ -22,9 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
-import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.io.CacheLoader;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
@@ -39,48 +37,35 @@ import java.util.concurrent.ExecutionException;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
-import static org.cache2k.test.core.StaticUtil.*;
-
 /**
  * @author Jens Wilke
  */
 @Category(FastTests.class)
 public class RejectNullValueTest {
 
-  private final static Integer KEY = 1;
-  private final static Integer VALUE = 1;
+  private static final Integer KEY = 1;
+  private static final Integer VALUE = 1;
 
   @ClassRule
-  public final static CacheRule<Integer, Integer> staticTarget = new IntCacheRule()
-    .config(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        configureRejectNull(b);
-      }
-    });
+  public static final CacheRule<Integer, Integer> staticTarget = new IntCacheRule()
+    .config(RejectNullValueTest::configureRejectNull);
 
-  static void configureRejectNull(final Cache2kBuilder<Integer, Integer> b) {
+  static void configureRejectNull(Cache2kBuilder<Integer, Integer> b) {
     b.permitNullValues(false);
-    b.loader(new CacheLoader<Integer, Integer>() {
-      @Override
-      public Integer load(final Integer key) throws Exception {
-        if (key % 2 == 0) {
-          return null;
-        }
-        return key;
+    b.loader(key -> {
+      if (key % 2 == 0) {
+        return null;
       }
+      return key;
     });
-    b.expiryPolicy(new ExpiryPolicy<Integer, Integer>() {
-      @Override
-      public long calculateExpiryTime(final Integer key, final Integer value, final long startTime, final CacheEntry<Integer, Integer> currentEntry) {
-        if (key >= 8) {
+    b.expiryPolicy((key, value, startTime, currentEntry) -> {
+      if (key >= 8) {
         throw new RuntimeException("exception in the expiry policy");
       }
       if (key % 4 == 0 && value == null) {
-        return NOW;
+        return ExpiryTimeValues.NOW;
       }
-      return ETERNAL;
-      }
+      return ExpiryTimeValues.ETERNAL;
     });
   }
 

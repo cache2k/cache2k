@@ -216,9 +216,9 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     Class<?> keyType = config.getKeyType().getType();
     if (keyType == Integer.class) {
       bc = (HeapCache<K, V>)
-        new IntHeapCache<V>((InternalCacheBuildContext<Integer, V>) this);
+        new IntHeapCache<>((InternalCacheBuildContext<Integer, V>) this);
     } else {
-      bc = new HeapCache<K, V>(this);
+      bc = new HeapCache<>(this);
     }
     Cache<K, V> cache = bc;
     if (config.isRefreshAhead() && !(
@@ -239,7 +239,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
 
     WiredCache<K, V> wc = null;
     if (wiredCache) {
-      wc = new WiredCache<K, V>();
+      wc = new WiredCache<>();
       wc.heapCache = bc;
       cache = wc;
     }
@@ -261,15 +261,15 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       wc.writer = createCustomization(config.getWriter());
       wc.asyncLoader = createCustomization(config.getAsyncLoader());
       List<CacheEntryCreatedListener<K, V>> syncCreatedListeners =
-        new ArrayList<CacheEntryCreatedListener<K, V>>();
+        new ArrayList<>();
       List<CacheEntryUpdatedListener<K, V>> syncUpdatedListeners =
-        new ArrayList<CacheEntryUpdatedListener<K, V>>();
+        new ArrayList<>();
       List<CacheEntryRemovedListener<K, V>> syncRemovedListeners =
-        new ArrayList<CacheEntryRemovedListener<K, V>>();
+        new ArrayList<>();
       List<CacheEntryExpiredListener<K, V>> syncExpiredListeners =
-        new ArrayList<CacheEntryExpiredListener<K, V>>();
+        new ArrayList<>();
       List<CacheEntryEvictedListener<K, V>> syncEvictedListeners =
-        new ArrayList<CacheEntryEvictedListener<K, V>>();
+        new ArrayList<>();
       if (config.hasListeners()) {
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f : config.getListeners()) {
           CacheEntryOperationListener<K, V> el =
@@ -296,17 +296,17 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
         if (config.getAsyncListenerExecutor() != null) {
           asyncExecutor = createCustomization(config.getAsyncListenerExecutor());
         }
-        AsyncDispatcher<K> asyncDispatcher = new AsyncDispatcher<K>(wc, asyncExecutor);
+        AsyncDispatcher<K> asyncDispatcher = new AsyncDispatcher<>(wc, asyncExecutor);
         List<CacheEntryCreatedListener<K, V>> cll =
-          new ArrayList<CacheEntryCreatedListener<K, V>>();
+          new ArrayList<>();
         List<CacheEntryUpdatedListener<K, V>> ull =
-          new ArrayList<CacheEntryUpdatedListener<K, V>>();
+          new ArrayList<>();
         List<CacheEntryRemovedListener<K, V>> rll =
-          new ArrayList<CacheEntryRemovedListener<K, V>>();
+          new ArrayList<>();
         List<CacheEntryExpiredListener<K, V>> ell =
-          new ArrayList<CacheEntryExpiredListener<K, V>>();
+          new ArrayList<>();
         List<CacheEntryEvictedListener<K, V>> evl =
-          new ArrayList<CacheEntryEvictedListener<K, V>>();
+          new ArrayList<>();
         for (CustomizationSupplier<CacheEntryOperationListener<K, V>> f :
           config.getAsyncListeners()) {
           CacheEntryOperationListener<K, V> el =
@@ -377,7 +377,7 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
       bc.init();
     }
     if (config.hasLifecycleListeners()) {
-      List<CacheClosedListener> closedListeners = new ArrayList<CacheClosedListener>();
+      List<CacheClosedListener> closedListeners = new ArrayList<>();
       for (CustomizationSupplier<? extends CacheLifecycleListener> sup :
         config.getLifecycleListeners()) {
         CacheLifecycleListener l = createCustomization(sup);

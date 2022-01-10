@@ -49,7 +49,6 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -74,12 +73,7 @@ public class TestingBase {
   public static final int MINIMAL_LOADER_THREADS = 4;
 
   private static final ThreadLocal<SimulatedClock> THREAD_CLOCK =
-    new ThreadLocal<SimulatedClock>() {
-    @Override
-    protected SimulatedClock initialValue() {
-      return new SimulatedClock(1000000);
-    }
-  };
+    ThreadLocal.withInitial(() -> new SimulatedClock(1000000));
 
   private static final AtomicLong UNIQUE_NAME_COUNTER = new AtomicLong();
 
@@ -91,7 +85,7 @@ public class TestingBase {
   public static final Executor SHARED_EXECUTOR =
     new ThreadPoolExecutor(4, 8 * Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
-      new SynchronousQueue<Runnable>(),
+      new SynchronousQueue<>(),
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("test-loader-pool"),
       new ThreadPoolExecutor.AbortPolicy());
 
@@ -121,7 +115,7 @@ public class TestingBase {
     }
     ).around(new TestRule() {
              @Override
-             public Statement apply(final Statement base, Description description) {
+             public Statement apply(Statement base, Description description) {
                return new Statement() {
                  @Override
                  public void evaluate() throws Throwable {
@@ -377,8 +371,7 @@ public class TestingBase {
       try {
         Class c = Class.forName(e.getClassName());
         m = c.getMethod(e.getMethodName());
-      } catch (Exception ignore) {
-      } catch (NoClassDefFoundError ignore) {
+      } catch (Exception | NoClassDefFoundError ignore) {
       }
       if (m == null) {
         continue;
@@ -521,14 +514,11 @@ public class TestingBase {
         fallBackExecutor =
           new ThreadPoolExecutor(0, MINIMAL_LOADER_THREADS,
             21, TimeUnit.SECONDS,
-            new SynchronousQueue<Runnable>(),
+            new SynchronousQueue<>(),
             HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(
               Thread.currentThread().getName() + "-loader-pool"),
-            new RejectedExecutionHandler() {
-              @Override
-              public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                throw new Error("more threads are needed then expected");
-              }
+            (r, executor) -> {
+              throw new Error("more threads are needed then expected");
             });
       }
       return fallBackExecutor;

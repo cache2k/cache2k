@@ -32,7 +32,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class IntegrityState {
 
-  List<String> failingTests = new ArrayList<String>();
+  List<String> failingTests = new ArrayList<>();
   long state = 0;
   long bitNr = 0;
   int stringsHashCode = 0;

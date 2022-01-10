@@ -21,13 +21,13 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -72,7 +72,9 @@ public class TimingUnitTest {
       }
 
       @Override
-      public Executor getExecutor() { return null; }
+      public Executor getExecutor() {
+        return null;
+      }
 
       @Override
       public String getName() {
@@ -148,13 +150,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy(new ExpiryPolicy() {
-          @Override
-          public long calculateExpiryTime(Object key, Object value, long startTime,
-                                          CacheEntry currentEntry) {
-            return ETERNAL;
-          }
-        })
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> ExpiryTimeValues.ETERNAL)
         .expireAfterWrite(bigValue, TimeUnit.MILLISECONDS)
         .config()
     );
@@ -172,13 +168,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy(new ExpiryPolicy() {
-          @Override
-          public long calculateExpiryTime(Object key, Object value, long startTime,
-                                          CacheEntry currentEntry) {
-            return startTime + 1;
-          }
-        })
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> startTime + 1)
         .sharpExpiry(true)
         .config()
     );
@@ -195,13 +185,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy(new ExpiryPolicy() {
-          @Override
-          public long calculateExpiryTime(Object key, Object value, long startTime,
-                                          CacheEntry currentEntry) {
-            return ETERNAL;
-          }
-        })
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> ExpiryTimeValues.ETERNAL)
         .expireAfterWrite(5, TimeUnit.MINUTES)
         .config()
     );
@@ -223,13 +207,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy(new ExpiryPolicy() {
-          @Override
-          public long calculateExpiryTime(Object key, Object value, long startTime,
-                                          CacheEntry currentEntry) {
-            return -sharpPointInTime;
-          }
-        })
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> -sharpPointInTime)
         .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
         .config()
     );
@@ -257,13 +235,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy(new ExpiryPolicy() {
-          @Override
-          public long calculateExpiryTime(Object key, Object value, long startTime,
-                                          CacheEntry currentEntry) {
-            return pointInTime;
-          }
-        })
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> pointInTime)
         .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
         .config()
     );
@@ -295,13 +267,7 @@ public class TimingUnitTest {
     Timing h = create(
       CLOCK,
       Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy(new ExpiryPolicy() {
-          @Override
-          public long calculateExpiryTime(Object key, Object value, long startTime,
-                                          CacheEntry currentEntry) {
-            return -sharpPointInTime;
-          }
-        })
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> -sharpPointInTime)
         .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
         .config()
     );

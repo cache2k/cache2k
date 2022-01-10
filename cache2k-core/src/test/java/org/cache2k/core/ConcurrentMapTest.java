@@ -46,7 +46,7 @@ public class ConcurrentMapTest {
 
   @Before
   public void setUp() {
-    map = new ConcurrentHashMap<Integer, String>();
+    map = new ConcurrentHashMap<>();
   }
 
   @After
@@ -229,7 +229,7 @@ public class ConcurrentMapTest {
 
   @Test
   public void testPutAll_Present() {
-    Map<Integer, String> m = new HashMap<Integer, String>();
+    Map<Integer, String> m = new HashMap<>();
     m.put(123, "abc");
     m.put(4711, "cologne");
     map.putAll(m);
@@ -327,9 +327,7 @@ public class ConcurrentMapTest {
     value = map.computeIfAbsent(123, integer -> "bar");
     assertEquals("foo", value);
     assertEquals("foo", map.get(123));
-    assertThatCode(() -> {
-      map.computeIfAbsent(4711, key -> key.toString().charAt(123) + "");
-    }).as("expect out of bounds")
+    assertThatCode(() -> map.computeIfAbsent(4711, key -> key.toString().charAt(123) + "")).as("expect out of bounds")
       .isInstanceOf(StringIndexOutOfBoundsException.class);
   }
 
@@ -347,9 +345,7 @@ public class ConcurrentMapTest {
     assertNull(map.get(123));
     assertFalse(untypedMap().containsValue(123));
     map.put(123, "xy");
-    assertThatCode(() -> {
-      map.computeIfPresent(123, (key, s) -> s.charAt(123) + "");
-    }).as("expect out of bounds")
+    assertThatCode(() -> map.computeIfPresent(123, (key, s) -> s.charAt(123) + "")).as("expect out of bounds")
       .isInstanceOf(StringIndexOutOfBoundsException.class);
   }
 
@@ -371,9 +367,7 @@ public class ConcurrentMapTest {
     assertNull(value);
     assertNull(map.get(123));
     assertFalse(untypedMap().containsValue(123));
-    assertThatCode(() -> {
-      map.compute(123, (integer, s) -> s.hashCode() + "");
-    }).as("expect NPE")
+    assertThatCode(() -> map.compute(123, (integer, s) -> s.hashCode() + "")).as("expect NPE")
       .isInstanceOf(NullPointerException.class);
   }
 

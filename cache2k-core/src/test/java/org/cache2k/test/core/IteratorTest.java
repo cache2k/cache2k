@@ -57,7 +57,7 @@ public class IteratorTest {
   public void testExpansion() {
     Cache<Integer, Integer> c = createCacheWith20Entries();
     Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
-    Set<Integer> _keysSeen = new HashSet<Integer>();
+    Set<Integer> _keysSeen = new HashSet<>();
     while (it.hasNext()) {
       CacheEntry<Integer,Integer> e = it.next();
       _keysSeen.add(e.getKey());
@@ -114,7 +114,7 @@ public class IteratorTest {
   @Test
   public void keyIteration() {
     Cache<Integer, Integer> c = createCacheWith20Entries();
-    Set<Integer> _keysSeen = new HashSet<Integer>();
+    Set<Integer> _keysSeen = new HashSet<>();
     for (Integer i : c.keys()) {
       _keysSeen.add(i);
     }
@@ -126,7 +126,7 @@ public class IteratorTest {
   public void testClose() {
     Cache<Integer, Integer> c = createCacheWith20Entries();
     Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
-    Set<Integer> _keysSeen = new HashSet<Integer>();
+    Set<Integer> _keysSeen = new HashSet<>();
     while (it.hasNext()) {
       CacheEntry<Integer,Integer> e = it.next();
       _keysSeen.add(e.getKey());

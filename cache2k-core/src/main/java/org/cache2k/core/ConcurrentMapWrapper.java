@@ -22,11 +22,9 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.annotation.Nullable;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
-import org.cache2k.processor.MutableCacheEntry;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -65,15 +63,12 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
    */
   @Override
   public V putIfAbsent(K key, V value) {
-    return cache.invoke(key, new EntryProcessor<K, V, V>() {
-      @Override
-      public V process(MutableCacheEntry<K, V> e) {
-        if (!e.exists()) {
-          e.setValue(value);
-          return null;
-        }
-        return e.getValue();
+    return cache.invoke(key, e -> {
+      if (!e.exists()) {
+        e.setValue(value);
+        return null;
       }
+      return e.getValue();
     });
   }
 
@@ -92,16 +87,13 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
 
   @Override
   public V replace(K key, V value) {
-    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
-      @Override
-      public V process(MutableCacheEntry<K, V> e) {
-        if (e.exists()) {
-          V result = e.getValue();
-          e.setValue(value);
-          return result;
-        }
-        return null;
+    EntryProcessor<K, V, V> p = e -> {
+      if (e.exists()) {
+        V result = e.getValue();
+        e.setValue(value);
+        return result;
       }
+      return null;
     };
     return cache.invoke(key, p);
   }
@@ -155,13 +147,10 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
 
   @Override
   public V put(K key, V value) {
-    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
-      @Override
-      public V process(MutableCacheEntry<K, V> e) {
-        V result = e.exists() ? e.getValue() : null;
-        e.setValue(value);
-        return result;
-      }
+    EntryProcessor<K, V, V> p = e -> {
+      V result = e.exists() ? e.getValue() : null;
+      e.setValue(value);
+      return result;
     };
     return cache.invoke(key, p);
   }
@@ -171,13 +160,10 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
     if (!keyType.isAssignableFrom(key.getClass())) {
       return null;
     }
-    EntryProcessor<K, V, V> p = new EntryProcessor<K, V, V>() {
-      @Override
-      public V process(MutableCacheEntry<K, V> e) {
-        V result = e.exists() ? e.getValue() : null;
-        e.remove();
-        return result;
-      }
+    EntryProcessor<K, V, V> p = e -> {
+      V result = e.exists() ? e.getValue() : null;
+      e.remove();
+      return result;
     };
     return cache.invoke((K) key, p);
   }
@@ -277,7 +263,6 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
           @Override
           public Entry<K, V> next() {
             CacheEntry<K, V> e = it.next();
-
             return new Entry<K, V>() {
               @Override
               public K getKey() {
@@ -299,8 +284,8 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
                */
               @Override
               public int hashCode() {
-                return (e.getKey()==null   ? 0 : e.getKey().hashCode()) ^
-                  (e.getValue()==null ? 0 : e.getValue().hashCode());
+                return (e.getKey() == null ? 0 : e.getKey().hashCode()) ^
+                  (e.getValue() == null ? 0 : e.getValue().hashCode());
               }
 
               @Override
@@ -310,10 +295,12 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
 
               @Override
               public boolean equals(Object obj) {
-                if (!(obj instanceof Map.Entry)) { return false; }
+                if (!(obj instanceof Map.Entry)) {
+                  return false;
+                }
                 Map.Entry<?, ?> entry = (Map.Entry) obj;
-                return (getKey().equals(entry.getKey()))  &&
-                  (getValue()==null ? entry.getValue()==null : getValue().equals(entry.getValue()));
+                return (getKey().equals(entry.getKey())) &&
+                  (getValue() == null ? entry.getValue() == null : getValue().equals(entry.getValue()));
               }
             };
           }
@@ -333,12 +320,20 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
 
       @Override
       public boolean contains(Object o) {
-        if (!(o instanceof Entry)) { return false; }
+        if (!(o instanceof Entry)) {
+          return false;
+        }
         Entry<?, ?> entry = (Entry) o;
-        if (!containsKey(entry.getKey())) { return false; }
+        if (!containsKey(entry.getKey())) {
+          return false;
+        }
         Object val = get(entry.getKey());
-        if (val == entry.getValue()) { return true; }
-        if (val == null) { return false; }
+        if (val == entry.getValue()) {
+          return true;
+        }
+        if (val == null) {
+          return false;
+        }
         return val.equals(entry.getValue());
       }
     };

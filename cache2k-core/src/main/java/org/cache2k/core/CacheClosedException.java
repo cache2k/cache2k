@@ -20,7 +20,6 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.Cache;
 import org.cache2k.core.api.InternalCache;
 
 /**

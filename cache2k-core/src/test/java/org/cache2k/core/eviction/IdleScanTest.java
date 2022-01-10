@@ -126,6 +126,7 @@ public class IdleScanTest {
       public Iterator<Integer> iterator() {
         return new Iterator<Integer>() {
           int i = from;
+
           @Override
           public boolean hasNext() {
             return i < to;

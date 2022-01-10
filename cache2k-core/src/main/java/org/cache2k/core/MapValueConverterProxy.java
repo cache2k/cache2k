@@ -107,7 +107,7 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
 
       @Override
       public Iterator<V> iterator() {
-        final Iterator<S> it = map.values().iterator();
+        Iterator<S> it = map.values().iterator();
         return new Iterator<V>() {
           @Override
           public boolean hasNext() {
@@ -139,7 +139,7 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
     return new AbstractSet<Entry<K, V>>() {
       @Override
       public Iterator<Entry<K, V>> iterator() {
-        final Iterator<Entry<K, S>> it = map.entrySet().iterator();
+        Iterator<Entry<K, S>> it = map.entrySet().iterator();
         return new Iterator<Entry<K, V>>() {
           @Override
           public boolean hasNext() {
@@ -148,7 +148,7 @@ public abstract class MapValueConverterProxy<K, V, S>  implements Map<K, V> {
 
           @Override
           public Entry<K, V> next() {
-            final Entry<K, S> e = it.next();
+            Entry<K, S> e = it.next();
             return new Entry<K, V>() {
               @Override
               public K getKey() {

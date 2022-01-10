@@ -21,15 +21,12 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.DefaultExceptionPropagatorTest;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.test.core.expiry.ExpiryTest;
-import org.cache2k.test.util.CacheRule;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
-import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.IntCacheRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,15 +43,12 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class ExceptionPropagatorTest {
 
-  final static Integer KEY = 1;
+  static final Integer KEY = 1;
 
   /** Provide unique standard cache per method */
   @Rule public IntCacheRule target = (IntCacheRule)
-    new IntCacheRule().config(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
-      }
+    new IntCacheRule().config(b -> {
+      b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
     });
 
   @Test(expected = CacheLoaderException.class)
@@ -90,12 +84,9 @@ public class ExceptionPropagatorTest {
   @Test
   public void mutableEntry_entry_throws() {
     try {
-      prepCache().invoke(KEY, new EntryProcessor<Integer, Integer, Void>() {
-        @Override
-        public Void process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-          e.getValue();
-          return null;
-        }
+      prepCache().invoke(KEY, (EntryProcessor<Integer, Integer, Void>) e -> {
+        e.getValue();
+        return null;
       });
       fail();
     } catch (EntryProcessingException ex) {
@@ -105,12 +96,9 @@ public class ExceptionPropagatorTest {
 
   Cache<Integer, Integer> prepCache() {
     Cache c = target.cache();
-    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        e.setException(new IllegalArgumentException("Test"));
-        return null;
-      }
+    c.invoke(KEY, (EntryProcessor<Integer, Integer, Object>) e -> {
+      e.setException(new IllegalArgumentException("Test"));
+      return null;
     });
     assertTrue(c.containsKey(KEY));
     return c;

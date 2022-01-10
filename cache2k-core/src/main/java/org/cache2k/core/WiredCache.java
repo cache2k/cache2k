@@ -241,7 +241,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   private CompletableFuture<Void> executeSyncBulkOp(Semantic operation, Set<K> keys,
                                                     boolean propagateLoadException) {
-    final CompletableFuture<Void> future = new CompletableFuture<>();
+    CompletableFuture<Void> future = new CompletableFuture<>();
     Runnable runnable = () -> {
       Throwable t;
       try {
@@ -276,7 +276,11 @@ public class WiredCache<K, V> extends BaseCache<K, V>
       }
     };
     BulkAction<K, V, R> bulkAction = new BulkAction<K, V, R>(heapCache, this, myLoader, keys) {
-      @Override protected boolean isSyncMode() { return true; }
+      @Override
+      protected boolean isSyncMode() {
+        return true;
+      }
+
       @Override
       protected EntryAction<K, V, R> createEntryAction(K key, BulkAction<K, V, R> bulkAction) {
         return new MyEntryAction<R>(op, key, null, null /* no callback */) {
@@ -330,7 +334,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    * Only sync loader present. Use loader executor to run things in parallel.
    */
   private CompletableFuture<Void> loadAllWithSyncLoader(Set<K> keysToLoad) {
-    OperationCompletion<K> completion = new OperationCompletion<K>(keysToLoad);
+    OperationCompletion<K> completion = new OperationCompletion<>(keysToLoad);
     for (K key : keysToLoad) {
       heapCache.executeLoader(completion, key, () -> {
         EntryAction<K, V, V> action = createEntryAction(key, null, ops.get(key));
@@ -373,7 +377,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   protected <R> MyEntryAction<R> createFireAndForgetAction(Entry<K, V> e, Semantic<K, V, R> op) {
-    return new MyEntryAction<R>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
+    return new MyEntryAction<>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
   }
 
   @Override
@@ -657,7 +661,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
    */
   @Override
   public Map<K, V> peekAll(Iterable<? extends K> keys) {
-    Map<K, CacheEntry<K, V>> map = new HashMap<K, CacheEntry<K, V>>();
+    Map<K, CacheEntry<K, V>> map = new HashMap<>();
     for (K k : keys) {
       CacheEntry<K, V> e = execute(k, ops.peekEntry());
       if (e != null) {
@@ -779,7 +783,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op) {
-    return new MyEntryAction<R>(op, key, e);
+    return new MyEntryAction<>(op, key, e);
   }
 
   @Override

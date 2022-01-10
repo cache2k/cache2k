@@ -58,11 +58,11 @@ public class AsyncDispatcher<K> {
   }
 
   private final Map<K, Queue<AsyncEvent<K>>> keyQueue =
-    new ConcurrentHashMap<K, Queue<AsyncEvent<K>>>();
-  private Executor executor;
-  private InternalCache cache;
+    new ConcurrentHashMap<>();
+  private final Executor executor;
+  private final InternalCache<?, ?> cache;
 
-  public AsyncDispatcher(InternalCache cache, final Executor executor) {
+  public AsyncDispatcher(InternalCache<?, ?> cache, Executor executor) {
     this.cache = cache;
     this.executor = executor;
   }
@@ -72,7 +72,7 @@ public class AsyncDispatcher<K> {
    * is already executing for the identical key, queue the event and execute
    * the event with FIFO scheme, preserving the order of the arrival.
    */
-  public void queue(final AsyncEvent<K> event) {
+  public void queue(AsyncEvent<K> event) {
     K key = event.getKey();
     synchronized (getLockObject(key)) {
       Queue<AsyncEvent<K>> q = keyQueue.get(key);
@@ -80,15 +80,10 @@ public class AsyncDispatcher<K> {
         q.add(event);
         return;
       }
-      q = new LinkedList<AsyncEvent<K>>();
+      q = new LinkedList<>();
       keyQueue.put(key, q);
     }
-    Runnable r = new Runnable() {
-      @Override
-      public void run() {
-        runMoreOrStop(event);
-      }
-    };
+    Runnable r = () -> runMoreOrStop(event);
     executor.execute(r);
   }
 

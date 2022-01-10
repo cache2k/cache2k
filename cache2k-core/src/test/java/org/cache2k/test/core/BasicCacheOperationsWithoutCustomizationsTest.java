@@ -34,7 +34,6 @@ import org.cache2k.io.CacheLoaderException;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.pinpoint.ExpectedException;
 import org.cache2k.processor.EntryProcessingResult;
-import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.testing.category.FastTests;
 import org.junit.After;
@@ -47,7 +46,6 @@ import org.junit.runners.Parameterized;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
@@ -77,7 +75,7 @@ import static org.hamcrest.Matchers.*;
 @Category(FastTests.class) @RunWith(Parameterized.class)
 public class BasicCacheOperationsWithoutCustomizationsTest {
 
-  static final ConcurrentMap<Pars, Cache> PARS2CACHE = new ConcurrentHashMap<Pars, Cache>();
+  static final ConcurrentMap<Pars, Cache> PARS2CACHE = new ConcurrentHashMap<>();
 
   @SuppressWarnings("ThrowableInstanceNeverThrown")
   static final Exception OUCH = new Exception("ouch");
@@ -92,7 +90,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Parameterized.Parameters(name = "{0}")
   public static Collection<Object[]> data() {
-    List<Object[]> l = new ArrayList<Object[]>();
+    List<Object[]> l = new ArrayList<>();
     for (Pars o : new TestVariants()) {
       l.add(new Object[]{o});
     }
@@ -149,16 +147,13 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       StaticUtil.enforceWiredCache(b);
     }
     if (pars.withExpiryListener) {
-      b.addListener(new CacheEntryExpiredListener() {
-        @Override
-        public void onEntryExpired(Cache cache, CacheEntry entry) {
+      b.addListener((CacheEntryExpiredListener) (cache, entry) -> {
 
-        }
       });
     }
     Cache<Integer, Integer> c = b.build();
     if (pars.withEntryProcessor) {
-      c = new EntryProcessorCacheWrapper<Integer, Integer>(c);
+      c = new EntryProcessorCacheWrapper<>(c);
     }
     if (pars.withForwardingAndAbstract) {
       c = wrapAbstractAndForwarding(c);
@@ -170,31 +165,28 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
    * Wrap into a proxy and check the exceptions on the abstract cache and then use the
    * forwarding cache.
    */
-  protected Cache<Integer, Integer> wrapAbstractAndForwarding(final Cache<Integer, Integer> c) {
-    final Cache<Integer, Integer> forwardingCache = new ForwardingCache<Integer, Integer>() {
+  protected Cache<Integer, Integer> wrapAbstractAndForwarding(Cache<Integer, Integer> c) {
+    Cache<Integer, Integer> forwardingCache = new ForwardingCache<Integer, Integer>() {
       @Override
       protected Cache<Integer, Integer> delegate() {
         return c;
       }
     };
-    final Cache<Integer, Integer> abstractCache = new AbstractCache<Integer, Integer>();
-    InvocationHandler h = new InvocationHandler() {
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        try {
-          method.invoke(abstractCache, args);
-          if (!method.getName().equals("toString")) {
-            fail("exception expected for method: " + method);
-          }
-        } catch (InvocationTargetException ex) {
-          assertEquals("expected exception",
-            UnsupportedOperationException.class, ex.getTargetException().getClass());
+    Cache<Integer, Integer> abstractCache = new AbstractCache<>();
+    InvocationHandler h = (proxy, method, args) -> {
+      try {
+        method.invoke(abstractCache, args);
+        if (!method.getName().equals("toString")) {
+          fail("exception expected for method: " + method);
         }
-        try {
-          return method.invoke(forwardingCache, args);
-        } catch (InvocationTargetException ex) {
-          throw ex.getTargetException();
-        }
+      } catch (InvocationTargetException ex) {
+        assertEquals("expected exception",
+          UnsupportedOperationException.class, ex.getTargetException().getClass());
+      }
+      try {
+        return method.invoke(forwardingCache, args);
+      } catch (InvocationTargetException ex) {
+        throw ex.getTargetException();
       }
     };
     return (Cache<Integer, Integer>)
@@ -323,12 +315,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   void checkRefreshTime(CacheEntry<Integer, Integer> e) {
-    long t = cache.invoke(e.getKey(), new EntryProcessor<Integer, Integer, Long>() {
-      @Override
-      public Long process(MutableCacheEntry<Integer, Integer> e) {
-        return e.getModificationTime();
-      }
-    });
+    long t = cache.invoke(e.getKey(), MutableCacheEntry::getModificationTime);
     if (refreshTimeAvailable) {
       assertThat("Timestamp beyond start", t, greaterThanOrEqualTo(START_TIME));
     } else {
@@ -369,7 +356,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void putAll() {
     cache.putAll(Collections.<Integer, Integer>emptyMap());
-    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    Map<Integer, Integer> map = new HashMap<>();
     map.put(KEY, VALUE);
     map.put(OTHER_KEY, null);
     cache.putAll(map);
@@ -382,7 +369,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void putAllChm() {
-    Map<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>();
+    Map<Integer, Integer> map = new ConcurrentHashMap<>();
     map.put(KEY, VALUE);
     map.put(OTHER_KEY, OTHER_VALUE);
     cache.putAll(map);
@@ -395,7 +382,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test(expected = NullPointerException.class)
   public void putAll_NullKey() {
-    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    Map<Integer, Integer> map = new HashMap<>();
     map.put(null, VALUE);
     cache.putAll(map);
   }
@@ -1286,7 +1273,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     statistics().reset();
-    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+    Map<Integer, Integer> map = new HashMap<>();
     for (CacheEntry<Integer, Integer> ce : cache.entries()) {
       map.put(ce.getKey(), ce.getValue());
     }
@@ -1322,37 +1309,26 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void invoke_exists() {
     cache.put(KEY, VALUE);
-    boolean f = cache.invoke(KEY, new EntryProcessor<Integer, Integer, Boolean>() {
-      @Override
-      public Boolean process(MutableCacheEntry<Integer, Integer> e) {
-        return e.exists();
-      }
-    });
+    boolean f = cache.invoke(KEY, MutableCacheEntry::exists);
     assertTrue(f);
   }
 
   @Test
   public void invoke_mutateWithExpiry() {
-    cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Boolean process(MutableCacheEntry<Integer, Integer> e) {
-        e.setValue(VALUE);
-        e.setExpiryTime(ExpiryTimeValues.ETERNAL);
-        return null;
-      }
+    cache.invoke(KEY, e -> {
+      e.setValue(VALUE);
+      e.setExpiryTime(ExpiryTimeValues.ETERNAL);
+      return null;
     });
     checkRefreshTime(cache.getEntry(KEY));
   }
 
   @Test
   public void invoke_mutateWithImmediateExpiry() {
-    cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Boolean process(MutableCacheEntry<Integer, Integer> e) {
-        e.setValue(VALUE);
-        e.setExpiryTime(ExpiryTimeValues.NOW);
-        return null;
-      }
+    cache.invoke(KEY, e -> {
+      e.setValue(VALUE);
+      e.setExpiryTime(ExpiryTimeValues.NOW);
+      return null;
     });
     assertFalse(cache.containsKey(KEY));
   }
@@ -1363,13 +1339,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void invoke_mutateWithRealExpiry() {
     boolean gotException = false;
     try {
-      cache.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
-        @Override
-        public Boolean process(MutableCacheEntry<Integer, Integer> e) {
-          e.setValue(VALUE);
-          e.setExpiryTime(MILLIS_IN_FUTURE);
-          return null;
-        }
+      cache.invoke(KEY, e -> {
+        e.setValue(VALUE);
+        e.setExpiryTime(MILLIS_IN_FUTURE);
+        return null;
       });
     } catch (IllegalArgumentException ex) {
       gotException = true;
@@ -1403,12 +1376,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void invokeAll() {
     cache.put(KEY, VALUE);
     Map<Integer, EntryProcessingResult<Boolean>> res =
-      cache.invokeAll(cache.keys(), new EntryProcessor<Integer, Integer, Boolean>() {
-        @Override
-        public Boolean process(MutableCacheEntry<Integer, Integer> e) {
-          return e.exists();
-        }
-      });
+      cache.invokeAll(cache.keys(), MutableCacheEntry::exists);
     assertEquals(1, res.size());
     assertNull(res.get(KEY).getException());
     assertTrue(res.get(KEY).getResult());
@@ -1473,12 +1441,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   }
 
   private void assignException(Integer key) {
-    cache.invoke(key, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(MutableCacheEntry<Integer, Integer> e) {
-        e.setException(OUCH);
-        return null;
-      }
+    cache.invoke(key, e -> {
+      e.setException(OUCH);
+      return null;
     });
   }
 
@@ -1644,7 +1609,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
     private long variant = 0;
     private long shiftRight;
-    private final Set<T> collection = new HashSet<T>();
+    private final Set<T> collection = new HashSet<>();
 
     {
       while (shiftRight == 0) {

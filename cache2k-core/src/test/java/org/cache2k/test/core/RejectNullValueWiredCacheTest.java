@@ -20,7 +20,6 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.testing.category.FastTests;
 import org.cache2k.test.util.CacheRule;
 import org.cache2k.test.util.IntCacheRule;
@@ -37,13 +36,10 @@ import static org.cache2k.test.core.StaticUtil.*;
 public class RejectNullValueWiredCacheTest extends RejectNullValueTest {
 
   @ClassRule
-  public final static CacheRule<Integer, Integer> staticTarget = new IntCacheRule()
-    .config(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        configureRejectNull(b);
-        enforceWiredCache(b);
-      }
+  public static final CacheRule<Integer, Integer> staticTarget = new IntCacheRule()
+    .config(b -> {
+      configureRejectNull(b);
+      enforceWiredCache(b);
     });
 
   @Before

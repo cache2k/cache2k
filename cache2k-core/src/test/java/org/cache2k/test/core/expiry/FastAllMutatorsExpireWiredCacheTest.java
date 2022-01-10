@@ -35,7 +35,7 @@ public class FastAllMutatorsExpireWiredCacheTest extends AllMutatorsExpireWiredC
     enableFastClock();
   }
 
-  public FastAllMutatorsExpireWiredCacheTest(final Pars p) {
+  public FastAllMutatorsExpireWiredCacheTest(Pars p) {
     super(p);
   }
 

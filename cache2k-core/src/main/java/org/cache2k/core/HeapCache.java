@@ -261,7 +261,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     } else if (cfg.getAdvancedLoader() != null) {
       AdvancedCacheLoader<K, V> advanceLoader = ctx.createCustomization(cfg.getAdvancedLoader());
       loader =
-        new InternalCache2kBuilder.WrappedAdvancedCacheLoader<K, V>(this, advanceLoader);
+        new InternalCache2kBuilder.WrappedAdvancedCacheLoader<>(this, advanceLoader);
     } else {
       loader = null;
     }
@@ -299,7 +299,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     int corePoolThreadSize = 0;
     return new ThreadPoolExecutor(corePoolThreadSize, threadCount,
       21, TimeUnit.SECONDS,
-      new SynchronousQueue<Runnable>(),
+      new SynchronousQueue<>(),
       HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(getThreadNamePrefix()),
       new ThreadPoolExecutor.AbortPolicy());
   }
@@ -342,12 +342,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public final void clear() {
-    executeWithGlobalLock(new Supplier<Void>() {
-      @Override
-      public Void get() {
-        clearLocalCache();
-        return null;
-      }
+    executeWithGlobalLock((Supplier<Void>) () -> {
+      clearLocalCache();
+      return null;
     });
   }
 
@@ -559,12 +556,25 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       return (ExceptionWrapper<K, V>) valueOrException;
     }
     return new AbstractCacheEntry<K, V>() {
-      @Override public K getKey() {
+      @Override
+      public K getKey() {
         return key;
       }
-      @Override public V getValue() { return (V) valueOrException; }
-      @Override public Throwable getException() { return null; }
-      @Override public LoadExceptionInfo getExceptionInfo() { return null; }
+
+      @Override
+      public V getValue() {
+        return (V) valueOrException;
+      }
+
+      @Override
+      public Throwable getException() {
+        return null;
+      }
+
+      @Override
+      public LoadExceptionInfo getExceptionInfo() {
+        return null;
+      }
     };
   }
 
@@ -642,7 +652,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * entry.
    */
   protected boolean removeEntry(Entry<K, V> e) {
-    int hc = spreadedHashFromEntry(e);
+    int hc = spreadHashFromEntry(e);
     boolean removed;
     StampedLock l = hash.getSegmentLock(hc);
     long stamp = l.writeLock();
@@ -1048,9 +1058,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       if (keys instanceof Set) {
         return (Set<K>) keys;
       }
-      return new HashSet<K>(((Collection<? extends K>) keys));
+      return new HashSet<>(((Collection<? extends K>) keys));
     }
-    Set<K> keySet = new HashSet<K>();
+    Set<K> keySet = new HashSet<>();
     for (K k : keys) {
       keySet.add(k);
     }
@@ -1064,7 +1074,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * @return keys not present in the cache
    */
   public Set<K> checkAllPresent(Iterable<? extends K> keys) {
-    Set<K> keysToLoad = new HashSet<K>();
+    Set<K> keysToLoad = new HashSet<>();
     for (K k : keys) {
       Entry<K, V> e = lookupEntryNoHitRecord(k);
       if (e == null || !e.hasFreshData(clock)) {
@@ -1173,7 +1183,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * needs to be done under the same lock, to allow a check of the consistency.
    */
   protected Entry<K, V> insertNewEntry(K key, int hc, int val) {
-    Entry<K, V> e = new Entry<K, V>(toEntryKey(key), val);
+    Entry<K, V> e = new Entry<>(toEntryKey(key), val);
     Entry<K, V> e2;
     eviction.evictEventuallyBeforeInsertOnSegment(hc);
     StampedLock l = hash.getSegmentLock(hc);
@@ -1307,7 +1317,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex));
       return;
     }
-    value = new ExceptionWrapper<K, V>(value, Math.abs(nextRefreshTime));
+    value = new ExceptionWrapper<>(value, Math.abs(nextRefreshTime));
     synchronized (e) {
       insertUpdateStats(e, (V) value, t0, t, INSERT_STAT_LOAD, nextRefreshTime, suppressException);
       if (suppressException) {
@@ -1539,7 +1549,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    * are expired or contain no valid data are not filtered out.
    */
   public final ConcurrentEntryIterator<K, V> iterateAllHeapEntries() {
-    return new ConcurrentEntryIterator<K, V>(this);
+    return new ConcurrentEntryIterator<>(this);
   }
 
   /**
@@ -1599,12 +1609,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   @Override
   protected <R> EntryAction<K, V, R> createEntryAction(K key, Entry<K, V> e, Semantic<K, V, R> op) {
-    return new MyEntryAction<R>(op, key, e);
+    return new MyEntryAction<>(op, key, e);
   }
 
   @Override
   protected <R> MyEntryAction<R> createFireAndForgetAction(Entry<K, V> e, Semantic<K, V, R> op) {
-    return new MyEntryAction<R>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
+    return new MyEntryAction<>(op, e.getKey(), e, EntryAction.NOOP_CALLBACK);
   }
 
   @Override
@@ -1692,7 +1702,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         throw new Error(
           "cache2k integrity error: " +
           is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
-            generateInfoMaybeLocked(HeapCache.this, clock.millis()).toString());
+            generateInfoMaybeLocked(HeapCache.this, clock.millis()));
       }
       return null;
     });
@@ -1762,7 +1772,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   private <T> T executeWithGlobalLock(Supplier<T> job, boolean checkClosed) {
     synchronized (lock) {
       if (checkClosed) { checkClosed(); }
-      T result = hash.runTotalLocked(() -> eviction.runLocked(() -> job.get()));
+      T result = hash.runTotalLocked(() -> eviction.runLocked(job::get));
       return result;
     }
   }
@@ -1818,7 +1828,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return key;
   }
 
-  public int spreadedHashFromEntry(Entry e) {
+  public int spreadHashFromEntry(Entry e) {
     return e.hashCode;
   }
 
@@ -1828,7 +1838,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   public K keyObjFromEntry(Entry<K, V> e) { return e.getKeyObj(); }
 
   public StampedHash<K, V> createHashTable() {
-    return new StampedHash<K, V>(this);
+    return new StampedHash<>(this);
   }
 
   public static class Tunable extends TunableConstants {

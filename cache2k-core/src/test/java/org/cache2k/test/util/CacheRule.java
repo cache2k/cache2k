@@ -48,16 +48,16 @@ public class CacheRule<K, V> implements TestRule {
   /**
    * Record classes that have shared caches, just to throw a better exception.
    */
-  private static Map<String, String> sharedCache = new ConcurrentHashMap<String, String>();
+  private static final Map<String, String> sharedCache = new ConcurrentHashMap<>();
 
   /** It is a class rule and we want to share the cache between the methods */
   private boolean shared;
   private Cache<K, V> cache;
   private Description description;
-  private CacheType<K> keyType;
-  private CacheType<V> valueType;
+  private final CacheType<K> keyType;
+  private final CacheType<V> valueType;
   private Statistics statistics;
-  private List<Specialization> configurationSpecialization = new ArrayList<Specialization>();
+  private final List<Specialization> configurationSpecialization = new ArrayList<>();
 
   @SuppressWarnings("unchecked")
   protected CacheRule() {
@@ -85,12 +85,7 @@ public class CacheRule<K, V> implements TestRule {
 
   public CacheRule<K, V> enforceWiredCache() {
     checkAlready();
-    configurationSpecialization.add(new Specialization() {
-      @Override
-      public void extend(final Cache2kBuilder b) {
-        StaticUtil.enforceWiredCache(b);
-      }
-    });
+    configurationSpecialization.add(StaticUtil::enforceWiredCache);
     return this;
   }
 
@@ -161,7 +156,7 @@ public class CacheRule<K, V> implements TestRule {
   }
 
   @Override
-  public Statement apply(final Statement st, final Description d) {
+  public Statement apply(Statement st, Description d) {
     if (d.isSuite()) {
       shared = true;
       description = d;

@@ -30,7 +30,7 @@ import org.cache2k.core.api.CommonMetrics;
 public class StandardCommonMetricsFactory implements CommonMetricsFactory {
 
   @Override
-  public CommonMetrics.Updater create(final Parameters p) {
+  public CommonMetrics.Updater create(Parameters p) {
     if (p.isDisabled()) {
       return new CommonMetrics.BlackHole();
     }

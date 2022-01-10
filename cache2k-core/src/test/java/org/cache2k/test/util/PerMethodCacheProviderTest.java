@@ -21,7 +21,6 @@ package org.cache2k.test.util;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -32,8 +31,9 @@ import static org.junit.Assert.*;
  */
 public class PerMethodCacheProviderTest {
 
+  @SuppressWarnings("Convert2Diamond") // needs Java 9
   @Rule
-  public CacheRule<Integer, Integer> target = new CacheRule<Integer, Integer>() {};
+  public CacheRule<Integer, Integer> target = new CacheRule<Integer, Integer>() { };
 
   @Test
   public void testName() {
@@ -43,12 +43,7 @@ public class PerMethodCacheProviderTest {
 
   @Test
   public void testClose() {
-    target.config(new CacheRule.Specialization<Integer, Integer>() {
-      @Override
-      public void extend(final Cache2kBuilder<Integer, Integer> b) {
-        b.entryCapacity(123);
-      }
-    });
+    target.config(b -> b.entryCapacity(123));
     Cache<Integer, Integer> c = target.cache();
     c.close();
   }

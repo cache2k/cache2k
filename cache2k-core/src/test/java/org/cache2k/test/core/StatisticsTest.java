@@ -44,7 +44,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPutAndRemove() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.put(1, 2);
     assertEquals(0, getInfo().getMissCount());
     assertEquals(0, getInfo().getGetCount());
@@ -61,7 +61,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPeekMiss() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.peek(123);
     c.peek(4985);
     assertEquals(2, getInfo().getMissCount());
@@ -70,7 +70,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPeekHit() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.peek(123);
     c.put(123, 3);
     c.peek(123);
@@ -80,7 +80,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPut() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.put(123, 32);
     assertEquals(0, getInfo().getMissCount());
     assertEquals(0, getInfo().getGetCount());
@@ -89,7 +89,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testContainsMissHit() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.containsKey(123);
     assertEquals(0, getInfo().getMissCount());
     assertEquals(0, getInfo().getGetCount());
@@ -103,7 +103,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPutIfAbsentHit() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.put(123, 3);
     c.putIfAbsent(123, 3);
     assertEquals(0, getInfo().getMissCount());
@@ -113,7 +113,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPutIfAbsentMissHit() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.putIfAbsent(123, 3);
     assertEquals(1, getInfo().getMissCount());
     assertEquals(1, getInfo().getGetCount());
@@ -126,7 +126,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testPeekAndPut() {
-    final Cache<Integer, Integer> c = freshCache(null, 100);
+    Cache<Integer, Integer> c = freshCache(null, 100);
     c.peekAndPut(123, 3);
     assertEquals(1, getInfo().getMissCount());
     assertEquals(1, getInfo().getGetCount());
@@ -139,7 +139,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testGetFetch() {
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         freshCache(new IdentIntSource(), 100);
     c.get(3);
     assertEquals(1, getInfo().getMissCount());
@@ -147,7 +147,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testGetFetchHit() {
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         freshCache(new IdentIntSource(), 100);
     c.get(3);
     c.get(3);
@@ -156,7 +156,7 @@ public class StatisticsTest extends TestingBase {
 
   @Test
   public void testGetPutHit() {
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         freshCache(new IdentIntSource(), 100);
     c.put(3, 3);
     c.get(3);
@@ -166,7 +166,7 @@ public class StatisticsTest extends TestingBase {
   @Test
   public void testGetFetchAlwaysOneGet() {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
             .loader(g)
             .expireAfterWrite(0, TimeUnit.SECONDS).build();
@@ -180,7 +180,7 @@ public class StatisticsTest extends TestingBase {
   @Test
   public void testGetFetchAlwaysTwoGets() {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
             .loader(g)
             .expireAfterWrite(0, TimeUnit.SECONDS).build();
@@ -194,8 +194,8 @@ public class StatisticsTest extends TestingBase {
 
   public void testGetFetchAndRefresh(boolean keepData) throws Exception {
     long expiryMillis = TestingParameters.MINIMAL_TICK_MILLIS;
-    final IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    IntCountingCacheSource g = new IntCountingCacheSource();
+    Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
             .keepDataAfterExpired(keepData)
             .loader(g)
@@ -203,21 +203,13 @@ public class StatisticsTest extends TestingBase {
             .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS).build();
     assertEquals("no miss yet", 0, g.getLoaderCalledCount());
     within(expiryMillis)
-      .perform(new Runnable() {
-        @Override
-        public void run() {
-          c.get(1802);
-        }
-      })
-      .expectMaybe(new Runnable() {
-        @Override
-        public void run() {
-          assertEquals(1, getInfo().getMissCount());
-          assertEquals(1, getInfo().getGetCount());
-          assertEquals(1, getInfo().getLoadCount());
-          assertEquals(1, g.getLoaderCalledCount());
-        }
-    });
+      .perform(() -> c.get(1802))
+      .expectMaybe(() -> {
+        assertEquals(1, getInfo().getMissCount());
+        assertEquals(1, getInfo().getGetCount());
+        assertEquals(1, getInfo().getLoadCount());
+        assertEquals(1, g.getLoaderCalledCount());
+      });
     sleep(expiryMillis * 3);
     c.get(1802);
     if (g.getLoaderCalledCount() >= 3) {
@@ -239,7 +231,7 @@ public class StatisticsTest extends TestingBase {
   @Test
   public void testFetchAlways() {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
           .loader(g)
           .expireAfterWrite(0, TimeUnit.SECONDS).build();
@@ -260,7 +252,7 @@ public class StatisticsTest extends TestingBase {
   @Test
   public void testReload() throws Exception {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
           .entryCapacity(1)
           .loader(g)
@@ -277,14 +269,13 @@ public class StatisticsTest extends TestingBase {
 
   void testUsageCounter(int[] accessPattern, int size) throws Exception {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
         builder(Integer.class, Integer.class)
             .entryCapacity(size)
             .loader(g)
             .eternal(true)
             .build();
-    for (int i = 0; i < accessPattern.length; i++) {
-      int v = accessPattern[i];
+    for (int v : accessPattern) {
       c.get(v);
 
     }
@@ -314,7 +305,7 @@ public class StatisticsTest extends TestingBase {
   @Test
   public void toStringWithEmptyCache() {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
       builder(Integer.class, Integer.class)
         .loader(g)
         .eternal(true)
@@ -329,7 +320,7 @@ public class StatisticsTest extends TestingBase {
   @Test
   public void disableStatistics() {
     IntCountingCacheSource g = new IntCountingCacheSource();
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
       builder(Integer.class, Integer.class)
         .loader(g)
         .disableStatistics(true)

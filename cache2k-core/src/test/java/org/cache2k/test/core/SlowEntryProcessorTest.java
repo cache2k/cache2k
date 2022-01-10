@@ -44,7 +44,7 @@ import static org.junit.Assert.*;
 @Category(SlowTests.class)
 public class SlowEntryProcessorTest {
 
-  final static Integer KEY = 3;
+  static final Integer KEY = 3;
 
   /** Provide unique standard cache per method */
   @Rule public IntCacheRule target = new IntCacheRule();
@@ -56,16 +56,13 @@ public class SlowEntryProcessorTest {
   @Test @Ignore("TODO: SlowEntryProcessorTest.modificationTime_reference_before_invoke")
   public void modificationTime_reference_before_invoke() {
     Cache<Integer, Integer> c = target.cache();
-    final long t0 = System.currentTimeMillis();
-    c.invoke(KEY, new EntryProcessor<Integer, Integer, Object>() {
-      @Override
-      public Object process(final MutableCacheEntry<Integer, Integer> e) throws Exception {
-        e.setValue((int) (System.currentTimeMillis() - t0));
-        Thread.sleep(1);
-        return null;
-      }
+    long t0 = System.currentTimeMillis();
+    c.invoke(KEY, e -> {
+      e.setValue((int) (System.currentTimeMillis() - t0));
+      Thread.sleep(1);
+      return null;
     });
-    assertThat(c.invoke(KEY, e -> e.getModificationTime()), Matchers.lessThanOrEqualTo((t0 + c.peek(KEY))));
+    assertThat(c.invoke(KEY, MutableCacheEntry::getModificationTime), Matchers.lessThanOrEqualTo((t0 + c.peek(KEY))));
   }
 
 }

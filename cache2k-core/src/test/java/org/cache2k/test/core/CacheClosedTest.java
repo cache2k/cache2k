@@ -27,9 +27,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Collections;
-
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 
 /**

@@ -20,6 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.Condition;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 
 /**
@@ -49,7 +49,7 @@ import static org.junit.Assert.*;
 @Category(FastTests.class)
 public class TimerTest {
 
-  final List<MyTimerTask> executed = new CopyOnWriteArrayList<MyTimerTask>();
+  final List<MyTimerTask> executed = new CopyOnWriteArrayList<>();
   Timer timer;
   MyClock clock;
 
@@ -64,7 +64,7 @@ public class TimerTest {
   }
 
   List<MyTimerTask> schedule(long... times) {
-    List<MyTimerTask> result = new ArrayList<MyTimerTask>();
+    List<MyTimerTask> result = new ArrayList<>();
     for (long millis : times) {
       MyTimerTask t = new MyTimerTask();
       t.scheduleTime = millis;
@@ -87,7 +87,7 @@ public class TimerTest {
   }
 
   Collection<MyTimerTask> extractUpTo(Collection<MyTimerTask> l, long time) {
-    List<MyTimerTask> result = new ArrayList<MyTimerTask>();
+    List<MyTimerTask> result = new ArrayList<>();
     Iterator<MyTimerTask> it = l.iterator();
     while (it.hasNext()) {
       MyTimerTask t = it.next();
@@ -102,7 +102,7 @@ public class TimerTest {
   @Test
   public void misc() {
     long startTime = 10;
-    final SimulatedClock simulatedClock = new SimulatedClock(startTime);
+    SimulatedClock simulatedClock = new SimulatedClock(startTime);
     Timer st =
       new DefaultTimer(simulatedClock, simulatedClock, 1);
     TimerTask t = new MyTimerTask();
@@ -254,7 +254,7 @@ public class TimerTest {
     long endTime = startTime + 100;
     long lagMillis = 3;
     init(startTime, lagMillis, 4);
-    List<MyTimerTask> scheduled = new ArrayList<MyTimerTask>();
+    List<MyTimerTask> scheduled = new ArrayList<>();
     for (long i = startTime; i < endTime; i++) {
       scheduled.addAll(schedule(i, i - 1, i - 3, i - 27));
       run(i);
@@ -288,7 +288,7 @@ public class TimerTest {
     long lagMillis = 2;
     long startTime = 2;
     long endTime = 31;
-    List<MyTimerTask> scheduled = new ArrayList<MyTimerTask>();
+    List<MyTimerTask> scheduled = new ArrayList<>();
     init(startTime, lagMillis, 2);
     for (long i = startTime + 1; i < endTime; i++) {
       scheduled.addAll(schedule(i));
@@ -305,7 +305,7 @@ public class TimerTest {
     long lagMillis = 1;
     long startTime = 2;
     long endTime = 31;
-    List<MyTimerTask> scheduled = new ArrayList<MyTimerTask>();
+    List<MyTimerTask> scheduled = new ArrayList<>();
     init(startTime, lagMillis, 2);
     for (long i = startTime + 1; i < endTime; i++) {
       scheduled.addAll(schedule(i));
@@ -420,16 +420,13 @@ public class TimerTest {
     public void sleep(long millis) { assert false; }
 
     @Override
-    public void schedule(final Runnable runnable, long millis) {
+    public void schedule(Runnable runnable, long millis) {
       assertThat(millis).isLessThanOrEqualTo(scheduledTime);
       scheduledTime = millis;
-      scheduled = new Runnable() {
-        @Override
-        public void run() {
-          scheduledTime = Long.MAX_VALUE;
-          scheduled = null;
-          runnable.run();
-        }
+      scheduled = () -> {
+        scheduledTime = Long.MAX_VALUE;
+        scheduled = null;
+        runnable.run();
       };
     }
 

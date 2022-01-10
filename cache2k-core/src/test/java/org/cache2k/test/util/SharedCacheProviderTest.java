@@ -37,8 +37,9 @@ import static org.junit.Assert.*;
 @NotThreadSafe @Category(FastTests.class)
 public class SharedCacheProviderTest {
 
+  @SuppressWarnings("Convert2Diamond") // needs Java 9
   @ClassRule
-  public static CacheRule<Integer, Integer> target = new CacheRule<Integer, Integer>() {};
+  public static CacheRule<Integer, Integer> target = new CacheRule<Integer, Integer>() { };
 
   @Rule
   public TestRule alsoPerMethod = target;

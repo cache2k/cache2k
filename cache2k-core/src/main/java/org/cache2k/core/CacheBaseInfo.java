@@ -21,16 +21,11 @@ package org.cache2k.core;
  */
 
 import org.cache2k.core.api.CommonMetrics;
-import org.cache2k.core.api.HealthInfoElement;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.EvictionMetrics;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.cache2k.core.util.Util.formatMillis;
 
@@ -53,8 +48,8 @@ class CacheBaseInfo implements InternalCacheInfo {
   /** May stay null, if not retrieved under global lock. */
   private final IntegrityState integrityState;
   private final long totalLoadCnt;
-  private long evictedWeight;
-  private EvictionMetrics evictionMetrics;
+  private final long evictedWeight;
+  private final EvictionMetrics evictionMetrics;
 
   /*
    * Consistent copies from heap cache. for 32 bit machines the access

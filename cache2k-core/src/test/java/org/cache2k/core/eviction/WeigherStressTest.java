@@ -21,7 +21,6 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.operation.Weigher;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.pinpoint.stress.ThreadingStressTester;
@@ -47,29 +46,21 @@ public class WeigherStressTest extends TestingBase {
     final int count = 100000;
     final int threads = 4;
     final int perThread = count / threads;
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
       builder()
         .entryCapacity(-1)
-        .weigher(new Weigher<Integer, Integer>() {
-        @Override
-        public int weigh(Integer key, Integer value) {
-          return value;
-        }
-      })
+        .weigher((key, value) -> value)
       .maximumWeight(Long.MAX_VALUE)
       .build();
-    final AtomicInteger offset = new AtomicInteger();
-    Runnable inserter = new Runnable() {
-      @Override
-      public void run() {
-        int start = offset.getAndAdd(perThread);
-        int end = start + perThread;
-        for (int i = start; i < end; i++) {
-          c.put(i, i);
-        }
-        for (int i = start; i < end; i++) {
-          c.remove(i);
-        }
+    AtomicInteger offset = new AtomicInteger();
+    Runnable inserter = () -> {
+      int start = offset.getAndAdd(perThread);
+      int end = start + perThread;
+      for (int i = start; i < end; i++) {
+        c.put(i, i);
+      }
+      for (int i = start; i < end; i++) {
+        c.remove(i);
       }
     };
     ThreadingStressTester tst = new ThreadingStressTester();
@@ -88,37 +79,26 @@ public class WeigherStressTest extends TestingBase {
     final int count = 100000;
     final int threads = 4;
     final int perThread = count / threads;
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
       builder()
         .entryCapacity(-1)
-        .weigher(new Weigher<Integer, Integer>() {
-          @Override
-          public int weigh(Integer key, Integer value) {
-            return value;
-          }
-        })
+        .weigher((key, value) -> value)
         .maximumWeight(Long.MAX_VALUE)
         .build();
-    final AtomicInteger offsetInsert = new AtomicInteger();
-    final AtomicInteger offsetRemove = new AtomicInteger();
-    Runnable inserter = new Runnable() {
-      @Override
-      public void run() {
-        int start = offsetInsert.getAndAdd(perThread);
-        int end = start + perThread;
-        for (int i = start; i < end; i++) {
-          c.put(i, i);
-        }
+    AtomicInteger offsetInsert = new AtomicInteger();
+    AtomicInteger offsetRemove = new AtomicInteger();
+    Runnable inserter = () -> {
+      int start = offsetInsert.getAndAdd(perThread);
+      int end = start + perThread;
+      for (int i = start; i < end; i++) {
+        c.put(i, i);
       }
     };
-    Runnable remover = new Runnable() {
-      @Override
-      public void run() {
-        int start = offsetRemove.getAndAdd(perThread);
-        int end = start + perThread;
-        for (int i = start; i < end; i++) {
-          c.remove(i);
-        }
+    Runnable remover = () -> {
+      int start = offsetRemove.getAndAdd(perThread);
+      int end = start + perThread;
+      for (int i = start; i < end; i++) {
+        c.remove(i);
       }
     };
     ThreadingStressTester tst = new ThreadingStressTester();
@@ -140,26 +120,18 @@ public class WeigherStressTest extends TestingBase {
     final int count = 100000;
     final int threads = 4;
     final int perThread = count / threads;
-    final Cache<Integer, Integer> c =
+    Cache<Integer, Integer> c =
       builder()
         .entryCapacity(-1)
-        .weigher(new Weigher<Integer, Integer>() {
-          @Override
-          public int weigh(Integer key, Integer value) {
-            return value;
-          }
-        })
+        .weigher((key, value) -> value)
         .maximumWeight(100)
         .build();
-    final AtomicInteger offsetInsert = new AtomicInteger();
-    Runnable inserter = new Runnable() {
-      @Override
-      public void run() {
-        int start = offsetInsert.getAndAdd(perThread);
-        int end = start + perThread;
-        for (int i = start; i < end; i++) {
-          c.put(i, i);
-        }
+    AtomicInteger offsetInsert = new AtomicInteger();
+    Runnable inserter = () -> {
+      int start = offsetInsert.getAndAdd(perThread);
+      int end = start + perThread;
+      for (int i = start; i < end; i++) {
+        c.put(i, i);
       }
     };
     ThreadingStressTester tst = new ThreadingStressTester();

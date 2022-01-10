@@ -21,7 +21,6 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.operation.Weigher;
 import org.cache2k.testing.category.FastTests;
 import org.junit.experimental.categories.Category;
 
@@ -39,12 +38,7 @@ public class ClockProEvictionWithWeigherTest extends ClockProEvictionTest {
     return builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(-1) // reset capacity, capacity is already set via builder()
-      .weigher(new Weigher<Integer, Integer>() {
-        @Override
-        public int weigh(final Integer key, final Integer value) {
-          return 1;
-        }
-      })
+      .weigher((key, value) -> 1)
       .maximumWeight(size)
       .build();
   }

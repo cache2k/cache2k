@@ -223,7 +223,7 @@ public class StampedHash<K, V> {
    * @return true, if entry was found and removed.
    */
   public boolean remove(Entry<K, V> e) {
-    int hash = spreadedHashFromEntry(e.hashCode);
+    int hash = spreadHashFromEntry(e.hashCode);
     StampedLock[] locks = this.locks;
     int si = hash & LOCK_MASK;
     StampedLock l = locks[si];
@@ -329,7 +329,7 @@ public class StampedHash<K, V> {
    * For integer keys we store the key directly, so we need to calculate the spread
    * again.
    */
-  protected int spreadedHashFromEntry(int hc) {
+  protected int spreadHashFromEntry(int hc) {
     return hc;
   }
 
@@ -348,7 +348,7 @@ public class StampedHash<K, V> {
     for (i = 0; i < sl; i++) {
       e = src[i];
       while (e != null) {
-        count++; next = e.another; idx = spreadedHashFromEntry(e.hashCode) & mask;
+        count++; next = e.another; idx = spreadHashFromEntry(e.hashCode) & mask;
         e.another = tab[idx]; tab[idx] = e;
         e = next;
       }
@@ -381,8 +381,8 @@ public class StampedHash<K, V> {
    */
   public long getSizeWithGlobalLock() {
     long sum = 0;
-    for (int i = 0; i < segmentSize.length; i++) {
-      sum += segmentSize[i];
+    for (long l : segmentSize) {
+      sum += l;
     }
     return sum;
   }

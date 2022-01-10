@@ -43,53 +43,53 @@ import static org.junit.Assert.assertEquals;
 public class Statistics {
 
   private InternalCacheInfo info;
-  private List<Counter> counters = new ArrayList<Counter>();
+  private final List<Counter> counters = new ArrayList<>();
   private boolean disable = false;
 
   public Statistics() { }
 
-  public Statistics(final boolean _disable) {
+  public Statistics(boolean _disable) {
     disable = _disable;
   }
 
   public final Counter getCount = new Counter("get") {
     @Override
-    protected long getCounterValue(final InternalCacheInfo inf) {
+    protected long getCounterValue(InternalCacheInfo inf) {
       return inf.getGetCount();
     }
   };
 
   public final Counter putCount = new Counter("put") {
     @Override
-    protected long getCounterValue(final InternalCacheInfo inf) {
+    protected long getCounterValue(InternalCacheInfo inf) {
       return inf.getPutCount();
     }
   };
 
   public final Counter missCount = new Counter("miss") {
     @Override
-    protected long getCounterValue(final InternalCacheInfo inf) {
+    protected long getCounterValue(InternalCacheInfo inf) {
       return inf.getMissCount();
     }
   };
 
   public final Counter removeCount = new Counter("remove") {
     @Override
-    protected long getCounterValue(final InternalCacheInfo inf) {
+    protected long getCounterValue(InternalCacheInfo inf) {
       return inf.getRemoveCount();
     }
   };
 
   public final Counter loadCount = new Counter("load") {
     @Override
-    protected long getCounterValue(final InternalCacheInfo inf) {
+    protected long getCounterValue(InternalCacheInfo inf) {
       return inf.getLoadCount();
     }
   };
 
   public final Counter expiredCount = new Counter("expired") {
     @Override
-    protected long getCounterValue(final InternalCacheInfo inf) {
+    protected long getCounterValue(InternalCacheInfo inf) {
       return inf.getExpiredCount();
     }
   };
@@ -124,7 +124,7 @@ public class Statistics {
     long baseValue;
     String name;
 
-    public Counter(final String _name) {
+    public Counter(String _name) {
       name = _name;
       counters.add(this);
     }

@@ -30,7 +30,7 @@ import org.cache2k.CustomizationException;
  */
 public class ResiliencePolicyException extends CustomizationException {
 
-  public ResiliencePolicyException(final Throwable cause) {
+  public ResiliencePolicyException(Throwable cause) {
     super("loader exception suppressed", cause);
   }
 

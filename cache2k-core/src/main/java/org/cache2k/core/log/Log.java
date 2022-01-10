@@ -20,6 +20,8 @@ package org.cache2k.core.log;
  * #L%
  */
 
+import org.cache2k.annotation.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -41,9 +43,9 @@ import java.util.logging.Logger;
  */
 public abstract class Log {
 
-  private static final Map<String, Log> LOGGERS = new HashMap<String, Log>();
+  private static final Map<String, Log> LOGGERS = new HashMap<>();
 
-  private static final LogFactory LOG_FACTORY;
+  private static final @NonNull LogFactory LOG_FACTORY;
 
   /*
    * Initialize used log implementation statically for GraalVM
@@ -59,21 +61,12 @@ public abstract class Log {
   }
 
   public static synchronized Log getLog(String s) {
-    Log l = LOGGERS.get(s);
-    if (l != null) {
-      return l;
-    }
-    if (LOG_FACTORY == null) {
-      initializeLogFactory();
-    }
-    l = LOG_FACTORY.getLog(s);
-    LOGGERS.put(s, l);
-    return l;
+    return LOGGERS.computeIfAbsent(s, s1 -> LOG_FACTORY.getLog(s));
   }
 
   /**
    * Finds a logger we can use. First we start with looking for a registered
-   * service provider. Then apache commons logging. As a fallback we use JDK logging.
+   * service provider, then SLF4J, last, use as a fallback we use JDK logging.
    */
   private static LogFactory initializeLogFactory() {
     ServiceLoader<LogFactory> loader = ServiceLoader.load(LogFactory.class);
@@ -81,20 +74,10 @@ public abstract class Log {
       return lf;
     }
     try {
-      final org.slf4j.ILoggerFactory lf = org.slf4j.LoggerFactory.getILoggerFactory();
-      return new LogFactory() {
-        @Override
-        public Log getLog(String s) {
-          return new Slf4jLogger(lf.getLogger(s));
-        }
-      };
+      org.slf4j.ILoggerFactory lf = org.slf4j.LoggerFactory.getILoggerFactory();
+      return s -> new Slf4jLogger(lf.getLogger(s));
     } catch (NoClassDefFoundError ignore) { }
-    return new LogFactory() {
-      @Override
-      public Log getLog(String s) {
-        return new JdkLogger(Logger.getLogger(s));
-      }
-    };
+    return s -> new JdkLogger(Logger.getLogger(s));
   }
 
   /**

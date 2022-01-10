@@ -46,14 +46,7 @@ public abstract class Timing<K, V> implements NeedsClose {
    * Instance of expiry calculator that extracts the expiry time from the value.
    */
   static final ExpiryPolicy<?, ValueWithExpiryTime> ENTRY_EXPIRY_CALCULATOR_FROM_VALUE =
-    new ExpiryPolicy<Object, ValueWithExpiryTime>() {
-      @Override
-      public long calculateExpiryTime(
-        Object key, ValueWithExpiryTime value, long startTime,
-        CacheEntry<Object, ValueWithExpiryTime> currentEntry) {
-        return value.getCacheExpiryTime();
-      }
-    };
+    (ExpiryPolicy<Object, ValueWithExpiryTime>) (key, value, startTime, currentEntry) -> value.getCacheExpiryTime();
 
   static boolean realDuration(Duration d) {
     return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfig.EXPIRY_ETERNAL;
@@ -82,11 +75,11 @@ public abstract class Timing<K, V> implements NeedsClose {
       || (cfg.getValueType() != null
         && ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()))
       || resiliencePolicy != ResiliencePolicy.DISABLED_POLICY) {
-      DynamicTiming<K, V> h = new DynamicTiming<K, V>(ctx, resiliencePolicy);
+      DynamicTiming<K, V> h = new DynamicTiming<>(ctx, resiliencePolicy);
       return h;
     }
     if (realDuration(cfg.getExpireAfterWrite()) || !cfg.isEternal()) {
-      StaticTiming<K, V> h = new StaticTiming<K, V>(ctx, resiliencePolicy);
+      StaticTiming<K, V> h = new StaticTiming<>(ctx, resiliencePolicy);
       return h;
     }
     return TimeAgnosticTiming.ETERNAL_IMMEDIATE;

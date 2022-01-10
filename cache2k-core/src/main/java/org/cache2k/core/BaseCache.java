@@ -134,13 +134,13 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   @Override
   public ConcurrentMap<K, V> asMap() {
-    return new ConcurrentMapWrapper<K, V>(this);
+    return new ConcurrentMapWrapper<>(this);
   }
 
   @Override
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
                                                         EntryProcessor<K, V, R> entryProcessor) {
-    Map<K, EntryProcessingResult<R>> m = new HashMap<K, EntryProcessingResult<R>>();
+    Map<K, EntryProcessingResult<R>> m = new HashMap<>();
     for (K k : keys) {
       try {
         R result = invoke(k, entryProcessor);
@@ -165,6 +165,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return execute(key, null, op);
   }
 
+  @SuppressWarnings("unchecked")
   protected <R> R execute(K key, Entry<K, V> e, Semantic<K, V, R> op) {
     EntryAction<K, V, R> action = createEntryAction(key, e, op);
     action.start();
@@ -192,7 +193,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   }
 
   /**
-   * Return status information. The status collection is time consuming, so this
+   * Return status information. The status collection is time-consuming, so this
    * is an expensive operation.
    */
   @Override

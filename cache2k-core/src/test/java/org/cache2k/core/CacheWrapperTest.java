@@ -22,7 +22,6 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
 import org.cache2k.ForwardingCache;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CacheWrapper;

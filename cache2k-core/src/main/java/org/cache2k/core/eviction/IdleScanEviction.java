@@ -23,16 +23,16 @@ package org.cache2k.core.eviction;
 import org.cache2k.core.api.InternalCacheCloseContext;
 
 /**
- * Merges in idle processing to eviction.
+ * Merges in idle scanning to eviction.
  *
  * @author Jens Wilke
  */
-public class IdleProcessingEviction extends DelegatingEviction {
+public class IdleScanEviction extends DelegatingEviction {
 
-  private IdleScan idleScan;
-  private Eviction eviction;
+  private final IdleScan idleScan;
+  private final Eviction eviction;
 
-  public IdleProcessingEviction(Eviction eviction, IdleScan idleScan) {
+  public IdleScanEviction(Eviction eviction, IdleScan idleScan) {
     this.idleScan = idleScan;
     this.eviction = eviction;
   }
