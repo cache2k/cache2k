@@ -210,7 +210,6 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
     if (config.hasFeatures()) {
       config.getFeatures().stream().forEach(x -> x.enlist(this));
     }
-    checkConfiguration();
     clock = createCustomization(config.getTimeReference(), TimeReference.DEFAULT);
     executor = createCustomization(config.getExecutor(), buildContext -> ForkJoinPool.commonPool());
     HeapCache<K, V> bc;
@@ -396,13 +395,6 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
   }
 
   static final EvictionFactory EVICTION_FACTORY = new EvictionFactory();
-
-  private void checkConfiguration() {
-    if (config.getExpireAfterWrite() == Cache2kConfig.EXPIRY_NOT_ETERNAL &&
-        config.getExpiryPolicy() == null) {
-      throw new IllegalArgumentException("not eternal is set, but expire value is missing");
-    }
-  }
 
   static class AsyncCreatedListener<K, V> implements CacheEntryCreatedListener<K, V> {
     AsyncDispatcher<K> dispatcher;

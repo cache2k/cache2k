@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  * Configuration for a cache2k cache.
  *
  * <p>To create a cache, the {@link Cache2kBuilder} is used. All configuration properties
- * are present on the builder and are documented in this place. Consequently all properties
+ * are present on the builder and are documented in this place. Consequently, all properties
  * refer to the corresponding builder method.
  *
  * <p>The configuration bean is designed to be serializable. This is used for example to copy
@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
  * immediate creation of one cache via the builder.
  *
  * <p>The configuration may contain additional beans, called configuration sections, that are
- * used to configure extensions or sub modules.
+ * used to configure extensions.
  *
  * <p>Within the XML configuration of a cache manager different default configuration
  * values may be specified. To get a configuration bean with the effective defaults of
@@ -77,13 +77,17 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * for our purposes.
    */
   public static final Duration EXPIRY_ETERNAL = Duration.ofMillis(ExpiryTimeValues.ETERNAL);
+
   /**
-   * Marker duration that {@code setEternal(false)} was set.
+   * Default entry capacity of a cache. If no capacity is configured the cache uses the default
+   * of 1802.
    */
-  public static final Duration EXPIRY_NOT_ETERNAL = Duration.ofMillis(ExpiryTimeValues.ETERNAL - 1);
-  public static final long UNSET_LONG = -1;
-  /** Default entry capacity. */
   public static final long DEFAULT_ENTRY_CAPACITY = 1802;
+
+  /**
+   * Constant for unset parameter value.
+   */
+  public static final long UNSET_LONG = -1;
 
   private boolean storeByReference;
   private @Nullable String name;
@@ -131,7 +135,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   private @Nullable Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> listeners;
   private @Nullable
     Collection<CustomizationSupplier<CacheEntryOperationListener<K, V>>> asyncListeners;
-  private @Nullable Collection<CustomizationSupplier<CacheLifecycleListener>> lifecycleListeners;
+  private @Nullable Collection<CustomizationSupplier<? extends CacheLifecycleListener>> lifecycleListeners;
   private @Nullable Set<Feature> features;
   private @Nullable SectionContainer sections;
   private @Nullable CacheWrapper traceCacheWrapper;
@@ -145,7 +149,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * @see Cache2kBuilder#valueType(Class)
    */
   public static <K, V> Cache2kConfig<K, V> of(Class<K> keyType, Class<V> valueType) {
-    Cache2kConfig<K, V> c = new Cache2kConfig<K, V>();
+    Cache2kConfig<K, V> c = new Cache2kConfig<>();
     c.setKeyType(CacheType.of(keyType));
     c.setValueType(CacheType.of(valueType));
     return c;
@@ -159,7 +163,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * @see Cache2kBuilder#valueType(CacheType)
    */
   public static <K, V> Cache2kConfig<K, V> of(CacheType<K> keyType, CacheType<V> valueType) {
-    Cache2kConfig<K, V> c = new Cache2kConfig<K, V>();
+    Cache2kConfig<K, V> c = new Cache2kConfig<>();
     c.setKeyType(keyType);
     c.setValueType(valueType);
     return c;
@@ -267,7 +271,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     this.expireAfterWrite = durationCheckAndSanitize(v);
   }
 
-  public Duration getIdleScanTime() {
+  public @Nullable Duration getIdleScanTime() {
     return idleScanTime;
   }
 
@@ -371,7 +375,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * improve integration with bean configuration mechanisms that use the set method and
    * construct a set or list, like Springs' bean XML configuration.
    */
-  public void setSections(Collection<ConfigSection> c) {
+  public void setSections(Collection<ConfigSection<?, ?>> c) {
     getSections().addAll(c);
   }
 
@@ -539,8 +543,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     if (lifecycleListeners == null) {
       lifecycleListeners = new ArrayList<>();
     }
-    return (Collection<CustomizationSupplier<? extends CacheLifecycleListener>>) (Object)
-      lifecycleListeners;
+    return lifecycleListeners;
   }
 
   /**
@@ -688,7 +691,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     weigher = v;
   }
 
-  public CustomizationSupplier<? extends Scheduler> getScheduler() {
+  public @Nullable CustomizationSupplier<? extends Scheduler> getScheduler() {
     return scheduler;
   }
 
@@ -696,7 +699,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
     this.scheduler = scheduler;
   }
 
-  public CustomizationSupplier<? extends TimeReference> getTimeReference() {
+  public @Nullable CustomizationSupplier<? extends TimeReference> getTimeReference() {
     return timeReference;
   }
 
