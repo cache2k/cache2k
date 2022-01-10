@@ -33,7 +33,10 @@ public abstract class TimerTask implements Runnable {
   void insert(TimerTask t) { t.next = next; t.prev = this; next.prev = t; next = t; }
   void remove() { prev.next = next; next.prev = prev; next = prev = null; }
   void execute() { prev = this; }
-  boolean isEmpty() { return next == this; }
+  void markForImmediateExecution() {
+    time = 0; next = null; prev = this;
+  }
+  boolean isOccupied() { return next != this; }
 
   static class Sentinel extends TimerTask {
     { next = prev = this; }
@@ -45,6 +48,13 @@ public abstract class TimerTask implements Runnable {
    */
   protected abstract void action();
 
+  /**
+   * Not thread save to use directly, use {@link Timer#cancel(TimerTask)}
+   * It can happen that cancel is called on a task that is already
+   * executing
+   *
+   * @return true, if really cancelled, to do resource cleanup in subclasses
+   */
   protected boolean cancel() {
     if (next != null) {
       remove();
@@ -59,9 +69,7 @@ public abstract class TimerTask implements Runnable {
    */
   @Override
   public void run() {
-    if (isExecuted()) {
-      action();
-    }
+    action();
   }
 
   public boolean isUnscheduled() {
@@ -96,7 +104,8 @@ public abstract class TimerTask implements Runnable {
   @Override
   public String toString() {
     return this.getClass().getSimpleName() + "{" +
-      "state=" + getState() +
+      "hash=" + Integer.toString(System.identityHashCode(this), 36) +
+      ", state=" + getState() +
       ", time=" + time +
       '}';
   }

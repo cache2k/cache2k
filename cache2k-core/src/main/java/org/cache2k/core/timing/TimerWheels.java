@@ -31,7 +31,7 @@ package org.cache2k.core.timing;
  */
 public class TimerWheels implements TimerStructure {
 
-  private Wheel wheel;
+  private final Wheel wheel;
 
   public TimerWheels(long startTime, long delta, int slots) {
     wheel = new Wheel(startTime, delta, slots);
@@ -63,33 +63,35 @@ public class TimerWheels implements TimerStructure {
 
     private Wheel up;
     private long noon;
-    private long oneBeforeNextNoon;
-    private long delta;
-    private TimerTask[] slots;
-    private  int index;
+    private long nextNoon;
+    private final long delta;
+    private final TimerTask[] slots;
+    private int index;
 
     Wheel(long time, long delta, int slotCount) {
       this.delta = delta;
-      initArray(slotCount);
+      slots = new TimerTask[slotCount];
+      initArray();
       atNoon(time);
+    }
+
+    private void initArray() {
+      for (int i = 0; i < slots.length; i++) {
+        slots[i] = new TimerTask.Sentinel();
+      }
     }
 
     /**
      * Called when we reach noon to reset the index hand.
+     * @param time positive value representing time. {@value Long#MAX_VALUE} is illegal
+     *             this would mean eternal / no expiry.
      */
     private void atNoon(long time) {
       index = 0;
       noon = time;
-      oneBeforeNextNoon = time + delta * slots.length - 1;
-      if (oneBeforeNextNoon < 0) {
-        oneBeforeNextNoon = Long.MAX_VALUE;
-      }
-    }
-
-    private void initArray(int slotCount) {
-      slots = new TimerTask[slotCount];
-      for (int i = 0; i < slots.length; i++) {
-        slots[i] = new TimerTask.Sentinel();
+      nextNoon = time + delta * slots.length;
+      if (nextNoon < 0) {
+        nextNoon = Long.MAX_VALUE;
       }
     }
 
@@ -98,7 +100,7 @@ public class TimerWheels implements TimerStructure {
      */
     private void cancel() {
       up = null;
-      initArray(slots.length);
+      initArray();
     }
 
     /**
@@ -116,7 +118,7 @@ public class TimerWheels implements TimerStructure {
      */
     long nextToRun() {
       for (int i = index; i < slots.length; i++) {
-        if (!slots[i].isEmpty()) {
+        if (slots[i].isOccupied()) {
           return executionTime(i);
         }
       }
@@ -137,16 +139,17 @@ public class TimerWheels implements TimerStructure {
       if (time >= hand) {
         while (true) {
           TimerTask head = slots[index];
-          if (!head.isEmpty()) {
+          if (head.isOccupied()) {
             TimerTask t = head.next;
             t.remove();
             return t;
           }
           hand = hand + delta;
-          if (time < hand) {
-            return null;
+          if (time >= hand) {
+            moveHand();
+            continue;
           }
-          moveHand();
+          break;
         }
       }
       return null;
@@ -159,7 +162,7 @@ public class TimerWheels implements TimerStructure {
     private void moveHand() {
       index++;
       if (index >= slots.length) {
-        atNoon(oneBeforeNextNoon + 1);
+        atNoon(nextNoon);
         refill();
       }
     }
@@ -170,7 +173,7 @@ public class TimerWheels implements TimerStructure {
      */
     private void refill() {
        TimerTask t;
-       long limit = oneBeforeNextNoon;
+       long limit = nextNoon - 1;
        Wheel up = this.up;
        if (up == null) { return; }
        while ((t = up.removeNextToRun(limit)) != null) {
@@ -187,13 +190,12 @@ public class TimerWheels implements TimerStructure {
       long hand = executionTime(index - 1);
       if (t.time <= hand) {
         return false;
-      } else if (t.time <= oneBeforeNextNoon) {
+      } else if (t.time < nextNoon) {
         insert(t);
         return true;
       } else {
-        Wheel up = this.up;
         if (up == null) {
-          this.up = up = new Wheel(oneBeforeNextNoon + 1, delta * slots.length, slots.length);
+          up = new Wheel(nextNoon, delta * slots.length, slots.length);
         }
         return up.schedule(t);
       }

@@ -35,6 +35,8 @@ public interface Timer extends NeedsClose {
    * the task is executed immediately in a separate thread.
    *
    * @param time the time when the task should be run. must be positive or 0.
+   *             The value {@value Long#MAX_VALUE} is illegal since this would
+   *             represent eternal timer and does not need to be scheduled.
    */
   void schedule(TimerTask task, long time);
 
@@ -44,7 +46,8 @@ public interface Timer extends NeedsClose {
   void cancel(TimerTask t);
 
   /**
-   * Terminates all timer tasks currently pending.
+   * Terminates all timer tasks currently pending. This does not mark the timer tasks
+   * as cancelled, just drops all tasks from the timer data structure.
    */
   void cancelAll();
 

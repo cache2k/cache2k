@@ -39,6 +39,8 @@ abstract class Tasks<K, V> extends TimerTask {
 
   /**
    * Null out references to avoid mem leaks, when timer is cancelled.
+   * Only null if cancel is successful, since execution might go on
+   * in parallel.
    */
   @Override
   protected boolean cancel() {

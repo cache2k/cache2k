@@ -44,11 +44,6 @@ public interface TimerStructure {
   boolean schedule(TimerTask task, long time);
 
   /**
-   * Cancel this timer task
-   */
-  void cancelAll(TimerTask t);
-
-  /**
    * Cancel all tasks
    */
   void cancelAll();
@@ -66,7 +61,7 @@ public interface TimerStructure {
   TimerTask removeNextToRun(long time);
 
   /**
-   * Time of next run, or -1 if no more tasks are scheduled
+   * Time of next run, or MAX_VALUE if no more tasks are scheduled
    */
   long nextRun();
 

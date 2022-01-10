@@ -27,6 +27,7 @@ import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.testing.category.FastTests;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -74,8 +75,7 @@ public class TimerTest {
   }
 
   /**
-   * Move time forward and return tasks that
-   * are executed.
+   * Move time forward and return tasks that are executed.
    */
   void run(long time) {
     clock.moveTo(time);
@@ -106,21 +106,42 @@ public class TimerTest {
     Timer st =
       new DefaultTimer(simulatedClock, simulatedClock, 1);
     TimerTask t = new MyTimerTask();
+    assertEquals("unscheduled", t.getState());
     try {
       st.schedule(t, -5);
+      Assert.fail("exception expected");
     } catch (IllegalArgumentException ex) {
     }
     st.schedule(t, 10);
     try {
       st.schedule(t, 15);
+      Assert.fail("exception expected, already scheduled");
     } catch (IllegalStateException ex) {
     }
+    t = new TimerTask.Sentinel();
+    t.execute();
+    t.next = null;
+    t.run();
+  }
+
+  /**
+   *
+   */
+  @Test
+  public void immediateExecution() {
+    MyTimerTask t = new MyTimerTask();
+    t.markForImmediateExecution();
+    assertTrue(t.isScheduled());
+    t.run();
+    assertTrue(t.isExecuted());
+    assertTrue(t.executed);
     t = new MyTimerTask();
-    st.cancelAll();
-    try {
-      st.schedule(t, 15);
-    } catch (IllegalStateException ex) {
-    }
+    t.markForImmediateExecution();
+    assertTrue(t.isExecuted());
+    assertFalse(t.executed);
+    t.run();
+    assertTrue(t.isExecuted());
+    assertTrue(t.executed);
   }
 
   @Test
@@ -155,6 +176,7 @@ public class TimerTest {
     init(100, 10, 10);
     MyTimerTask t = schedule(50).get(0);
     assertTrue(t.executed);
+    assertEquals("executed", t.getState());
   }
 
   /**
@@ -166,6 +188,40 @@ public class TimerTest {
     init(startTime, 10, 10);
     MyTimerTask t = schedule(startTime).get(0);
     assertTrue(t.executed);
+  }
+
+  @Test
+  public void scheduleReachedTime0() {
+    long startTime = 100;
+    init(startTime, 10, 10);
+    MyTimerTask t = schedule(140).get(0);
+    assertTrue(t.isScheduled());
+    run(150);
+    assertTrue(t.executed);
+  }
+
+  @Test
+  public void scheduleAndCancel() {
+    long startTime = 100;
+    init(startTime, 10, 10);
+    MyTimerTask t = schedule(140).get(0);
+    assertTrue(t.isScheduled());
+    assertTrue(t.cancel());
+    assertEquals("cancelled", t.getState());
+    assertFalse(t.cancel());
+    run(150);
+    assertFalse(t.executed);
+  }
+
+  @Test
+  public void scheduleAndCancelAll() {
+    long startTime = 100;
+    init(startTime, 10, 10);
+    MyTimerTask t = schedule(140).get(0);
+    assertTrue(t.isScheduled());
+    timer.cancelAll();
+    run(150);
+    assertFalse(t.executed);
   }
 
   @Test
@@ -186,6 +242,8 @@ public class TimerTest {
     run(145);
     MyTimerTask t = schedule(987654).get(0);
     assertFalse(t.executed);
+    assertEquals("scheduled", t.getState());
+    assertTrue(t.isScheduled());
     run(987654 + 27);
     assertTrue(t.executed);
   }
@@ -277,12 +335,6 @@ public class TimerTest {
   @Test
   public void executedAfterLag_2_2() {
     test2_2_x(2);
-  }
-
-  @Test
-  public void scheduleMax() {
-    init(100, 10, 2);
-    schedule(Long.MAX_VALUE);
   }
 
   @Test

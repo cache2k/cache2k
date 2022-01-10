@@ -103,10 +103,10 @@ public class DefaultTimer implements Timer {
         rescheduleEventually(time + lagMillis);
         return;
       }
+      executeImmediately(task);
     } finally {
       lock.unlock();
     }
-    executeImmediately(task);
   }
 
   /**
@@ -114,10 +114,14 @@ public class DefaultTimer implements Timer {
    * as soon as possible. Execution is done via executor instead of in the current thread.
    * Alternatively, we could add it to wheel for the next timeslot to execute, which
    * would mean further delay, but is within lag limits.
+   *
+   * <p>Executing within lock, since racing with cancel.
+   *
+   * <p>After marked for execution, the task cannot be cancelled any more and
+   * is expected to be executed by the executor.
    */
   private void executeImmediately(TimerTask task) {
-    task.time = 0;
-    task.execute();
+    task.markForImmediateExecution();
     scheduler.execute(task);
   }
 
@@ -125,7 +129,7 @@ public class DefaultTimer implements Timer {
   public void cancel(TimerTask t) {
     lock.lock();
     try {
-      structure.cancelAll(t);
+      t.cancel();
     } finally {
       lock.unlock();
     }
@@ -196,7 +200,7 @@ public class DefaultTimer implements Timer {
    * Also marks that no timer job is scheduled if run with -1 as time parameter.
    *
    * @param now the current time for calculations
-   * @param time requested time for processing, or -1 if nothing needs to be scheduled
+   * @param time requested time for processing, or MAX_VALUE if nothing needs to be scheduled
    */
   private void schedule(long now, long time) {
     if (time != Long.MAX_VALUE) {
