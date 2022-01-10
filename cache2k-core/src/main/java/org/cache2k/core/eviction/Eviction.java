@@ -36,7 +36,7 @@ public interface Eviction extends NeedsClose {
 
   /**
    * Start new idle scan round and return current scan counter
-   * @see IdleProcessing
+   * @see IdleScan
    */
   long startNewIdleScanRound();
 
@@ -82,7 +82,7 @@ public interface Eviction extends NeedsClose {
    * Scan for idle (no access count since last scan) entries and evict them.
    *
    * @return number of evicted entries
-   * @see IdleProcessing
+   * @see IdleScan
    */
   long evictIdleEntries(int maxScan);
 

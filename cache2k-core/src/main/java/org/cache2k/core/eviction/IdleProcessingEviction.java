@@ -29,11 +29,11 @@ import org.cache2k.core.api.InternalCacheCloseContext;
  */
 public class IdleProcessingEviction extends DelegatingEviction {
 
-  private IdleProcessing idleProcessing;
+  private IdleScan idleScan;
   private Eviction eviction;
 
-  public IdleProcessingEviction(Eviction eviction, IdleProcessing idleProcessing) {
-    this.idleProcessing = idleProcessing;
+  public IdleProcessingEviction(Eviction eviction, IdleScan idleScan) {
+    this.idleScan = idleScan;
     this.eviction = eviction;
   }
 
@@ -44,13 +44,13 @@ public class IdleProcessingEviction extends DelegatingEviction {
 
   @Override
   public void close(InternalCacheCloseContext closeContext) {
-    idleProcessing.close(closeContext);
+    idleScan.close(closeContext);
     super.close(closeContext);
   }
 
   @Override
   public String toString() {
-    return idleProcessing.toString() + ", " + super.toString();
+    return idleScan.toString() + ", " + super.toString();
   }
 
 }

@@ -73,10 +73,10 @@ public class EvictionFactory {
     }
     Eviction eviction = segmentCount == 1 ? segments[0] : new SegmentedEviction(segments);
     if (config.getIdleScanTime() != null) {
-      IdleProcessing idleProcessing =
-        new IdleProcessing(ctx.getTimeReference(), ctx.createScheduler(),
+      IdleScan idleScan =
+        new IdleScan(ctx.getTimeReference(), ctx.createScheduler(),
           eviction, config.getIdleScanTime().toMillis());
-      eviction = new IdleProcessingEviction(eviction, idleProcessing);
+      eviction = new IdleProcessingEviction(eviction, idleScan);
     }
     return eviction;
   }

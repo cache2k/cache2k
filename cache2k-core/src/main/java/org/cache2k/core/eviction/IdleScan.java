@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Jens Wilke
  */
-public class IdleProcessing implements NeedsClose {
+public class IdleScan implements NeedsClose {
 
   private static final long IDLE = -1;
 
@@ -62,8 +62,8 @@ public class IdleProcessing implements NeedsClose {
   private long roundCompleteCount = 0;
   private long roundAbortCount = 0;
 
-  public IdleProcessing(TimeReference clock, Scheduler scheduler,
-                        Eviction eviction, long roundTicks) {
+  public IdleScan(TimeReference clock, Scheduler scheduler,
+                  Eviction eviction, long roundTicks) {
     this.scheduler = scheduler;
     this.clock = clock;
     this.eviction = eviction;
@@ -160,12 +160,11 @@ public class IdleProcessing implements NeedsClose {
 
   @Override
   public synchronized String toString() {
-    return
-      "idleScanRoundStarted=" + roundStartCount + ", " +
-      "idleScanRoundCompleted=" + roundCompleteCount + ", " +
-      "idleScanRoundAbort=" + roundAbortCount + ", " +
-      "idleEvicted=" + evictedCount +
-     (roundStartTicks == IDLE ? "" : ", idleScanPercent=" + (getIdleScanPercent()));
+    return "idleScanRoundStarted=" + roundStartCount +
+      ", idleScanRoundCompleted=" + roundCompleteCount +
+      ", idleScanRoundAbort=" + roundAbortCount +
+      ", idleEvicted=" + evictedCount +
+      ", idleScanPercent=" + (roundStartTicks == IDLE ? "IDLE" : getIdleScanPercent());
   }
 
 }

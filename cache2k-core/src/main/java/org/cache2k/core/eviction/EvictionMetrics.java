@@ -78,7 +78,7 @@ public interface EvictionMetrics {
   /**
    * Count of entries scanned for eviction. Used to evict idle entries.
    *
-   * @see IdleProcessing
+   * @see IdleScan
    */
   long getScanCount();
 
@@ -89,7 +89,7 @@ public interface EvictionMetrics {
    * scan rates for idle scanning rounds.
    *
    * @return number of entries actively removed since scan round start.
-   * @see IdleProcessing
+   * @see IdleScan
    */
   long getIdleNonEvictDrainCount();
 

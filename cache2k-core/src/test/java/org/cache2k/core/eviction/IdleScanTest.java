@@ -23,7 +23,9 @@ package org.cache2k.core.eviction;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.testing.SimulatedClock;
+import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.AbstractCollection;
 import java.util.Iterator;
@@ -36,40 +38,33 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * @author Jens Wilke
  */
-public class IdleProcessingTest {
-
-  @Test
-  public void testIntervalCalculation() {
-    assertEquals(100, IdleProcessing.calculateWakeupTicks(1000, 10));
-    assertEquals(10, IdleProcessing.calculateWakeupTicks(1000, 1111));
-  }
+@Category(FastTests.class)
+public class IdleScanTest {
 
   static final long START_OFFSET_MILLIS = 1000;
 
-  Iterable<Integer> range(int from, int count) {
-    int to = from + count;
-    return new AbstractCollection<Integer>() {
-      @Override
-      public Iterator<Integer> iterator() {
-        return new Iterator<Integer>() {
-          int i = from;
-          @Override
-          public boolean hasNext() {
-            return i < to;
-          }
+  @Test
+  public void testIntervalCalculation() {
+    assertEquals(100, IdleScan.calculateWakeupTicks(1000, 10));
+    assertEquals(10, IdleScan.calculateWakeupTicks(1000, 1111));
+  }
 
-          @Override
-          public Integer next() {
-            return i++;
-          }
-        };
-      }
-
-      @Override
-      public int size() {
-        return count;
-      }
-    };
+  @Test
+  public void stayIdle() throws InterruptedException {
+    SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
+    Cache<Integer, Integer> cache =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .timeReference(clock)
+        .executor(clock.wrapExecutor(Runnable::run))
+        .idleScanTime(1_000, TimeUnit.MILLISECONDS)
+        .strictEviction(true)
+        .loader(k -> k)
+        .build();
+    for (int i = 0; i < 5; i++) {
+      assertThat(cache.toString()).contains("IDLE");
+      clock.sleep(500);
+    }
+    cache.close();
   }
 
   @Test
@@ -122,6 +117,32 @@ public class IdleProcessingTest {
     clock.sleep(500);
     assertEquals(0, cache.asMap().size());
     cache.close();
+  }
+
+  static Iterable<Integer> range(int from, int count) {
+    int to = from + count;
+    return new AbstractCollection<Integer>() {
+      @Override
+      public Iterator<Integer> iterator() {
+        return new Iterator<Integer>() {
+          int i = from;
+          @Override
+          public boolean hasNext() {
+            return i < to;
+          }
+
+          @Override
+          public Integer next() {
+            return i++;
+          }
+        };
+      }
+
+      @Override
+      public int size() {
+        return count;
+      }
+    };
   }
 
 }
