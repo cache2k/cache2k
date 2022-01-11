@@ -20,6 +20,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.annotation.NonNull;
 import org.cache2k.annotation.Nullable;
 import org.cache2k.processor.EntryMutator;
 import org.cache2k.processor.EntryProcessingResult;
@@ -27,7 +28,6 @@ import org.cache2k.processor.EntryProcessor;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -44,7 +44,7 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
    * Subclasses need to implement this method which specifies the delegation
    * target.
    */
-  protected abstract Cache<K, V> delegate();
+  protected abstract @NonNull Cache<K, V> delegate();
 
   @Override
   public String getName() {
@@ -136,7 +136,6 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
     return delegate().peekAndPut(key, value);
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public void expireAt(K key, long millis) {
     delegate().expireAt(key, millis);
@@ -152,6 +151,7 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
     return delegate().reloadAll(keys);
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Override
   public <@Nullable R> R invoke(K key, EntryProcessor<K, V, R> processor) {
     return delegate().invoke(key, processor);
@@ -238,7 +238,7 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
    */
   @Override
   public String toString() {
-    return this.getClass().getSimpleName() + "!" + delegate().toString();
+    return this.getClass().getSimpleName() + "!" + delegate();
   }
 
 }

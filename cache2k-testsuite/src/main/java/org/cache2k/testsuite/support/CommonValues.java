@@ -28,6 +28,6 @@ public interface CommonValues {
   /**
    * Highest time in the future we expect to work.
    */
-  long TIME_MAX_MILLIS = Long.MAX_VALUE / 1000;
+  long TIME_MAX_MILLIS = Long.MAX_VALUE - 1;
 
 }

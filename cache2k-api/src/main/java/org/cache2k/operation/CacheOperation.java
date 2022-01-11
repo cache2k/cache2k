@@ -62,10 +62,10 @@ public interface CacheOperation {
   CompletableFuture<Void> close();
 
   /**
-   * A combination of {@link Cache#clear} and {@link Cache#close} potentially
-   * wiping all stored data of this cache.
+   * A combination of {@link Cache#clear} and {@link Cache#close} wiping all stored
+   * data of this cache.
    *
-   * <p>This method is to future proof the API, when a persistence feature is added.
+   * <p>This method is to future-proof the API, when a persistence feature is added.
    * In this case the method will stop cache operations and remove all stored external data.
    *
    * <p>Rationale: The corresponding method in JSR107 is {@code CacheManager.destroyCache()}.
@@ -81,7 +81,7 @@ public interface CacheOperation {
    *
    * <p>The value of {@code 0} has the special function to disable the cache.
    * Disabling the cache is only useful in development or if no concurrent
-   * access is happening. When the cache is disabled an cache entries will still
+   * access is happening. When the cache is disabled a cache entries will still
    * be inserted and subsequent load requests on the same entry will block.
    * After every cache operation the entry is immediately expired.
    *

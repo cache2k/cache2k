@@ -31,7 +31,7 @@ import org.cache2k.Cache;
 public interface CacheControl extends CacheOperation, CacheInfo {
 
   /**
-   * Request an management interface of the given cache.
+   * Request the management interface of the given cache.
    */
   static CacheControl of(Cache<?, ?> cache) {
     return cache.requestInterface(CacheControl.class);

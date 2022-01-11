@@ -30,7 +30,7 @@ import org.cache2k.Cache;
  * cache instead of the original. Depending on the configuration the wrapper
  * may also decide to just return the original cache instance.
  *
- * <p>The configuration allows to specify two different wrappers.
+ * <p>The configuration allows specifying two different wrappers.
  * One for tracing {@link Cache2kConfig#setTraceCacheWrapper(CacheWrapper)} and
  * one for general use {@link Cache2kConfig#setCacheWrapper(CacheWrapper)}. The wrapping
  * is applied in that order, with tracing first.

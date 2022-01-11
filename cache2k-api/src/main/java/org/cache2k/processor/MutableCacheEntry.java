@@ -109,13 +109,16 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   boolean exists();
 
   /**
-   * Current time as provided by the internal time source
-   * (usually {@code System.currentTimeMillis()}.
-   * The time is retrieved once when the entry processor is invoked and will not change afterwards.
+   * Time the operation started.
+   *
+   * <p>The time is retrieved once when the entry processor is invoked and will not change afterwards.
    * If a load is triggered this value will be identical to the {@code startTime} in
    * {@link AdvancedCacheLoader#load},
    * {@link LoadExceptionInfo#getLoadTime()} or {
    * @link AsyncCacheLoader.Context#getLoadStartTime()}
+   *
+   * @return Time in millis since epoch or as defined by
+   *         {@link org.cache2k.operation.TimeReference}.
    */
   long getStartTime();
 
@@ -194,10 +197,12 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * <p>Special time values are defined and described at {@link org.cache2k.expiry.ExpiryTimeValues}
    *
-   * @param t Time in millis since epoch.
+   * @param t millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}
    * @throws RestartException If the information is not yet available and the cache
    *                          needs to do an operation to supply it. After completion,
    *                          the entry processor will be executed again.
+   * @throws IllegalArgumentException if expiry was disabled via
+   *                                  {@link org.cache2k.Cache2kBuilder#eternal(boolean)}
    */
   MutableCacheEntry<K, V> setExpiryTime(long t);
 
@@ -212,7 +217,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
   long getExpiryTime();
 
   /**
-   * Timestamp of the last update of the cached value. This is the start time
+   * Time of the last update of the cached value. This is the start time
    * (before the loader was called) of a successful load operation, or the time
    * the value was modified directly via {@link org.cache2k.Cache#put} or other sorts
    * of mutation. Does not trigger a load.
@@ -220,6 +225,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * @throws RestartException If the information is not yet available and the cache
    *                          needs to do an operation to supply it. After completion,
    *                          the entry processor will be executed again.
+   * @return Time in millis since epoch or as defined by
+   *         {@link org.cache2k.operation.TimeReference}.
    */
   long getModificationTime();
 
@@ -231,6 +238,7 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * <p>If refresh ahead is enabled via {@link org.cache2k.Cache2kBuilder#refreshAhead(boolean)},
    * the next refresh time is controlled by the expiry time.
    *
+   * @param t millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}
    * @throws RestartException If the information is not yet available and the cache
    *                          needs to do an operation to supply it. After completion,
    *                          the entry processor will be executed again.

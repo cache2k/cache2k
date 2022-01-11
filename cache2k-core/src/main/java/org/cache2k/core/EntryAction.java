@@ -1219,7 +1219,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     boolean justExpired = false;
     boolean evictionHint = false;
     synchronized (heapEntry) {
-
       if (heapCache.isRecordRefreshTime()) {
         heapEntry.setRefreshTime(lastRefreshTime);
       }
@@ -1241,10 +1240,14 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       } else if (remove) {
         heapCache.removeEntry(heapEntry);
       } else {
-        heapEntry.setNextRefreshTime(timing().stopStartTimer(expiry, heapEntry));
-        boolean entryExpired = heapEntry.isExpiredState();
-        if (!expiredImmediately && entryExpired) {
-          justExpired = true;
+        try {
+          heapEntry.setNextRefreshTime(timing().stopStartTimer(expiry, heapEntry));
+          boolean entryExpired = heapEntry.isExpiredState();
+          if (!expiredImmediately && entryExpired) {
+            justExpired = true;
+          }
+        } catch (RuntimeException ex) {
+          exceptionToPropagate = ex;
         }
       }
       if (valueLoadedOrRevived) {
@@ -1257,7 +1260,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         heapEntry.processingDone(this);
         entryLocked = false;
       }
-    }
+    } // synchronized
     if (justExpired) {
       expiredAtEndOfOperationStartOver();
       return;
@@ -1270,7 +1273,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   }
 
   /**
-   * Entry expired during progress of the action, reentry at a previous processing
+   * Entry expired during progress of the action, reenter at a previous processing
    * state to call listeners and update heap.
    * <p>We could get rid of this path in case the timer would just execute immediately.
    */

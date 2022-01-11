@@ -46,7 +46,7 @@ public final class CustomizationReferenceSupplier<@NonNull T> implements Customi
   }
 
   @Override
-  public T supply(CacheBuildContext ignored) {
+  public T supply(CacheBuildContext<?, ?> ignored) {
     return object;
   }
 

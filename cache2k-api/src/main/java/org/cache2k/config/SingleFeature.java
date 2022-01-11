@@ -23,7 +23,7 @@ package org.cache2k.config;
 /**
  * Feature that distinct type is only present once.
  *
- * <p>Rationale: We could use toggle feature instead but maybe
+ * <p>Rationale: We could use toggle feature instead, however, maybe
  * we want to add features that do not need to be toggled.
  *
  * @author Jens Wilke

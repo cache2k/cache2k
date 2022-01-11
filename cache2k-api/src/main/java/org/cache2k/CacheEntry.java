@@ -79,8 +79,8 @@ public interface CacheEntry<K, V> extends DataAware<K, V> {
   }
 
   /**
-   * Detailed information of latest exception from the loader or {@code null}
-   * if no exception happened or it was suppressed. If {@code null}
+   * Detailed information of the latest exception from the loader. {@code null}
+   * if no exception happened or was suppressed. If {@code null}
    * then {@link #getValue} returns a value and does not throw an exception.
    */
   @Nullable LoadExceptionInfo<K, V> getExceptionInfo();

@@ -45,7 +45,7 @@ public interface AdvancedCacheLoader<K, V> extends DataAwareCustomization<K, V> 
    * @param key The non-null key to provide the value for.
    * @param startTime Time in millis, retrieved before the call.
    * @param currentEntry Current entry in the cache. The entry is available if the load is caused
-   *                     by a reload or refresh. If expired before, {@code null} is returned.
+   *                     by reload or refresh. If expired before, {@code null} is returned.
    *                     If {@link Cache2kBuilder#keepDataAfterExpired(boolean)} is enabled, also
    *                     an expired entry is provided to the loader for optimization purposes.
    *                     See also the description of

@@ -23,9 +23,11 @@ package org.cache2k.processor;
 import org.cache2k.CacheException;
 
 /**
- * Wrapped exception of an exception thrown during entry processing.
+ * The wrapped exception from entry processing.
  *
  * @author Jens Wilke
+ * @see EntryProcessor
+ * @see org.cache2k.Cache#invoke(Object, EntryProcessor)
  */
 public class EntryProcessingException extends CacheException {
 

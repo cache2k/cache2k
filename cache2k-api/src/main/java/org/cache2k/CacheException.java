@@ -20,6 +20,8 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.annotation.Nullable;
+
 /**
  * Base class of all cache exceptions.
  *
@@ -27,7 +29,7 @@ package org.cache2k;
  */
 public class CacheException extends RuntimeException {
 
-  protected CacheException(String message, Throwable cause, boolean enableSuppression,
+  protected CacheException(@Nullable String message, @Nullable Throwable cause, boolean enableSuppression,
                            boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }

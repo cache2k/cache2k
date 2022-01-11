@@ -51,11 +51,13 @@ import java.lang.reflect.Type;
  * @see <a href="https://github.com/google/guava/wiki/ReflectionExplained">
  *   ReflectionExplained - Google Guava Documentation</a>
  */
+@SuppressWarnings("rawtypes")
 public interface CacheType<T> {
 
   /** The used prefix for the toString() output. */
   String DESCRIPTOR_TO_STRING_PREFIX = "CacheType:";
 
+  @SuppressWarnings("unchecked")
   static <T> CacheType<T> of(Class<T> t) {
     return (CacheType<T>) of((Type) t);
   }
@@ -89,12 +91,12 @@ public interface CacheType<T> {
 
   /**
    * The type has generic type parameters and the concrete types are known.
-   * {@link #getTypeArguments()} returns the the arguments.
+   * {@link #getTypeArguments()} returns the arguments.
    */
   boolean hasTypeArguments();
 
   /**
-   * This type is an array. To analyze a multi dimensional array descend to the component,
+   * This type is an array. To analyze a multidimensional array descend to the component,
    * for example {@code getComponentType().isArray()}.
    *
    * @see #getComponentType()

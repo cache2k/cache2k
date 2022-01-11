@@ -20,10 +20,6 @@ package org.cache2k.expiry;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
-
-import java.util.concurrent.TimeUnit;
-
 /**
  * Interface to add to a value object if it is possible to derive the
  * expiry time from the value. If no explicit expiry calculator is set

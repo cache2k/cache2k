@@ -32,11 +32,10 @@ import org.cache2k.Cache2kBuilder;
  * several advantages. The usable features with a loader are explained in the following.
  *
  * <p><b>Transparent operation</b>: If configured, the loader is invoked implicitly, in case
- * there is no value in the cache or it is expired, by the cache methods {@code get()},
+ * there is no value in the cache, or it is expired, by the cache methods {@code get()},
  * {@code getAll()} or {@code getEntry()} as well as {@link MutableCacheEntry#getValue()}.
  *
- * <p>The cache loader can be invoked explicitly via {
- * @link Cache#reloadAll(Iterable, CacheOperationCompletionListener)}.
+ * <p>The cache loader can be invoked explicitly via {@link Cache#reloadAll(Iterable)}.
  *
  * <p><b>Blocking</b>: If the loader is invoked by {@link Cache#get} or other methods that allow
  * transparent access (see above) concurrent requests on the same key will block until the loading
@@ -51,7 +50,7 @@ import org.cache2k.Cache2kBuilder;
  * <p>The alternative loader interface {@link AdvancedCacheLoader} provides the loader
  * with the current cache value.
  *
- * <p>The {@link AsyncCacheLoader} interface can be used to provide a non blocking asynchronous
+ * <p>The {@link AsyncCacheLoader} interface can be used to provide a non-blocking asynchronous
  * loader implementation.
  *
  * <p>If no loader is enabled, the methods {@link Cache#get} and {@link Cache#peek}
@@ -74,9 +73,9 @@ public interface CacheLoader<K, V> extends DataAwareCustomization<K, V> {
    * may cause a deadlock.
    *
    * <p>API rationale: This method declares an exception to allow any unhandled
-   * exceptions of the loader implementation to just pass through. Since the cache
-   * needs to catch an deal with loader exceptions in any way, this saves otherwise
-   * necessary try/catch clauses in the loader.
+   * exceptions from the loader implementation to just pass through. Since the cache
+   * needs to deal with loader exceptions any way, this saves otherwise
+   * necessary try/catch clauses in the loader and also reduces boilerplate code.
    *
    * @param key the non-null key to provide the value for.
    * @return value to be associated with the key. If the cache does not permit {@code null}

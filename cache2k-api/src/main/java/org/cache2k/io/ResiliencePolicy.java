@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Controls how to deal with loader exceptions in a read through configuration.
- * An exception can be cached and propagated or the cache can fallback to the
+ * An exception can be cached and propagated or the cache can fall back to the
  * currently cached value if a previous load attempt did complete successful.
  *
  * @author Jens Wilke
@@ -42,6 +42,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
    * A policy always returning zero, thus disabling resilience features. This is also used
    * as default when no resilience policy is set.
    */
+  @SuppressWarnings("Convert2Diamond") // needs Java 9
   ResiliencePolicy<?, ?> DISABLED_POLICY = new ResiliencePolicy<Object, Object>() {
     @Override
     public long suppressExceptionUntil(Object key, LoadExceptionInfo<Object, Object> loadExceptionInfo,
@@ -55,6 +56,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
     }
   };
 
+  @SuppressWarnings("unchecked")
   static <K, V> ResiliencePolicy<K, V> disabledPolicy() {
     return (ResiliencePolicy<K, V>) DISABLED_POLICY;
   }
@@ -75,17 +77,17 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
    * <p>If {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} is specified, the
    * maximum duration will be capped with the specified value.
    *
-   * <p>Returning 0 or a past time means the exception should not be suppressed.
+   * <p>Returning 0 or a time in the past means the exception should not be suppressed.
    * The cache will call immediately {@link #retryLoadAfter} to determine how long the
    * exception should stay in the cache and when the next retry attempt takes place.
    *
-   * <p>If the exception is not suppressed, it will wrapped into a {@link CacheLoaderException}
+   * <p>If the exception is not suppressed, it will be wrapped into a {@link CacheLoaderException}
    * and propagated to the cache client. This is customizable by the {@link ExceptionPropagator}.
    *
    * @param cachedEntry The entry representing the currently cached content.
    *                    It is possible that this data is already expired.
    *                    This entry never contains an exception.
-   * @return Time in millis in the future when the content should expire again. A zero or
+   * @return Time in the future when the content should expire again. A zero or
    *         a time before the current time means the exception will not be suppressed. A
    *         {@link ExpiryPolicy#ETERNAL} means the exception will be
    *         suppressed and the recent content will be returned eternally.
@@ -104,7 +106,7 @@ public interface ResiliencePolicy<K, V> extends ExpiryTimeValues, DataAwareCusto
    *  <p>If {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} is specified, the
    *  maximum duration will be capped with the specified value.
    *
-   * @return Time in epoch millis in the future when the exception should expire. A zero or
+   * @return Time in the future when the exception should expire. A zero or
    *         a time before the current time means the exception will not be cached and
    *         a new load is triggered by the next {@code get()}. A {@link ExpiryPolicy#ETERNAL}
    *         means the exception will be  cached forever.

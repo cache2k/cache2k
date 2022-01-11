@@ -33,7 +33,7 @@ import org.cache2k.io.ResiliencePolicy;
 public class Expiry implements ExpiryTimeValues {
 
   /**
-   * Convert the time value to a time representing an a sharp expiry.
+   * Convert the time value to a time representing a sharp expiry.
    * This essentially negates the time value and is provided for a more speaking coding style.
    *
    * @param millis expiry time since the milliseconds since epoch or {@link #ETERNAL} if no
@@ -89,7 +89,7 @@ public class Expiry implements ExpiryTimeValues {
    * usually expire. The two concepts can be combined in the expiry policy, e.g.
    * using an interval for triggering refresh ahead and requesting a sharp expiry
    * only when needed. If effective expiry time for the lagging variant and the
-   * for the sharp variant are in close proximity, conflicts need to be resolved.
+   * for the sharp variant are in proximity, conflicts need to be resolved.
    *
    * @param loadTime time when the load was started
    * @param refreshAfter time span in milliseconds when the next refresh should happen
@@ -113,10 +113,7 @@ public class Expiry implements ExpiryTimeValues {
       return pointInTime;
     }
     long pointInTimeMinusDelta = absPointInTime - refreshAfter;
-    if (pointInTimeMinusDelta < refreshTime) {
-      return pointInTimeMinusDelta;
-    }
-    return refreshTime;
+    return Math.min(pointInTimeMinusDelta, refreshTime);
   }
 
 }

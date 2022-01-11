@@ -131,10 +131,11 @@ public abstract class Timing<K, V> implements NeedsClose {
    *
    * @param expiryTime calculated expiry time
    * @return sanitized nextRefreshTime for storage in the entry.
+   * @throws IllegalArgumentException if time is not supported
    */
   public long stopStartTimer(long expiryTime, Entry<K, V> e) {
     if ((expiryTime > 0 && expiryTime < Long.MAX_VALUE) || expiryTime < 0) {
-      throw new IllegalArgumentException("Cache is not configured for expiry");
+      throw new IllegalArgumentException("Expiry timer disabled via eternal = true");
     }
     return expiryTime == 0 ? Entry.EXPIRED : expiryTime;
   }

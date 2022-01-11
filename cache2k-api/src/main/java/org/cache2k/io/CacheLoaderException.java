@@ -21,7 +21,6 @@ package org.cache2k.io;
  */
 
 import org.cache2k.CacheException;
-import org.cache2k.CustomizationException;
 
 /**
  * Exception to wrap a loader exception. When an exception is thrown by the loader

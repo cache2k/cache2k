@@ -186,6 +186,7 @@ public class CacheTypeCapture<T> implements CacheType<T> {
   /**
    * CacheType representing an array.
    */
+  @SuppressWarnings("ConstantConditions")
   public static class OfArray extends BaseType<Void> {
 
     private final CacheType<?> componentType;

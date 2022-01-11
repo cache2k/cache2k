@@ -51,6 +51,7 @@ import org.cache2k.processor.MutableCacheEntry;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -117,7 +118,7 @@ public class Cache2kBuilder<K, V>
    * @see #valueType(Class)
    */
   public static <K, V> Cache2kBuilder<K, V> of(Class<K> keyType, Class<V> valueType) {
-    return new Cache2kBuilder<K, V>(CacheType.of(keyType), CacheType.of(valueType));
+    return new Cache2kBuilder<>(CacheType.of(keyType), CacheType.of(valueType));
   }
 
   /**
@@ -126,7 +127,7 @@ public class Cache2kBuilder<K, V>
    * applied.
    */
   public static <K, V> Cache2kBuilder<K, V> of(Cache2kConfig<K, V> c) {
-    Cache2kBuilder<K, V> cb = new Cache2kBuilder<K, V>(c);
+    Cache2kBuilder<K, V> cb = new Cache2kBuilder<>(c);
     return cb;
   }
 
@@ -182,7 +183,7 @@ public class Cache2kBuilder<K, V>
   @SuppressWarnings("unchecked")
   private Cache2kConfig<K, V> cfg() {
     if (config == null) {
-      config = CacheManager.PROVIDER.getDefaultConfig(getManager());
+      config = (Cache2kConfig<K, V>) CacheManager.PROVIDER.getDefaultConfig(getManager());
       if (keyType != null) {
         config.setKeyType(keyType);
       }
@@ -275,10 +276,8 @@ public class Cache2kBuilder<K, V>
    *                    May be {@code null}.
    * @see #name(String)
    */
-  public final Cache2kBuilder<K, V> name(String uniqueName, Class<?> clazz, String fieldName) {
-    if (fieldName == null) {
-      throw new NullPointerException();
-    }
+  public final Cache2kBuilder<K, V> name(@Nullable String uniqueName, Class<?> clazz, String fieldName) {
+    Objects.requireNonNull(fieldName);
     if (uniqueName == null) {
       return name(clazz, fieldName);
     }
@@ -295,9 +294,7 @@ public class Cache2kBuilder<K, V>
    * @see #name(String)
    */
   public final Cache2kBuilder<K, V> name(Class<?> clazz, String fieldName) {
-    if (fieldName == null) {
-      throw new NullPointerException();
-    }
+    Objects.requireNonNull(fieldName);
     cfg().setName(clazz.getName() + "." + fieldName);
     return this;
   }
@@ -321,7 +318,7 @@ public class Cache2kBuilder<K, V>
    *
    * <p>If a name is not specified the cache generates a name automatically. The name is
    * inferred from the call stack trace and contains the simple class name, the method and
-   * the line number of the of the caller to {@code build()}. The name also contains
+   * the line number of the caller to {@code build()}. The name also contains
    * a random number. Automatically generated names don't allow reliable management, logging and
    * additional configuration of caches. If no name is set, {@link #build()} will always create
    * a new cache with a new unique name within the cache manager. Automatically generated
@@ -349,7 +346,7 @@ public class Cache2kBuilder<K, V>
   /**
    * Expired data is kept in the cache until the entry is evicted. This consumes memory,
    * but if the data is accessed again the previous data can be used by the cache loader
-   * for optimizing (e.g. if-modified-since for a HTTP request). Default value: {@code false}
+   * for optimizing (e.g. if-modified-since for an HTTP request). Default value: {@code false}
    *
    * @see AdvancedCacheLoader
    */
@@ -366,9 +363,9 @@ public class Cache2kBuilder<K, V>
    * <p>The value {@code Long.MAX_VALUE} means the capacity is not limited.
    *
    * <p>The default value is {@link Cache2kConfig#DEFAULT_ENTRY_CAPACITY}. The odd value
-   * is intentional, to serve as an indicate for SREs that the cache is running on its default
+   * is intentional, to serve as an indicator for SREs that the cache is running on its default
    * size. A low capacity default is different to caches like Guava or Caffeine, that create
-   * an unbounded cache by default, which potentially a memory leak.
+   * an unbounded cache by default, which potentially is a memory leak.
    */
   public final Cache2kBuilder<K, V> entryCapacity(long v) {
     cfg().setEntryCapacity(v);
@@ -382,7 +379,7 @@ public class Cache2kBuilder<K, V>
    * {@link #idleScanTime(long, TimeUnit)}. It also means that no expiry functions are
    * available and {@link MutableCacheEntry#setExpiryTime(long)}` cannot be used.
    * If no expiry is needed it is a good idea to enable eternal, which safes resources used
-   * for the timer data structures. Changing when data is considered eteranl, will lead to
+   * for the timer data structures. Changing when data is considered eternal, will lead to
    * and error.
    *
    * <p>Setting eternal to {@code false} signals that the data might expire, but there is no
@@ -451,8 +448,8 @@ public class Cache2kBuilder<K, V>
    * <p>In contrast to the typical time to idle implementation there is no additional access
    * overhead.
    *
-   * <p>For entries removed by the idle scanner an eviction event is sent and
-   * it is counted as eviction in the cache statistics.
+   * <p>For entries removed by the idle scanner an eviction event is generated and
+   * counted as eviction in the cache statistics.
    *
    * <p>Idle scanning works in combination with a cache size limit and expiry.
    *
@@ -469,7 +466,7 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Sets customization for propagating loader exceptions. By default loader exceptions
+   * Sets customization for propagating loader exceptions. By default, loader exceptions
    * are wrapped into a {@link CacheLoaderException}.
    */
   public final Cache2kBuilder<K, V> exceptionPropagator(
@@ -480,7 +477,7 @@ public class Cache2kBuilder<K, V>
 
   /** Wraps to factory but passes on nulls. */
   private static <T> CustomizationReferenceSupplier<T> wrapCustomizationInstance(T obj) {
-    return new CustomizationReferenceSupplier<T>(obj);
+    return new CustomizationReferenceSupplier<>(obj);
   }
 
   /**
@@ -529,7 +526,7 @@ public class Cache2kBuilder<K, V>
 
   /**
    * Enables write through operation and sets a writer customization that gets
-   * called synchronously upon cache mutations. By default write through is not enabled.
+   * called synchronously upon cache mutations. By default, write through is not enabled.
    */
   public final Cache2kBuilder<K, V> writer(CacheWriter<K, V> w) {
     cfg().setWriter(wrapCustomizationInstance(w));
@@ -548,7 +545,7 @@ public class Cache2kBuilder<K, V>
   /**
    * Add a listener. The listeners  will be executed in a synchronous mode, meaning,
    * further processing for an entry will stall until a registered listener is executed.
-   * The expiry will be always executed asynchronously.
+   * The expiry will always be executed asynchronously.
    *
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
@@ -560,7 +557,7 @@ public class Cache2kBuilder<K, V>
 
   /**
    * A set of listeners. Listeners added in this collection will be
-   * executed in a asynchronous mode.
+   * executed in an asynchronous mode.
    *
    * @throws IllegalArgumentException if an identical listener is already added.
    * @param listener The listener to add
@@ -592,8 +589,8 @@ public class Cache2kBuilder<K, V>
    * <p>Once refreshed, the entry is in a probation period. If it is not accessed until the next
    * expiry, no refresh will be done and the entry expires regularly. This means that the
    * time an entry stays within the probation period is determined by the configured expiry time
-   * or the {@code ExpiryPolicy}. In case an entry is not accessed any more it needs to
-   * reach the expiry time twice before being removed from the cache.
+   * or the {@code ExpiryPolicy}. When an entry is not accessed for two times the expiry time,
+   * it gets removed from the cache.
    *
    * <p>The number of threads used to do the refresh are configured via
    * {@link #loaderThreadCount(int)}
@@ -609,14 +606,14 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * By default the time of expiry is not exact, which means, a value might be visible for up to
+   * By default, the time of expiry is not exact, which means, a value might be visible for up to
    * a second longer after the requested time of expiry. The time lag depends on the system load
    * and the parameter {@link #timerLag(long, TimeUnit)}
    * Switching to {@code true}, means that values will not be visible when the entry is reached past
    * its expiry time which set by the {@link ExpiryPolicy}. This has no
    * effect on {@link #expireAfterWrite(long, TimeUnit)}.
    *
-   * <p>Alternatively, sharp expiry can be requested on a per entry basis in the
+   * <p>Alternatively, sharp expiry can be requested on a per-entry basis in the
    * {@link ExpiryPolicy} via {@link org.cache2k.expiry.Expiry#toSharpTime(long)}
    */
   public final Cache2kBuilder<K, V> sharpExpiry(boolean f) {
@@ -650,7 +647,7 @@ public class Cache2kBuilder<K, V>
    * <p>If this value is not set to true this means: The key and value objects need to have a
    * defined serialization mechanism and the cache may choose to transfer off the heap.
    * For cache2k version 1.0 this value has no effect. It should be
-   * used by application developers to future proof the applications with upcoming versions.
+   * used by application developers to future-proof the applications with upcoming versions.
    */
   public final Cache2kBuilder<K, V> storeByReference(boolean v) {
     cfg().setStoreByReference(v);
@@ -701,7 +698,7 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * By default statistic gathering is enabled. Switching this to {@code true} will disable all
+   * By default, statistic gathering is enabled. Switching this to {@code true} will disable all
    * statistics that have significant overhead. Whether the values become visible in monitoring
    * can be controlled via {@link #disableMonitoring(boolean)}
    */
@@ -738,7 +735,7 @@ public class Cache2kBuilder<K, V>
   /**
    * Disables reporting of cache metrics to monitoring systems or management.
    * This should be set, e.g. if a cache is created dynamically and
-   * intended to be short lived. All extensions for monitoring or management
+   * intended to be short-lived. All extensions for monitoring or management
    * respect this parameter.
    */
   public final Cache2kBuilder<K, V> disableMonitoring(boolean f) {
@@ -761,7 +758,7 @@ public class Cache2kBuilder<K, V>
    * @see #loaderThreadCount(int)
    */
   public final Cache2kBuilder<K, V> loaderExecutor(Executor v) {
-    cfg().setLoaderExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setLoaderExecutor(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 
@@ -777,7 +774,7 @@ public class Cache2kBuilder<K, V>
    * @see #loaderExecutor(Executor)
    */
   public final Cache2kBuilder<K, V> refreshExecutor(Executor v) {
-    cfg().setRefreshExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setRefreshExecutor(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 
@@ -786,7 +783,7 @@ public class Cache2kBuilder<K, V>
    * used by default.
    */
   public final Cache2kBuilder<K, V> executor(Executor v) {
-    cfg().setExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setExecutor(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 
@@ -794,7 +791,7 @@ public class Cache2kBuilder<K, V>
    * Use a different scheduler to run timer tasks for.
    */
   public final Cache2kBuilder<K, V> scheduler(Scheduler v) {
-    cfg().setScheduler(new CustomizationReferenceSupplier<Scheduler>(v));
+    cfg().setScheduler(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 
@@ -802,7 +799,7 @@ public class Cache2kBuilder<K, V>
    * Use a different time reference.
    */
   public final Cache2kBuilder<K, V> timeReference(TimeReference v) {
-    cfg().setTimeReference(new CustomizationReferenceSupplier<TimeReference>(v));
+    cfg().setTimeReference(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 
@@ -813,18 +810,18 @@ public class Cache2kBuilder<K, V>
    * @see #addAsyncListener(CacheEntryOperationListener)
    */
   public final Cache2kBuilder<K, V> asyncListenerExecutor(Executor v) {
-    cfg().setAsyncListenerExecutor(new CustomizationReferenceSupplier<Executor>(v));
+    cfg().setAsyncListenerExecutor(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 
   /**
    * Set the weigher to be used to calculate the entry weight. The parameter
-   * {@link #maximumWeight(long)} needs to be specified as well. Using a weigher has a slightly
+   * {@link #maximumWeight(long)} needs to be specified as well. Using a weigher has a slight
    * performance impact on the update of existing entries. When a weigher is set the
    * {@link #entryCapacity(long)} parameter is ignored.
    */
   public final Cache2kBuilder<K, V> weigher(Weigher<K, V> v) {
-    cfg().setWeigher(new CustomizationReferenceSupplier<Weigher<K, V>>(v));
+    cfg().setWeigher(new CustomizationReferenceSupplier<>(v));
     return this;
   }
 

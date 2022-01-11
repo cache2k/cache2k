@@ -45,7 +45,7 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
    * Starts an asynchronous load operation.
    *
    * <p>If this call throws an exception, it is assumed that the load operation was not
-   * started and the callback will not called.
+   * started and the callback will not be called.
    *
    * @param key key of the value to load
    * @param context additional context information for the load operation
@@ -97,7 +97,7 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
 
     /**
      * Current entry in the cache. The entry is available if the load is caused
-     * by a reload or refresh. If expired before, {@code null} is returned.
+     * by reload or refresh. If expired before, {@code null} is returned.
      * If {@link Cache2kBuilder#keepDataAfterExpired(boolean)} is enabled, also
      * an expired entry is provided to the loader for optimization purposes.
      * See also the description of
@@ -127,7 +127,7 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
     void onLoadSuccess(V value);
 
     /**
-     * Called if a failure happened. The exceptions is propagated to
+     * Called if a failure happened. The exception is propagated to
      * the clients accessing the associated key.
      *
      * @throws IllegalStateException if the callback was already made

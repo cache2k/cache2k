@@ -22,6 +22,7 @@ package org.cache2k.testsuite.expiry;
 
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.expiry.ExpiryTimeValues;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.testsuite.support.DataType;
 import org.cache2k.testsuite.support.AbstractCacheTester;
 import org.cache2k.testsuite.support.TestContext;
@@ -97,8 +98,12 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
     assertFalse(containsKey(k0));
     put(k0, v0);
     assertThatCode(() -> {
+      expireAt(k0, 123);
+    }).isInstanceOf(IllegalArgumentException.class);
+    assertThatCode(() -> {
       invoke(k0, entry -> entry.setExpiryTime(123));
     }).isInstanceOf(IllegalArgumentException.class);
+    put(k0, v0);
   }
 
   @Test

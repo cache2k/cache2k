@@ -63,9 +63,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    * <p><b>Inserts or updates:</b> It is possible to return different expiry times for
    * inserts or updates. An update can be detected by the presence of the old entry.
    *
-   * <p><b>Calling cache operations:</b> It is illegal to call any
-   * cache methods from this method. The outcome is undefined and it can
-   * cause a deadlock.
+   * <p><b>Calling cache operations:</b> Calling other cache methods may cause errors or deadlocks.
    *
    * <p><b>Calling time:</b></p>The method is called from the cache whenever a
    * cache entry is updated. However, it is legal that the cache calls the
@@ -81,12 +79,12 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    * operation.
    *
    * <p><b>API rationale:</b> The recently loaded or inserted data is not passed in via a cache
-   * entry object. Using a cache entry is desirable for API design reasons to have less parameters.
+   * entry object. Using a cache entry is desirable for API design reasons to have fewer parameters.
    * But the "real" entry can only be filled after the expiry policy has been run, passing
    * in an entry object would mean to build a temporary object, increasing GC load. Second, the
    * properties that are needed by the implementation are available directly. The downside, OTOH,
    * 4-arity breaks Java 8 lambdas. <b>Time values:</b> For performance reasons the long type
-   * is used to represent the time and not an object. Also it allows a simple offset calculation.
+   * is used to represent the time and not an object. Also, it allows a simple offset calculation.
    *
    * @param key the cache key used for inserting or loading
    * @param value the value to be cached. May be {@code null} if the loader returns {@code null},
@@ -98,7 +96,7 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    *                     exception. This can be used for adapting the expiry time to the amount
    *                     of data changes.
    * @return the time of expiry in millis since epoch. {@link #NOW} if it should not
-   *         cached. If {@link Cache2kBuilder#refreshAhead} is enabled the return value
+   *         be cached. If {@link Cache2kBuilder#refreshAhead} is enabled the return value
    *         {@link #NOW} will trigger an immediate refresh.
    *         The return value {@link #ETERNAL} means that there is no specific expiry time
    *         known or needed. The effective expiry duration will never be longer than the configured

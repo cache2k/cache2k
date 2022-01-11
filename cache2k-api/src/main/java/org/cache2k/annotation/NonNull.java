@@ -29,7 +29,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Non null is the default. This annotation is rarely used.
+ * Non-null is the default. This annotation is rarely used.
  *
  * @author Jens Wilke
  * @see Nullable

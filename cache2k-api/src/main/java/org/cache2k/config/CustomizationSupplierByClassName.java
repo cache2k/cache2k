@@ -70,6 +70,7 @@ public final class CustomizationSupplierByClassName<T>
     checkNull(className);
   }
 
+  @SuppressWarnings("rawtypes")
   @Override
   public ConfigBuilder builder() {
     throw new UnsupportedOperationException();

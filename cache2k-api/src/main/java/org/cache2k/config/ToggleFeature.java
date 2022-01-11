@@ -23,7 +23,6 @@ package org.cache2k.config;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.annotation.Nullable;
 
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -32,7 +31,7 @@ import java.util.Set;
  * two ways: Either by setting enabled to {@code false} or by removing
  * it from the feature set.
  *
- * <p>This allows enablement of features based on the users preference:
+ * <p>This allows enablement of features based on the users' preference:
  * A feature can be enabled by default and then disabled per individual
  * cache or just enabled at the individual cache level.
  *
@@ -64,12 +63,7 @@ public abstract class ToggleFeature implements SingleFeature {
    */
   public static void disable(Cache2kBuilder<?, ?> builder,
                             Class<? extends ToggleFeature> featureType) {
-    Iterator<Feature> it = builder.config().getFeatures().iterator();
-    while (it.hasNext()) {
-      if (it.next().getClass().equals(featureType)) {
-        it.remove();
-      }
-    }
+    builder.config().getFeatures().removeIf(feature -> feature.getClass().equals(featureType));
   }
 
   /**
@@ -78,9 +72,7 @@ public abstract class ToggleFeature implements SingleFeature {
   @SuppressWarnings("unchecked")
   public static <T extends ToggleFeature> @Nullable T extract(Cache2kBuilder<?, ?> builder,
                                                               Class<T> featureType) {
-    Iterator<Feature> it = builder.config().getFeatures().iterator();
-    while (it.hasNext()) {
-      Feature feature = it.next();
+    for (Feature feature : builder.config().getFeatures()) {
       if (feature.getClass().equals(featureType)) {
         return (T) feature;
       }
@@ -92,17 +84,16 @@ public abstract class ToggleFeature implements SingleFeature {
    * Returns true if the feature is enabled. Meaning, the feature instance is present
    * and enabled.
    */
-  @SuppressWarnings("unchecked")
   public static boolean isEnabled(Cache2kBuilder<?, ?> builder,
                                   Class<? extends ToggleFeature> featureType) {
     ToggleFeature f = extract(builder, featureType);
-    return f != null ? f.isEnabled() : false;
+    return f != null && f.isEnabled();
   }
 
   /**
-   * Feature is enabled by default. We the enabled field is intended for
+   * Feature is enabled by default. The enabled field is intended for
    * usage with an external configuration, to disable a feature
-   * which was enabled globally e.g. {@code <enabled>false</enabled>}
+   * which was enabled globally e.g. {@code false}
    */
   private boolean enabled = true;
 
@@ -134,7 +125,7 @@ public abstract class ToggleFeature implements SingleFeature {
   }
 
   /**
-   * Identical if its the same implementation class. Relevant for
+   * Identical if it is the same implementation class. Relevant for
    * keeping only one feature within the configuration.
    */
   @Override

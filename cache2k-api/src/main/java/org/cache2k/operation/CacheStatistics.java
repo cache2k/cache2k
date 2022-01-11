@@ -47,10 +47,7 @@ public interface CacheStatistics {
   long getInsertCount();
 
   /**
-   * How often data was requested from the cache. In multi threading scenarios this
-   * counter may be not totally accurate. For performance reason the cache implementation
-   * may choose to only present a best effort value. It is guaranteed that the
-   * usage count is always greater than the miss count.
+   * How often data was requested from the cache.
    */
   long getGetCount();
 
@@ -88,18 +85,18 @@ public interface CacheStatistics {
   long getTotalLoadMillis();
 
   /**
-   * A value of an a cache entry was refreshed.
+   * Refreshed entries counter.
    */
   long getRefreshCount();
 
   /**
-   * Counter how many times a refresh failed, because there were
+   * Counter how many times a refresh failed, e.g. because there were
    * not enough thread resources available.
    */
   long getRefreshFailedCount();
 
   /**
-   * How many times we had a hit on a refreshed entry. This counter is incremented
+   * How many times there was a hit on a refreshed entry. This counter is incremented
    * once, after a refreshed entry is requested by the application for the first time.
    * That means the quotient from {@code refreshedCount} and {@code refreshedHitCount}
    * is the efficiency of refreshing.
@@ -148,7 +145,7 @@ public interface CacheStatistics {
 
   /**
    * Number of key mutations occurred. This should be always 0, otherwise it is an indicator
-   * that the a key object was modified after it was stored in the cache. Whenever
+   * that the key object was modified after it was stored in the cache. Whenever
    * {@code `keyMutationCount`} is non-zero, check and correct your application.
    *
    * <p>How it works: When an entry is evicted the cache checks whether the {@code hashCode} of

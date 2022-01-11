@@ -31,7 +31,7 @@ import org.cache2k.annotation.NonNull;
  * a default configuration do a deep copy. If suppliers do not support this
  * they must not have a default constructor, such as {@link CustomizationReferenceSupplier}.
  *
- * @param <T> the type for the customization. Typically extends
+ * @param <T> the type for the customization. Typically, extends
  *           {@link org.cache2k.Customization}, but can be
  *           {@link java.util.concurrent.Executor} as well
  * @author Jens Wilke

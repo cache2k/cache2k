@@ -27,13 +27,12 @@ import org.cache2k.processor.EntryProcessor;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 /**
- * Base class for implementations of the cache interface. By default every methods throws
+ * Base class for implementations of the cache interface. By default, every method throws
  * {@link UnsupportedOperationException}.
  *
  * @author Jens Wilke
@@ -130,7 +129,6 @@ public class AbstractCache<K, V> implements Cache<K, V> {
     throw new UnsupportedOperationException();
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public void expireAt(K key, long millis) {
     throw new UnsupportedOperationException();

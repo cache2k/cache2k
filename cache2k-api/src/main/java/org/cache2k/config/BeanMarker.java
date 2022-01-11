@@ -22,8 +22,8 @@ package org.cache2k.config;
 
 /**
  * Marks the class as bean compatible, meaning, it has a public default constructor
- * and getter and setters for all its properties. A class not be marked with this
- * if its content cannot be deep copied, an example is {@link CustomizationReferenceSupplier}.
+ * and getter and setters for all its properties. A class not be marked cannot be copied,
+ * an example is {@link CustomizationReferenceSupplier}.
  *
  * @author Jens Wilke
  */

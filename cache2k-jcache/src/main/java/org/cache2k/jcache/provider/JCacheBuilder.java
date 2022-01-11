@@ -104,7 +104,7 @@ public class JCacheBuilder<K, V> {
       config = cfgCopy;
     }
     if (cache2kConfig == null) {
-      cache2kConfig =
+      cache2kConfig = (Cache2kConfig<K, V>)
         CacheManagerImpl.PROVIDER.getDefaultConfig(manager.getCache2kManager());
       if (cfg instanceof ExtendedMutableConfiguration) {
         ((ExtendedMutableConfiguration) cfg).setCache2kConfiguration(cache2kConfig);

@@ -1,9 +1,9 @@
 /**
  * Main package for cache2k API containing functions to build and access a cache.
  *
- * <p>A {@link org.cache2k.Cache} can be created the {@link org.cache2k.Cache2kBuilder}. Besides the
- * parameters that can be set via the builder, a cache can be further customized and extended via
- * a {@link org.cache2k.io.CacheLoader}, {@link org.cache2k.io.CacheWriter},
+ * <p>A {@link org.cache2k.Cache} can be created the {@link org.cache2k.Cache2kBuilder}. Besides,
+ * the parameters that can be set via the builder, a cache can be further customized and extended
+ * via a {@link org.cache2k.io.CacheLoader}, {@link org.cache2k.io.CacheWriter},
  * {@link org.cache2k.expiry.ExpiryPolicy} or {@link org.cache2k.io.ResiliencePolicy}.
  *
  * @author Jens Wilke

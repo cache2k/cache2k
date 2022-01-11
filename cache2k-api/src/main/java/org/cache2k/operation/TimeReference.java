@@ -24,7 +24,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.processor.MutableCacheEntry;
 
 /**
- * Time reference for a cache. By default the current time is retrieved with
+ * Time reference for a cache. By default, the current time is retrieved with
  * {@link System#currentTimeMillis()}. Another time reference can be specified
  * if the application uses a different time source or when a simulated clock should be used.
  *
@@ -53,7 +53,7 @@ public interface TimeReference {
    * Returns the milliseconds since epoch. In the simulated clock a call to this method
    * would make time pass in small increments.
    *
-   * <p>It is possible to use other time scales and references (e.g. nano seconds). In
+   * <p>It is possible to use other time scales and references (e.g. nanoseconds). In
    * this case the method {@link #toMillis(long)} needs to be implemented. All times in the
    * cache API, e.g. {@link MutableCacheEntry#getExpiryTime()} or in
    * {@link org.cache2k.io.AdvancedCacheLoader#load(Object, long, CacheEntry)} are based on the
@@ -72,7 +72,7 @@ public interface TimeReference {
 
   /**
    * Convert a value returned by {@link #millis()} to milliseconds since epoch.
-   * This can be overridden in case another time scale and or reference is used.
+   * This can be overridden in case another timescale and or reference is used.
    * Conversion is needed for correctly scheduling timer task that regularly process
    * the expiry tasks.
    */

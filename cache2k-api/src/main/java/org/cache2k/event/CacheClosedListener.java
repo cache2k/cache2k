@@ -21,7 +21,6 @@ package org.cache2k.event;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.annotation.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 

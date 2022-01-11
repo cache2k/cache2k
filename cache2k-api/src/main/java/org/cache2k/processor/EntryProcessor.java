@@ -21,7 +21,6 @@ package org.cache2k.processor;
  */
 
 import org.cache2k.DataAware;
-import org.cache2k.annotation.NonNull;
 import org.cache2k.annotation.Nullable;
 
 /**

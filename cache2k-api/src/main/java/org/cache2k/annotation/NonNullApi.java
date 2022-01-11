@@ -32,16 +32,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Sets the convention to non null parameters and return values on a package level.
- * We basically use that everywhere since its a common convention and implied
- * by tools like NullAway. However, we need to formally define it in the API
+ * Sets the convention to not null parameters and return values on a package level
+ * (Non-null except locals). It is used everywhere since it is a common convention and
+ * implied by tools like NullAway. However, we need to formally define it in the API
  * so Kotlin can infer the nullability correctly.
  *
  * <p>This uses the {@code @TypeQualifierDefault} from JSR305, which is also recognized by
  * Kotlin. Unfortunately Kotlin does not support the {@code @DefaultQualifiers} annotation from
  * the checker framework. For best tooling support we annotate the packages with both
- * annotations. An alternative would be to annotate @NonNull instead of having the default
- * convention Non-null except locals (NNEL).
+ * annotations.
  *
  * @author Jens Wilke
  * @see <a href="https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/lang/Nullable.html"/>
@@ -50,6 +49,7 @@ import java.lang.annotation.Target;
  * @see <a href="https://youtrack.jetbrains.com/issue/IDEA-144920"/>
  * @see <a href="https://youtrack.jetbrains.com/issue/KT-21408"/>
  */
+@SuppressWarnings("deprecation")
 @Target(value = {ElementType.PACKAGE, ElementType.TYPE})
 @Retention(value = RetentionPolicy.CLASS)
 @Documented

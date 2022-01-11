@@ -27,8 +27,8 @@ import org.cache2k.annotation.NonNull;
  * contract for the K and V type parameter.
  *
  * @author Jens Wilke
- * @param <K> non null type for the cache key
- * @param <V> non null type for the cache value. Although cache2k support null values
+ * @param <K> non-null type for the cache key
+ * @param <V> non-null type for the cache value. Although cache2k support null values
  *           by {@link Cache2kBuilder#permitNullValues(boolean)} this is not the common
  *           use case
  * @since 2.0

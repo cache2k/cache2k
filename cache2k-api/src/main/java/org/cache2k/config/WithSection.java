@@ -20,8 +20,6 @@ package org.cache2k.config;
  * #L%
  */
 
-import org.cache2k.Customization;
-
 /**
  * Supplier for a customization that has its own config section.
  *

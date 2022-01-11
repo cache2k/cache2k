@@ -79,7 +79,7 @@ public interface Cache2kCoreProvider {
    * @return mutable configuration instance containing the effective configuration defaults,
    *         never {@code null}
    */
-  Cache2kConfig getDefaultConfig(CacheManager m);
+  Cache2kConfig<?, ?> getDefaultConfig(CacheManager m);
 
   /**
    * @since 2

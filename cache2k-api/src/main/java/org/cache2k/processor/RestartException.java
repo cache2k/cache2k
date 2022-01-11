@@ -31,7 +31,7 @@ import org.cache2k.CacheException;
 public class RestartException extends CacheException {
 
   /**
-   * Exceptions of this kind are used for internal flow control and don't carry a
+   * Used for internal flow control, no need to carry a
    * message or stack trace. Disabling the stack trace speeds up processing.
    * @see <a href="https://github.com/cache2k/cache2k/issues/170"/>
    */

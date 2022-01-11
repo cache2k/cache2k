@@ -221,7 +221,7 @@ public abstract class CacheManager implements AutoCloseable {
   public abstract boolean isClosed();
 
   /**
-   * Properties for the cache manager, never null. By default the properties are empty.
+   * Properties for the cache manager, never null. By default, the properties are empty.
    * Cache clients may store arbitrary information.
    */
   public abstract Properties getProperties();

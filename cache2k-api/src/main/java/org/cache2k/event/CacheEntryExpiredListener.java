@@ -23,16 +23,11 @@ package org.cache2k.event;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 
-import java.util.concurrent.Callable;
-
 /**
  * Listener called when an entry expires.
  *
- * <p>The listener is called after an entry logically expired. The
- * An event may be delayed
- * or suppressed if a long running operation is
- * working on the, for example a load or a {@link Cache#computeIfAbsent(Object, Callable)}.
- * In case a load is triggered by the expiry an expiry event is send before the load
+ * <p>The listener is called after an entry logically expired.
+ * In case a load is triggered by the expiry an expiry event is sent before the load
  * is started.
  *
  * @author Jens Wilke

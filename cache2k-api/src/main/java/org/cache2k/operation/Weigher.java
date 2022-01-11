@@ -23,7 +23,7 @@ package org.cache2k.operation;
 import org.cache2k.DataAwareCustomization;
 
 /**
- * Allows to give cached values a weight and limit the cache capacity by total weight.
+ * Allows giving cached values a weight and limit the cache capacity by total weight.
  *
  * @author Jens Wilke
  */

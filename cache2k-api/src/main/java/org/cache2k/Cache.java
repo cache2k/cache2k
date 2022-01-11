@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /* Credits
@@ -56,7 +55,7 @@ import java.util.function.Function;
 
 /**
  * A cache is similar to a map or a key value store, allowing to retrieve and
- * update values which are associated to keys. In contrast to a {@code HashMap} the
+ * update values which are associated with keys. In contrast to a {@code HashMap} the
  * cache allows concurrent access and modification to its content and
  * automatically controls the amount of entries in the cache to stay within
  * configured resource limits.
@@ -124,7 +123,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
   String getName();
 
   /**
-   * Returns a value associated with the given key.  If no value is present or it
+   * Returns a value associated with the given key. If no value is present, or it
    * is expired the cache loader is invoked, if configured, or {@code null} is returned.
    *
    * <p>If the {@link CacheLoader} is invoked, subsequent requests of the same key will block
@@ -327,7 +326,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * is missing, a miss and put is counted. This definition is identical to the JSR107
    * statistics semantics. This is not consistent with other operations like
    * {@link #containsAndRemove(Object)} and {@link #containsKey(Object)} that don't update
-   * the hit and miss counter if solely the existence of an entry is tested and not the
+   * the hit or miss counter if solely the existence of an entry is tested and not the
    * value itself is requested. This counting is subject to discussion and future change.
    *
    * @param key key with which the specified value is to be associated
@@ -392,7 +391,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * is missing, a miss and put is counted. This definition is identical to the JSR107
    * statistics semantics. This is not consistent with other operations like
    * {@link #containsAndRemove(Object)} and {@link #containsKey(Object)} that don't update
-   * the hit and miss counter if solely the existence of an entry is tested and not the
+   * the hit or miss counter if solely the existence of an entry is tested and not the
    * value itself is requested. This counting is subject to discussion and future change.
    *
    * @param key key with which the specified value is associated
@@ -470,12 +469,11 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
   @Nullable V peekAndRemove(K key);
 
   /**
-   * Removes the mapping for a key from the cache and returns {@code true} if it
-   * one was present.
+   * Check for existing mapping and remove it.
    *
-   * @param key key whose mapping is to be removed from the cache
+   * @param key key to be checked and removed
    * @return {@code true} if the cache contained a mapping for the specified key
-   * @throws NullPointerException if a specified key is null
+   * @throws NullPointerException if the specified key is {@code null}
    * @throws ClassCastException if the key is of an inappropriate type for
    *         the cache. This check is optional depending on the cache
    *         configuration.
@@ -539,7 +537,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
   /**
    * Updates an existing cache entry for the specified key, so it associates
    * the given value, or, insert a new cache entry for this key and value. The previous
-   * value will returned, or null if none was available.
+   * value will be returned, or null if none was available.
    *
    * <p>Returns the value to which the cache previously associated the key,
    * or {@code null} if the cache contained no mapping for the key.
@@ -581,7 +579,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
 
   /**
    * Updates an existing not expired mapping to expire at the given point in time.
-   * If there is no mapping associated with the key or it is already expired, this
+   * If there is no mapping associated with the key, or it is already expired, this
    * operation has no effect. The special values {@link org.cache2k.expiry.Expiry#NOW} and
    * {@link org.cache2k.expiry.Expiry#REFRESH} also effect an entry that was just
    * refreshed.
@@ -593,15 +591,11 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * to an effective removal of the cache entry, the writer is not called, since the
    * method is for cache control only.
    *
-   * <p>The cache must be configured with a {@link ExpiryPolicy} or
-   * {@link Cache2kBuilder#expireAfterWrite(long, TimeUnit)} otherwise expiry
-   * timing is not available and this method will throw an exception. An immediate expire
-   * via {@link org.cache2k.expiry.Expiry#NOW} is always working.
-   *
    * @param key key with which the specified value is associated
    * @param millis Time in milliseconds since epoch when the entry should expire.
    *               Also see {@link ExpiryTimeValues}
-   * @throws IllegalArgumentException if no expiry was enabled during cache setup.
+   * @throws IllegalArgumentException if expiry was disabled via
+   *                                  {@link Cache2kBuilder#eternal(boolean)}
    */
   void expireAt(K key, long millis);
 
@@ -636,7 +630,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
   /**
    * Request to load the given set of keys into the cache. Missing or expired values will be loaded
    * a {@code CompletableFuture}. The method returns immediately with a {@code CompletableFuture}.
-   * If no asynchronous loader is specified, the executor sepcified by
+   * If no asynchronous loader is specified, the executor specified by
    * {@link Cache2kBuilder#loaderExecutor(Executor)} will be used.
    *
    * <p>The cache uses multiple threads to load the values in parallel. If thread resources
@@ -688,12 +682,9 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * @since 2.0
    */
   default void mutate(K key, EntryMutator<K, V> mutator) {
-    invoke(key, new EntryProcessor<K, V, Void>() {
-      @Override
-      public @Nullable Void process(MutableCacheEntry<K, V> entry) throws Exception {
-        mutator.mutate(entry);
-        return null;
-      }
+    invoke(key, (EntryProcessor<K, V, Void>) entry -> {
+      mutator.mutate(entry);
+      return null;
     });
   }
 
@@ -759,7 +750,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * @return an immutable map with the requested values
    * @throws NullPointerException if one of the specified keys is null
    * @throws CacheLoaderException in case the loader has permanent failures.
-   *            Otherwise the exception is thrown when the key is requested.
+   *            Otherwise, the exception is thrown when the key is requested.
    */
   Map<K, V> getAll(Iterable<? extends K> keys);
 
@@ -821,7 +812,7 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    *
    * <p>See {@link #keys()} for the general contract.
    *
-   * <p><b>Efficiency:</b> Iterating entries is less efficient then just iterating keys. The cache
+   * <p><b>Efficiency:</b> Iterating entries is less efficient than just iterating keys. The cache
    * needs to create a new entry object and employ some sort of synchronisation to supply a
    * consistent and immutable entry.
    *

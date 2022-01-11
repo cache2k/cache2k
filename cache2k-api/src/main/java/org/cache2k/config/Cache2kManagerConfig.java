@@ -23,7 +23,7 @@ package org.cache2k.config;
 import org.cache2k.annotation.Nullable;
 
 /**
- * Configuration options for a cache manager. The options can only be changed if a
+ * Configuration options for a cache manager. The options can only be changed if an
  * XML file is provided. This bean is in the API artifact for documentation purposes.
  *
  * @author Jens Wilke
