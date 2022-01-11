@@ -144,9 +144,9 @@ public class AsyncDispatcher<K, V> {
    * decrementing a countdown. In case the event is processed completely, we check whether
    * more is queued up for this key meanwhile.
    */
-  void runAllListenersInParallel(final EntryEvent<K, V> event, List<Listener<K, V>> listeners) {
-    final AtomicInteger countDown = new AtomicInteger(listeners.size());
-    for (final Listener<K, V> l : listeners) {
+  void runAllListenersInParallel(EntryEvent<K, V> event, List<Listener<K, V>> listeners) {
+    AtomicInteger countDown = new AtomicInteger(listeners.size());
+    for (Listener<K, V> l : listeners) {
       Runnable r = new Runnable() {
         @Override
         public void run() {

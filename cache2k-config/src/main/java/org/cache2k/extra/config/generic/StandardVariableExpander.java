@@ -139,7 +139,7 @@ public class StandardVariableExpander implements VariableExpander {
         ValueAccessor savedAccessor = null;
         if (context != null) {
           savedAccessor = scope2resolver.get(context);
-          final ParsedConfiguration localScope = c2;
+          ParsedConfiguration localScope = c2;
           scope2resolver.put(context, new ValueAccessor() {
             @Override
             public String get(ExpanderContext ctx, String variable) {

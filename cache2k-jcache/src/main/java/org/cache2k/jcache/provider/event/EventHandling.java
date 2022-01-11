@@ -40,7 +40,7 @@ public interface EventHandling<K, V> {
       "enable with: supportOnlineListenerAttachment";
 
     @Override
-    public boolean deregisterListener(final CacheEntryListenerConfiguration cfg) {
+    public boolean deregisterListener(CacheEntryListenerConfiguration cfg) {
       throw new UnsupportedOperationException(ERROR);
     }
 
@@ -50,12 +50,12 @@ public interface EventHandling<K, V> {
     }
 
     @Override
-    public void registerListener(final CacheEntryListenerConfiguration cfg) {
+    public void registerListener(CacheEntryListenerConfiguration cfg) {
       throw new UnsupportedOperationException(ERROR);
     }
 
     @Override
-    public void addInternalListenersToCache2kConfiguration(final Cache2kConfig cfg) {
+    public void addInternalListenersToCache2kConfiguration(Cache2kConfig cfg) {
 
     }
   };

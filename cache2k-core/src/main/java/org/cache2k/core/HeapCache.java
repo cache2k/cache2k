@@ -1326,7 +1326,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         if (isRecordRefreshTime()) {
           e.setRefreshTime(t0);
         }
-        e.setValueOrException((V) value);
+        e.setValueOrException(value);
       }
       finishLoadOrEviction(e, nextRefreshTime);
     }

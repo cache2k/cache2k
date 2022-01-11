@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   implements ExtendedCache<K, V>, CommonValues {
 
-  private boolean realTime = false;
+  private final boolean realTime = false;
   private TimeReference clock;
   private Cache<K, V> createdCache;
   /** Provides alternative cache interface, with out any decorations */

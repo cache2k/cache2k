@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class StandardPropertyParser implements PropertyParser {
 
-  private Map<Class<?>, ValueConverter> type2parser = new HashMap<Class<?>, ValueConverter>();
+  private final Map<Class<?>, ValueConverter> type2parser = new HashMap<Class<?>, ValueConverter>();
 
   private static final Map<String, Long> UNIT2LONG = new HashMap<String, Long>() {{
     put("KiB", 1024L);
@@ -69,7 +69,7 @@ public class StandardPropertyParser implements PropertyParser {
   {
     addParser(Integer.TYPE, Integer.class, new ValueConverter<Integer>() {
       @Override
-      public Integer parse(final String v) {
+      public Integer parse(String v) {
         return Integer.valueOf(v);
       }
     });
@@ -100,7 +100,7 @@ public class StandardPropertyParser implements PropertyParser {
     });
     addParser(String.class, new ValueConverter<String>() {
       @Override
-      public String parse(final String v) {
+      public String parse(String v) {
         return v;
       }
     });

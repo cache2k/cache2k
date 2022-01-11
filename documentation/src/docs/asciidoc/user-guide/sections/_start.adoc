@@ -168,10 +168,10 @@ is to define a dedicated class for the cache key that is a tuple of origin and d
 [source,java]
 ----
   public final class Route {
-    private String origin;
-    private String destination;
+    private final String origin;
+    private final String destination;
 
-    public Route(final String origin, final String destination) {
+    public Route( String origin, String destination) {
       this.destination = destination;
       this.origin = origin;
     }
@@ -185,7 +185,7 @@ is to define a dedicated class for the cache key that is a tuple of origin and d
     }
 
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals( Object other) {
       if (this == other) return true;
       if (other == null || getClass() != other.getClass()) return false;
       Route route = (Route) other;

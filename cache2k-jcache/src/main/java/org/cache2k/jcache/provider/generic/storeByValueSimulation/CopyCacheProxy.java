@@ -50,9 +50,9 @@ public class CopyCacheProxy<K, V> extends TransformingCacheProxy<K, V, K, V> {
   @SuppressWarnings("unchecked")
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
-    final C c = cache.getConfiguration(clazz);
+    C c = cache.getConfiguration(clazz);
     if (c instanceof CompleteConfiguration) {
-      final CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) c;
+      CompleteConfiguration<K, V> cc = (CompleteConfiguration<K, V>) c;
       return (C) new CompleteConfiguration<K, V>() {
         @Override
         public Iterable<CacheEntryListenerConfiguration<K, V>>

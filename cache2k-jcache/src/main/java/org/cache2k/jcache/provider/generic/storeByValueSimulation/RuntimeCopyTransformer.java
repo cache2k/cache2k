@@ -29,7 +29,7 @@ public class RuntimeCopyTransformer extends CopyTransformer<Object>  {
 
   SerializableCopyTransformer serializableCopyTransformer;
 
-  public RuntimeCopyTransformer(final ClassLoader classLoader) {
+  public RuntimeCopyTransformer(ClassLoader classLoader) {
     serializableCopyTransformer = new SerializableCopyTransformer(classLoader);
   }
 

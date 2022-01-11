@@ -202,7 +202,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
    * examined and may be replaced.
    */
   private void sleepInExecutor(long millis) throws InterruptedException {
-    final CountDownLatch latch = new CountDownLatch(1);
+    CountDownLatch latch = new CountDownLatch(1);
     schedule(new Runnable() {
       @Override
       public void run() {
@@ -371,7 +371,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
     }
 
     @Override
-    public void execute(final Runnable r) {
+    public void execute(Runnable r) {
       tasksWaitingForExecution.incrementAndGet();
       try {
         executor.execute(new Runnable() {

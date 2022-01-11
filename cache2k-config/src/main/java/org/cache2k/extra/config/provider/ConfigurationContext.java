@@ -46,7 +46,7 @@ public class ConfigurationContext {
     return defaultManagerConfiguration;
   }
 
-  public void setDefaultManagerConfiguration(final Cache2kConfig<?, ?> v) {
+  public void setDefaultManagerConfiguration(Cache2kConfig<?, ?> v) {
     defaultManagerConfiguration = v;
   }
 
@@ -54,7 +54,7 @@ public class ConfigurationContext {
     return configurationPresent;
   }
 
-  public void setConfigurationPresent(final boolean v) {
+  public void setConfigurationPresent(boolean v) {
     configurationPresent = v;
   }
 
@@ -62,7 +62,7 @@ public class ConfigurationContext {
     return classLoader;
   }
 
-  public void setClassLoader(final ClassLoader v) {
+  public void setClassLoader(ClassLoader v) {
     classLoader = v;
   }
 
@@ -70,7 +70,7 @@ public class ConfigurationContext {
     return predefinedSectionTypes;
   }
 
-  public void setPredefinedSectionTypes(final Map<String, String> v) {
+  public void setPredefinedSectionTypes(Map<String, String> v) {
     predefinedSectionTypes = v;
   }
 
@@ -78,7 +78,7 @@ public class ConfigurationContext {
     return templates;
   }
 
-  public void setTemplates(final ParsedConfiguration v) {
+  public void setTemplates(ParsedConfiguration v) {
     templates = v;
   }
 

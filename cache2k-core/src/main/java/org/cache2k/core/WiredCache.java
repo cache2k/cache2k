@@ -346,7 +346,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private CompletableFuture<Void> completeWithVoid(CompletableFuture<BulkAction<K, V, Void>> future) {
-    return future.thenApply(action -> (Void) null);
+    return future.thenApply(action -> null);
   }
 
   @Override
@@ -412,7 +412,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   V returnValue(Object v) {
-    return heapCache.returnValue(v);
+    return HeapCache.returnValue(v);
   }
 
   V returnValue(Entry<K, V> e) {
@@ -459,7 +459,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   private void getAllBulkLoad(BulkResultCollector<K, V> collect, Set<K> keysMissing) {
-    BulkAction<K, V, V> bulkAction = syncBulkOp(ops.GET, keysMissing);
+    BulkAction<K, V, V> bulkAction = syncBulkOp(Operations.GET, keysMissing);
     Throwable t = bulkAction.getExceptionToPropagate();
     if (t != null) {
       if (t instanceof RuntimeException) {
@@ -528,7 +528,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     CountDownLatch completion = new CountDownLatch(keysMissing.size());
     EntryAction.CompletedCallback cb = ea -> completion.countDown();
     for (K key : keysMissing) {
-      EntryAction<K, V, V> action = new MyEntryAction<>(ops.GET, key, null, cb);
+      EntryAction<K, V, V> action = new MyEntryAction<>(Operations.GET, key, null, cb);
       actions.add(action);
       heapCache.executeLoader(action);
     }
@@ -587,7 +587,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     try {
       Map<K, EntryProcessingResult<R>> resultMap = new HashMap<>();
       BulkAction<K, V, R> bulkAction =
-        asyncBulkOp((Semantic<K, V, R>) ops.invoke(entryProcessor), keySet, false).get();
+        asyncBulkOp(ops.invoke(entryProcessor), keySet, false).get();
       for (EntryAction<K, V, R> action : bulkAction.getActions()) {
         Throwable ex = action.getException();
         EntryProcessingResult<R> result = null;

@@ -46,7 +46,7 @@ public class ThreadingStressTester {
   private static final ExecutorService pool =
     Executors.newCachedThreadPool(new ThreadFactory() {
       @Override
-      public Thread newThread(final Runnable r) {
+      public Thread newThread(Runnable r) {
         Thread t = new Thread(r);
         t.setDaemon(true);
         t.setName("stress-tester-" + threadCounter.incrementAndGet());
@@ -54,7 +54,7 @@ public class ThreadingStressTester {
       }
     });
 
-  private List<Runnable> tasks = new ArrayList<Runnable>();
+  private final List<Runnable> tasks = new ArrayList<Runnable>();
 
   /** Thread array we will use for interruption if time boundary is set */
   private Thread[] threads;
@@ -225,7 +225,7 @@ public class ThreadingStressTester {
    * Timeout to wait for threads stopping after an interrupt signal is sent.
    * Default is 30 seconds.
    */
-  public void setTimeoutAfterInterruptMillis(final long v) {
+  public void setTimeoutAfterInterruptMillis(long v) {
     timeoutAfterInterruptMillis = v;
   }
 
@@ -309,7 +309,7 @@ public class ThreadingStressTester {
     return stopTime;
   }
 
-  private boolean ignoreException(final Throwable exception) {
+  private boolean ignoreException(Throwable exception) {
     Throwable rootCause = exception;
     while (rootCause.getCause() != null) {
       rootCause = rootCause.getCause();
@@ -430,7 +430,7 @@ public class ThreadingStressTester {
         continue;
       }
       errorOutput.println("\nThread: " + t + ", id=" + t.getId() + ", state=" + t.getState());
-      final StackTraceElement[] stackTraceElements = t.getStackTrace();
+      StackTraceElement[] stackTraceElements = t.getStackTrace();
       for (StackTraceElement el : stackTraceElements) {
         errorOutput.println(t.getId() + "     at " + el);
       }
@@ -592,8 +592,8 @@ public class ThreadingStressTester {
   }
 
   @FunctionalInterface
-  public static interface ExceptionalRunnable {
-    public void run() throws Exception;
+  public interface ExceptionalRunnable {
+    void run() throws Exception;
   }
 
 }

@@ -38,7 +38,7 @@ public class SimulatedClockTest {
   @Test(timeout = 10000)
   public void scheduleAndTrigger() throws InterruptedException {
     assertEquals(100000, clock.millis());
-    final AtomicBoolean trigger = new AtomicBoolean();
+    AtomicBoolean trigger = new AtomicBoolean();
     clock.schedule(new Runnable() {
       @Override
       public void run() {

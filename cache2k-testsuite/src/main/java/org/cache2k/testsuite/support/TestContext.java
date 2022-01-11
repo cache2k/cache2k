@@ -28,8 +28,8 @@ public class TestContext<K, V> {
   public static final TestContext<Integer, Integer> DEFAULT =
     new TestContext<>(DataType.INT_KEYS, DataType.INT_VALUES);
 
-  private DataType<K> keys;
-  private DataType<V> values;
+  private final DataType<K> keys;
+  private final DataType<V> values;
 
   public TestContext(DataType<K> keys, DataType<V> values) {
     this.keys = keys;

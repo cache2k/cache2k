@@ -221,7 +221,7 @@ public class CacheConfigProviderImpl
       defaultConfiguration.setExternalConfigurationPresent(true);
       ctx.setTemplates(extractTemplates(pc));
       apply(ctx, pc, ctx.getManagerConfiguration());
-      final String version = ctx.getManagerConfiguration().getVersion();
+      String version = ctx.getManagerConfiguration().getVersion();
       if (version != null && (version.startsWith("1.") || version.startsWith("2."))) {
         ctx.setPredefinedSectionTypes(VERSION_1_2_SECTION_TYPES);
       }

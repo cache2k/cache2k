@@ -131,7 +131,7 @@ public class UniversalResilienceConfig
 
   public static class Builder implements SectionBuilder<Builder, UniversalResilienceConfig> {
 
-    private UniversalResilienceConfig config;
+    private final UniversalResilienceConfig config;
 
     private Builder(UniversalResilienceConfig config) {
       this.config = config;

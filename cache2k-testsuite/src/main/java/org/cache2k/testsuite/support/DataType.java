@@ -68,12 +68,12 @@ public class DataType<T> {
       }
     }, new CacheTypeCapture.OfClass<>(Object.class));
 
-  private List<T> generatedValues = new ArrayList<>();
+  private final List<T> generatedValues = new ArrayList<>();
   private final Supplier<T> anotherValue;
   private final CacheType<T> cacheType;
-  private T value0;
-  private T value1;
-  private T value2;
+  private final T value0;
+  private final T value1;
+  private final T value2;
 
   public DataType(Supplier<T> anotherValue, CacheType<T> cacheType) {
     this.anotherValue = anotherValue;

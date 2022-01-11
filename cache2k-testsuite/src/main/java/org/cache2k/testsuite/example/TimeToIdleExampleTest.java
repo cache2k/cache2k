@@ -49,7 +49,7 @@ public class TimeToIdleExampleTest {
 
   public class WrappedCache<K, V> {
     private final long expireAfterAccess = TimeUnit.MINUTES.toMillis(5);
-    private Cache<K, V> cache;
+    private final Cache<K, V> cache;
     public WrappedCache(Cache<K, V> cache) { this.cache = cache; }
     /** Store new value and update expiry time. */
     public void put(K key, V value) {

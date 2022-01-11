@@ -38,11 +38,11 @@ public class IntegerTo16BitFloatingPoint {
       }
       throw new IllegalArgumentException("weight must be positive");
     }
-    int exp = (32 - FRACTION_BITS) - Integer.numberOfLeadingZeros((int) v);
+    int exp = (32 - FRACTION_BITS) - Integer.numberOfLeadingZeros(v);
     if (exp < 0) {
-      return (int) v;
+      return v;
     }
-    return (exp << FRACTION_BITS) | ((int) (v >> exp));
+    return (exp << FRACTION_BITS) | (v >> exp);
   }
 
   public static int expand(int v) {

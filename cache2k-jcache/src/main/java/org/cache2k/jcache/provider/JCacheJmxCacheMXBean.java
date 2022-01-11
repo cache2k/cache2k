@@ -30,7 +30,7 @@ import javax.cache.management.CacheMXBean;
  */
 public class JCacheJmxCacheMXBean implements CacheMXBean {
 
-  private Cache<?, ?> cache;
+  private final Cache<?, ?> cache;
 
   public JCacheJmxCacheMXBean(Cache cache) {
     this.cache = cache;

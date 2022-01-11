@@ -84,7 +84,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Map<K, V> getAll(Set<? extends K> keys) {
-    final Map<K, V> map = cache.getAll(keys);
+    Map<K, V> map = cache.getAll(keys);
     return new Map<K, V>() {
       @Override
       public int size() {
@@ -152,7 +152,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
           @Override
           public Iterator<V> iterator() {
-            final Iterator<Entry<K, V>> it = map.entrySet().iterator();
+            Iterator<Entry<K, V>> it = map.entrySet().iterator();
             return new Iterator<V>() {
               @Override
               public boolean hasNext() {
@@ -177,7 +177,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
       @Override
       public Set<Entry<K, V>> entrySet() {
-        final Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
         return new AbstractSet<Entry<K, V>>() {
           @Override
           public Iterator<Entry<K, V>> iterator() {
@@ -189,7 +189,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
               @Override
               public Entry<K, V> next() {
-                final Entry<K, V> e = it.next();
+                Entry<K, V> e = it.next();
                 return new Entry<K, V>() {
                   @Override
                   public K getKey() {
@@ -262,7 +262,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public boolean remove(K key, final V oldValue) {
+  public boolean remove(K key, V oldValue) {
     checkClosed();
     checkNullValue(oldValue);
     if (key == null) {
@@ -318,7 +318,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public boolean replace(K key, final V oldValue, final V newValue) {
+  public boolean replace(K key, V oldValue, V newValue) {
     checkClosed();
     checkNullValue(newValue);
     checkNullValue(oldValue);
@@ -424,7 +424,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
 
   @Override
   public Iterator<Cache.Entry<K, V>> iterator() {
-    final Iterator<Cache.Entry<K, V>> it = cache.iterator();
+    Iterator<Cache.Entry<K, V>> it = cache.iterator();
     return new Iterator<Entry<K, V>>() {
       @Override
       public boolean hasNext() {
@@ -445,14 +445,14 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   }
 
   private <T> javax.cache.processor.EntryProcessor<K, V, T> wrapEntryProcessor(
-    final javax.cache.processor.EntryProcessor<K, V, T> ep) {
+    javax.cache.processor.EntryProcessor<K, V, T> ep) {
     if (ep == null) {
       throw new NullPointerException("processor is null");
     }
     return new javax.cache.processor.EntryProcessor<K, V, T>() {
       boolean freshOrJustLoaded = false;
       @Override
-      public T process(final MutableEntry<K, V> e0, Object... args)
+      public T process(MutableEntry<K, V> e0, Object... args)
         throws EntryProcessorException {
         MutableEntry<K, V> me = new MutableEntry<K, V>() {
 

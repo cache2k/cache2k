@@ -143,7 +143,7 @@ public class ActorPairSuite {
 
   private void runLoop() {
     do {
-      final OneShotPairRunner<?> runner = nextRunner();
+      OneShotPairRunner<?> runner = nextRunner();
       try {
         runner.run(executor);
       } catch (Throwable t) {

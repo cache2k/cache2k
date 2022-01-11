@@ -158,7 +158,7 @@ public class TimeTracePlaybackTest {
   public static PlaybackResult runWithCache2k(boolean histogram, long entryCapacity, long scanTimeSeconds, int[] trace) {
     SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
     DurationHistogram histo = histogram ? new DurationHistogram(clock) : null;
-    final Cache2kBuilder<Integer, Data> builder = Cache2kBuilder.of(Integer.class, Data.class)
+    Cache2kBuilder<Integer, Data> builder = Cache2kBuilder.of(Integer.class, Data.class)
       .timeReference(clock)
       .executor(clock.wrapExecutor(Runnable::run))
       .idleScanTime(scanTimeSeconds, TimeUnit.SECONDS)
@@ -281,13 +281,13 @@ public class TimeTracePlaybackTest {
     }
   }
 
-  final static long START_OFFSET_MILLIS = 1000;
+  static final long START_OFFSET_MILLIS = 1000;
 
   static class Cache2kCache implements CacheSimulation {
 
     private final SimulatedClock clock;
     private final Cache<Integer, Data> cache;
-    private int lastNow = -1;
+    private final int lastNow = -1;
 
     public Cache2kCache(SimulatedClock clock, Cache<Integer, Data> cache) {
       this.clock = clock;
@@ -347,7 +347,7 @@ public class TimeTracePlaybackTest {
 
     private final int timeToIdle;
     private final Data lru = new Data();
-    private Map<Integer, Data> map = new HashMap<>();
+    private final Map<Integer, Data> map = new HashMap<>();
 
     /** Default constructor, do not apply time to idle */
     public LruCache() {

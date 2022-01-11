@@ -90,15 +90,15 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     return expandMap(m);
   }
 
-  static <E, I> Set<I> compactSet(final Set<E> keys, final ObjectTransformer<E, I> tr) {
+  static <E, I> Set<I> compactSet(Set<E> keys, ObjectTransformer<E, I> tr) {
     if (keys == null) {
       return null;
     }
-    final int size = keys.size();
+    int size = keys.size();
     return new AbstractSet<I>() {
       @Override
       public Iterator<I> iterator() {
-        final Iterator<E> it = keys.iterator();
+        Iterator<E> it = keys.iterator();
         return new Iterator<I>() {
           @Override
           public boolean hasNext() {
@@ -124,16 +124,16 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     };
   }
 
-  static <E, I> Set<I> compactBoundedSet(final Set<? extends E> keys,
-                                         final ObjectTransformer<E, I> tr) {
+  static <E, I> Set<I> compactBoundedSet(Set<? extends E> keys,
+                                         ObjectTransformer<E, I> tr) {
     if (keys == null) {
       return null;
     }
-    final int size = keys.size();
+    int size = keys.size();
     return new AbstractSet<I>() {
       @Override
       public Iterator<I> iterator() {
-        final Iterator<? extends E> it = keys.iterator();
+        Iterator<? extends E> it = keys.iterator();
         return new Iterator<I>() {
           @Override
           public boolean hasNext() {
@@ -159,12 +159,12 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     };
   }
 
-  static <E, I> Set<E> expandSet(final Set<I> keys, final ObjectTransformer<E, I> tr) {
-    final int size = keys.size();
+  static <E, I> Set<E> expandSet(Set<I> keys, ObjectTransformer<E, I> tr) {
+    int size = keys.size();
     return new AbstractSet<E>() {
       @Override
       public Iterator<E> iterator() {
-        final Iterator<I> it = keys.iterator();
+        Iterator<I> it = keys.iterator();
         return new Iterator<E>() {
           @Override
           public boolean hasNext() {
@@ -210,7 +210,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     return compactSet(values, valueTransformer);
   }
 
-  Map<K0, V0> compactMap(final Map<? extends K, ? extends V> map) {
+  Map<K0, V0> compactMap(Map<? extends K, ? extends V> map) {
     if (map == null) {
       return null;
     }
@@ -221,7 +221,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     return m2;
   }
 
-  Map<K, V> expandMap(final Map<K0, V0> map) {
+  Map<K, V> expandMap(Map<K0, V0> map) {
     Map<K, V> m2 = new HashMap<K, V>();
     for (Map.Entry<K0, V0> e : map.entrySet()) {
       m2.put(keyTransformer.expand(e.getKey()), valueTransformer.expand(e.getValue()));
@@ -322,20 +322,20 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   @Override
   public <T> T invoke(
-      K key, final EntryProcessor<K, V, T> entryProcessor, Object... arguments)
+      K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
     throws EntryProcessorException {
     EntryProcessor<K0, V0, T> processor = wrapEntryProcessor(entryProcessor);
     return cache.invoke(keyTransformer.compact(key), processor, arguments);
   }
 
   private <T> EntryProcessor<K0, V0, T> wrapEntryProcessor(
-    final EntryProcessor<K, V, T> entryProcessor) {
+    EntryProcessor<K, V, T> entryProcessor) {
     if (entryProcessor == null) {
       throw new NullPointerException("null processor");
     }
     return new EntryProcessor<K0, V0, T>() {
       @Override
-      public T process(final MutableEntry<K0, V0> entry, Object... arguments)
+      public T process(MutableEntry<K0, V0> entry, Object... arguments)
         throws EntryProcessorException {
         MutableEntry<K, V>  e = wrapMutableEntry(entry);
         return entryProcessor.process(e, arguments);
@@ -343,7 +343,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     };
   }
 
-  private MutableEntry<K, V> wrapMutableEntry(final MutableEntry<K0, V0> entry) {
+  private MutableEntry<K, V> wrapMutableEntry(MutableEntry<K0, V0> entry) {
     return new MutableEntry<K, V>() {
       @Override
       public boolean exists() {
@@ -439,7 +439,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   @Override
   public Iterator<Entry<K, V>> iterator() {
-    final Iterator<Entry<K0, V0>> it = cache.iterator();
+    Iterator<Entry<K0, V0>> it = cache.iterator();
 
     return new Iterator<Entry<K, V>>() {
       @Override
@@ -449,7 +449,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
       @Override
       public Entry<K, V> next() {
-        final Entry<K0, V0> e = it.next();
+        Entry<K0, V0> e = it.next();
         return new Entry<K, V>() {
           @Override
           public K getKey() {

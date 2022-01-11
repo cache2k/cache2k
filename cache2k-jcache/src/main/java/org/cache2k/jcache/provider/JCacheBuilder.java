@@ -206,7 +206,7 @@ public class JCacheBuilder<K, V> {
    */
   private void setupCacheThrough() {
     if (config.getCacheLoaderFactory() != null) {
-      final CacheLoader<K, V> clf = config.getCacheLoaderFactory().create();
+      CacheLoader<K, V> clf = config.getCacheLoaderFactory().create();
       cache2kConfig.setAdvancedLoader(
         new CustomizationReferenceSupplier<AdvancedCacheLoader<K, V>>(
           new CloseableLoader() {
@@ -226,12 +226,12 @@ public class JCacheBuilder<K, V> {
           }));
     }
     if (config.getCacheWriterFactory() != null) {
-      final javax.cache.integration.CacheWriter<? super K, ? super V> cw =
+      javax.cache.integration.CacheWriter<? super K, ? super V> cw =
         config.getCacheWriterFactory().create();
       cache2kConfig.setWriter(
         new CustomizationReferenceSupplier<CacheWriter<K, V>>(new CloseableWriter() {
         @Override
-        public void write(final K key, final V value) {
+        public void write(K key, V value) {
           Cache.Entry<K, V> ce = new Cache.Entry<K, V>() {
             @Override
             public K getKey() {
@@ -295,7 +295,7 @@ public class JCacheBuilder<K, V> {
     }
     if (expiryPolicy instanceof ModifiedExpiryPolicy) {
       Duration d = expiryPolicy.getExpiryForCreation();
-      final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
+      long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (millisDuration == 0) {
         cache2kConfig.setExpiryPolicy(
           new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(
@@ -324,7 +324,7 @@ public class JCacheBuilder<K, V> {
     if (expiryPolicy instanceof CreatedExpiryPolicy) {
       cache2kConfig.setExpireAfterWrite(Cache2kConfig.EXPIRY_ETERNAL);
       Duration d = expiryPolicy.getExpiryForCreation();
-      final long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
+      long millisDuration = d.getTimeUnit().toMillis(d.getDurationAmount());
       if (millisDuration == 0) {
         cache2kConfig.setExpiryPolicy(
           new CustomizationReferenceSupplier<org.cache2k.expiry.ExpiryPolicy<K, V>>(

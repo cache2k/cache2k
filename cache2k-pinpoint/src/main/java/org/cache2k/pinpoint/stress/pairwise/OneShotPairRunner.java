@@ -34,13 +34,13 @@ import java.util.concurrent.atomic.AtomicReference;
 class OneShotPairRunner<R> {
 
   private final ActorPair<R> actorPair;
-  private AtomicReference<R> result1 = new AtomicReference<R>();
-  private AtomicReference<R> result2 = new AtomicReference<R>();
-  private AtomicReference<Throwable> exception1 = new AtomicReference<Throwable>();
-  private AtomicReference<Throwable> exception2 = new AtomicReference<Throwable>();
-  private AtomicInteger finishLatch = new AtomicInteger();
+  private final AtomicReference<R> result1 = new AtomicReference<R>();
+  private final AtomicReference<R> result2 = new AtomicReference<R>();
+  private final AtomicReference<Throwable> exception1 = new AtomicReference<Throwable>();
+  private final AtomicReference<Throwable> exception2 = new AtomicReference<Throwable>();
+  private final AtomicInteger finishLatch = new AtomicInteger();
 
-  OneShotPairRunner(final ActorPair<R> actorPair) {
+  OneShotPairRunner(ActorPair<R> actorPair) {
     this.actorPair = actorPair;
   }
 
@@ -49,7 +49,7 @@ class OneShotPairRunner<R> {
     exception1.set(null);
     exception2.set(null);
     finishLatch.set(2);
-    final CountDownLatch startLatch = new CountDownLatch(2);
+    CountDownLatch startLatch = new CountDownLatch(2);
     Runnable r1 = new Runnable() {
       @Override
       public void run() {
@@ -92,7 +92,7 @@ class OneShotPairRunner<R> {
 
   static class ExceptionInActorThread extends AssertionError {
 
-    ExceptionInActorThread(final Throwable cause) {
+    ExceptionInActorThread(Throwable cause) {
       super(cause.toString());
       initCause(cause);
     }

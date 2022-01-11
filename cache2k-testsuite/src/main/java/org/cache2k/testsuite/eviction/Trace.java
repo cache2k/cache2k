@@ -43,14 +43,14 @@ public class Trace implements Supplier<int[]> {
    * the second one the accessed key. Both integers are normalized starting at 0.
    * The trace characteristics are: request count: 66319, unique keys: 8810, maximum hitrate: 86.72
    */
-  public final static Trace WEBLOG424_NOROBOTS = new Trace("weblog-424-norobots.slt.gz");
+  public static final Trace WEBLOG424_NOROBOTS = new Trace("weblog-424-norobots.slt.gz");
 
   /**
    * Same access trace as {@link #WEBLOG424_NOROBOTS} containing also the robot activity.
    * The robots do access a big amount of outdated product data with no repetition and low
    * overlap.
    */
-  public final static Trace WEBLOG424_ROBOTS = new Trace("weblog-424.slt.gz");
+  public static final Trace WEBLOG424_ROBOTS = new Trace("weblog-424.slt.gz");
 
   private final Supplier<int[]> supplier;
   private int[] data = null;
