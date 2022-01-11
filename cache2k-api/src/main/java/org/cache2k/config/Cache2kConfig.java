@@ -265,7 +265,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * Sets expire after write. The value is capped at {@link #EXPIRY_ETERNAL}, meaning
    * an equal or higher duration is treated as eternal expiry.
    *
-   * @see Cache2kBuilder#expireAfterWrite
+   * @see Cache2kBuilder#expireAfterWrite(Duration)
    */
   public void setExpireAfterWrite(@Nullable Duration v) {
     this.expireAfterWrite = durationCheckAndSanitize(v);
@@ -276,17 +276,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   }
 
   /**
-   * Sets the time for regular scan round of all cache contents which evicts
-   * idle cache entries that are not accessed since the last scan round.
-   * The effect is similar then the setting time to idle or expire after access
-   * in other caches when set to about half of the time to idle time. In contract
-   * to the typical time to idle implementation there is no additional access
-   * overhead. This is intended to shrink the cache size in case entries are unused.
-   * Since coupled with the eviction algorithm the efficiency is better than
-   * a typical time to idle implementation.
-   *
-   * @since 2.6
-   * @see <a href="https://github.com/cache2k/cache2k/issues/39">Github issue #39</a>
+   * @see Cache2kBuilder#idleScanTime(Duration) 
    */
   public void setIdleScanTime(@Nullable Duration v) {
     this.idleScanTime = durationCheckAndSanitize(v);
@@ -308,7 +298,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   }
 
   /**
-   * @see Cache2kBuilder#timerLag(long, TimeUnit)
+   * @see Cache2kBuilder#timerLag(Duration)
    */
   public void setTimerLag(@Nullable Duration v) {
     this.timerLag = durationCheckAndSanitize(v);

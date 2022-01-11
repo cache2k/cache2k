@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-annotations-jvm</artifactId>
-      <version>1.4.10</version>
+      <version>1.6.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

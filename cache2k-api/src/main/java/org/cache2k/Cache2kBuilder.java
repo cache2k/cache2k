@@ -394,7 +394,15 @@ public class Cache2kBuilder<K, V>
   }
 
   /**
-   * Time duration a cache entry expires after an insert or update.
+   * @see #expireAfterWrite(Duration)
+   */
+  public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
+    expireAfterWrite(toDuration(v, u));
+    return this;
+  }
+
+  /**
+   * Duration after an entry expires after an insert or update.
    *
    * <p>The expiry happens via a timer event and may lag approximately
    * one second by default, see {@link #timerLag(long, TimeUnit)}.
@@ -420,8 +428,16 @@ public class Cache2kBuilder<K, V>
    * @see <a href="https://cache2k.org/docs/latest/user-guide.html#expiry-and-refresh">
    *   cache2k user guide - Expiry and Refresh</a>
    */
-  public final Cache2kBuilder<K, V> expireAfterWrite(long v, TimeUnit u) {
-    cfg().setExpireAfterWrite(toDuration(v, u));
+  public final Cache2kBuilder<K, V> expireAfterWrite(Duration v) {
+    cfg().setExpireAfterWrite(v);
+    return this;
+  }
+
+  /**
+   * @see #timerLag(Duration)
+   */
+  public final Cache2kBuilder<K, V> timerLag(long v, TimeUnit u) {
+    timerLag(toDuration(v, u));
     return this;
   }
 
@@ -432,8 +448,16 @@ public class Cache2kBuilder<K, V>
    * <p>If an application needs exact, point in time expiry {@link #sharpExpiry(boolean)} or
    * {@link org.cache2k.expiry.Expiry#toSharpTime(long)} need to be used.
    */
-  public final Cache2kBuilder<K, V> timerLag(long v, TimeUnit u) {
-    cfg().setTimerLag(toDuration(v, u));
+  public final Cache2kBuilder<K, V> timerLag(Duration v) {
+    cfg().setTimerLag(v);
+    return this;
+  }
+
+  /**
+   * @see #idleScanTime(Duration)
+   */
+  public final Cache2kBuilder<K, V> idleScanTime(long v, TimeUnit u) {
+    idleScanTime(toDuration(v, u));
     return this;
   }
 
@@ -445,19 +469,21 @@ public class Cache2kBuilder<K, V>
    * of an idle entry will approximately happen between one or two times the
    * configured idle scan time.
    *
-   * <p>In contrast to the typical time to idle implementation there is no additional access
-   * overhead.
+   * <p>Idle scanning works in combination with a cache size limit and expiry.
    *
    * <p>For entries removed by the idle scanner an eviction event is generated and
    * counted as eviction in the cache statistics.
    *
-   * <p>Idle scanning works in combination with a cache size limit and expiry.
+   * <p>Rationale: Although a regular scan sounds like a lot of overhead it is
+   * the opposite, since there is no additional overhead of bookkeeping when an item
+   * is accessed. This is more efficient then a straight forward time to idle
+   * implementation via a linked list.
    *
    * @since 2.6
    * @see <a href="https://github.com/cache2k/cache2k/issues/39">Github issue #39</a>
    */
-  public final Cache2kBuilder<K, V> idleScanTime(long v, TimeUnit u) {
-    cfg().setIdleScanTime(toDuration(v, u));
+  public final Cache2kBuilder<K, V> idleScanTime(Duration v) {
+    cfg().setIdleScanTime(v);
     return this;
   }
 
