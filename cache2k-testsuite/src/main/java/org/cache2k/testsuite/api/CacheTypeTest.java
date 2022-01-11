@@ -37,7 +37,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Test whether every type combination with generics can be build and retrieved from the type descriptor.

@@ -10,7 +10,6 @@
     <relativePath>../test-parent/pom.xml</relativePath>
   </parent>
 
-  <groupId>org.cache2k</groupId>
   <artifactId>cache2k-jcache-tests</artifactId>
 
   <packaging>jar</packaging>

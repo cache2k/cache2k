@@ -22,12 +22,10 @@ package org.cache2k.extra.spring;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
-import org.cache2k.processor.EntryProcessingException;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Cache wrapper for the spring cache abstraction.

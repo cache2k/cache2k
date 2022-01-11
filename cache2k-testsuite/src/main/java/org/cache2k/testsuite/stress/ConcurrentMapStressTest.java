@@ -150,7 +150,7 @@ public class ConcurrentMapStressTest {
     public MyActorPair(Target target) {
       super(target);
       this.key = target.key;
-      this.map = target.map;;
+      this.map = target.map;
     }
     Integer value() { return map.get(key); }
     public void put(Integer value) { map.put(key, value); }

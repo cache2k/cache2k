@@ -20,7 +20,6 @@ package org.cache2k.testsuite.support;
  * #L%
  */
 
-import com.google.common.cache.CacheBuilder;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.ForwardingCache;

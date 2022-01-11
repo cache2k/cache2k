@@ -22,7 +22,6 @@ package org.cache2k.testsuite.expiry;
 
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.operation.TimeReference;
 import org.cache2k.testsuite.support.DataType;
 import org.cache2k.testsuite.support.AbstractCacheTester;
 import org.cache2k.testsuite.support.TestContext;
@@ -53,15 +52,7 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
   @Test
   public void maxExpireAfterWrite() {
     init(b -> {
-      b.expireAfterWrite(Long.MAX_VALUE / 20, TimeUnit.MILLISECONDS);
-    });
-    put(k0, v0);
-  }
-
-  @Test
-  public void beyondMaxExpireAfterWrite() {
-    init(b -> {
-      b.expireAfterWrite(Long.MAX_VALUE / 5, TimeUnit.MILLISECONDS);
+      b.expireAfterWrite(TIME_MAX_MILLIS, TimeUnit.MILLISECONDS);
     });
     put(k0, v0);
   }

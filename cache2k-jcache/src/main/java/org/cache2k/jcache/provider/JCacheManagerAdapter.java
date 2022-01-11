@@ -20,7 +20,6 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.cache2k.core.spi.CacheLifeCycleListener;
 import org.cache2k.core.CacheManagerImpl;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
 

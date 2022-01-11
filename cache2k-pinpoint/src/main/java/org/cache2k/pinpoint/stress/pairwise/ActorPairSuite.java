@@ -21,6 +21,7 @@ package org.cache2k.pinpoint.stress.pairwise;
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -89,9 +90,7 @@ public class ActorPairSuite {
    * Add an actor pair
    */
   public ActorPairSuite addPair(ActorPair<?>... ps) {
-    for (ActorPair<?> p : ps) {
-      pairs.add(p);
-    }
+    pairs.addAll(Arrays.asList(ps));
     return this;
   }
 

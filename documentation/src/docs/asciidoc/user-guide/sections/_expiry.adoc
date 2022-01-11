@@ -30,7 +30,7 @@ below.
 
 *Lag time:* Expiry is lagging by default, meaning that the mapping disappears shortly after the
 configured duration. If an entry needs to expire at an exact point in time, this can be achieved
-with the `ExpiryPolicy` and the `sharpExpiry` parameter, see <<_sharp_expiry,Sharp Expiry>>.
+with the `ExpiryPolicy` and the `sharpExpiry` parameter, see <<sharp-expiry,Sharp Expiry>>.
 The parameter `timerLag` is available to configure the lag of timer event processing.
 
 *Exceptions:* When an expiry duration is specified via `expireAfterWrite`, resilience features
@@ -78,6 +78,7 @@ If the loader yields an exception `ExpiryPolicy` is not called. Its possible
 to set a variable expiry for exceptions via the `ResiliencePolicy`. See
 the <<resilience,Resilience and Exceptions>> chapter.
 
+[[sharp-expiry]]
 ==== Sharp Expiry
 
 In default operation mode, the cache does not check the time when an entry is accessed.

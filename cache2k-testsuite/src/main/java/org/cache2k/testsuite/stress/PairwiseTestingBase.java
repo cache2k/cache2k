@@ -23,7 +23,6 @@ package org.cache2k.testsuite.stress;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.pinpoint.stress.pairwise.ActorPairSuite;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

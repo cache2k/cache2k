@@ -21,7 +21,6 @@ package org.cache2k.extra.config.generic;
  */
 
 import org.cache2k.config.CacheType;
-import org.cache2k.config.CacheTypeCapture;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;

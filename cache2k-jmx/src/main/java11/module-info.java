@@ -17,8 +17,6 @@
  * limitations under the License.
  * #L%
  */
-import org.cache2k.extra.jmx.JmxSupport;
-
 /**
  * @author Jens Wilke
  */

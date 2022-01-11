@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.google.common.collect.testing.MapTestSuiteBuilder;
-import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 
 import com.google.common.collect.testing.ConcurrentMapTestSuiteBuilder;
@@ -36,7 +35,6 @@ import com.google.common.collect.testing.features.MapFeature;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.testing.category.FastTests;
 import org.junit.experimental.categories.Category;

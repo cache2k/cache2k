@@ -21,11 +21,7 @@ package org.cache2k.testsuite.stress;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.io.AsyncBulkCacheLoader;
-import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.testing.category.SlowTests;
-import org.cache2k.testsuite.support.Loaders;
-import org.cache2k.testsuite.support.StaticUtil;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -34,9 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;

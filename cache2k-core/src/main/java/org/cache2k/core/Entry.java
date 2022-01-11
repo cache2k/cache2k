@@ -56,7 +56,6 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
   /**
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
    */
-  @SuppressWarnings("unchecked")
   private volatile Object valueOrException = INITIAL_VALUE;
 
   /**

@@ -374,26 +374,6 @@
 
   <profiles>
 
-    <!--
-         Profile is used to deploy an internal pre release for integration tests with the
-         rest of the headissue software.
-    -->
-    <profile>
-      <id>headissue-release</id>
-      <distributionManagement>
-        <repository>
-          <id>headissue.public</id>
-          <name>headissue public repository</name>
-          <url>${h7e.release.deploy.url}</url>
-        </repository>
-        <snapshotRepository>
-          <id>headissue.snapshot</id>
-          <name>Internal Snapshot Repository</name>
-          <url>${h7e.snapshot.deploy.url}</url>
-        </snapshotRepository>
-      </distributionManagement>
-    </profile>
-
     <!-- profile used for the oss release via sonatype. This is taken from
          oss-parent-9.pom -->
     <profile>
