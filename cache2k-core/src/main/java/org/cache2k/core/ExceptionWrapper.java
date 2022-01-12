@@ -111,11 +111,6 @@ public class ExceptionWrapper<K, V> implements LoadExceptionInfo<K, V> {
   }
 
   @Override
-  public LoadExceptionInfo<K, V> getExceptionInfo() {
-    return this;
-  }
-
-  @Override
   public long getUntil() {
     return until;
   }

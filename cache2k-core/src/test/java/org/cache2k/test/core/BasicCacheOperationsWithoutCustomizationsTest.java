@@ -890,9 +890,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     } catch (CacheLoaderException ex) {
     }
     assertNotNull(e.getException());
-    if (exception != null) {
-      assertEquals(exception, e.getException());
-    }
+    assertEquals(exception, e.getException());
+    assertEquals(e.getExceptionInfo().getException(), exception);
+    assertNotNull(e.getExceptionInfo().getKey());
+    assertNotNull(e.getExceptionInfo().toString());
   }
 
   /*

@@ -42,10 +42,6 @@ import org.cache2k.CacheException;
  */
 public class CacheLoaderException extends CacheException {
 
-  public CacheLoaderException(String message) {
-    super(message);
-  }
-
   public CacheLoaderException(String message, Throwable ex) {
     super(message, ex);
   }

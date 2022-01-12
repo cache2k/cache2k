@@ -20,6 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.Random;
@@ -111,6 +112,13 @@ public class IntegerTo16BitFloatingPointTest {
     assertEquals(1, IntegerTo16BitFloatingPoint.compress(1));
     assertEquals(2, IntegerTo16BitFloatingPoint.compress(2));
     assertEquals(3584, IntegerTo16BitFloatingPoint.compress(4096));
+  }
+
+  @Test
+  public void testCheck() {
+    Assertions.assertThatCode(() -> {
+      IntegerTo16BitFloatingPoint.compress(-1);
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
 }
