@@ -59,7 +59,7 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
   long calcNextRefreshTime(K key, V value, long now, CacheEntry<K, V> entry) {
     return calcNextRefreshTime(
       key, value, now, entry,
-      expiryPolicy, expiryMillis, sharpExpiry);
+      expiryPolicy, expiryTicks, sharpExpiry);
   }
 
   public long calculateNextRefreshTime(Entry<K, V> entry, V value, long loadTime) {

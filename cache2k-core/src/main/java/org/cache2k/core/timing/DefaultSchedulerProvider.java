@@ -65,7 +65,7 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
         THREAD_COUNT, new DaemonThreadFactory());
     }
     usageCounter++;
-    return new MyScheduler(buildContext.getExecutor());
+    return new DefaultScheduler(buildContext.getExecutor());
   }
 
   /**
@@ -83,17 +83,17 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
     }
   }
 
-  private class MyScheduler implements Scheduler, AutoCloseable {
+  private class DefaultScheduler implements Scheduler, AutoCloseable {
 
     private final Executor executor;
     private boolean closed;
 
-    private MyScheduler(Executor executor) {
+    private DefaultScheduler(Executor executor) {
       this.executor = executor;
     }
 
     /**
-     * Wrap task to be executed in separate executor to not black the common
+     * Wrap task to be executed in separate executor to not block the common
      * scheduler. Scheduling may race with closing of the cache. When shut down
      * the ScheduledExcecutorService is throwing a RejectedExecutionException.
      * Rethrow as CacheClosedException. When this exception happens internally, it
@@ -101,12 +101,10 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
      * the client was issuing a close in parallel.
      */
     @Override
-    public void schedule(Runnable task, long millis) {
+    public void schedule(Runnable task, long delayMillis) {
       Runnable wrap = () -> executor.execute(task);
-      long delay = millis - System.currentTimeMillis();
-      delay = Math.max(0, delay);
       try {
-        scheduledExecutor.schedule(wrap, delay, TimeUnit.MILLISECONDS);
+        scheduledExecutor.schedule(wrap, delayMillis, TimeUnit.MILLISECONDS);
       } catch (RejectedExecutionException ex) {
         throw new CacheClosedException();
       }

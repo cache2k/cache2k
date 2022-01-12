@@ -20,6 +20,7 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
@@ -37,6 +38,7 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -459,7 +461,7 @@ public class BasicCacheTest extends TestingBase {
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
-    long t0 = millis();
+    long t0 = ticks();
     try {
       c.get(1);
       fail("exception expected");
@@ -468,7 +470,7 @@ public class BasicCacheTest extends TestingBase {
     checkExistingAndTimeStampGreaterOrEquals(c, 1, t0);
     try {
       c.get(2);
-      long refreshedBefore = millis();
+      long refreshedBefore = ticks();
       assertFalse("entry disappears since expiry=0", c.containsKey(2));
       assertEquals("entry has no modification time since suppressed", 0,
         getRefreshedTimeViaEntryProcessor(c, 2));
@@ -579,18 +581,19 @@ public class BasicCacheTest extends TestingBase {
 
   @Test
   public void testInfoPropertyStarted() {
-    long t = millis();
+    Instant t0 = now();
     freshCacheForInfoTest();
-    assertTrue("started set", getInfo().getStartedTime() >= t);
+    Assertions.assertThat(getInfo().getStartedTime()).isAfterOrEqualTo(t0);
+    Assertions.assertThat(getInfo().getInfoCreatedTime()).isAfterOrEqualTo(t0);
   }
 
   @Test
   public void testInfoPropertyCleared() {
-    long t = millis();
+    Instant t0 = now();
     freshCacheForInfoTest();
-    assertEquals("not yet cleared", 0, getInfo().getClearedTime());
+    assertNull(getInfo().getClearedTime());
     cache.clear();
-    assertTrue("cleared set", getInfo().getClearedTime() >= t);
+    Assertions.assertThat(getInfo().getClearedTime()).isAfterOrEqualTo(t0);
   }
 
   @Test(expected = CacheException.class)

@@ -591,13 +591,17 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * to an effective removal of the cache entry, the writer is not called, since the
    * method is for cache control only.
    *
+   * <p>It is possible to insert a value and set a custom expiry time atomically
+   * via {@link Cache#invoke(Object, EntryProcessor)} and
+   * {@link MutableCacheEntry#setExpiryTime(long)}.
+   *
    * @param key key with which the specified value is associated
-   * @param millis Time in milliseconds since epoch when the entry should expire.
-   *               Also see {@link ExpiryTimeValues}
+   * @param time millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}.
+   *             Some values have special meanings, see {@link ExpiryTimeValues}
    * @throws IllegalArgumentException if expiry was disabled via
    *                                  {@link Cache2kBuilder#eternal(boolean)}
    */
-  void expireAt(K key, long millis);
+  void expireAt(K key, long time);
 
   /**
    * Request to load the given set of keys into the cache. Only missing or expired

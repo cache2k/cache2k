@@ -31,6 +31,8 @@ import org.cache2k.test.util.TestingBase;
 import org.cache2k.annotation.Nullable;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -110,16 +112,28 @@ public class CustomizationClosedTest extends TestingBase {
 
   class MyTimeReference extends Common implements TimeReference {
     @Override
-    public long millis() {
+    public long ticks() {
       return 0;
     }
     @Override
-    public void sleep(long millis) { }
+    public void sleep(long ticks) { }
+    @Override
+    public long ticksToMillisCeiling(long ticks) {
+      return 0;
+    }
+    @Override
+    public long toTicks(Duration v) {
+      return 0;
+    }
+    @Override
+    public Instant ticksToInstant(long timeInTicks) {
+      return null;
+    }
   }
 
   class MyScheduler extends Common implements Scheduler {
     @Override
-    public void schedule(Runnable runnable, long millis) { }
+    public void schedule(Runnable runnable, long delayMillis) { }
 
     @Override
     public void execute(Runnable command) { }

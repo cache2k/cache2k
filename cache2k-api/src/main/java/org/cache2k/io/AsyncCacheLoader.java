@@ -70,7 +70,10 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
     Cache<K, V> getCache();
 
     /**
-     * Time in millis since epoch of start of load operation
+     * Start of load operation
+     *
+     * @return Time in millis since epoch or as defined by
+     *         {@link org.cache2k.operation.TimeReference}.
      */
     long getStartTime();
 

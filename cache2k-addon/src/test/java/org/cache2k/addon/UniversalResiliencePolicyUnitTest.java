@@ -26,6 +26,7 @@ import org.cache2k.annotation.Nullable;
 import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -133,7 +134,8 @@ public class UniversalResiliencePolicyUnitTest {
   }
 
   private static @Nullable UniversalResiliencePolicy policy(Cache2kBuilder builder) {
-    ResiliencePolicy policy = UniversalResilienceSupplier.supplyPolicy(builder.config());
+    ResiliencePolicy policy =
+      UniversalResilienceSupplier.supplyPolicy(TimeReference.DEFAULT, builder.config());
     if (policy instanceof UniversalResiliencePolicy) {
       return (UniversalResiliencePolicy) policy;
     }

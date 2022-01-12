@@ -96,11 +96,11 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   }
 
   public long now() {
-    return clock.millis();
+    return clock.ticks();
   }
 
   public TimeBox within(long millis) {
-    return new TimeBox(() -> clock.millis(), millis);
+    return new TimeBox(() -> clock.ticks(), millis);
   }
 
   @AfterEach

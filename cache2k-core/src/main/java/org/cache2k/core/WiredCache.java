@@ -803,7 +803,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     synchronized (e) {
       if (e.getTask() != task) { return; }
       long nrt = e.getNextRefreshTime();
-      long now = heapCache.clock.millis();
+      long now = heapCache.clock.ticks();
       if (now < Math.abs(nrt)) {
         if (nrt > 0) {
           heapCache.timing.scheduleFinalTimerForSharpExpiry(e);

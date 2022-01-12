@@ -137,8 +137,8 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void expireAt(K key, long millis) {
-    delegate().expireAt(key, millis);
+  public void expireAt(K key, long time) {
+    delegate().expireAt(key, time);
   }
 
   @Override

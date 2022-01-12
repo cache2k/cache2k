@@ -100,14 +100,16 @@ public interface LoadExceptionInfo<K, V> extends CacheEntry<K, V> {
   /**
    * Start time of the load that generated the first exception.
    *
-   * @return time in millis since epoch
+   * @return Time in millis since epoch or as defined by
+   *         {@link org.cache2k.operation.TimeReference}.
    */
   long getSinceTime();
 
   /**
    * Start time of the load operation that generated the recent exception.
    *
-   * @return time in millis since epoch
+   * @return Time in millis since epoch or as defined by
+   *         {@link org.cache2k.operation.TimeReference}.
    */
   long getLoadTime();
 
@@ -115,7 +117,8 @@ public interface LoadExceptionInfo<K, V> extends CacheEntry<K, V> {
    * Time in millis until the next retry attempt.
    * This property is only set in the context of the {@link ExceptionPropagator}.
    *
-   * @return time in millis since epoch
+   * @return Time in millis since epoch or as defined by
+   *         {@link org.cache2k.operation.TimeReference}.
    */
   long getUntil();
 

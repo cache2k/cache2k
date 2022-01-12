@@ -46,6 +46,7 @@ import org.junit.runners.model.Statement;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
@@ -60,7 +61,7 @@ import static org.junit.Assert.*;
 /**
  * Base class for most of the cache tests. Provides a separate cache for
  * each test within the default cache manager. Provides methods for testing the timing
- * like {@link #millis()}, {@link #within(long)} and {@link #sleep(long)}, that may be
+ * like {@link #ticks()}, {@link #within(long)} and {@link #sleep(long)}, that may be
  * backed via a simulated clock implementation {@link #enableFastClock()}.
  *
  * @author Jens Wilke
@@ -409,7 +410,9 @@ public class TestingBase {
   /**
    * Return milliseconds since epoch based on the used clock implementation
    */
-  public long millis() { return getClock().millis(); }
+  public long ticks() { return getClock().ticks(); }
+
+  public Instant now() { return getClock().ticksToInstant(ticks()); }
 
   public TimeStepper stepper() { return stepper; }
 
@@ -426,7 +429,7 @@ public class TestingBase {
   }
 
   public TimeBox within(long millis) {
-    return new TimeBox(() -> clock.millis(), millis);
+    return new TimeBox(() -> clock.ticks(), millis);
   }
 
   public void await(long timeoutMillis, Condition condition) {

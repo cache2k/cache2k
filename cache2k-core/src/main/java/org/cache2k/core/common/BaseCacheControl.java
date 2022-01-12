@@ -97,18 +97,14 @@ public class BaseCacheControl implements CacheControl {
 
   @Override
   public Instant getCreatedTime() {
-    return Instant.ofEpochMilli(getInfo().getStartedTime());
+    return getInfo().getStartedTime();
   }
 
   @Override
   public Instant getClearedTime() {
-    return instantOrNull(getInfo().getClearedTime());
+    return getInfo().getClearedTime();
   }
 
-
-  Instant instantOrNull(long millis) {
-    return millis == 0 ? null : Instant.ofEpochMilli(millis);
-  }
 
   @Override
   public String getImplementation() {

@@ -22,6 +22,8 @@ package org.cache2k.core.util;
 
 import org.junit.Test;
 
+import java.time.Instant;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -37,22 +39,26 @@ public class TimestampFormatterTest {
     return s.replaceAll("[0-9]", "#");
   }
 
+  private static Instant toInstant(long millis) {
+    return Instant.ofEpochMilli(millis);
+  }
+
   @Test
   public void test() {
     long t0 = 0;
-    assertEquals("####-##-##T##:##:##", hashDigits(Util.formatMillis(t0)));
+    assertEquals("####-##-##T##:##:##", hashDigits(Util.formatTime(toInstant(t0))));
   }
 
   @Test
   public void testWithMillis() {
     long t0 = 123;
-    assertEquals("####-##-##T##:##:##.###", hashDigits(Util.formatMillis(t0)));
+    assertEquals("####-##-##T##:##:##.###", hashDigits(Util.formatTime(toInstant(t0))));
   }
 
   @Test
   public void testWithMillis2() {
     long t0 = 120;
-    assertEquals("####-##-##T##:##:##.##", hashDigits(Util.formatMillis(t0)));
+    assertEquals("####-##-##T##:##:##.##", hashDigits(Util.formatTime(toInstant(t0))));
   }
 
 }

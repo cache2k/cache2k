@@ -23,6 +23,7 @@ package org.cache2k.testing;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
@@ -44,7 +45,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author Jens Wilke
  */
-public class SimulatedClock implements TimeReference, Scheduler {
+public class SimulatedClock extends TimeReference.Milliseconds implements Scheduler {
 
   static final ThreadLocal<Boolean> EXECUTOR_CONTEXT = new ThreadLocal<Boolean>() {
     @Override
@@ -56,7 +57,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
   private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
   /**
-   * Current time of the clock in millis.
+   * Current time of the clock in ticks.
    */
   private final AtomicLong now;
 
@@ -97,7 +98,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
    * That is to simulate that time passes during execution and that it is not possible
    * to exactly execute at a point in time. Randomized by default.
    */
-  private final int jobExecutionLagMillis;
+  private final int jobExecutionLagTicks;
 
   /**
    * Executor used to move the clock. If millis() moves the clock, we need
@@ -117,30 +118,29 @@ public class SimulatedClock implements TimeReference, Scheduler {
   /**
    * Create a clock with the initial time.
    *
-   * @param initialMillis initial time in millis since epoch, can start 0 for easy debugging
+   * @param initialTicks initial time in millis since epoch, can start 0 for easy debugging
    */
-  public SimulatedClock(boolean deterministic, long initialMillis) {
-    now = new AtomicLong(initialMillis);
+  public SimulatedClock(boolean deterministic, long initialTicks) {
+    now = new AtomicLong(initialTicks);
     this.deterministic = deterministic;
     if (deterministic) {
-      jobExecutionLagMillis = 0;
+      jobExecutionLagTicks = 0;
     } else {
-      jobExecutionLagMillis = (int) (System.currentTimeMillis() % 2);
+      jobExecutionLagTicks = (int) (System.currentTimeMillis() % 2);
     }
   }
 
-  public SimulatedClock(long initialMillis) {
-    this(false, initialMillis);
+  public SimulatedClock(long initialTicks) {
+    this(false, initialTicks);
   }
 
   public SimulatedClock() {
     this(1000000);
   }
 
-  @Override
-  public void schedule(Runnable runnable, long requestedMillis) {
-    long millis = requestedMillis + jobExecutionLagMillis;
-    schedule(runnable, requestedMillis, millis);
+  public void schedule(Runnable runnable, long delayMillis) {
+    long ticks = now.get() + toTicks(Duration.ofMillis(delayMillis));
+    schedule(runnable, ticks, ticks + jobExecutionLagTicks);
   }
 
   private void schedule(Runnable runnable, long requestedMillis, long millis) {
@@ -170,7 +170,7 @@ public class SimulatedClock implements TimeReference, Scheduler {
    * this was called {@value CLOCK_READING_PROGRESS} times.
    */
   @Override
-  public long millis() {
+  public long ticks() {
     if (!deterministic && clockReadingCounter.incrementAndGet() % CLOCK_READING_PROGRESS == 0) {
       advanceExecutor.execute(advance);
     }
@@ -182,16 +182,16 @@ public class SimulatedClock implements TimeReference, Scheduler {
    * A value greater then {@code 0}s advances the time just by the specified amount.
    */
   @Override
-  public void sleep(long millis) throws InterruptedException {
+  public void sleep(long ticks) throws InterruptedException {
     if (EXECUTOR_CONTEXT.get()) {
-      sleepInExecutor(millis);
+      sleepInExecutor(ticks);
       return;
     }
-    if (millis == 0) {
+    if (ticks == 0) {
       sleep0();
       return;
     }
-    long wakeupTime = millis() + millis;
+    long wakeupTime = ticks() + ticks;
     progressAndRunEvents(wakeupTime);
   }
 
@@ -201,14 +201,9 @@ public class SimulatedClock implements TimeReference, Scheduler {
    * This is not heavily used. Tests we sleep in executors should be
    * examined and may be replaced.
    */
-  private void sleepInExecutor(long millis) throws InterruptedException {
+  private void sleepInExecutor(long ticks) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
-    schedule(new Runnable() {
-      @Override
-      public void run() {
-        latch.countDown();
-      }
-    }, now.get() + millis);
+    schedule(() -> latch.countDown(), ticksToMillisCeiling(ticks - now.get()));
     latch.await(3, TimeUnit.MILLISECONDS);
   }
 

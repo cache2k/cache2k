@@ -683,7 +683,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testResiliencePolicyLoadExceptionInformationContent_keep() {
-    long t0 = millis();
+    long t0 = ticks();
     final int initial = -4711;
     AtomicInteger cacheRetryCount = new AtomicInteger(initial);
     AtomicInteger suppressRetryCount = new AtomicInteger(initial);
@@ -739,7 +739,7 @@ public class ExpiryTest extends TestingBase {
 
   @Test
   public void testResiliencePolicyLoadExceptionInformationContent_noKeep() {
-    long t0 = millis();
+    long t0 = ticks();
     final int initial = -4711;
     AtomicInteger cacheRetryCount = new AtomicInteger(initial);
     AtomicInteger suppressRetryCount = new AtomicInteger(initial);
@@ -1059,7 +1059,7 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     assertTrue(c.containsKey(1));
-    c.expireAt(1, millis());
+    c.expireAt(1, ticks());
     assertFalse(c.containsKey(1));
     statistics()
       .putCount.expect(1)
@@ -1081,7 +1081,7 @@ public class ExpiryTest extends TestingBase {
         .keepDataAfterExpired(false);
       addLoader(b);
       cache = b.build();
-      startTime = getClock().millis();
+      startTime = getClock().ticks();
     }
 
     protected void addLoader(Cache2kBuilder<Integer, Integer> b) {
@@ -1105,7 +1105,7 @@ public class ExpiryTest extends TestingBase {
       try {
         assertEquals(1, getInfo().getSize());
       } catch (AssertionError e) {
-        if (millis() < (startTime + LONG_DELTA)) {
+        if (ticks() < (startTime + LONG_DELTA)) {
           throw e;
         }
       }
@@ -1220,7 +1220,7 @@ public class ExpiryTest extends TestingBase {
       .loader(key -> 4711)
       .build();
     c.put(1, 2);
-    c.expireAt(1, -millis());
+    c.expireAt(1, -ticks());
     assertFalse(c.containsKey(1));
     await(() -> getInfo().getRefreshCount() > 0);
   }
@@ -1232,7 +1232,7 @@ public class ExpiryTest extends TestingBase {
       .loader(key -> 4711)
       .build();
     c.put(1, 2);
-    c.expireAt(1, -millis());
+    c.expireAt(1, -ticks());
     assertFalse(c.containsKey(1));
   }
 
@@ -1246,7 +1246,7 @@ public class ExpiryTest extends TestingBase {
       .build();
     within(LONG_DELTA).perform(() -> {
       c.put(1, 2);
-      c.expireAt(1, -millis());
+      c.expireAt(1, -ticks());
     }).expectMaybe(() -> {
       assertFalse(c.containsKey(1));
       await(() -> getInfo().getRefreshCount() > 0);
@@ -1268,7 +1268,7 @@ public class ExpiryTest extends TestingBase {
     c.put(1, 2);
     within(LONG_DELTA)
       .perform(() -> {
-        c.expireAt(1, -millis());
+        c.expireAt(1, -ticks());
         assertFalse(
           "entry not visible after expireAt, during refresh and after refresh",
           c.containsKey(1));
@@ -1297,7 +1297,7 @@ public class ExpiryTest extends TestingBase {
       .loader(key -> 4711)
       .build();
     c.invoke(1, e -> {
-      e.setExpiryTime(millis() + LONG_DELTA);
+      e.setExpiryTime(ticks() + LONG_DELTA);
       e.setValue(7);
       return null;
     });
@@ -1314,7 +1314,7 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     c.invoke(1, e -> {
-      e.setExpiryTime(-millis());
+      e.setExpiryTime(-ticks());
       return null;
     });
     assertFalse(c.containsKey(1));

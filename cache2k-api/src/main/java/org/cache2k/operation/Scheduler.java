@@ -40,11 +40,10 @@ import java.util.concurrent.TimeUnit;
 public interface Scheduler extends Executor {
 
   /**
-   * Schedule a task to be run at the given time
-   * 
-   * @param millis since epoch, provided by {@link TimeReference#toMillis(long)}
+   * Schedule the task to be run after a given delay. This uses always millisecond
+   * resolution. A negative or zero duration means immediate execution is requested.
    */
-  void schedule(Runnable runnable, long millis);
+  void schedule(Runnable runnable, long delayMillis);
 
   /**
    * Run a task immediately, usually via the common ForkJoinPool.

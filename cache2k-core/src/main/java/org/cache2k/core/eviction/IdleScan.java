@@ -54,7 +54,7 @@ public class IdleScan implements NeedsClose {
   private long roundStartScans;
   /** Size at round start. */
   private long scansPerRound;
-  private long wakeupInterval;
+  private long wakeupIntervalMillis;
   /** Entries evicted via idle eviction. */
   private long evictedCount = 0;
   private long lastScanCount = 0;
@@ -69,14 +69,14 @@ public class IdleScan implements NeedsClose {
     this.eviction = eviction;
     this.roundTicks = roundTicks;
     synchronized (this) {
-      scheduleIdleWakeup(clock.millis(), eviction.getMetrics());
+      scheduleIdleWakeup(eviction.getMetrics());
     }
   }
 
   public void scanWakeup() {
     int extraScan;
     synchronized (this) {
-      long now = clock.millis();
+      long now = clock.ticks();
       lastWakeupTicks = now;
       EvictionMetrics metrics = eviction.getMetrics();
       long expectedScans =
@@ -84,12 +84,12 @@ public class IdleScan implements NeedsClose {
           roundStartScans - metrics.getIdleNonEvictDrainCount();
       long remainingScans = roundStartScans + scansPerRound - expectedScans;
       extraScan = (int) (expectedScans - metrics.getScanCount());
-      if (extraScan < -remainingScans) { scheduleIdleWakeup(now, metrics); return; }
-      if (extraScan <= 0) { scheduleNextWakeup(now, wakeupInterval); return; }
+      if (extraScan < -remainingScans) { scheduleIdleWakeup(metrics); return; }
+      if (extraScan <= 0) { scheduleNextWakeup(wakeupIntervalMillis); return; }
       if (now >= roundStartTicks + roundTicks) {
         startNewScanRound(now, metrics);
       } else {
-        scheduleNextWakeup(now, wakeupInterval);
+        scheduleNextWakeup(wakeupIntervalMillis);
       }
     }
     long count = eviction.evictIdleEntries(extraScan);
@@ -113,14 +113,14 @@ public class IdleScan implements NeedsClose {
    */
   private void idleWakeup() {
     synchronized (this) {
-      long now = clock.millis();
+      long now = clock.ticks();
       EvictionMetrics metrics = eviction.getMetrics();
       long size = metrics.getSize();
       long scansSinceLastWakeup = metrics.getScanCount() - lastScanCount;
       boolean enoughScanActivity = scansSinceLastWakeup >= size;
       boolean empty = size == 0;
       if (empty || enoughScanActivity) {
-        scheduleIdleWakeup(now, metrics);
+        scheduleIdleWakeup(metrics);
         return;
       }
       startNewScanRound(now, metrics);
@@ -134,19 +134,19 @@ public class IdleScan implements NeedsClose {
     roundStartCount++;
     roundStartTicks = now;
     roundStartScans = eviction.startNewIdleScanRound();
-    wakeupInterval = clock.toMillis(calculateWakeupTicks(roundTicks, scansPerRound));
-    scheduleNextWakeup(now, wakeupInterval);
+    wakeupIntervalMillis = clock.ticksToMillisCeiling(calculateWakeupTicks(roundTicks, scansPerRound));
+    scheduleNextWakeup(wakeupIntervalMillis);
   }
 
-  private void scheduleIdleWakeup(long now, EvictionMetrics metrics) {
+  private void scheduleIdleWakeup(EvictionMetrics metrics) {
     if (roundStartTicks != IDLE) { roundAbortCount++; }
     roundStartTicks = IDLE;
     lastScanCount = metrics.getScanCount();
-    scheduler.schedule(this::idleWakeup, roundTicks + now);
+    scheduler.schedule(this::idleWakeup, clock.ticksToMillisCeiling(roundTicks));
   }
 
-  private void scheduleNextWakeup(long now, long deltaMillis) {
-    scheduler.schedule(this::scanWakeup, deltaMillis + now);
+  private void scheduleNextWakeup(long delayMillis) {
+    scheduler.schedule(this::scanWakeup, delayMillis);
   }
 
   @Override

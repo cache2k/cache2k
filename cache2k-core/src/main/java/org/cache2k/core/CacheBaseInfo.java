@@ -24,10 +24,10 @@ import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.eviction.EvictionMetrics;
+import org.cache2k.core.util.Util;
 
 import java.text.DecimalFormat;
-
-import static org.cache2k.core.util.Util.formatMillis;
+import java.time.Instant;
 
 /**
  * Stable interface to request information from the cache, the object
@@ -202,9 +202,11 @@ class CacheBaseInfo implements InternalCacheInfo {
   public String getHitRateString() { return percentString(getHitRate()); }
   @Override
   public double getMillisPerLoad() {
-    return getLoadCount() == 0 ? 0 : (metrics.getLoadMillis() * 1D / getLoadCount()); }
+    return getLoadCount() == 0 ? 0 : (getLoadMillis() * 1D / getLoadCount()); }
   @Override
-  public long getLoadMillis() { return metrics.getLoadMillis(); }
+  public long getLoadMillis() {
+    return cache.getClock().ticksToMillisCeiling(metrics.getLoadTicks());
+  }
   @Override
   public String getIntegrityDescriptor() {
     if (integrityState == null) {
@@ -213,17 +215,21 @@ class CacheBaseInfo implements InternalCacheInfo {
     return integrityState.getStateDescriptor();
   }
   @Override
-  public long getStartedTime() { return heapCache.startedTime; }
+  public Instant getStartedTime() { return instantOrNull(heapCache.startedTime); }
   @Override
-  public long getClearedTime() { return clearedTime; }
+  public Instant getClearedTime() { return instantOrNull(clearedTime); }
   @Override
-  public long getInfoCreatedTime() { return infoCreatedTime; }
+  public Instant getInfoCreatedTime() { return instantOrNull(infoCreatedTime); }
 
-  private static String timestampToString(long t) {
-    if (t == 0) {
+  Instant instantOrNull(long ticks) {
+    return ticks == 0 ? null : cache.getClock().ticksToInstant(ticks);
+  }
+
+  private static String timestampToString(Instant t) {
+    if (t == null) {
       return "-";
     }
-    return formatMillis(t);
+    return Util.formatTime(t);
   }
 
   @Override

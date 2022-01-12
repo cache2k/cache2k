@@ -20,64 +20,103 @@ package org.cache2k.operation;
  * #L%
  */
 
-import org.cache2k.CacheEntry;
-import org.cache2k.processor.MutableCacheEntry;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * Time reference for a cache. By default, the current time is retrieved with
  * {@link System#currentTimeMillis()}. Another time reference can be specified
  * if the application uses a different time source or when a simulated clock should be used.
  *
- *  <p>An instance may implement {@link AutoCloseable} if resources need to be cleaned up.
+ * <p>For efficiency reasons cache2k always uses a long to store a time value internally.
+ * The resolution is expected to be milliseconds or higher. There is currently no
+ * intensive testing carried out with different timer resolutions.
+ *
+ * <p>An instance may implement {@link AutoCloseable} if resources need to be cleaned up.
  *
  * @author Jens Wilke
  */
 public interface TimeReference {
 
   /**
+   * Every time reference is expected to produce times higher or equal to this value.
+   * cache2k uses lower values for expired or invalid entries, which must be guaranteed
+   * in the past.
+   */
+  long MINIMUM_TICKS = 100;
+
+  /**
    * Default implementation using {@link System#currentTimeMillis()} as time reference.
    */
-  TimeReference DEFAULT = new TimeReference() {
-    @Override
-    public long millis() {
-      return System.currentTimeMillis();
-    }
-
-    @Override
-    public void sleep(long millis) throws InterruptedException {
-      Thread.sleep(millis);
-    }
-  };
+  TimeReference DEFAULT = new Default();
 
   /**
-   * Returns the milliseconds since epoch. In the simulated clock a call to this method
-   * would make time pass in small increments.
-   *
-   * <p>It is possible to use other time scales and references (e.g. nanoseconds). In
-   * this case the method {@link #toMillis(long)} needs to be implemented. All times in the
-   * cache API, e.g. {@link MutableCacheEntry#getExpiryTime()} or in
-   * {@link org.cache2k.io.AdvancedCacheLoader#load(Object, long, CacheEntry)} are based on the
-   * time defined here.
+   * Returns the timer ticks since a reference point, typically milliseconds since epoch.
+   * Expected to be always equal or higher than {@value MINIMUM_TICKS}.
    */
-  long millis();
+  long ticks();
 
   /**
-   * Wait for the specified amount of time in milliseconds.
+   * Wait for the specified amount of time. This is only executed by tests and never
+   * by the cache itself.
    *
    * <p>The value of 0 means that the thread should pause and other processing should be
    * done. In a simulated clock this would wait for concurrent processing and, if
    * no processing is happening, advance the time to the next event.
    */
-  void sleep(long millis) throws InterruptedException;
+  void sleep(long ticks) throws InterruptedException;
 
   /**
-   * Convert a value returned by {@link #millis()} to milliseconds since epoch.
-   * This can be overridden in case another timescale and or reference is used.
-   * Conversion is needed for correctly scheduling timer task that regularly process
+   * Convert a duration in ticks to milliseconds, rounding up to the next full
+   * millisecond.
+   *
+   * <p>This can be overridden in case another timescale is used.
+   * Conversion is needed for correctly scheduling a timer task that regularly process
    * the expiry tasks.
    */
-  default long toMillis(long millis) {
-    return millis;
+  long ticksToMillisCeiling(long ticks);
+
+  /**
+   * Convert a duration to ticks. Used to convert configuration durations.
+   */
+  long toTicks(Duration v);
+
+  /**
+   * Convert a time value in ticks to an instant object. Needed for display
+   * purposes.
+   */
+  Instant ticksToInstant(long timeInTicks);
+
+  abstract class Milliseconds implements TimeReference {
+
+    @Override
+    public long ticksToMillisCeiling(long ticks) {
+      return ticks;
+    }
+
+    @Override
+    public long toTicks(Duration v) { return v.toMillis(); }
+
+    @Override
+    public Instant ticksToInstant(long ticks) {
+      return Instant.ofEpochMilli(ticks);
+    }
+  }
+
+  final class Default extends Milliseconds {
+
+    private Default() { }
+
+    @Override
+    public long ticks() {
+      return System.currentTimeMillis();
+    }
+
+    @Override
+    public void sleep(long ticks) throws InterruptedException {
+      Thread.sleep(ticks);
+    }
+
   }
 
 }

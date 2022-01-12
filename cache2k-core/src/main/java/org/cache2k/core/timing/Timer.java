@@ -54,6 +54,6 @@ public interface Timer extends NeedsClose {
   /**
    * The lag time tasks may lag behind.
    */
-  long getLagMillis();
+  long getLagTicks();
 
 }

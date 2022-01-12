@@ -84,7 +84,7 @@ public interface CommonMetrics {
    *
    * @see InternalCacheInfo#getLoadMillis()
    */
-  long getLoadMillis();
+  long getLoadTicks();
 
   /**
    * Counter of exceptions thrown from the loader.
@@ -272,7 +272,7 @@ public interface CommonMetrics {
     }
 
     @Override
-    public long getLoadMillis() {
+    public long getLoadTicks() {
       return 0;
     }
 

@@ -44,10 +44,10 @@ public class TimeStepper {
    * some CPU time to other tasks.
    */
   public void await(String description, long timeoutMillis, Condition c) {
-    long t0 = clock.millis();
+    long t0 = clock.ticks();
     try {
       while (!c.check()) {
-        if (t0 + timeoutMillis < clock.millis()) {
+        if (t0 + timeoutMillis < clock.ticks()) {
           if (description != null) {
             throw new TimeoutException("waiting for " + timeoutMillis + " milliseconds for event '" + description + "'");
           } else {

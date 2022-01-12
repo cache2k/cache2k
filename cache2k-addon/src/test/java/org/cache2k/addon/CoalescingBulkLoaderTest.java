@@ -262,7 +262,7 @@ public class CoalescingBulkLoaderTest {
     AtomicBoolean checked = new AtomicBoolean();
     AtomicReference<Cache> cacheRef = new AtomicReference<>();
     CountDownLatch release = new CountDownLatch(1);
-    long startMillis = clock.millis();
+    long startMillis = clock.ticks();
     AsyncBulkCacheLoader<Integer, Integer> loader = (keys, context, callback) -> {
       assertEquals(2, keys.size());
       assertTrue(context.getStartTime() >= startMillis);

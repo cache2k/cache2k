@@ -22,6 +22,7 @@ package org.cache2k.processor;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
+import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.LoadExceptionInfo;
@@ -197,7 +198,8 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    *
    * <p>Special time values are defined and described at {@link org.cache2k.expiry.ExpiryTimeValues}
    *
-   * @param t millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}
+   * @param t millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}.
+   *          Some values have special meanings, see {@link ExpiryTimeValues}
    * @throws RestartException If the information is not yet available and the cache
    *                          needs to do an operation to supply it. After completion,
    *                          the entry processor will be executed again.

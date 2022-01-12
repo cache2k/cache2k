@@ -35,26 +35,25 @@ public class SimulatedClockTest {
   final SimulatedClock clock = new SimulatedClock(100000);
   final AtomicInteger trigger = new AtomicInteger();
 
+  private long ticksToMillis(long v) {
+    return v;
+  }
+
   @Test(timeout = 10000)
   public void scheduleAndTrigger() throws InterruptedException {
-    assertEquals(100000, clock.millis());
+    assertEquals(100000, clock.ticks());
     AtomicBoolean trigger = new AtomicBoolean();
-    clock.schedule(new Runnable() {
-      @Override
-      public void run() {
-        trigger.set(true);
-      }
-    }, 100005);
+    clock.schedule(() -> trigger.set(true), ticksToMillis(5));
     clock.sleep(10);
     assertTrue(trigger.get());
   }
 
   @Test
   public void sequenceSleep0() throws InterruptedException {
-    assertEquals(100000, clock.millis());
+    assertEquals(100000, clock.ticks());
     clock.schedule(new Event(0), 0);
-    clock.schedule(new Event(2), clock.millis() + 7);
-    clock.schedule(new Event(1), 123);
+    clock.schedule(new Event(2), 7);
+    clock.schedule(new Event(1), 1);
     assertEquals(0, trigger.get());
     clock.sleep(0);
     assertEquals(1, trigger.get());
@@ -68,7 +67,7 @@ public class SimulatedClockTest {
 
   @Test
   public void sequence0Sleep0() throws InterruptedException {
-    assertEquals(100000, clock.millis());
+    assertEquals(100000, clock.ticks());
     clock.schedule(new Event(-1), 0);
     clock.schedule(new Event(-1), 0);
     clock.schedule(new Event(-1), 0);
@@ -78,30 +77,25 @@ public class SimulatedClockTest {
 
   @Test
   public void sequenceSleepX() throws InterruptedException {
-    assertEquals(100000, clock.millis());
+    assertEquals(100000, clock.ticks());
     clock.schedule(new Event(0), 0);
-    clock.schedule(new Event(3), clock.millis() + 9);
-    clock.schedule(new Event(2), clock.millis() + 7);
-    clock.schedule(new Event(1), 123);
+    clock.schedule(new Event(3), 9);
+    clock.schedule(new Event(2), 7);
+    clock.schedule(new Event(1), 1);
     assertEquals(0, trigger.get());
-    clock.sleep(10);
+    clock.sleep(ticksToMillis(10));
     assertEquals(4, trigger.get());
   }
 
   @Test(expected = AssertionError.class)
   public void assertionPropagated() throws InterruptedException {
-    clock.schedule(new Runnable() {
-      @Override
-      public void run() {
-        fail("always");
-      }
-    }, 0);
+    clock.schedule(() -> fail("always"), 0);
     clock.sleep(0);
   }
 
   class Event implements Runnable {
 
-    int expectedTrigger = -1;
+    final int expectedTrigger;
 
     Event(int expectedTrigger) {
       this.expectedTrigger = expectedTrigger;
@@ -118,9 +112,10 @@ public class SimulatedClockTest {
 
   @Test(timeout = 10000)
   public void clockAdvancing() {
-    long t0 = clock.millis();
-    while (clock.millis() == t0) { }
-    assertTrue(clock.millis() > t0);
+    long t0 = clock.ticks();
+    while (clock.ticks() == t0) {
+    }
+    assertTrue(clock.ticks() > t0);
   }
 
 }

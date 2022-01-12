@@ -24,6 +24,8 @@ import org.cache2k.core.eviction.EvictionMetrics;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.Weigher;
 
+import java.time.Instant;
+
 /**
  * Collection of all metrics of a cache. The data can be retrieved via
  * {@link InternalCache#getInfo()} or {@link InternalCache#getConsistentInfo()}.
@@ -231,7 +233,7 @@ public interface InternalCacheInfo {
   /**
    * Accumulated loader execution time.
    *
-   * @see CommonMetrics#getLoadMillis()
+   * @see CommonMetrics#getLoadTicks()
    */
   long getLoadMillis();
 
@@ -247,19 +249,19 @@ public interface InternalCacheInfo {
   /**
    * Time when the cache started the operation.
    */
-  long getStartedTime();
+  Instant getStartedTime();
 
   /**
    * Time of last clear operation.
    */
-  long getClearedTime();
+  Instant getClearedTime();
 
   /**
    * Time when the info object was created. The information needs time to collect. Whenever
    * statistics are requested, a new values may be collected or old values are used. The recency
    * of the information can be determined by this value.
    */
-  long getInfoCreatedTime();
+  Instant getInfoCreatedTime();
 
   long getEvictedWeight();
 

@@ -30,8 +30,6 @@ import org.cache2k.io.LoadExceptionInfo;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static org.cache2k.core.util.Util.*;
-
 /**
  * Separate with relevant fields for read access only for optimizing the object layout.
  *
@@ -46,7 +44,7 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
 
   /**
    * Contains the next time a refresh has to occur, or if no background refresh is configured,
-   * when the entry is expired. Low values have a special meaning, see defined constants.
+   * when the entry will expire. Low values have a special meaning, see defined constants.
    * Negative values means that we need to check against the wall clock.
    */
   protected volatile long nextRefreshTime;
@@ -160,9 +158,12 @@ public class Entry<K, V> extends CompactEntry<K, V>
   implements ExaminationEntry<K, V> {
 
   /**
-   * A value greater as means it is a time value.
+   * A value greater as this means it is a time value.
    */
   public static final int EXPIRY_TIME_MIN = 32;
+
+  {
+  }
 
   /**
    * bigger or equal means entry has / contains valid data
@@ -500,7 +501,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
       return true;
     }
     if (needsTimeCheck(nrt)) {
-      return t.millis() < -nrt;
+      return t.ticks() < -nrt;
     }
     return false;
   }
@@ -612,15 +613,15 @@ public class Entry<K, V> extends CompactEntry<K, V>
     }
     long t = getModificationTime();
     if (t > 0) {
-      sb.append(", refresh=").append(formatMillis(t));
+      sb.append(", refresh=").append(formatTicks(t));
     }
     long nrt = nextRefreshTime;
     if (nrt < 0) {
-      sb.append(", nextRefreshTime(sharp)=").append(formatMillis(-nrt));
+      sb.append(", nextRefreshTime(sharp)=").append(formatTicks(-nrt));
     } else if (nrt == ExpiryPolicy.ETERNAL) {
       sb.append(", nextRefreshTime=ETERNAL");
     } else if (nrt >= EXPIRY_TIME_MIN) {
-      sb.append(", nextRefreshTime(timer)=").append(formatMillis(nrt));
+      sb.append(", nextRefreshTime(timer)=").append(formatTicks(nrt));
     } else {
       sb.append(", state=").append(nrt);
     }
@@ -635,6 +636,14 @@ public class Entry<K, V> extends CompactEntry<K, V>
     }
     sb.append("}");
     return sb.toString();
+  }
+
+  /**
+   * Pass on the absolute time value. We cannot format to a readable value
+   * since we don't know the time reference
+   */
+  private long formatTicks(long l) {
+    return l;
   }
 
   @Override

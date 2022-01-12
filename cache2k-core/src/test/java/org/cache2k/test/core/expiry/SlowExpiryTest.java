@@ -558,9 +558,9 @@ public class SlowExpiryTest extends TestingBase {
     assertTrue("expiry policy called", expiryTime.get() > 0);
     if (v == 0) {
       await("Get returns fresh", () -> {
-        long t0 = millis();
+        long t0 = ticks();
         Integer v1 = c.get(key);
-        long t1 = millis();
+        long t1 = ticks();
         assertNotNull(v1);
         assertTrue("Only see 0 before expiry time", !(v1 == 0) || t0 < expiryTime.get());
         assertTrue("Only see 1 after expiry time", !(v1 == 1) || t1 >= expiryTime.get());
@@ -568,7 +568,7 @@ public class SlowExpiryTest extends TestingBase {
         return v1 > 0;
       });
     } else {
-      long t1 = millis();
+      long t1 = ticks();
       assertTrue("Only see 1 after expiry time", t1 >= expiryTime.get());
     }
     final long loadsTriggeredByGet = 2;
@@ -774,12 +774,12 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(expiry, TimeUnit.MILLISECONDS)
       .loader(loader)
       .build();
-    long t0 = millis();
+    long t0 = ticks();
     c.get(key);
     sleep(expiry * 3 / 2);
     c.remove(key);
-    if (millis() - t0 < expiry * 2) {
-      sleep(expiry * 3 - (millis() - t0));
+    if (ticks() - t0 < expiry * 2) {
+      sleep(expiry * 3 - (ticks() - t0));
       assertThat(
         "0 timer events if we are to fast, " +
         "max. 1 timer event because entry was removed before the refresh could happen",
@@ -826,18 +826,18 @@ public class SlowExpiryTest extends TestingBase {
       .expireAfterWrite(5, TimeUnit.MINUTES)
       .build();
     c.put(1, 2);
-    c.expireAt(1, millis() + TestingParameters.MINIMAL_TICK_MILLIS);
+    c.expireAt(1, ticks() + TestingParameters.MINIMAL_TICK_MILLIS);
     await(() -> !c.containsKey(1));
   }
 
   @Test
   public void expireAt_nowIsh_doesRefresh() {
-    expireAt_x_doesRefresh(millis() + TestingParameters.MINIMAL_TICK_MILLIS);
+    expireAt_x_doesRefresh(ticks() + TestingParameters.MINIMAL_TICK_MILLIS);
   }
 
   @Test
   public void expireAt_NOW_doesRefresh() {
-    expireAt_x_doesRefresh(millis());
+    expireAt_x_doesRefresh(ticks());
   }
 
   @Test

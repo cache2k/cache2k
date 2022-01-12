@@ -47,7 +47,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final TimeReference clock;
   protected final boolean sharpExpiry;
   protected final boolean refreshAhead;
-  protected final long expiryMillis;
+  protected final long expiryTicks;
   private final Timer timer;
 
   private TimerEventListener<K, V> target;
@@ -58,16 +58,17 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     Cache2kConfig<K, V> cfg = buildContext.getConfig();
     if (cfg.getExpireAfterWrite() == null
       || cfg.getExpireAfterWrite() == Cache2kConfig.EXPIRY_ETERNAL) {
-      this.expiryMillis = ExpiryPolicy.ETERNAL;
+      this.expiryTicks = ExpiryPolicy.ETERNAL;
     } else {
-      this.expiryMillis = cfg.getExpireAfterWrite().toMillis();
+      this.expiryTicks = clock.toTicks(cfg.getExpireAfterWrite());
     }
     refreshAhead = cfg.isRefreshAhead();
     sharpExpiry = cfg.isSharpExpiry();
     if (cfg.getTimerLag() == null) {
       timer = new DefaultTimer(clock, buildContext.createScheduler());
     } else {
-      timer = new DefaultTimer(clock, buildContext.createScheduler(), cfg.getTimerLag().toMillis());
+      timer =
+        new DefaultTimer(clock, buildContext.createScheduler(), clock.toTicks(cfg.getTimerLag()));
     }
     this.resiliencePolicy = resiliencePolicy;
   }
@@ -90,20 +91,20 @@ public class StaticTiming<K, V> extends Timing<K, V> {
 
   @Override
   public long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime) {
-    return calcNextRefreshTime(e.getKey(), value, loadTime, e, null, expiryMillis, sharpExpiry);
+    return calcNextRefreshTime(e.getKey(), value, loadTime, e, null, expiryTicks, sharpExpiry);
   }
 
   @Override
   public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
     long pointInTime =
       resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
-    return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryMillis, pointInTime);
+    return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryTicks, pointInTime);
   }
 
   @Override
   public long cacheExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
     long pointInTime = resiliencePolicy.retryLoadAfter(e.getKey(), inf);
-    return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryMillis, pointInTime);
+    return Expiry.mixTimeSpanAndPointInTime(inf.getLoadTime(), expiryTicks, pointInTime);
   }
 
   /**
@@ -148,12 +149,12 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     if (expiryTime == ExpiryTimeValues.ETERNAL) {
       return expiryTime;
     }
-    long now = clock.millis();
+    long now = clock.ticks();
     if (Math.abs(expiryTime) <= now) {
       return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
     }
     if (expiryTime < 0) {
-      long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLagMillis();
+      long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLagTicks();
       if (timerTime >= now) {
         e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
         scheduleTask(timerTime, e);

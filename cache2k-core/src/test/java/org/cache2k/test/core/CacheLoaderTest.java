@@ -1303,7 +1303,7 @@ public class CacheLoaderTest extends TestingBase {
   public void asyncBulkLoaderContext() throws ExecutionException, InterruptedException {
     AtomicInteger checkCount = new AtomicInteger();
     AtomicReference<Cache> cacheRef = new AtomicReference<>();
-    long t = millis();
+    long t = ticks();
     Cache<Integer, Integer> c = target.cache(new CacheRule.Context<Integer, Integer>() {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {

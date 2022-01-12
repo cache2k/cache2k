@@ -36,15 +36,6 @@ public class Util {
 
   public static final String NAME_SEPARATOR = ":";
 
-  /**
-   * Format milliseconds since epoch to a compact timestamp.
-   */
-  public static String formatMillis(long millis) {
-    LocalDateTime t = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime();
-    return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(t);
-
-  }
-
   public static String compactFullName(CacheManager mgr, String cacheName) {
     if (!CacheManager.STANDARD_DEFAULT_MANAGER_NAME.equals(mgr.getName())) {
       return mgr.getName() + NAME_SEPARATOR + cacheName;
@@ -52,4 +43,8 @@ public class Util {
     return cacheName;
   }
 
+  public static String formatTime(Instant t) {
+    LocalDateTime ldt = t.atZone(ZoneId.systemDefault()).toLocalDateTime();
+    return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(ldt);
+  }
 }

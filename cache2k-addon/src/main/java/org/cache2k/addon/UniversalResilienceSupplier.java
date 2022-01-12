@@ -26,6 +26,7 @@ import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.WithSection;
 import org.cache2k.io.ResiliencePolicy;
+import org.cache2k.operation.TimeReference;
 
 import java.time.Duration;
 
@@ -47,19 +48,19 @@ public class UniversalResilienceSupplier<K, V> implements
   @Override
   public ResiliencePolicy<K, V> supply(CacheBuildContext buildContext) {
     Cache2kConfig<K, V> rootCfg = buildContext.getConfig();
-    return supplyPolicy(rootCfg);
+    return supplyPolicy(buildContext.getTimeReference(), rootCfg);
   }
 
-  static <K, V> ResiliencePolicy<K, V> supplyPolicy(Cache2kConfig<K, V> rootCfg) {
+  static <K, V> ResiliencePolicy<K, V> supplyPolicy(TimeReference clock, Cache2kConfig<K, V> rootCfg) {
     UniversalResilienceConfig cfg =
       rootCfg.getSections().getSection(UniversalResilienceConfig.class, DEFAULT_CONFIG);
-    long resilienceDuration = toMillis(cfg.getResilienceDuration());
-    long retryInterval = toMillis(cfg.getRetryInterval());
+    long resilienceDuration = toMillis(clock, cfg.getResilienceDuration());
+    long retryInterval = toMillis(clock, cfg.getRetryInterval());
     Duration expireAfterWrite = rootCfg.getExpireAfterWrite();
     if (expireAfterWrite == null && rootCfg.isEternal()) {
       expireAfterWrite = EXPIRY_ETERNAL;
     }
-    long maxRetryInterval = toMillis(cfg.getMaxRetryInterval());
+    long maxRetryInterval = toMillis(clock, cfg.getMaxRetryInterval());
     if (resilienceDuration == UNSET_LONG) {
       if (expireAfterWrite == EXPIRY_ETERNAL) {
         resilienceDuration = 0;
@@ -104,11 +105,11 @@ public class UniversalResilienceSupplier<K, V> implements
   /**
    * Convert duration to millis. Duration is capped to Long.MAX_VALUE by config.
    */
-  private static long toMillis(@Nullable Duration d) {
+  private static long toMillis(TimeReference clock, @Nullable Duration d) {
     if (d == null) {
       return UNSET_LONG;
     }
-    return d.toMillis();
+    return clock.toTicks(d);
   }
 
   @Override

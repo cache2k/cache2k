@@ -321,7 +321,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (mutationStartTime > 0) {
       return mutationStartTime;
     }
-    mutationStartTime = millis();
+    mutationStartTime = ticks();
     return mutationStartTime;
   }
 
@@ -444,8 +444,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     heapHit(e);
   }
 
-  private long millis() {
-    return heapCache.getClock().millis();
+  private long ticks() {
+    return heapCache.getClock().ticks();
   }
 
   public void heapMiss() {
@@ -775,7 +775,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     heapEntry.nextProcessingStep(LOAD_COMPLETE);
     entryLocked = true;
     if (needsLoadTimes()) {
-      loadCompletedTime = millis();
+      loadCompletedTime = ticks();
     }
     mutationCalculateExpiry();
   }

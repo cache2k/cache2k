@@ -83,7 +83,7 @@ public class StandardCommonMetrics implements CommonMetrics.Updater {
     AtomicLongFieldUpdater.newUpdater(StandardCommonMetrics.class, "loadMillis");
   private volatile long loadMillis;
   @Override
-  public long getLoadMillis() {
+  public long getLoadTicks() {
     return LOAD_MILLIS_UPDATER.get(this);
   }
 

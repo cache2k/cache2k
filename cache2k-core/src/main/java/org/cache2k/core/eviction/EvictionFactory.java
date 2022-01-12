@@ -75,7 +75,7 @@ public class EvictionFactory {
     if (config.getIdleScanTime() != null) {
       IdleScan idleScan =
         new IdleScan(ctx.getTimeReference(), ctx.createScheduler(),
-          eviction, config.getIdleScanTime().toMillis());
+          eviction, ctx.getTimeReference().toTicks(config.getIdleScanTime()));
       eviction = new IdleScanEviction(eviction, idleScan);
     }
     return eviction;

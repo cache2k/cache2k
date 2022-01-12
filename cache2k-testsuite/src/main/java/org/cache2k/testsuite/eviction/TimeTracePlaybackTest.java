@@ -194,7 +194,7 @@ public class TimeTracePlaybackTest {
       if (DEBUG_OUTPUT && d.key == TRACE_KEY) {
         System.err.println("EVICT");
       }
-      long delta = (clock.millis() - seconds2millis(d.lastAccess)) / UNIT;
+      long delta = (clock.ticks() - seconds2millis(d.lastAccess)) / UNIT;
       delta -= delta % RESOLUTION;
       List<Data> l = map.computeIfAbsent(delta, k -> new ArrayList<>());
       l.add(d);
@@ -312,7 +312,7 @@ public class TimeTracePlaybackTest {
 
     private void advanceClock(long now) {
       if (now != lastNow) {
-        long moveClock = now - clock.millis();
+        long moveClock = now - clock.ticks();
         if (moveClock > 0) {
           try {
             clock.sleep(moveClock);

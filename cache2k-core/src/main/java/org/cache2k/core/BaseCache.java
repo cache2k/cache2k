@@ -157,8 +157,8 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public void expireAt(K key, long millis) {
-    execute(key, Operations.SINGLETON.expire(key, millis));
+  public void expireAt(K key, long time) {
+    execute(key, Operations.SINGLETON.expire(key, time));
   }
 
   protected <R> R execute(K key, Semantic<K, V, R> op) {

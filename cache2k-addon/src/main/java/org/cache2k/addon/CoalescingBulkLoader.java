@@ -87,7 +87,7 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
   /**
    * Constructor using the specified time reference instance.
    * @param timeReference if the cache is using a different time reference, the instance is
-   *                      used to translate to milli seconds via {@link TimeReference#toMillis(long)}
+   *                      used to translate to milli seconds via {@link TimeReference#ticksToMillisCeiling(long)}
    */
   public CoalescingBulkLoader(AsyncBulkCacheLoader<K, V> forwardingLoader,
                               TimeReference timeReference, long maxDelayMillis, int maxBatchSize,
@@ -237,8 +237,8 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
     if (next == null) {
       return;
     }
-    long startTime = timeReference.toMillis(next.context.getStartTime());
-    long now = timeReference.toMillis(timeReference.millis());
+    long startTime = timeReference.ticksToMillisCeiling(next.context.getStartTime());
+    long now = timeReference.ticksToMillisCeiling(timeReference.ticks());
     scheduleTimer(startTime + maxDelayMillis - now);
   }
 
@@ -272,8 +272,8 @@ public class CoalescingBulkLoader<K, V> implements AsyncBulkCacheLoader<K, V>, A
             return false;
           }
           if (queueSize.get() < maxBatchSize) {
-            long startTime = timeReference.toMillis(next.context.getStartTime());
-            long now = timeReference.toMillis(timeReference.millis());
+            long startTime = timeReference.ticksToMillisCeiling(next.context.getStartTime());
+            long now = timeReference.ticksToMillisCeiling(timeReference.ticks());
             if (now - startTime < maxDelayMillis) {
               scheduleTimer(startTime + maxDelayMillis - now);
               return false;

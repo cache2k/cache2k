@@ -120,7 +120,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   protected volatile long keyMutationCnt = 0;
 
   protected long clearedTime = 0;
-  protected long startedTime;
+  protected long startedTime = 0;
 
   Eviction eviction;
 
@@ -328,7 +328,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public void initWithoutTimerHandler() {
-    startedTime = clock.millis();
+    startedTime = clock.ticks();
     if (isRefreshAhead() && timing instanceof TimeAgnosticTiming) {
       throw new IllegalArgumentException("refresh ahead enabled, but no expiry variant defined");
     }
@@ -354,7 +354,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     clearCnt++;
     timing.cancelAll();
     hash.clearWhenLocked();
-    clearedTime = clock.millis();
+    clearedTime = clock.ticks();
   }
 
   /**
@@ -733,7 +733,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     if (!isUpdateTimeNeeded()) {
       insertOrUpdateAndCalculateExpiry(e, value, 0, 0, 0, INSERT_STAT_PUT);
     } else {
-      long t = clock.millis();
+      long t = clock.ticks();
       insertOrUpdateAndCalculateExpiry(e, value, t, t, t, INSERT_STAT_PUT);
     }
   }
@@ -852,10 +852,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       if (!isUpdateTimeNeeded()) {
         value = function.apply(key);
       } else {
-        t0 = clock.millis();
+        t0 = clock.ticks();
         value = function.apply(key);
         if (!metrics.isDisabled()) {
-          t = clock.millis();
+          t = clock.ticks();
         }
       }
       synchronized (e) {
@@ -1250,7 +1250,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   @SuppressWarnings("unchecked")
   protected void load(Entry<K, V> e) {
     V v;
-    long t0 = !isUpdateTimeNeeded() ? 0 : clock.millis();
+    long t0 = !isUpdateTimeNeeded() ? 0 : clock.ticks();
     long refreshTime = t0;
     if (e.getNextRefreshTime() == Entry.EXPIRED_REFRESHED) {
       if (entryInRefreshProbationAccessed(e, t0)) {
@@ -1267,14 +1267,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     } catch (Throwable ouch) {
       long t = t0;
       if (!metrics.isDisabled() && isUpdateTimeNeeded()) {
-        t = clock.millis();
+        t = clock.ticks();
       }
       loadGotException(e, t0, t, ouch);
       return;
     }
     long t = t0;
     if (!metrics.isDisabled() && isUpdateTimeNeeded()) {
-      t = clock.millis();
+      t = clock.ticks();
     }
     insertOrUpdateAndCalculateExpiry(e, v, t0, t, refreshTime, INSERT_STAT_LOAD);
   }
@@ -1494,7 +1494,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   private void expireOrScheduleFinalExpireEvent(Entry<K, V> e) {
     long nrt = e.getNextRefreshTime();
-    long t = clock.millis();
+    long t = clock.ticks();
     if (t >= Math.abs(nrt)) {
       try {
         expireEntry(e);
@@ -1702,7 +1702,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         throw new Error(
           "cache2k integrity error: " +
           is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
-            generateInfoMaybeLocked(HeapCache.this, clock.millis()));
+            generateInfoMaybeLocked(HeapCache.this, clock.ticks()));
       }
       return null;
     });
@@ -1719,12 +1719,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public final InternalCacheInfo getInfo(InternalCache userCache) {
-    long t = clock.millis();
+    long t = clock.ticks();
     return generateInfoMaybeLocked(userCache, t);
   }
 
   public final InternalCacheInfo getConsistentInfo(InternalCache userCache) {
-    return generateInfoWithLock(userCache, clock.millis());
+    return generateInfoWithLock(userCache, clock.ticks());
   }
 
   private CacheBaseInfo generateInfoWithLock(InternalCache userCache, long t) {

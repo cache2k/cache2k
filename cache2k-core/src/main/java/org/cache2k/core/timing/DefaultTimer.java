@@ -57,12 +57,12 @@ public class DefaultTimer implements Timer {
   /**
    * Lag time to gather timer tasks for more efficient execution.
    */
-  private final long lagMillis;
+  private final long lagTicks;
 
   private final Runnable timerAction = new Runnable() {
     @Override
     public void run() {
-      timeReachedEvent(clock.millis());
+      timeReachedEvent(clock.ticks());
     }
   };
 
@@ -70,13 +70,13 @@ public class DefaultTimer implements Timer {
     this(clock, scheduler, DEFAULT_TIMER_LAG_MILLIS);
   }
 
-  public DefaultTimer(TimeReference clock, Scheduler scheduler, long lagMillis) {
-    this(clock, scheduler, lagMillis, DEFAULT_SLOTS_PER_WHEEL);
+  public DefaultTimer(TimeReference clock, Scheduler scheduler, long lagTicks) {
+    this(clock, scheduler, lagTicks, DEFAULT_SLOTS_PER_WHEEL);
   }
 
-  public DefaultTimer(TimeReference c, Scheduler scheduler, long lagMillis, int steps) {
-    structure = new TimerWheels(c.millis() + 1, lagMillis + 1, steps);
-    this.lagMillis = lagMillis;
+  public DefaultTimer(TimeReference c, Scheduler scheduler, long lagTicks, int steps) {
+    structure = new TimerWheels(c.ticks() + 1, lagTicks + 1, steps);
+    this.lagTicks = lagTicks;
     this.clock = c;
     this.scheduler = scheduler;
   }
@@ -100,7 +100,7 @@ public class DefaultTimer implements Timer {
     lock.lock();
     try {
       if (structure.schedule(task, time)) {
-        rescheduleEventually(time + lagMillis);
+        rescheduleEventually(time + lagTicks);
         return;
       }
       executeImmediately(task);
@@ -138,8 +138,8 @@ public class DefaultTimer implements Timer {
   /**
    * Lag to gather timer tasks processing. In milliseconds.
    */
-  public long getLagMillis() {
-    return lagMillis;
+  public long getLagTicks() {
+    return lagTicks;
   }
 
   /**
@@ -196,17 +196,16 @@ public class DefaultTimer implements Timer {
   }
 
   /**
-   * Schedule the next time we process expired times. At least wait {@link #lagMillis}.
-   * Also marks that no timer job is scheduled if run with -1 as time parameter.
+   * Schedule the next time we process expired times. At least wait {@link #lagTicks}.
+   * Also marks that no timer job is scheduled if run with Long.MAX_VALUE as time parameter.
    *
    * @param now the current time for calculations
    * @param time requested time for processing, or MAX_VALUE if nothing needs to be scheduled
    */
   private void schedule(long now, long time) {
     if (time != Long.MAX_VALUE) {
-      long earliestTime = now + lagMillis;
-      nextScheduled = Math.max(earliestTime, time);
-      scheduler.schedule(timerAction, clock.toMillis(nextScheduled));
+      long earliestTime = now + lagTicks;
+      scheduleNext(Math.max(earliestTime, time));
     } else {
       nextScheduled = Long.MAX_VALUE;
     }
@@ -218,11 +217,16 @@ public class DefaultTimer implements Timer {
    * We don't cancel a scheduled task. The additional event does not hurt.
    */
   void rescheduleEventually(long time) {
-    if (time >= nextScheduled - lagMillis) {
+    if (time >= nextScheduled - lagTicks) {
       return;
     }
-    nextScheduled = time;
-    scheduler.schedule(timerAction, nextScheduled);
+    scheduleNext(time);
+  }
+
+  private void scheduleNext(long nextWakeupTicks) {
+    nextScheduled = nextWakeupTicks;
+    scheduler.schedule(timerAction,
+      clock.ticksToMillisCeiling(nextScheduled - clock.ticks()));
   }
 
 }

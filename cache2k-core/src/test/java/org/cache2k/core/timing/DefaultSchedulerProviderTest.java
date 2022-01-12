@@ -47,6 +47,19 @@ public class DefaultSchedulerProviderTest {
     return new MyBuildContext();
   }
 
+  /**
+   * Immediate execute.
+   */
+  @Test
+  public void immediateExecute() throws Exception {
+    DefaultSchedulerProvider provider = new DefaultSchedulerProvider();
+    Scheduler s1 = provider.supply(ctx());
+    s1.schedule(() -> { }, 0);
+    s1.schedule(() -> { }, -2);
+  }
+  /**
+   * The effective scheduler is only closed after all executors are closed.
+   */
   @Test
   public void createAndClose() throws Exception {
     DefaultSchedulerProvider provider = new DefaultSchedulerProvider();

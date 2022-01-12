@@ -26,6 +26,8 @@ import org.cache2k.io.CacheLoaderException;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
 
+import java.time.Instant;
+
 /**
  * Standard behavior of the exception propagator.
  *
@@ -46,7 +48,8 @@ public final class DefaultExceptionPropagator<K, V> implements ExceptionPropagat
       if (expiry == ExpiryTimeValues.ETERNAL) {
         txt = "expiry=ETERNAL, cause: ";
       } else {
-        txt = "expiry=" + Util.formatMillis(expiry) + ", cause: ";
+        Instant t = Instant.ofEpochMilli(expiry);
+        txt = "expiry=" + Util.formatTime(t) + ", cause: ";
       }
     }
     return new CacheLoaderException(txt + loadExceptionInfo.getException(),

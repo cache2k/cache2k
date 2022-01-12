@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -72,18 +73,6 @@ public class TimerTest {
       result.add(t);
     }
     return result;
-  }
-
-  /**
-   * Move time forward and return tasks that are executed.
-   */
-  void run(long time) {
-    clock.moveTo(time);
-    if (clock.scheduledTime <= time) {
-      Runnable action = clock.scheduled;
-      clock.reset();
-      action.run();
-    }
   }
 
   Collection<MyTimerTask> extractUpTo(Collection<MyTimerTask> l, long time) {
@@ -196,7 +185,7 @@ public class TimerTest {
     init(startTime, 10, 10);
     MyTimerTask t = schedule(140).get(0);
     assertTrue(t.isScheduled());
-    run(150);
+    clock.run(150);
     assertTrue(t.executed);
   }
 
@@ -209,7 +198,7 @@ public class TimerTest {
     assertTrue(t.cancel());
     assertEquals("cancelled", t.getState());
     assertFalse(t.cancel());
-    run(150);
+    clock.run(150);
     assertFalse(t.executed);
   }
 
@@ -220,7 +209,7 @@ public class TimerTest {
     MyTimerTask t = schedule(140).get(0);
     assertTrue(t.isScheduled());
     timer.cancelAll();
-    run(150);
+    clock.run(150);
     assertFalse(t.executed);
   }
 
@@ -228,10 +217,10 @@ public class TimerTest {
   public void scheduleReachedTime1() {
     long startTime = 100;
     init(startTime, 10, 10);
-    run(145);
+    clock.run(145);
     MyTimerTask t = schedule(140).get(0);
     assertFalse("inserted in timer, since timer structure was not advanced", t.executed);
-    run(140 + 10);
+    clock.run(140 + 10);
     assertTrue(t.executed);
   }
 
@@ -239,12 +228,12 @@ public class TimerTest {
   public void scheduleDistantFuture() {
     long startTime = 100;
     init(startTime, 10, 10);
-    run(145);
+    clock.run(145);
     MyTimerTask t = schedule(987654).get(0);
     assertFalse(t.executed);
     assertEquals("scheduled", t.getState());
     assertTrue(t.isScheduled());
-    run(987654 + 27);
+    clock.run(987654 + 27);
     assertTrue(t.executed);
   }
 
@@ -257,10 +246,10 @@ public class TimerTest {
     List<MyTimerTask> scheduled = new ArrayList<>();
     for (long i = startTime; i < endTime; i++) {
       scheduled.addAll(schedule(i, i - 1, i - 3, i - 27));
-      run(i);
+      clock.run(i);
       scheduled.addAll(schedule(i, i - 1, i - 3, i - 27));
     }
-    run(endTime + lagMillis);
+    clock.run(endTime + lagMillis);
     assertThat(scheduled).are(new Condition<MyTimerTask>() {
       @Override
       public boolean matches(MyTimerTask value) {
@@ -294,7 +283,7 @@ public class TimerTest {
       scheduled.addAll(schedule(i));
     }
     for (long i = startTime + 1; i <= endTime + lagMillis; i++) {
-      run(i);
+      clock.run(i);
       Collection<MyTimerTask> expected = extractUpTo(scheduled, i - lagMillis);
       assertThat(executed).containsAll(expected);
     }
@@ -313,7 +302,7 @@ public class TimerTest {
       scheduled.addAll(schedule(i));
     }
     for (long i = startTime + 1; i <= endTime + lagMillis; i++) {
-      run(i);
+      clock.run(i);
       Collection<MyTimerTask> expected = extractUpTo(scheduled, i - lagMillis);
       assertThat(executed).containsAll(expected);
     }
@@ -324,7 +313,7 @@ public class TimerTest {
     long startTime = 2;
     init(startTime, lagMillis, 123);
     MyTimerTask t = schedule(startTime + offset).get(0);
-    run(startTime + offset + lagMillis);
+    clock.run(startTime + offset + lagMillis);
     assertTrue(t.executed);
   }
 
@@ -346,7 +335,7 @@ public class TimerTest {
   @Test
   public void schedule100Years() {
     init(System.currentTimeMillis(), 2);
-    schedule(clock.millis() + 100L * 1000 * 60 * 60 * 24 * 365);
+    schedule(clock.ticks() + 100L * 1000 * 60 * 60 * 24 * 365);
   }
 
   @Test
@@ -392,14 +381,26 @@ public class TimerTest {
     }
   }
 
-  static class MyClock implements TimeReference, Scheduler {
+  static class MyClock extends TimeReference.Milliseconds implements  Scheduler {
 
-    long time;
-    Runnable scheduled;
-    long scheduledTime = Long.MAX_VALUE;
+    private long time;
+    private Runnable scheduled;
+    private long scheduledTime = Long.MAX_VALUE;
 
     MyClock(long startTime) {
       this.time = startTime;
+    }
+
+    /**
+     * Move time forward and return tasks that are executed.
+     */
+    void run(long time) {
+      moveTo(time);
+      if (scheduledTime <= time) {
+        Runnable action = scheduled;
+        reset();
+        action.run();
+      }
     }
 
     void moveTo(long newTime) {
@@ -412,17 +413,18 @@ public class TimerTest {
     }
 
     @Override
-    public long millis() {
+    public long ticks() {
       return time;
     }
 
     @Override
-    public void sleep(long millis) { assert false; }
+    public void sleep(long ticks) { assert false; }
 
     @Override
-    public void schedule(Runnable runnable, long millis) {
-      assertThat(millis).isLessThanOrEqualTo(scheduledTime);
-      scheduledTime = millis;
+    public void schedule(Runnable runnable, long delayMillis) {
+      long ticks = time + toTicks(Duration.ofMillis(delayMillis));
+      assertThat(ticks).isLessThanOrEqualTo(scheduledTime);
+      scheduledTime = ticks;
       scheduled = () -> {
         scheduledTime = Long.MAX_VALUE;
         scheduled = null;

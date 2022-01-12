@@ -121,9 +121,9 @@ public class AllMutatorsExpireTest extends TestingBase {
     sleep(expiryTime);
     long laggingMillis = 0;
     if (c.containsKey(KEY)) {
-      long t1 = millis();
+      long t1 = ticks();
       await(() -> !c.containsKey(KEY));
-      laggingMillis = millis() - t1 + 1;
+      laggingMillis = ticks() - t1 + 1;
     }
     assertFalse(c.containsKey(KEY));
     assertNull(c.peek(KEY));

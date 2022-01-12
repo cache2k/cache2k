@@ -130,7 +130,7 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void expireAt(K key, long millis) {
+  public void expireAt(K key, long time) {
     throw new UnsupportedOperationException();
   }
 
