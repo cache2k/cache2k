@@ -66,9 +66,9 @@ public class CacheManagerInitTest {
   }
 
   @Test
-  public void slf4jInUse() {
+  public void suppressionCounterInUse() {
     Log l = Log.getLog(CacheManagerInitTest.class);
-    Assertions.assertThat(l).isInstanceOf(Log.Slf4jLogger.class);
+    Assertions.assertThat(l).isInstanceOf(Log.SuppressionCounter.class);
   }
 
 }
