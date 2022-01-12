@@ -20,10 +20,9 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
+import org.cache2k.core.timing.TimingUnitTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.Cache;
-import org.cache2k.core.HeapCache;
-import org.cache2k.core.util.TunableFactory;
 import org.cache2k.test.core.TestingParameters;
 import org.cache2k.testing.category.SlowTests;
 import org.junit.Test;
@@ -47,8 +46,7 @@ import static org.junit.Assert.*;
 @Category(SlowTests.class) @RunWith(Parameterized.class)
 public class AllMutatorsExpireTest extends TestingBase {
 
-  static final long EXPIRY_BEYOND_GAP =
-    TunableFactory.get(HeapCache.Tunable.class).sharpExpirySafetyGapMillis + 3;
+  static final long EXPIRY_BEYOND_GAP = TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS + 3;
   static final Integer KEY = 1;
   static final Integer VALUE = 1;
 

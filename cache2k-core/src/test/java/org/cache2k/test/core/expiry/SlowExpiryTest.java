@@ -22,14 +22,13 @@ package org.cache2k.test.core.expiry;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.timing.DefaultTimer;
+import org.cache2k.core.timing.TimingUnitTest;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.test.core.BasicCacheTest;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.HeapCache;
-import org.cache2k.core.util.TunableFactory;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.Cache;
@@ -412,10 +411,9 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void testExpireNoKeepSharpExpiryBeyondSafetyGap() {
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
-      .expireAfterWrite(t.sharpExpirySafetyGapMillis + 3, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS + 3, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
@@ -479,14 +477,12 @@ public class SlowExpiryTest extends TestingBase {
 
   @Test
   public void testExpireNoKeepGap() {
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
-    testExpireNoKeep(t.sharpExpirySafetyGapMillis);
+    testExpireNoKeep(getEffectiveSafetyGapMillis());
   }
 
   @Test
   public void testExpireNoKeepAfterGap() {
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
-    testExpireNoKeep(t.sharpExpirySafetyGapMillis + 3);
+    testExpireNoKeep(getEffectiveSafetyGapMillis() + 3);
   }
 
   @Test

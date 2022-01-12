@@ -28,8 +28,9 @@ import org.cache2k.core.HeapCache;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
+import org.cache2k.core.concurrency.ThreadFactoryProvider;
+import org.cache2k.core.timing.TimingUnitTest;
 import org.cache2k.operation.TimeReference;
-import org.cache2k.core.util.TunableFactory;
 import org.cache2k.pinpoint.TimeBox;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.io.CacheLoader;
@@ -87,7 +88,7 @@ public class TestingBase {
     new ThreadPoolExecutor(4, 8 * Runtime.getRuntime().availableProcessors(),
       21, TimeUnit.SECONDS,
       new SynchronousQueue<>(),
-      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory("test-loader-pool"),
+      ThreadFactoryProvider.DEFAULT.newThreadFactory("test-loader-pool"),
       new ThreadPoolExecutor.AbortPolicy());
 
   private Executor loaderExecutor = new ExecutorWrapper();
@@ -399,8 +400,7 @@ public class TestingBase {
   }
 
   public long getEffectiveSafetyGapMillis() {
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
-    return t.sharpExpirySafetyGapMillis;
+    return TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS;
   }
 
   public TimeReference getClock() {
@@ -518,7 +518,7 @@ public class TestingBase {
           new ThreadPoolExecutor(0, MINIMAL_LOADER_THREADS,
             21, TimeUnit.SECONDS,
             new SynchronousQueue<>(),
-            HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(
+            ThreadFactoryProvider.DEFAULT.newThreadFactory(
               Thread.currentThread().getName() + "-loader-pool"),
             (r, executor) -> {
               throw new Error("more threads are needed then expected");

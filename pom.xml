@@ -153,7 +153,7 @@
             <threadCount>2</threadCount>
             <perCoreThreadCount>true</perCoreThreadCount>
             <systemPropertyVariables>
-              <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>7654</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
+              <org.cache2k.sharpExpirySafetyGapMillis>7654</org.cache2k.sharpExpirySafetyGapMillis>
             </systemPropertyVariables>
           </configuration>
         </plugin>
@@ -642,7 +642,7 @@
                    the safety gap.
               -->
               <systemPropertyVariables>
-                <org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>1234</org.cache2k.core.HeapCache.Tunable.sharpExpirySafetyGapMillis>
+                <org.cache2k.sharpExpirySafetyGapMillis>1234</org.cache2k.sharpExpirySafetyGapMillis>
               </systemPropertyVariables>
             </configuration>
           </plugin>

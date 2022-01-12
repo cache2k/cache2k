@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Provide the default implementation for the thread factory.
  *
- * @author Jens Wilke; created: 2014-06-10
+ * @author Jens Wilke
  */
 public class DefaultThreadFactoryProvider implements ThreadFactoryProvider {
 

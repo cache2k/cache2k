@@ -23,15 +23,13 @@ package org.cache2k.core.eviction;
 import org.cache2k.operation.Weigher;
 import org.cache2k.core.Entry;
 import org.cache2k.core.IntegrityState;
-import org.cache2k.core.util.TunableConstants;
-import org.cache2k.core.util.TunableFactory;
 
 /**
  * Eviction algorithm inspired from CLOCK Pro with 3 clocks.
  *
  * <p>Uses a static allocation for hot and cold space sizes. No online or dynamic
  * optimization is done yet. However, the hit rate for all measured access traces is better
- * then LRU and it is resistant to scans.
+ * than LRU and resistant to scans.
  *
  * <p>From cache2k version 1.2 to version 1.4 the implementation was simplified and the
  * demotion of hot entries removed. The result achieves similar or better hit rates.
@@ -46,8 +44,14 @@ import org.cache2k.core.util.TunableFactory;
  *
  * @author Jens Wilke
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "rawtypes"})
 public class ClockProPlusEviction extends AbstractEviction {
+
+  static final int MAX_GHOST_ENTRIES = 3_000;
+  static final int GHOST_LOAD_PERCENT = 63;
+  static final int HOT_MAX_PERCENTAGE = 97;
+  static final int HIT_COUNTER_DECREASE_SHIFT = 6;
+  static final int GHOST_MAX_PERCENTAGE = 50;
 
   private long hotHits;
   private long coldHits;
@@ -61,8 +65,6 @@ public class ClockProPlusEviction extends AbstractEviction {
   private int coldSize;
   private int hotSize;
 
-  /** Maximum size of hot clock. 0 means normal clock behaviour */
-
   private Entry handCold;
   private Entry handHot;
 
@@ -70,26 +72,12 @@ public class ClockProPlusEviction extends AbstractEviction {
   private final Ghost ghostHead = new Ghost().shortCircuit();
   private int ghostSize = 0;
   private long hotMax = Long.MAX_VALUE;
-  private long ghostMax = Long.MAX_VALUE;
-
-  private static final int GHOST_LOAD_PERCENT;
-  private static final int HOT_MAX_PERCENTAGE;
-  private static final int HIT_COUNTER_DECREASE_SHIFT;
-  private static final int GHOST_MAX_PERCENTAGE;
-
-  static {
-    Tunable tunable = TunableFactory.get(Tunable.class);
-    GHOST_LOAD_PERCENT = tunable.ghostLoadPercentage;
-    HOT_MAX_PERCENTAGE = tunable.hotMaxPercentage;
-    HIT_COUNTER_DECREASE_SHIFT = tunable.hitCounterDecreaseShift;
-    GHOST_MAX_PERCENTAGE = tunable.ghostMaxPercentage;
-  }
+  private long ghostMax = MAX_GHOST_ENTRIES;
 
   public ClockProPlusEviction(HeapCacheForEviction heapCache, InternalEvictionListener listener,
                               long maxSize, Weigher weigher, long maxWeight,
                               boolean noChunking) {
     super(heapCache, listener, maxSize, weigher, maxWeight, noChunking);
-
     coldSize = 0;
     hotSize = 0;
     handCold = null;
@@ -125,7 +113,7 @@ public class ClockProPlusEviction extends AbstractEviction {
   protected void updateHotMax() {
     hotMax = getSize() * HOT_MAX_PERCENTAGE / 100;
     ghostMax = getSize() * GHOST_MAX_PERCENTAGE / 100 + 1;
-    ghostMax = Math.min(3_000, ghostMax);
+    ghostMax = Math.min(MAX_GHOST_ENTRIES, ghostMax);
     trimGhostSize();
   }
 
@@ -541,18 +529,6 @@ public class ClockProPlusEviction extends AbstractEviction {
       while ((e = e.next) != head) { count++; }
       return count;
     }
-
-  }
-
-  public static class Tunable extends TunableConstants {
-
-    public int hotMaxPercentage = 97;
-
-    public int hitCounterDecreaseShift = 6;
-
-    public int ghostLoadPercentage = 63;
-
-    public int ghostMaxPercentage = 50;
 
   }
 

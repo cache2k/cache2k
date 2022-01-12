@@ -23,11 +23,14 @@ package org.cache2k.core.api;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
+import org.cache2k.config.ConfigSection;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 /**
  * Context information when a cache is build.
@@ -77,6 +80,20 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext<K, V>
                                     CustomizationSupplier<? extends T> fallback) {
     if (supplier == null) { return createCustomization(fallback); }
     return createCustomization(supplier);
+  }
+
+
+  InternalConfig INTERNAL_CONFIG_DEFAULT = new InternalConfig();
+
+  /**
+   * Return internal config section or default fallback.
+   */
+  default InternalConfig internalConfig() {
+    InternalConfig cfg = getConfig().getSections().getSection(InternalConfig.class);
+    if (cfg == null) {
+      cfg = INTERNAL_CONFIG_DEFAULT;
+    }
+    return cfg;
   }
 
 }

@@ -22,13 +22,13 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.CacheClosedException;
+import org.cache2k.core.timing.TimingUnitTest;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.Cache;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.core.HeapCache;
-import org.cache2k.core.util.TunableFactory;
 import org.cache2k.testing.category.SlowTests;
 import static org.hamcrest.Matchers.*;
 import org.junit.Test;
@@ -61,9 +61,8 @@ public class ExpiryListenerTest extends TestingBase {
   @Test
   public void expireBeforePut() {
     AtomicInteger callCount = new AtomicInteger();
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
     final long expiryMillis = 100;
-    assertThat(t.sharpExpirySafetyGapMillis, greaterThan(expiryMillis));
+    assertThat(TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS, greaterThan(expiryMillis));
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .addListener((CacheEntryExpiredListener<Integer, Integer>) (c1, e) -> callCount.incrementAndGet())
       .expiryPolicy((key, value, startTime, currentEntry) -> startTime + expiryMillis)
@@ -195,9 +194,8 @@ public class ExpiryListenerTest extends TestingBase {
 
   private void testListenerCalled(boolean sharp, boolean beyondSafetyGap) {
     AtomicInteger callCount = new AtomicInteger();
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
     long expiryMillis =
-      (beyondSafetyGap ? t.sharpExpirySafetyGapMillis : 0) + TestingParameters.MINIMAL_TICK_MILLIS;
+      (beyondSafetyGap ? getEffectiveSafetyGapMillis() : 0) + TestingParameters.MINIMAL_TICK_MILLIS;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .addListener((CacheEntryExpiredListener<Integer, Integer>) (c1, e) -> callCount.incrementAndGet())
       .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS)
@@ -219,9 +217,8 @@ public class ExpiryListenerTest extends TestingBase {
   public void asyncExpiredListenerAfterRefreshCalled() {
     AtomicInteger listenerCallCount = new AtomicInteger();
     AtomicInteger loaderCallCount = new AtomicInteger();
-    HeapCache.Tunable t = TunableFactory.get(HeapCache.Tunable.class);
     final long extraGap = TestingParameters.MINIMAL_TICK_MILLIS;
-    long expiryMillis = t.sharpExpirySafetyGapMillis + extraGap;
+    long expiryMillis = getEffectiveSafetyGapMillis() + extraGap;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .addListener((CacheEntryExpiredListener<Integer, Integer>) (c1, e) -> listenerCallCount.incrementAndGet())
       .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS)

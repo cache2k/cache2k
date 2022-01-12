@@ -20,6 +20,7 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
+import org.cache2k.core.api.InternalConfig;
 import org.cache2k.operation.Weigher;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -37,7 +38,7 @@ public class EvictionFactory {
    * Segmenting the eviction only improves for lots of concurrent inserts or evictions,
    * there is no effect on read performance.
    */
-  public Eviction constructEviction(InternalCacheBuildContext ctx,
+  public Eviction constructEviction(InternalCacheBuildContext<?, ?> ctx,
                                     HeapCacheForEviction hc, InternalEvictionListener l,
                                     Cache2kConfig config, int availableProcessors) {
     boolean strictEviction = config.isStrictEviction();
@@ -60,7 +61,7 @@ public class EvictionFactory {
         throw new IllegalArgumentException("entryCapacity of 0 is not supported.");
       }
     }
-    int segmentCountOverride = HeapCache.TUNABLE.segmentCountOverride;
+    int segmentCountOverride = ctx.internalConfig().getSegmentCount();
     int segmentCount =
       EvictionFactory.determineSegmentCount(
         strictEviction, availableProcessors,

@@ -26,13 +26,15 @@ import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
-import org.cache2k.core.HeapCache;
+import org.cache2k.core.api.InternalConfig;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
+
+import java.time.Duration;
 
 /**
  * Expiry time is constant
@@ -41,7 +43,26 @@ import org.cache2k.io.ResiliencePolicy;
  */
 public class StaticTiming<K, V> extends Timing<K, V> {
 
-  static final long SAFETY_GAP_MILLIS = HeapCache.TUNABLE.sharpExpirySafetyGapMillis;
+  /**
+   * When sharp expiry is enabled, the expiry timer goes
+   * before the actual expiry to switch back to a time checking
+   * scheme when the cache is accessed. This prevents
+   * that an expired value gets served by the cache when the time
+   * is too late. Experiments showed that a value of one second is
+   * usually sufficient.
+   *
+   * <p>OS scheduling is not reliable on virtual servers (e.g. KVM)
+   * to give the expiry task compute time on a busy server. To be safe in
+   * extreme cases, this parameter is set to a high value.
+   */
+  public static final Duration SHARP_EXPIRY_SAFETY_GAP;
+
+  static {
+    long millis = Long.parseLong(
+      System.getProperty("org.cache2k.sharpExpirySafetyGapMillis", "27127")
+    );
+    SHARP_EXPIRY_SAFETY_GAP = Duration.ofMillis(millis);
+  }
 
   protected final ResiliencePolicy<K, V> resiliencePolicy;
   protected final TimeReference clock;
@@ -49,8 +70,8 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final boolean refreshAhead;
   protected final long expiryTicks;
   private final Timer timer;
-
   private TimerEventListener<K, V> target;
+  private long safetyGapTicks;
 
   StaticTiming(InternalCacheBuildContext<K, V> buildContext,
                ResiliencePolicy<K, V> resiliencePolicy) {
@@ -71,6 +92,15 @@ public class StaticTiming<K, V> extends Timing<K, V> {
         new DefaultTimer(clock, buildContext.createScheduler(), clock.toTicks(cfg.getTimerLag()));
     }
     this.resiliencePolicy = resiliencePolicy;
+    this.safetyGapTicks = fetchSafetyGapTicks(buildContext);
+  }
+
+  private static long fetchSafetyGapTicks(InternalCacheBuildContext<?, ?> ctx) {
+    long ticks = ctx.getTimeReference().toTicks(SHARP_EXPIRY_SAFETY_GAP);
+    if (ticks <= 0) {
+      ticks = Long.MAX_VALUE;
+    }
+    return ticks;
   }
 
   @Override
@@ -154,7 +184,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
     }
     if (expiryTime < 0) {
-      long timerTime = -expiryTime - SAFETY_GAP_MILLIS - timer.getLagTicks();
+      long timerTime = -expiryTime - safetyGapTicks - timer.getLagTicks();
       if (timerTime >= now) {
         e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
         scheduleTask(timerTime, e);

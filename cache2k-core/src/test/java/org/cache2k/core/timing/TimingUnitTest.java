@@ -27,6 +27,7 @@ import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.HeapCache;
+import org.cache2k.core.api.InternalConfig;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
@@ -48,6 +49,9 @@ import static org.junit.Assert.*;
 @SuppressWarnings("unchecked")
 @Category(FastTests.class)
 public class TimingUnitTest {
+
+  public static final long SHARP_EXPIRY_GAP_MILLIS =
+    StaticTiming.SHARP_EXPIRY_SAFETY_GAP.toMillis();
 
   private static final Entry ENTRY = new Entry();
   private static final long NOW = 10000000;
@@ -275,8 +279,8 @@ public class TimingUnitTest {
     long  later = sharpPointInTime - duration - 1;
     long t = h.calculateNextRefreshTime(e, null, later);
     assertTrue("expect gap bigger then duration",
-      HeapCache.TUNABLE.sharpExpirySafetyGapMillis > duration);
-    assertNotEquals(sharpPointInTime - HeapCache.TUNABLE.sharpExpirySafetyGapMillis, t);
+      SHARP_EXPIRY_GAP_MILLIS > duration);
+    assertNotEquals(sharpPointInTime - SHARP_EXPIRY_GAP_MILLIS, t);
     assertTrue(Math.abs(t) > NOW);
     assertTrue(Math.abs(t) < sharpPointInTime);
   }

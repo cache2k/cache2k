@@ -24,12 +24,14 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * Provider interface for a thread factory. This makes it possible to change
- * the thread factory via the {@link org.cache2k.core.util.TunableConstants}.
+ * the thread factory via the {@link org.cache2k.core.api.InternalConfig}.
  *
- * @author Jens Wilke; created: 2014-06-10
+ * @author Jens Wilke
  */
 public interface ThreadFactoryProvider {
 
+  ThreadFactoryProvider DEFAULT = new DefaultThreadFactoryProvider();
+  
   /**
    * Construct a new thread factory for the pool.
    */

@@ -23,6 +23,7 @@ package org.cache2k.test.core;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.cache2k.core.HeapCache;
+import org.cache2k.core.concurrency.ThreadFactoryProvider;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
@@ -314,7 +315,7 @@ public class CacheLoaderTest extends TestingBase {
     ThreadPoolExecutor pool = new ThreadPoolExecutor(0, 10,
       21, TimeUnit.SECONDS,
       new SynchronousQueue<>(),
-      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(namePrefix),
+      ThreadFactoryProvider.DEFAULT.newThreadFactory(namePrefix),
       new ThreadPoolExecutor.AbortPolicy());
     Cache<Integer, Integer> c = target.cache(b -> {
       b.loaderExecutor(pool);
@@ -353,7 +354,7 @@ public class CacheLoaderTest extends TestingBase {
     ThreadPoolExecutor pool = new ThreadPoolExecutor(0, 1,
       21, TimeUnit.SECONDS,
       new SynchronousQueue<>(),
-      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(namePrefix),
+      ThreadFactoryProvider.DEFAULT.newThreadFactory(namePrefix),
       new ThreadPoolExecutor.AbortPolicy());
     Cache<Integer, Integer> c = target.cache(b -> b.loaderExecutor(pool)
       .loader(key -> {

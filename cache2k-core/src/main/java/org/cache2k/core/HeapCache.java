@@ -35,7 +35,6 @@ import org.cache2k.core.eviction.HeapCacheForEviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.core.operation.Operations;
-import org.cache2k.core.concurrency.DefaultThreadFactoryProvider;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
@@ -43,8 +42,6 @@ import org.cache2k.core.timing.Timing;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
-import org.cache2k.core.util.TunableConstants;
-import org.cache2k.core.util.TunableFactory;
 import org.cache2k.event.CacheClosedListener;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.ExceptionPropagator;
@@ -86,8 +83,6 @@ import static org.cache2k.core.util.Util.*;
  */
 @SuppressWarnings({"rawtypes", "SynchronizationOnLocalVariableOrMethodParameter"})
 public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEviction<K, V> {
-
-  public static final Tunable TUNABLE = TunableFactory.get(Tunable.class);
 
   protected final String name;
   public final CacheManagerImpl manager;
@@ -201,6 +196,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   private static final int UPDATE_TIME_NEEDED = 32;
   private static final int RECORD_REFRESH_TIME = 64;
 
+  private final ThreadFactoryProvider threadFactoryProvider;
+
   protected final boolean isKeepAfterExpired() {
     return (featureBits & KEEP_AFTER_EXPIRED) > 0;
   }
@@ -267,18 +264,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     }
     exceptionPropagator =
       ctx.createCustomization(cfg.getExceptionPropagator(), DefaultExceptionPropagator.SINGLETON);
-    metrics = TUNABLE.commonMetricsFactory.create(new CommonMetricsFactory.Parameters() {
-      @Override
-      public boolean isDisabled() {
-        return cfg.isDisableStatistics();
-      }
-
-      @Override
-      public boolean isPrecise() {
-        return false;
-      }
-    });
-
+    metrics = ctx.createCustomization(ctx.internalConfig().getCommonMetrics());
+    threadFactoryProvider =
+      ctx.createCustomization(
+        ctx.internalConfig().getThreadFactoryProvider());
     if (cfg.getLoaderExecutor() != null) {
       loaderExecutor = ctx.createCustomization(cfg.getLoaderExecutor());
     } else {
@@ -300,7 +289,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return new ThreadPoolExecutor(corePoolThreadSize, threadCount,
       21, TimeUnit.SECONDS,
       new SynchronousQueue<>(),
-      HeapCache.TUNABLE.threadFactoryProvider.newThreadFactory(getThreadNamePrefix()),
+      threadFactoryProvider.newThreadFactory(getThreadNamePrefix()),
       new ThreadPoolExecutor.AbortPolicy());
   }
 
@@ -1815,7 +1804,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   /**
-   * We store either the spreaded hash code or the raw integer key in the hash table
+   * We store either the spread hash code or the raw integer key in the hash table
    */
   public int toStoredHashCodeOrKey(K key, int hc) {
     return hc;
@@ -1839,35 +1828,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   public StampedHash<K, V> createHashTable() {
     return new StampedHash<>(this);
-  }
-
-  public static class Tunable extends TunableConstants {
-
-    /**
-     * When sharp expiry is enabled, the expiry timer goes
-     * before the actual expiry to switch back to a time checking
-     * scheme when the cache is accessed. This prevents
-     * that an expired value gets served by the cache when the time
-     * is too late. Experiments showed that a value of one second is
-     * usually sufficient.
-     *
-     * <p>OS scheduling is not reliable on virtual servers (e.g. KVM)
-     * to give the expiry task compute time on a busy server. To be safe in
-     * extreme cases, this parameter is set to a high value.
-     */
-    public long sharpExpirySafetyGapMillis = 27 * 1000 + 127;
-
-    public ThreadFactoryProvider threadFactoryProvider = new DefaultThreadFactoryProvider();
-
-    public StandardCommonMetricsFactory commonMetricsFactory =
-      new StandardCommonMetricsFactory();
-
-    /**
-     * Override parameter for segment count. Has to be power of two, e.g. 2, 4, 8, etc.
-     * Invalid numbers will be replaced by the next higher power of two. Default is 0, no override.
-     */
-    public int segmentCountOverride = 0;
-
   }
 
 }
