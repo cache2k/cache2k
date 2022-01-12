@@ -21,6 +21,7 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.NonNull;
 import org.cache2k.annotation.Nullable;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
@@ -83,7 +84,7 @@ public class SpringCache2kCache implements Cache {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T get(Object key, Class<T> type) {
+  public <T> T get(Object key, @Nullable Class<T> type) {
     Object value = cache.get(key);
     if (value != null && type != null && !type.isInstance(value)) {
       throw new IllegalStateException(
@@ -111,7 +112,7 @@ public class SpringCache2kCache implements Cache {
     }
   }
 
-  private class WrappedException extends RuntimeException {
+  private static class WrappedException extends RuntimeException {
     public WrappedException(Throwable cause) {
       super(cause);
     }

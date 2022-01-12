@@ -29,6 +29,7 @@ import org.cache2k.operation.CacheControl;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for evey method of the Spring cache2k cache manager.
@@ -46,21 +47,39 @@ public class SpringCache2KCacheManagerTest {
   @Test(expected = IllegalArgumentException.class)
   public void nameMissing() {
     SpringCache2kCacheManager m = getManager();
-    m.addCaches(b -> Cache2kBuilder.forUnknownTypes().manager(m.getNativeCacheManager()));
+    m.addCaches(b -> b);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void managerMissing() {
+  public void defaultManagerRejected() {
     SpringCache2kCacheManager m = getManager();
     m.addCaches(b -> Cache2kBuilder.forUnknownTypes().name("abc"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
+  public void defaultSetupSupplier() {
+    SpringCache2kCacheManager m = new SpringCache2kCacheManager(() ->
+      Cache2kBuilder.forUnknownTypes()
+        .manager(CacheManager.getInstance(
+          SpringCache2KCacheManagerTest.class.getSimpleName() + "defaultSetupSupplier")
+        ));
+    assertNotNull(m.getCache("abc"));
+  }
+
+  @Test(expected = IllegalStateException.class)
   public void doubleAdd() {
     SpringCache2kCacheManager m = getManager();
+    m.setAllowUnknownCache(true);
     assertNotNull(m.getCache("abc"));
-    assertNotNull(m.getCache("abc"));
-    m.addCaches(b -> Cache2kBuilder.forUnknownTypes().name("abc"));
+    m.addCaches(b -> b.name("abc"));
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void doubleAdd2() {
+    SpringCache2kCacheManager m = getManager();
+    m.addCaches(
+      b -> b.name("abc"),
+      b -> b.name("abc"));
   }
 
   private SpringCache2kCacheManager getManager() {
@@ -140,6 +159,45 @@ public class SpringCache2KCacheManagerTest {
     m.setAllowUnknownCache(true);
     assertNotNull(m.getCache("cache1"));
     assertTrue(m.getConfiguredCacheNames().isEmpty());
+  }
+
+  @Test
+  public void testExample1() {
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(springCache2kDefaultSupplier1());
+    assertEquals("springDefault", m.getNativeCacheManager().getName());
+  }
+
+  @Test
+  public void testExample2() {
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(springCache2kDefaultSupplier2());
+    assertEquals(6666,
+      CacheControl.of(m.getCache("unknown").getNativeCache())
+        .getEntryCapacity());
+  }
+
+  /**
+   * Example default supplier, topProvide defaults for all cache2k caches when used
+   * with Spring Boot.
+   */
+  public SpringCache2kDefaultSupplier springCache2kDefaultSupplier1() {
+    return () -> SpringCache2kDefaultSupplier.supplyDefaultBuilder()
+      .expireAfterWrite(6, TimeUnit.MINUTES)
+      .entryCapacity(5555)
+      .strictEviction(true);
+  }
+
+  /**
+   * Example default supplier with different manager
+   */
+  public SpringCache2kDefaultSupplier springCache2kDefaultSupplier2() {
+    return () -> Cache2kBuilder.forUnknownTypes()
+      .manager(org.cache2k.CacheManager.getInstance("specialManager"))
+      .setup(SpringCache2kDefaultSupplier::applySpringDefaults)
+      .expireAfterWrite(6, TimeUnit.MINUTES)
+      .entryCapacity(6666)
+      .strictEviction(true);
   }
 
 }
