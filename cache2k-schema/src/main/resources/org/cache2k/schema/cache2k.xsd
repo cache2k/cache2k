@@ -127,7 +127,7 @@
         <xs:element name ="caches" minOccurs="0">
           <xs:annotation>
             <xs:documentation>
-              Section that defines the configuraton values for caches.
+              Section that defines the configuration values for caches.
             </xs:documentation>
           </xs:annotation>
           <xs:complexType>
