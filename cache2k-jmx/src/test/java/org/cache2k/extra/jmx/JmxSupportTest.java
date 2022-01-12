@@ -61,21 +61,6 @@ public class JmxSupportTest {
   private @Nullable ObjectName objectName;
 
 
-  private static class KeyForMutation {
-    int value = 0;
-    public int hashCode() { return value; }
-  }
-
-  static MBeanInfo getCacheManagerInfo(String name) throws Exception {
-    ObjectName on = getCacheManagerObjectName(name);
-    return SERVER.getMBeanInfo(on);
-  }
-
-  private static ObjectName getCacheManagerObjectName(String name)
-    throws MalformedObjectNameException {
-    return new ObjectName("org.cache2k:type=CacheManager,name=" + maybeQuote(name));
-  }
-
   private static String maybeQuote(String name) {
     if (needsQuoting(name)) {
       return "\"" + name + "\"";
@@ -123,16 +108,22 @@ public class JmxSupportTest {
       .name(name)
       .eternal(true)
       .setup(JmxSupport::enable)
+      .strictEviction(true)
       .build();
     objectName = constructCacheObjectName(name);
+    checkAttribute("Name", name);
+    checkAttribute("ManagerName", c.getCacheManager().getName());
     checkAttribute("KeyType", "Long");
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
     checkAttribute("EntryCapacity", 1802L);
+    checkAttribute("CapacityLimit", 1802L);
     checkAttribute("MaximumWeight", -1L);
     checkAttribute("TotalWeight", 0L);
     checkAttribute("Implementation", "HeapCache");
     checkAttribute("ClearedTime", null);
+    checkAttribute("LoaderPresent", false);
+    checkAttribute("WeigherPresent", false);
     assertTrue("reasonable CreatedTime",
       ((Date) retrieve("CreatedTime")).compareTo(beforeCreation) >= 0);
     objectName = constructCacheStatisticsObjectName(name);
@@ -153,6 +144,13 @@ public class JmxSupportTest {
     checkAttribute("HitRate", 0.0);
     checkAttribute("MillisPerLoad", 0.0);
     checkAttribute("TotalLoadMillis", 0L);
+    objectName = constructCacheObjectName(name);
+    invoke("clear");
+    assertTrue("reasonable ClearedTime",
+      ((Date) retrieve("ClearedTime")).compareTo(beforeCreation) >= 0);
+    invoke("changeCapacity", 4711, "long");
+    checkAttribute("EntryCapacity", 4711L);
+    checkAttribute("CapacityLimit", 4711L);
     c.close();
   }
 
@@ -210,6 +208,7 @@ public class JmxSupportTest {
     checkAttribute("ValueType", "java.util.List<java.util.Collection<Long>>");
     checkAttribute("Size", 0L);
     checkAttribute("EntryCapacity", -1L);
+    checkAttribute("WeigherPresent", true);
     long v = (Long) retrieve("MaximumWeight");
     assertTrue(v >= 123456789L);
     checkAttribute("TotalWeight", 0L);
@@ -244,6 +243,16 @@ public class JmxSupportTest {
     throws MBeanException, AttributeNotFoundException, InstanceNotFoundException,
     ReflectionException, IOException {
     return SERVER.getAttribute(objectName, name);
+  }
+
+  private Object invoke(String methodName)
+    throws ReflectionException, InstanceNotFoundException, MBeanException, IOException {
+    return SERVER.invoke(objectName, methodName, null, null);
+  }
+
+  private Object invoke(String methodName, Object params, String signature)
+    throws ReflectionException, InstanceNotFoundException, MBeanException, IOException {
+    return SERVER.invoke(objectName, methodName, new Object[]{params}, new String[]{signature});
   }
 
   static MBeanInfo getCacheInfo(String name) throws Exception {

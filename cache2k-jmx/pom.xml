@@ -13,6 +13,8 @@
   <name>cache2k JMX support</name>
 
   <description>
+    A light weight and high performance Java caching library.
+    Optional module adding support for JMX monitoring and management.
   </description>
 
   <dependencies>

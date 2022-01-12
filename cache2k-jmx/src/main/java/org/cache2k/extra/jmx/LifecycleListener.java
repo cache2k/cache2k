@@ -32,6 +32,7 @@ import org.cache2k.event.CacheCreatedListener;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.CompletableFuture;
@@ -55,46 +56,55 @@ class LifecycleListener implements CacheCreatedListener, CacheClosedListener {
                                                        CacheBuildContext<K, V> ctx) {
     MBeanServer mbs = getPlatformMBeanServer();
     CacheControlMXBean management = new CacheControlMXBeanImpl(cache);
-    String name = createCacheControlName(cache.getCacheManager(), cache);
-    try {
-      mbs.registerMBean(management, new ObjectName(name));
-    } catch (InstanceAlreadyExistsException existing) {
-      LOG.debug("register failure, cache: " + cache.getName(), existing);
-    } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + name, e);
-    }
+    registerBean(mbs, management, createCacheControlName(cache.getCacheManager(), cache));
     if (!management.isStatisticsEnabled()) {
       return CompletableFuture.completedFuture(null);
     }
-    name = createCacheStatisticsName(cache.getCacheManager(), cache);
-    try {
-      mbs.registerMBean(new CacheStatisticsMXBeanImpl(cache), new ObjectName(name));
-    } catch (InstanceAlreadyExistsException existing) {
-      LOG.debug("register failure, cache: " + cache.getName(), existing);
-    } catch (Exception e) {
-      throw new CacheException("register JMX bean, ObjectName: " + name, e);
-    }
+    registerBean(mbs,
+      new CacheStatisticsMXBeanImpl(cache),
+      createCacheStatisticsName(cache.getCacheManager(), cache));
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> onCacheClosed(Cache<?, ?> cache) {
     MBeanServer mbs = getPlatformMBeanServer();
-    String name = createCacheControlName(cache.getCacheManager(), cache);
-    try {
-      mbs.unregisterMBean(new ObjectName(name));
-    } catch (InstanceNotFoundException ignore) {
-    } catch (Exception e) {
-      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
-    }
-    name = createCacheStatisticsName(cache.getCacheManager(), cache);
-    try {
-      mbs.unregisterMBean(new ObjectName(name));
-    } catch (InstanceNotFoundException ignore) {
-    } catch (Exception e) {
-      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
-    }
+    unregisterBean(mbs, createCacheControlName(cache.getCacheManager(), cache));
+    unregisterBean(mbs, createCacheStatisticsName(cache.getCacheManager(), cache));
     return CompletableFuture.completedFuture(null);
+  }
+
+  static void registerBean(MBeanServer mbs, Object obj, String name) {
+    try {
+      mbs.registerMBean(obj, objectName(name));
+    } catch (InstanceAlreadyExistsException existing) {
+      LOG.debug("register failure, name: " + name, existing);
+    } catch (Exception e) {
+      throw new CacheException("register JMX bean, ObjectName: " + name, e);
+    }
+  }
+
+  /**
+   * Unregister rethrow unexpected exceptions.
+   */
+  static void unregisterBean(MBeanServer mbs, String name) {
+    try {
+      mbs.unregisterMBean(objectName(name));
+    } catch (InstanceNotFoundException ignore) {
+    } catch (Exception e) {
+      throw new CacheException("unregister JMX bean, ObjectName: " + name, e);
+    }
+  }
+
+  /**
+   * Malformed names should never happen since we sanitize the names
+   */
+  static ObjectName objectName(String name) {
+    try {
+      return new ObjectName(name);
+    } catch (MalformedObjectNameException e) {
+      throw new CacheException("Error created ObjectName, name: " + name, e);
+    }
   }
 
   private static MBeanServer getPlatformMBeanServer() {
