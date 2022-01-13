@@ -20,12 +20,14 @@ package org.cache2k.testing;
  * #L%
  */
 
-import org.junit.Test;
+import org.cache2k.pinpoint.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * @author Jens Wilke
@@ -39,58 +41,64 @@ public class SimulatedClockTest {
     return v;
   }
 
-  @Test(timeout = 10000)
+  @Test
   public void scheduleAndTrigger() throws InterruptedException {
-    assertEquals(100000, clock.ticks());
+    assertThat(clock.ticks()).isEqualTo(100000);
     AtomicBoolean trigger = new AtomicBoolean();
     clock.schedule(() -> trigger.set(true), ticksToMillis(5));
     clock.sleep(10);
-    assertTrue(trigger.get());
+    assertThat(trigger.get()).isTrue();
   }
 
   @Test
   public void sequenceSleep0() throws InterruptedException {
-    assertEquals(100000, clock.ticks());
+    assertThat(clock.ticks()).isEqualTo(100000);
     clock.schedule(new Event(0), 0);
     clock.schedule(new Event(2), 7);
     clock.schedule(new Event(1), 1);
-    assertEquals(0, trigger.get());
+    assertThat(trigger.get()).isEqualTo(0);
     clock.sleep(0);
-    assertEquals(1, trigger.get());
+    assertThat(trigger.get()).isEqualTo(1);
     clock.sleep(0);
-    assertEquals(2, trigger.get());
+    assertThat(trigger.get()).isEqualTo(2);
     clock.sleep(0);
-    assertEquals(3, trigger.get());
+    assertThat(trigger.get()).isEqualTo(3);
     clock.sleep(0);
-    assertEquals(3, trigger.get());
+    assertThat(trigger.get()).isEqualTo(3);
   }
 
   @Test
   public void sequence0Sleep0() throws InterruptedException {
-    assertEquals(100000, clock.ticks());
+    assertThat(clock.ticks()).isEqualTo(100000);
     clock.schedule(new Event(-1), 0);
     clock.schedule(new Event(-1), 0);
     clock.schedule(new Event(-1), 0);
     clock.sleep(0);
-    assertEquals(3, trigger.get());
+    assertThat(trigger.get()).isEqualTo(3);
   }
 
   @Test
   public void sequenceSleepX() throws InterruptedException {
-    assertEquals(100000, clock.ticks());
+    assertThat(clock.ticks()).isEqualTo(100000);
     clock.schedule(new Event(0), 0);
     clock.schedule(new Event(3), 9);
     clock.schedule(new Event(2), 7);
     clock.schedule(new Event(1), 1);
-    assertEquals(0, trigger.get());
+    assertThat(trigger.get()).isEqualTo(0);
     clock.sleep(ticksToMillis(10));
-    assertEquals(4, trigger.get());
+    assertThat(trigger.get()).isEqualTo(4);
   }
 
-  @Test(expected = AssertionError.class)
-  public void assertionPropagated() throws InterruptedException {
-    clock.schedule(() -> fail("always"), 0);
-    clock.sleep(0);
+  @Test
+  public void assertionPropagated() {
+    assertThatCode(
+      () -> {
+        clock.schedule(() -> {
+          throw new ExpectedException();
+        }, 0);
+        clock.sleep(0);
+      }
+    ).isInstanceOf(ExpectedException.class);
   }
 
   class Event implements Runnable {
@@ -105,17 +113,19 @@ public class SimulatedClockTest {
     public void run() {
       int count = trigger.getAndIncrement();
       if (expectedTrigger >= 0) {
-        assertEquals("trigger sequence", expectedTrigger, count);
+        assertThat(count)
+          .as("trigger sequence")
+          .isEqualTo(expectedTrigger);
       }
     }
   }
 
-  @Test(timeout = 10000)
+  @Test
   public void clockAdvancing() {
     long t0 = clock.ticks();
     while (clock.ticks() == t0) {
     }
-    assertTrue(clock.ticks() > t0);
+    assertThat(clock.ticks() > t0).isTrue();
   }
 
 }

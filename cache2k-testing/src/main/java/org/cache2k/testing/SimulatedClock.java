@@ -47,12 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SimulatedClock extends TimeReference.Milliseconds implements Scheduler {
 
-  static final ThreadLocal<Boolean> EXECUTOR_CONTEXT = new ThreadLocal<Boolean>() {
-    @Override
-    protected Boolean initialValue() {
-      return false;
-    }
-  };
+  static final ThreadLocal<Boolean> EXECUTOR_CONTEXT = ThreadLocal.withInitial(() -> false);
 
   private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -71,7 +66,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
    * The tree sorts the timer events.
    * Guarded by: {@link #structureLock}.
    */
-  private final TreeMap<Event, Event> tree = new TreeMap<Event, Event>();
+  private final TreeMap<Event, Event> tree = new TreeMap<>();
 
   /**
    * Every time we look on the clock we count this.
@@ -79,7 +74,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
   private final AtomicLong clockReadingCounter = new AtomicLong();
 
   /**
-   * Clock makes a milli second progress after this many readings.
+   * Clock makes a millisecond progress after this many readings.
    */
   private static final int CLOCK_READING_PROGRESS = 1000;
 
@@ -101,9 +96,9 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
   private final int jobExecutionLagTicks;
 
   /**
-   * Executor used to move the clock. If millis() moves the clock, we need
+   * Executor used to move the clock. If ticks() moves the clock, we need
    * to do that in a separate executor, because that may trigger timer events.
-   * Otherwise that can mean a deadlock since millis() is called within
+   * Otherwise, that can mean a deadlock since ticks() is called within
    * the cache when a lock is held.
    */
   private final Executor advanceExecutor = wrapExecutor(DEFAULT_EXECUTOR);
@@ -158,7 +153,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
     schedule(command, 0, 0);
   }
 
-  Runnable advance = new Runnable() {
+  final Runnable advance = new Runnable() {
     @Override
     public void run() {
       progressAndRunEvents(now.get() + 1);
@@ -203,7 +198,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
    */
   private void sleepInExecutor(long ticks) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
-    schedule(() -> latch.countDown(), ticksToMillisCeiling(ticks - now.get()));
+    schedule(latch::countDown, ticksToMillisCeiling(ticks - now.get()));
     latch.await(3, TimeUnit.MILLISECONDS);
   }
 
@@ -342,8 +337,9 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
     }
 
     public String toString() {
-      return "Event#" + number + "{time=" +
-        (time == Long.MAX_VALUE ? "forever" : Long.toString(time))
+      return "Event#" + number + "{" +
+        "requestedWakeupTime=" + (requestedWakeupTime == Long.MAX_VALUE ? "forever" : Long.toString(requestedWakeupTime)) +
+        ", time=" + (time == Long.MAX_VALUE ? "forever" : Long.toString(time))
         + "}";
     }
   }
@@ -359,7 +355,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
 
   class WrappedExecutor implements Executor {
 
-    Executor executor;
+    private final Executor executor;
 
     WrappedExecutor(Executor ex) {
       executor = ex;
@@ -369,15 +365,12 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
     public void execute(Runnable r) {
       tasksWaitingForExecution.incrementAndGet();
       try {
-        executor.execute(new Runnable() {
-          @Override
-          public void run() {
-            EXECUTOR_CONTEXT.set(true);
-            try {
-              r.run();
-            } finally {
-              taskFinished();
-            }
+        executor.execute(() -> {
+          EXECUTOR_CONTEXT.set(true);
+          try {
+            r.run();
+          } finally {
+            taskFinished();
           }
         });
       } catch (RejectedExecutionException ex) {

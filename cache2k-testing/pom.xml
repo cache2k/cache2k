@@ -14,7 +14,7 @@
     Defines different categories (SlowTests, FastTests, ...) we can specify for unit testing.
     Added as test dependency, otherwise we cannot specify the category in aggregator builds / on top level.
     This serves also as a test scope BOM for transitive dependencies to JUnit and hamcrest.
-    Currently for internal testing purposes only. Not deployed to central.
+    Currently, for internal testing purposes only. Not deployed to central.
   </description>
 
   <artifactId>cache2k-testing</artifactId>
@@ -24,11 +24,6 @@
   <dependencies>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit4.version}</version>
-    </dependency>
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-pinpoint</artifactId>
       <version>${project.version}</version>
@@ -37,6 +32,29 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>cache2k-api</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- FIXME: remove -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit4.version}</version>
+    </dependency>
+    <!-- FIXME: remove -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit5.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit5.version}</version>
     </dependency>
 
   </dependencies>
