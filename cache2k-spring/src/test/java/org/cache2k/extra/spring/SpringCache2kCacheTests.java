@@ -22,10 +22,8 @@ package org.cache2k.extra.spring;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.junit.After;
-import org.junit.Before;
-
-import static org.junit.Assert.assertNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Execute spring test suite.
@@ -34,18 +32,18 @@ import static org.junit.Assert.assertNull;
  */
 public class SpringCache2kCacheTests extends AbstractCacheTests<SpringCache2kCache> {
 
-  private Cache nativeCache;
+  private Cache<?, ?> nativeCache;
   private SpringCache2kCache cache;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     SpringCache2kCacheManager mgm = new SpringCache2kCacheManager();
-    Cache2kBuilder builder = mgm.getDefaultBuilder().name(CACHE_NAME);
+    Cache2kBuilder<?, ?> builder = mgm.getDefaultBuilder().name(CACHE_NAME);
     cache = mgm.buildAndWrap(builder);
     nativeCache = cache.getNativeCache();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     nativeCache.close();
   }
@@ -56,7 +54,7 @@ public class SpringCache2kCacheTests extends AbstractCacheTests<SpringCache2kCac
   }
 
   @Override
-  protected Cache getNativeCache() {
+  protected Cache<?, ?> getNativeCache() {
     return nativeCache;
   }
 

@@ -162,13 +162,13 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
     return this;
   }
 
-  private SpringCache2kCache addCache(Cache2kBuilder<?, ?> builder) {
+  private void addCache(Cache2kBuilder<?, ?> builder) {
     String name = builder.config().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager,
       "Manager must be identical in builder.");
     configuredCacheNames.add(name);
-    return name2cache.compute(name, (name2, existingCache) -> {
+    name2cache.compute(name, (name2, existingCache) -> {
       if (existingCache != null) {
         throw new IllegalStateException("Cache already configured");
       }
@@ -259,7 +259,7 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   }
 
   @Override
-  public void destroy() throws Exception {
+  public void destroy() {
     manager.close();
     name2cache.clear();
   }

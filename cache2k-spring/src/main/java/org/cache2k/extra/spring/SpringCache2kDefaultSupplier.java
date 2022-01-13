@@ -56,7 +56,7 @@ public interface SpringCache2kDefaultSupplier extends Supplier<Cache2kBuilder<?,
     return
       Cache2kBuilder.forUnknownTypes()
         .manager(CacheManager.getInstance(DEFAULT_SPRING_CACHE_MANAGER_NAME))
-        .setup(b -> applySpringDefaults(b));
+        .setup(SpringCache2kDefaultSupplier::applySpringDefaults);
   }
 
 }

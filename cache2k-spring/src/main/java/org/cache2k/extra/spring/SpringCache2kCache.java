@@ -21,7 +21,6 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.CacheEntry;
-import org.cache2k.annotation.NonNull;
 import org.cache2k.annotation.Nullable;
 import org.springframework.cache.Cache;
 import org.springframework.util.Assert;
@@ -72,7 +71,7 @@ public class SpringCache2kCache implements Cache {
   }
 
   static class WrappedValue implements ValueWrapper {
-    Object value;
+    final Object value;
     public WrappedValue(CacheEntry<Object, Object> entry) {
       this.value = entry.getValue();
     }
@@ -95,7 +94,7 @@ public class SpringCache2kCache implements Cache {
 
   /**
    * This method is called instead of {@link #get} and {@link #put} in case {@code sync=true} is
-   * specified on the {@code Cachable} annotation.
+   * specified on the {@code Cacheable} annotation.
    */
   @SuppressWarnings("unchecked")
   @Override

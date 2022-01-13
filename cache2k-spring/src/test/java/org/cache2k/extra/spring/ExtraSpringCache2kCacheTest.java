@@ -21,28 +21,28 @@ package org.cache2k.extra.spring;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheEntry;
-import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheLoaderException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.cache2k.extra.spring.AbstractCacheTests.createRandomKey;
 
 /**
  * Some extra tests not covered by {@link SpringCache2kCacheTests}
  *
  * @author Jens Wilke
  */
+@SuppressWarnings("ConstantConditions")
 public class ExtraSpringCache2kCacheTest {
 
   SpringCache2kCache cache;
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (cache != null) {
       cache.getNativeCache().close();
@@ -58,7 +58,7 @@ public class ExtraSpringCache2kCacheTest {
 
   @Test
   public void testNoLoadingCache() {
-    assertFalse(getCache().isLoaderPresent());
+    assertThat(getCache().isLoaderPresent()).isFalse();
   }
 
   /**
@@ -67,24 +67,25 @@ public class ExtraSpringCache2kCacheTest {
   @Test
   public void testEvict() {
     SpringCache2kCache cache = getCache();
-    String key = AbstractCacheTests.createRandomKey();
+    String key = createRandomKey();
     Object value = "george";
     cache.put(key, value);
-    assertEquals(value, cache.get(key).get());
+    assertThat(cache.get(key).get()).isEqualTo(value);
     cache.evict(key);
-    assertNull(cache.get(key));
+    assertThat(cache.get(key)).isNull();
   }
 
   /**
    * Missing from the generic tests
    */
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testTypeCheck() {
     SpringCache2kCache cache = getCache();
     String key = AbstractCacheTests.createRandomKey();
     Object value = "george";
     cache.put(key, value);
-    cache.get(key, Integer.class);
+    assertThatCode(() -> cache.get(key, Integer.class))
+      .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
@@ -93,7 +94,7 @@ public class ExtraSpringCache2kCacheTest {
     SpringCache2kCache cacheWithLoader = constructCache(cacheName, b ->
         b.loader(key -> "123")
       );
-    assertTrue(cacheWithLoader.isLoaderPresent());
+    assertThat(cacheWithLoader.isLoaderPresent()).isTrue();
     cacheWithLoader.getNativeCache().close();
   }
 
@@ -105,18 +106,16 @@ public class ExtraSpringCache2kCacheTest {
       .getCache(cacheName);
   }
 
-  @Test(expected = CacheLoaderException.class)
-  public void testLoadingCacheWithException() throws Exception {
+  @Test
+  public void testLoadingCacheWithException() {
     String cacheName =
       ExtraSpringCache2kCacheTest.class.getSimpleName() + "-withLoaderException";
     SpringCache2kCache cacheWithLoader = constructCache(cacheName, b -> b
       .loader(key -> { throw new IOException("ouch"); })
     );
-    try {
-      cacheWithLoader.get("123", (Callable) null);
-    } finally {
-      cacheWithLoader.getNativeCache().close();
-    }
+    assertThatCode(() ->
+      cacheWithLoader.get("123", (Callable<Object>) null))
+      .isInstanceOf(CacheLoaderException.class);
   }
 
   @Test
@@ -124,22 +123,13 @@ public class ExtraSpringCache2kCacheTest {
     String cacheName =
       ExtraSpringCache2kCacheTest.class.getSimpleName() + "-withAdvancedLoader";
     SpringCache2kCache cacheWithLoader = constructCache(cacheName, b -> b
-      .loader(new AdvancedCacheLoader() {
-          @Override
-          public Object load(
-            Object key, long startTime, CacheEntry currentEntry) {
-            return "123";
-          }
-        }));
-    assertTrue(cacheWithLoader.isLoaderPresent());
-    Object v = cacheWithLoader.get("321", new Callable<Object>() {
-      @Override
-      public Object call() throws Exception {
-        fail("this is never called");
-        return null;
-      }
+      .loader((key, startTime, currentEntry) -> "123"));
+    assertThat(cacheWithLoader.isLoaderPresent()).isTrue();
+    Object v = cacheWithLoader.get("321", () -> {
+      fail("this is never called");
+      return null;
     });
-    assertEquals("123", v);
+    assertThat(v).isEqualTo("123");
     cacheWithLoader.getNativeCache().close();
   }
 

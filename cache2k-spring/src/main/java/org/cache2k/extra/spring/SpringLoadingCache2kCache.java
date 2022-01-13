@@ -37,7 +37,7 @@ class SpringLoadingCache2kCache extends SpringCache2kCache {
 
   /**
    * <p>Ignore the {@code valueLoader} parameter in case a loader is present. This makes
-   * sure the loader is consistently used and we make use of the cache2k features
+   * sure the loader is consistently used, and we make use of the cache2k features
    * refresh ahead and resilience. Does not wrap into
    * {@link org.springframework.cache.Cache.ValueRetrievalException}
    * intentionally, since this is only needed if the callable is used.
