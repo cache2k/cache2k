@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.annotation.NonNull;
 import org.cache2k.config.Cache2kConfig;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
 
@@ -47,7 +48,7 @@ import java.util.function.Function;
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#spring">
  *   Spring Framework - cache2k User Guide</a>
  */
-public class SpringCache2kCacheManager implements CacheManager {
+public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
 
   /**
    * @deprecated use {@link SpringCache2kDefaultSupplier#DEFAULT_SPRING_CACHE_MANAGER_NAME}
@@ -255,6 +256,12 @@ public class SpringCache2kCacheManager implements CacheManager {
     boolean loaderPresent = cfg.getLoader() != null || cfg.getAdvancedLoader() != null;
     return loaderPresent ?
       new SpringLoadingCache2kCache(nativeCache) : new SpringCache2kCache(nativeCache);
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    manager.close();
+    name2cache.clear();
   }
 
 }

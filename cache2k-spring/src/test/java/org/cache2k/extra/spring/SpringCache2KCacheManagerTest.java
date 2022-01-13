@@ -20,13 +20,16 @@ package org.cache2k.extra.spring;
  * #L%
  */
 
+import org.assertj.core.api.Assertions;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.*;
 
 import org.cache2k.operation.CacheControl;
 import org.junit.Test;
+import org.springframework.cache.Cache;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -175,6 +178,21 @@ public class SpringCache2KCacheManagerTest {
     assertEquals(6666,
       CacheControl.of(m.getCache("unknown").getNativeCache())
         .getEntryCapacity());
+  }
+
+  @Test
+  public void destroy() throws Exception {
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(
+        CacheManager.getInstance(
+          SpringCache2KCacheManagerTest.class.getSimpleName() + "destroy"));
+    SpringCache2kCache cache = m.getCache("test1");
+    assertFalse(cache.getNativeCache().isClosed());
+    m.destroy();
+    assertTrue(cache.getNativeCache().isClosed());
+    assertThatCode(() -> {
+      m.getCache("hello");
+    }).isInstanceOf(IllegalStateException.class);
   }
 
   /**
