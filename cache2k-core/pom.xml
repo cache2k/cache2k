@@ -34,11 +34,10 @@
       <version>1.7.32</version>
       <optional>true</optional>
     </dependency>
-
     <!--
       slf4j api is included in test scope by maven and it is the first pick.
       add simple log output to see log output.
-     -->
+      -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>

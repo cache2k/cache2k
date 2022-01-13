@@ -38,29 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class LogTest {
 
-  public void slf4jAdapter() {
-    InvocationsRecorder recorder = new InvocationsRecorder();
-    Log log = new Log.Slf4jLogger(recorder.getProxy(Logger.class));
-    assertThat(log.isDebugEnabled()).isTrue();
-    assertThat(log.isInfoEnabled()).isTrue();
-    Exception ex = new ExpectedException();
-    log.debug("debug");
-    log.debug("debug", ex);
-    log.info("info");
-    log.info("info", ex);
-    log.warn("warn");
-    log.warn("warn", ex);
-    final String exceptionString = ex.getClass().getName();
-    assertThat(recorder.getRecording()).isEqualTo("isDebugEnabled()\n" +
-      "isInfoEnabled()\n" +
-      "debug(\"debug\")\n" +
-      "debug(\"debug\"" + exceptionString + ")\n" +
-      "info(\"info\")\n" +
-      "info(\"info\")\n" +
-      "warn(\"warn\")\n" +
-      "warn(\"warn\"" + exceptionString + ")\n");
-  }
-
   @Test
   public void julAdapter() {
     java.util.logging.Logger logger = java.util.logging.Logger.getLogger(this.getClass().getName());
@@ -97,43 +74,6 @@ public class LogTest {
     assertThat(log.getWarnCount()).isEqualTo(2);
     assertThat(log.getDebugCount()).isEqualTo(2);
     assertThat(log.getInfoCount()).isEqualTo(2);
-  }
-
-  static class InvocationsRecorder {
-
-    private StringBuilder recording = new StringBuilder();
-
-    @SuppressWarnings("unchecked")
-    public <T> T getProxy(Class<T>... types) {
-      InvocationHandler h = (proxy, method, args) -> {
-        recording.append(method.getName());
-        recording.append('(');
-        if (args != null) {
-          for (Object o : args) {
-            if (o instanceof String) {
-              recording.append('"').append(o).append('"');
-            } else {
-              recording.append(o);
-            }
-          }
-        }
-        recording.append(')');
-        recording.append('\n');
-        if (Boolean.class.equals(method.getReturnType()) ||
-             Boolean.TYPE.equals(method.getReturnType())) {
-          return Boolean.TRUE;
-        } else if (method.getReturnType() != Void.TYPE) {
-          throw new IllegalArgumentException("unsupported return type: " + method.getReturnType());
-        }
-        return null;
-      };
-      return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), types, h);
-    }
-
-    public String getRecording() {
-      return recording.toString();
-    }
-
   }
 
 }
