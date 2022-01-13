@@ -50,6 +50,17 @@
         <artifactId>cache2k-testing</artifactId>
         <version>${project.version}</version>
         <scope>test</scope>
+      <!-- Exclude JUnit5 to have parallel test execution with JUnit4 -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit</groupId>
+          <artifactId>junit-vintage-engine</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.junit</groupId>
+          <artifactId>junit-jupiter-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
