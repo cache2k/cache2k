@@ -20,13 +20,13 @@ package test;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.Cache2kBuilder;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
 
 import org.cache2k.core.log.Log;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Jens Wilke
@@ -35,16 +35,16 @@ public class InitTest {
 
   @Test
   public void config() {
-    Cache2kBuilder b = Cache2kBuilder.forUnknownTypes();
+    Cache2kBuilder<?, ?> b = forUnknownTypes();
     b.name("testCache");
     b.build();
-    assertEquals(1802, b.config().getEntryCapacity());
+    assertThat(b.config().getEntryCapacity()).isEqualTo(1802);
   }
 
   @Test
   public void slf4jInUse() {
     Log l = Log.getLog(InitTest.class);
-    Assertions.assertThat(l).isInstanceOf(Log.Slf4jLogger.class);
+    assertThat(l).isInstanceOf(Log.Slf4jLogger.class);
   }
 
 }

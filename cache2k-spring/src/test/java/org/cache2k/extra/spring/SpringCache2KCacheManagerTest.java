@@ -24,7 +24,6 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.cache2k.Cache2kBuilder.forUnknownTypes;
@@ -99,7 +98,7 @@ public class SpringCache2KCacheManagerTest {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(
         CacheManager.getInstance(
-          SpringCache2KCacheManagerTest.class.getSimpleName() + "notConfigured"));
+          SpringCache2KCacheManagerTest.class.getSimpleName() + "testMissing"));
     m.setAllowUnknownCache(false);
     assertThatCode(() -> m.getCache("testUnknown"))
       .isInstanceOf(IllegalArgumentException.class);
@@ -109,7 +108,7 @@ public class SpringCache2KCacheManagerTest {
   public void testAll() {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(
-        SpringCache2KCacheManagerTest.class.getSimpleName() + "notConfigured");
+        SpringCache2KCacheManagerTest.class.getSimpleName() + "testAll");
     assertThat(m.isAllowUnknownCache())
       .as("allow unknown cache is default")
       .isTrue();
@@ -118,9 +117,6 @@ public class SpringCache2KCacheManagerTest {
     m.getCache("test");
     assertThat(m.getCacheNames().size()).isEqualTo(1);
     assertThat(m.getCacheMap().size()).isEqualTo(1);
-    m.setCaches(singletonList(
-      forUnknownTypes().name("other").config()));
-    assertThat(m.getCacheNames().size()).isEqualTo(2);
   }
 
   @Test
@@ -160,10 +156,21 @@ public class SpringCache2KCacheManagerTest {
   public void testDynamicCache() {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(
-        SpringCache2KCacheManagerTest.class.getSimpleName() + "dynamicCache");
+        this.getClass().getSimpleName() + "dynamicCache");
     m.setAllowUnknownCache(true);
     assertThat(m.getCache("cache1")).isNotNull();
     assertThat(m.getConfiguredCacheNames().isEmpty()).isTrue();
+  }
+
+  @Test
+  public void testSetCacheNames() {
+    SpringCache2kCacheManager m =
+      new SpringCache2kCacheManager(
+        () -> Cache2kBuilder.forUnknownTypes().manager(CacheManager.getInstance("setCacheNames")));
+    m.setCacheNames();
+    m.setCacheNames("1", "2", "3");
+    assertThat(m.isAllowUnknownCache()).isFalse();
+    assertThat(m.getCache(("1"))).isNotNull();
   }
 
   @Test

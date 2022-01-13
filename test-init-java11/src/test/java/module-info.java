@@ -20,10 +20,12 @@
 /**
  * @author Jens Wilke
  */
-module test.init.java11 {
+module test.init.java11test {
+  requires org.slf4j;
   requires org.cache2k.api;
   requires org.cache2k.core;
   requires org.assertj.core;
-  requires junit;
+  requires org.junit.jupiter.api;
+  requires org.junit.platform.engine;
   exports test;
 }

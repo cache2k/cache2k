@@ -28,6 +28,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -41,8 +42,7 @@ import java.util.function.Function;
  * A Spring cache manager that manages cache2k caches. The manager delegates to the cache2k
  * native {@link org.cache2k.CacheManager}. The available caches can be
  * configured programmatically in a Spring configuration class via the use
- * of {@link #addCaches(Function[])}, via a Spring XML configuration
- * and {@link #setCaches(Collection)} or via the cache2k XML configuration.
+ * of {@link #addCaches(Function[])}  or via the cache2k XML configuration.
  *
  * @author Jens Wilke
  * @see <a href="https://cache2k.org/docs/latest/user-guide.html#spring">
@@ -118,9 +118,10 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   }
 
   /**
-   * Returns an existing cache or creates and wraps a new cache. When a new
-   * cache is created which was not added by {@link #addCache(Cache2kConfig)} the
-   * default setup from {@link #defaultSetup} is applied.
+   * Returns an existing cache or creates and wraps a new cache if the creation
+   * of unknown caches is enabled. When a new cache is created which was not added by
+   * {@link #addCaches} the default setup from {@link #defaultSetup} or
+   * {@link SpringCache2kDefaultSupplier} is applied.
    */
   @Override
   public @NonNull SpringCache2kCache getCache(String name) {
@@ -177,16 +178,24 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   }
 
   /**
-   * Configure the known caches via the configuration bean. This method is intended to
-   * be used together with Springs' own XML bean configuration. If a cache name
-   * is configured also with a cache2k XML configuration, the configuration is merged.
+   * @see #setCacheNames(Collection)
    */
-  public void setCaches(Collection<Cache2kConfig<?, ?>> cacheConfigurationList) {
-    cacheConfigurationList.forEach(this::addCache);
+  public void setCacheNames(String... names) {
+    setCacheNames(Arrays.asList(names));
   }
 
-  private void addCache(Cache2kConfig<?, ?> cfg) {
-    addCache(Cache2kBuilder.of(cfg).manager(manager));
+  /**
+   * Initialize the specified caches with defaults if not yet present and disable
+   * dynamic creation of caches by setting {@link #setAllowUnknownCache(boolean)} to {@code false}
+   */
+  public void setCacheNames(Collection<String> names) {
+    for (String name : names) {
+      try {
+        addCaches(b -> b.name(name));
+      } catch (IllegalStateException ignore) {
+      }
+    }
+    allowUnknownCache = false;
   }
 
   /**
@@ -233,9 +242,12 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
 
   /**
    * If {@code false}, the cache manager only manages a cache if added via {@link #addCaches},
-   * {@link #setCaches(Collection)} or enlisted in the cache2k XML configuration.
+   * of {@link #setCacheNames(String...)} or enlisted in the cache2k XML configuration.
    * Setting this to {@code true} will create a cache with a default configuration if the requested
    * cache name is not known. The default is {@code true}.
+   *
+   * <p>Other Spring cache managers use the notion of 'dynamic' cache creation for the same
+   * concept.
    */
   public void setAllowUnknownCache(boolean v) {
     allowUnknownCache = v;

@@ -1,8 +1,8 @@
-package org.cache2k.core;
+package test;
 
 /*-
  * #%L
- * cache2k initialization tests
+ * cache2k initialization tests Java 11
  * %%
  * Copyright (C) 2000 - 2022 headissue GmbH, Munich
  * %%
@@ -21,8 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.core.log.Log;
-import org.cache2k.pinpoint.ExpectedException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import java.lang.reflect.InvocationHandler;
@@ -33,22 +32,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Jens Wilke
  */
-public class LogTest {
+public class Slf4jLogTest {
 
+  /**
+   * Expect Slf4j is active
+   */
+  @Test
+  public void usingSlf4j() {
+    assertThat(Log.getLog("any").getClass()).isEqualTo(Log.Slf4jLogger.class);
+  }
+
+  /**
+   * Test all relevant log methods via a simple proxy
+   */
   @Test
   public void slf4jAdapter() {
     InvocationsRecorder recorder = new InvocationsRecorder();
     Log log = new Log.Slf4jLogger(recorder.getProxy(Logger.class));
     assertThat(log.isDebugEnabled()).isTrue();
     assertThat(log.isInfoEnabled()).isTrue();
-    Exception ex = new ExpectedException();
+    Exception ex = new IllegalMonitorStateException();
     log.debug("debug");
     log.debug("debug", ex);
     log.info("info");
     log.info("info", ex);
     log.warn("warn");
     log.warn("warn", ex);
-    final String exceptionString = ex.getClass().getName();
+    String exceptionString = ex.getClass().getName();
     assertThat(recorder.getRecording()).isEqualTo("isDebugEnabled()\n" +
       "isInfoEnabled()\n" +
       "debug(\"debug\")\n" +
@@ -61,7 +71,7 @@ public class LogTest {
 
   static class InvocationsRecorder {
 
-    private StringBuilder recording = new StringBuilder();
+    private final StringBuilder recording = new StringBuilder();
 
     @SuppressWarnings("unchecked")
     public <T> T getProxy(Class<T>... types) {

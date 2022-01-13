@@ -46,20 +46,15 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!--
+    Use slf4j in this init test
+     -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.32</version>
       <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <version>3.17.2</version>
-      <scope>test</scope>
-    </dependency>
-
 
   </dependencies>
 
