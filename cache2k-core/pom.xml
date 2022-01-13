@@ -53,12 +53,16 @@
       <!-- Exclude JUnit5 to have parallel test execution with JUnit4 -->
       <exclusions>
         <exclusion>
-          <groupId>org.junit</groupId>
-          <artifactId>junit-vintage-engine</artifactId>
+          <groupId>org.junit.vintage</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.junit</groupId>
-          <artifactId>junit-jupiter-api</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.junit.platform</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
