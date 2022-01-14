@@ -21,7 +21,6 @@ package org.cache2k.core.eviction;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.test.core.TestingParameters;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.pinpoint.stress.ThreadingStressTester;
 import org.cache2k.testing.category.SlowTests;
@@ -30,7 +29,9 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static java.lang.Long.MAX_VALUE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.test.core.TestingParameters.MAX_FINISH_WAIT_MILLIS;
 
 /**
  * @author Jens Wilke
@@ -50,8 +51,8 @@ public class WeigherStressTest extends TestingBase {
       builder()
         .entryCapacity(-1)
         .weigher((key, value) -> value)
-      .maximumWeight(Long.MAX_VALUE)
-      .build();
+        .maximumWeight(MAX_VALUE)
+        .build();
     AtomicInteger offset = new AtomicInteger();
     Runnable inserter = () -> {
       int start = offset.getAndAdd(perThread);
@@ -65,10 +66,12 @@ public class WeigherStressTest extends TestingBase {
     };
     ThreadingStressTester tst = new ThreadingStressTester();
     tst.setOneShotMode(true);
-    tst.setOneShotTimeoutMillis(TestingParameters.MAX_FINISH_WAIT_MILLIS);
+    tst.setOneShotTimeoutMillis(MAX_FINISH_WAIT_MILLIS);
     tst.addTask(threads, inserter);
     tst.run();
-    assertEquals("total weight is 0", 0, getInfo().getTotalWeight());
+    assertThat(getInfo().getTotalWeight())
+      .as("total weight is 0")
+      .isEqualTo(0);
   }
 
   /**
@@ -83,7 +86,7 @@ public class WeigherStressTest extends TestingBase {
       builder()
         .entryCapacity(-1)
         .weigher((key, value) -> value)
-        .maximumWeight(Long.MAX_VALUE)
+        .maximumWeight(MAX_VALUE)
         .build();
     AtomicInteger offsetInsert = new AtomicInteger();
     AtomicInteger offsetRemove = new AtomicInteger();
@@ -109,7 +112,9 @@ public class WeigherStressTest extends TestingBase {
     for (int k : c.keys()) {
       c.remove(k);
     }
-    assertEquals("total weight is 0", 0, getInfo().getTotalWeight());
+    assertThat(getInfo().getTotalWeight())
+      .as("total weight is 0")
+      .isEqualTo(0);
   }
 
   /**
@@ -141,7 +146,9 @@ public class WeigherStressTest extends TestingBase {
     for (int k : c.keys()) {
       c.remove(k);
     }
-    assertEquals("total weight is 0", 0, getInfo().getTotalWeight());
+    assertThat(getInfo().getTotalWeight())
+      .as("total weight is 0")
+      .isEqualTo(0);
   }
 
 }

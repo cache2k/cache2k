@@ -33,9 +33,10 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
 /**
@@ -123,16 +124,18 @@ public class AllMutatorsExpireTest extends TestingBase {
       await(() -> !c.containsKey(KEY));
       laggingMillis = ticks() - t1 + 1;
     }
-    assertFalse(c.containsKey(KEY));
-    assertNull(c.peek(KEY));
-    assertNull(c.peekEntry(KEY));
+    assertThat(c.containsKey(KEY)).isFalse();
+    assertThat(c.peek(KEY)).isNull();
+    assertThat(c.peekEntry(KEY)).isNull();
     if (opCnt.get() == 1) {
       await(() -> getInfo().getExpiredCount() == 1);
     }
     if (!pars.keepData && opCnt.get() == 1) {
       await(() -> getInfo().getSize() == 0);
     }
-    assertEquals("(flaky?) No lag, got delay: " + laggingMillis, 0, laggingMillis);
+    assertThat(laggingMillis)
+      .as("(flaky?) No lag, got delay: " + laggingMillis)
+      .isEqualTo(0);
   }
 
   private String getAndSetCacheName(String methodName) {
@@ -143,7 +146,7 @@ public class AllMutatorsExpireTest extends TestingBase {
   void putExpiresLagging(long expiryTime, int variant, boolean keepData) {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .name(getAndSetCacheName("putExpiresLagging"))
-      .expireAfterWrite(expiryTime, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(expiryTime, MILLISECONDS)
       .sharpExpiry(false)
       .keepDataAfterExpired(keepData)
       .build();
@@ -151,8 +154,8 @@ public class AllMutatorsExpireTest extends TestingBase {
     within(expiryTime)
       .perform(() -> opCnt.set(mutate(variant, c))).expectMaybe(() -> assertTrue(c.containsKey(1)));
     await(() -> !c.containsKey(KEY));
-    assertNull(c.peek(KEY));
-    assertNull(c.peekEntry(KEY));
+    assertThat(c.peek(KEY)).isNull();
+    assertThat(c.peekEntry(KEY)).isNull();
     if (opCnt.get() == 1) {
       await(() -> getInfo().getExpiredCount() == 1);
     }

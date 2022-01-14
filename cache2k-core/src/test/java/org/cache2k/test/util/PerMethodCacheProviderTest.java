@@ -24,7 +24,7 @@ import org.cache2k.Cache;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Jens Wilke
@@ -38,7 +38,7 @@ public class PerMethodCacheProviderTest {
   @Test
   public void testName() {
     Cache<Integer, Integer> c = target.cache();
-    assertEquals("org.cache2k.test.util.PerMethodCacheProviderTest.testName", c.getName());
+    assertThat(c.getName()).isEqualTo("org.cache2k.test.util.PerMethodCacheProviderTest.testName");
   }
 
   @Test

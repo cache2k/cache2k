@@ -32,7 +32,9 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.cache2k.Cache2kBuilder.of;
+import static org.cache2k.core.eviction.IdleScan.calculateWakeupTicks;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -45,8 +47,8 @@ public class IdleScanTest {
 
   @Test
   public void testIntervalCalculation() {
-    assertEquals(100, IdleScan.calculateWakeupTicks(1000, 10));
-    assertEquals(10, IdleScan.calculateWakeupTicks(1000, 1111));
+    assertThat(calculateWakeupTicks(1000, 10)).isEqualTo(100);
+    assertThat(calculateWakeupTicks(1000, 1111)).isEqualTo(10);
   }
 
   @Test
@@ -71,10 +73,10 @@ public class IdleScanTest {
   public void idleScanTwoRounds() throws InterruptedException, ExecutionException {
     SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
     Cache<Integer, Integer> cache =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .timeReference(clock)
         .executor(clock.wrapExecutor(Runnable::run))
-        .idleScanTime(1_000, TimeUnit.MILLISECONDS)
+        .idleScanTime(1_000, MILLISECONDS)
         .strictEviction(true)
         .loader(k -> k)
         .build();
@@ -82,12 +84,12 @@ public class IdleScanTest {
     clock.sleep(500);
     cache.loadAll(range(2_000, 10)).get();
     clock.sleep(500);
-    assertEquals(20, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(20);
     clock.sleep(500);
     assertThat(cache.toString()).contains("idleScanPercent=50");
-    assertEquals(10, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(10);
     clock.sleep(500);
-    assertEquals(0, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(0);
     assertThat(cache.toString()).contains("idleScanRoundCompleted=1");
     cache.close();
   }
@@ -99,10 +101,10 @@ public class IdleScanTest {
   public void idleScanTwoRoundsWithRemovals() throws InterruptedException, ExecutionException {
     SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
     Cache<Integer, Integer> cache =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .timeReference(clock)
         .executor(clock.wrapExecutor(Runnable::run))
-        .idleScanTime(1_000, TimeUnit.MILLISECONDS)
+        .idleScanTime(1_000, MILLISECONDS)
         .strictEviction(true)
         .loader(k -> k)
         .build();
@@ -110,12 +112,12 @@ public class IdleScanTest {
     clock.sleep(500);
     cache.loadAll(range(2_000, 10)).get();
     clock.sleep(500);
-    assertEquals(20, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(20);
     cache.removeAll(range(1_000, 10));
     clock.sleep(500);
-    assertEquals(10, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(10);
     clock.sleep(500);
-    assertEquals(0, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(0);
     cache.close();
   }
 

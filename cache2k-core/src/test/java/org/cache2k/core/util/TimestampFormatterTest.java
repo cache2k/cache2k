@@ -24,7 +24,8 @@ import org.junit.Test;
 
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.util.Util.formatTime;
 
 /**
  * @author Jens Wilke
@@ -46,19 +47,19 @@ public class TimestampFormatterTest {
   @Test
   public void test() {
     long t0 = 0;
-    assertEquals("####-##-##T##:##:##", hashDigits(Util.formatTime(toInstant(t0))));
+    assertThat(hashDigits(formatTime(toInstant(t0)))).isEqualTo("####-##-##T##:##:##");
   }
 
   @Test
   public void testWithMillis() {
     long t0 = 123;
-    assertEquals("####-##-##T##:##:##.###", hashDigits(Util.formatTime(toInstant(t0))));
+    assertThat(hashDigits(formatTime(toInstant(t0)))).isEqualTo("####-##-##T##:##:##.###");
   }
 
   @Test
   public void testWithMillis2() {
     long t0 = 120;
-    assertEquals("####-##-##T##:##:##.##", hashDigits(Util.formatTime(toInstant(t0))));
+    assertThat(hashDigits(formatTime(toInstant(t0)))).isEqualTo("####-##-##T##:##:##.##");
   }
 
 }

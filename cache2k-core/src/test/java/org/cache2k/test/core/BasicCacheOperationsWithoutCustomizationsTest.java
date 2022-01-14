@@ -31,7 +31,6 @@ import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.operation.CacheControl;
 import org.cache2k.pinpoint.ExpectedException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
@@ -50,7 +49,6 @@ import java.lang.reflect.Proxy;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -63,9 +61,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
+import static java.util.Collections.emptyMap;
+import static org.assertj.core.api.Assertions.*;
+import static org.cache2k.expiry.ExpiryTimeValues.NOW;
+import static org.cache2k.operation.CacheControl.of;
 
 /**
  * Test basic cache operations on a shared cache in a simple configuration.
@@ -180,8 +179,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
           fail("exception expected for method: " + method);
         }
       } catch (InvocationTargetException ex) {
-        assertEquals("expected exception",
-          UnsupportedOperationException.class, ex.getTargetException().getClass());
+        assertThat(ex.getTargetException().getClass())
+          .as("expected exception")
+          .isEqualTo(UnsupportedOperationException.class);
       }
       try {
         return method.invoke(forwardingCache, args);
@@ -221,7 +221,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @After
   public void cleanupCache() {
-    assertSame("Tests are not allowed to create private caches", PARS2CACHE.get(pars), cache);
+    assertThat(cache)
+      .as("Tests are not allowed to create private caches")
+      .isSameAs(PARS2CACHE.get(pars));
     cache.requestInterface(InternalCache.class).checkIntegrity();
     cache.clear();
   }
@@ -229,13 +231,15 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @AfterClass
   public static void tearDown() {
     for (Cache c : PARS2CACHE.values()) {
-      CacheControl.of(c).destroy();
+      of(c).destroy();
       c.close();
-      assertTrue(c.isClosed());
-      assertNotNull("getName working in closed state", c.getName());
+      assertThat(c.isClosed()).isTrue();
+      assertThat(c.getName())
+        .as("getName working in closed state")
+        .isNotNull();
       String txt = c.toString();
-      assertThat(txt, containsString(c.getName()));
-      assertThat(txt, containsString("closed"));
+      assertThat(txt).contains(c.getName());
+      assertThat(txt).contains("closed");
       try {
         c.get(KEY);
         fail("CacheClosedException expected");
@@ -260,40 +264,40 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void initial_Static_Stuff() {
-    assertFalse(cache.isClosed());
-    assertNotNull(cache.getName());
-    assertNotNull(cache.getCacheManager());
-    assertNotNull(cache.toString());
+    assertThat(cache.isClosed()).isFalse();
+    assertThat(cache.getName()).isNotNull();
+    assertThat(cache.getCacheManager()).isNotNull();
+    assertThat(cache.toString()).isNotNull();
   }
 
   @Test
   public void initial_Iterator() {
-    assertFalse(cache.entries().iterator().hasNext());
+    assertThat(cache.entries().iterator().hasNext()).isFalse();
   }
 
   @Test
   public void initial_Peek() {
-    assertNull(cache.peek(KEY));
-    assertNull(cache.peek(OTHER_KEY));
-    assertEquals(0, size());
+    assertThat(cache.peek(KEY)).isNull();
+    assertThat(cache.peek(OTHER_KEY)).isNull();
+    assertThat(size()).isEqualTo(0);
   }
 
   @Test
   public void initial_Contains() {
-    assertFalse(cache.containsKey(KEY));
-    assertFalse(cache.containsKey(OTHER_KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
+    assertThat(cache.containsKey(OTHER_KEY)).isFalse();
   }
 
   @Test
   public void initial_Get() {
     Object obj = cache.get(KEY);
-    assertNull(obj);
+    assertThat(obj).isNull();
   }
 
   @Test
   public void initial_Size() {
-    assertEquals(0, size());
-    assertEquals(0, cache.asMap().size());
+    assertThat(size()).isEqualTo(0);
+    assertThat(cache.asMap().size()).isEqualTo(0);
   }
 
   /*
@@ -308,18 +312,22 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(VALUE, cache.get(KEY));
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.get(KEY)).isEqualTo(VALUE);
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     checkRefreshTime(cache.peekEntry(KEY));
   }
 
   void checkRefreshTime(CacheEntry<Integer, Integer> e) {
     long t = cache.invoke(e.getKey(), MutableCacheEntry::getModificationTime);
     if (refreshTimeAvailable) {
-      assertThat("Timestamp beyond start", t, greaterThanOrEqualTo(START_TIME));
+      assertThat(t)
+        .as("Timestamp beyond start")
+        .isGreaterThanOrEqualTo(START_TIME);
     } else {
-      assertEquals("No time set", 0, t);
+      assertThat(t)
+        .as("No time set")
+        .isEqualTo(0);
     }
   }
 
@@ -332,17 +340,17 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(2)
       .expectAllZero();
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(OTHER_VALUE, cache.get(KEY));
-    assertEquals(OTHER_VALUE, cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.get(KEY)).isEqualTo(OTHER_VALUE);
+    assertThat(cache.peek(KEY)).isEqualTo(OTHER_VALUE);
   }
 
   @Test
   public void put_Null() {
     cache.put(KEY, null);
-    assertTrue(cache.containsKey(KEY));
-    assertNull(cache.peek(KEY));
-    assertNull(cache.get(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isNull();
+    assertThat(cache.get(KEY)).isNull();
   }
 
   @Test(expected = NullPointerException.class)
@@ -355,15 +363,15 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
    */
   @Test
   public void putAll() {
-    cache.putAll(Collections.<Integer, Integer>emptyMap());
+    cache.putAll(emptyMap());
     Map<Integer, Integer> map = new HashMap<>();
     map.put(KEY, VALUE);
     map.put(OTHER_KEY, null);
     cache.putAll(map);
-    assertTrue(cache.containsKey(KEY));
-    assertTrue(cache.containsKey(OTHER_KEY));
-    assertNull(cache.peek(OTHER_KEY));
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.containsKey(OTHER_KEY)).isTrue();
+    assertThat(cache.peek(OTHER_KEY)).isNull();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     checkRefreshTime(cache.peekEntry(KEY));
   }
 
@@ -373,10 +381,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     map.put(KEY, VALUE);
     map.put(OTHER_KEY, OTHER_VALUE);
     cache.putAll(map);
-    assertTrue(cache.containsKey(KEY));
-    assertTrue(cache.containsKey(OTHER_KEY));
-    assertEquals(OTHER_VALUE, cache.peek(OTHER_KEY));
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.containsKey(OTHER_KEY)).isTrue();
+    assertThat(cache.peek(OTHER_KEY)).isEqualTo(OTHER_VALUE);
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     checkRefreshTime(cache.peekEntry(KEY));
   }
 
@@ -399,9 +407,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
-    assertEquals(VALUE, v);
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(KEY, cache.peek(KEY));
+    assertThat(v).isEqualTo(VALUE);
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isEqualTo(KEY);
     statistics()
       .getCount.expect(1)
       .expectAllZero();
@@ -411,9 +419,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(0)
       .expectAllZero();
-    assertEquals(VALUE, v);
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(v).isEqualTo(VALUE);
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     checkRefreshTime(cache.peekEntry(KEY));
     cache.put(KEY, VALUE);
   }
@@ -421,10 +429,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void computeIfAbsent_Null() {
     cache.computeIfAbsent(KEY, key -> null);
-    assertTrue(cache.containsKey(KEY));
-    assertNull(cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isNull();
     cache.computeIfAbsent(KEY, key -> 123);
-    assertNull(cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isNull();
   }
 
   @Test
@@ -441,7 +449,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(1)
       .putCount.expect(0)
       .expectAllZero();
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test
@@ -452,14 +460,14 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       });
       fail("RuntimeException expected");
     } catch (RuntimeException ex) {
-      assertTrue(ex instanceof IllegalArgumentException);
+      assertThat(ex instanceof IllegalArgumentException).isTrue();
     }
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
       .putCount.expect(0)
       .expectAllZero();
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   /*
@@ -468,7 +476,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void peek_Miss() {
-    assertNull(cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
@@ -481,7 +489,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .putCount.expect(1)
       .expectAllZero();
-    assertNotNull(cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isNotNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
@@ -494,8 +502,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .putCount.expect(1)
       .expectAllZero();
-    cache.expireAt(KEY, ExpiryTimeValues.NOW);
-    assertNull(cache.peek(KEY));
+    cache.expireAt(KEY, NOW);
+    assertThat(cache.peek(KEY)).isNull();
     statistics()
       .getCount.expect(pars.keepDataAfterExpired && pars.withWiredCache ? 2 : 1)
       .missCount.expect(1)
@@ -509,7 +517,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void get_Miss() {
-    assertNull(cache.get(KEY));
+    assertThat(cache.get(KEY)).isNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
@@ -522,7 +530,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .putCount.expect(1)
       .expectAllZero();
-    assertNotNull(cache.get(KEY));
+    assertThat(cache.get(KEY)).isNotNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
@@ -535,8 +543,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .putCount.expect(1)
       .expectAllZero();
-    cache.expireAt(KEY, ExpiryTimeValues.NOW);
-    assertNull(cache.get(KEY));
+    cache.expireAt(KEY, NOW);
+    assertThat(cache.get(KEY)).isNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
@@ -550,16 +558,16 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void contains() {
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, VALUE);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
   }
 
   @Test
   public void contains_Null() {
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, null);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
   }
 
   /*
@@ -574,8 +582,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(KEY, cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isEqualTo(KEY);
     statistics()
       .getCount.expect(1)
       .expectAllZero();
@@ -585,16 +593,16 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(0)
       .expectAllZero();
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     checkRefreshTime(cache.peekEntry(KEY));
   }
 
   @Test
   public void putIfAbsent_Null() {
     cache.putIfAbsent(KEY, null);
-    assertTrue(cache.containsKey(KEY));
-    assertNull(cache.peek(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(cache.peek(KEY)).isNull();
   }
 
   /*
@@ -604,15 +612,15 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAndPut() {
     Integer v = cache.peekAndPut(KEY, VALUE);
-    assertNull(v);
+    assertThat(v).isNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
     v = cache.peekAndPut(KEY, VALUE);
-    assertNotNull(v);
-    assertEquals(VALUE, v);
+    assertThat(v).isNotNull();
+    assertThat(v).isEqualTo(VALUE);
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
@@ -630,26 +638,26 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAndPut_Null() {
     Integer v = cache.peekAndPut(KEY, null);
-    assertNull(v);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(v).isNull();
+    assertThat(cache.containsKey(KEY)).isTrue();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
       .putCount.expect(1)
       .expectAllZero();
     v = cache.peekAndPut(KEY, VALUE);
-    assertNull(v);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(v).isNull();
+    assertThat(cache.containsKey(KEY)).isTrue();
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
     v = cache.peekAndPut(KEY, null);
-    assertNotNull(v);
-    assertEquals(VALUE, v);
+    assertThat(v).isNotNull();
+    assertThat(v).isEqualTo(VALUE);
     v = cache.peekAndPut(KEY, null);
-    assertNull(v);
+    assertThat(v).isNull();
   }
 
   @Test
@@ -666,10 +674,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAndPut_NotFresh() {
     cache.put(KEY, VALUE);
-    cache.expireAt(KEY, ExpiryTimeValues.NOW);
+    cache.expireAt(KEY, NOW);
     statistics().reset();
     Integer v = cache.peekAndPut(KEY, VALUE);
-    assertNull(v);
+    assertThat(v).isNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
@@ -689,10 +697,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(1)
       .putCount.expect(0)
       .expectAllZero();
-    assertNull(v);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(v).isNull();
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, VALUE);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
     statistics()
       .getCount.expect(0)
       .missCount.expect(0)
@@ -706,17 +714,17 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .removeCount.expect(1)
       .putCount.expect(0)
       .expectAllZero();
-    assertNotNull(v);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(v).isNotNull();
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test
   public void peekAndRemove_Null() {
     cache.put(KEY, null);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
     Integer v = cache.peekAndRemove(KEY);
-    assertNull(v);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(v).isNull();
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test(expected = NullPointerException.class)
@@ -741,10 +749,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAndRemove_NotFresh() {
     cache.put(KEY, VALUE);
-    cache.expireAt(KEY, ExpiryTimeValues.NOW);
+    cache.expireAt(KEY, NOW);
     statistics().reset();
     Integer v = cache.peekAndRemove(KEY);
-    assertNull(v);
+    assertThat(v).isNull();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
@@ -760,27 +768,27 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAndReplace() {
     Integer v = cache.peekAndReplace(KEY, VALUE);
-    assertNull(v);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(v).isNull();
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, VALUE);
     v = cache.peekAndReplace(KEY, OTHER_VALUE);
-    assertNotNull(v);
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(VALUE, v);
-    assertEquals(OTHER_VALUE, cache.peek(KEY));
+    assertThat(v).isNotNull();
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(v).isEqualTo(VALUE);
+    assertThat(cache.peek(KEY)).isEqualTo(OTHER_VALUE);
   }
 
   @Test
   public void peekAndReplace_Null() {
     Integer v = cache.peekAndReplace(KEY, null);
-    assertNull(v);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(v).isNull();
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, VALUE);
     v = cache.peekAndReplace(KEY, null);
-    assertNotNull(v);
-    assertTrue(cache.containsKey(KEY));
-    assertEquals(VALUE, v);
-    assertNull(cache.peek(KEY));
+    assertThat(v).isNotNull();
+    assertThat(cache.containsKey(KEY)).isTrue();
+    assertThat(v).isEqualTo(VALUE);
+    assertThat(cache.peek(KEY)).isNull();
   }
 
   @Test(expected = NullPointerException.class)
@@ -806,30 +814,30 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekEntry_Initial() {
     CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
-    assertNull(e);
-    assertEquals(0, size());
+    assertThat(e).isNull();
+    assertThat(size()).isEqualTo(0);
   }
 
   @Test
   public void peekEntry() {
     CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
-    assertNull(e);
+    assertThat(e).isNull();
     cache.put(KEY, VALUE);
     e = cache.peekEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertEquals(VALUE, e.getValue());
-    assertNull(e.getException());
+    assertThat(e.getKey()).isEqualTo(KEY);
+    assertThat(e.getValue()).isEqualTo(VALUE);
+    assertThat(e.getException()).isNull();
     checkRefreshTime(e);
   }
 
   @Test
   public void peekEntry_Null() {
     CacheEntry<Integer, Integer> e = cache.peekEntry(KEY);
-    assertNull(e);
+    assertThat(e).isNull();
     cache.put(KEY, null);
     e = cache.peekEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertNull(e.getValue());
+    assertThat(e.getKey()).isEqualTo(KEY);
+    assertThat(e.getValue()).isNull();
     checkRefreshTime(e);
   }
 
@@ -853,9 +861,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void getEntry() {
     cache.put(KEY, VALUE);
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertEquals(VALUE, e.getValue());
-    assertNull(e.getException());
+    assertThat(e.getKey()).isEqualTo(KEY);
+    assertThat(e.getValue()).isEqualTo(VALUE);
+    assertThat(e.getException()).isNull();
     checkRefreshTime(e);
   }
 
@@ -863,8 +871,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void getEntry_Null() {
     cache.put(KEY, null);
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
-    assertEquals(KEY, e.getKey());
-    assertNull(e.getValue());
+    assertThat(e.getKey()).isEqualTo(KEY);
+    assertThat(e.getValue()).isNull();
     checkRefreshTime(e);
   }
 
@@ -889,11 +897,11 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       fail("exception expected");
     } catch (CacheLoaderException ex) {
     }
-    assertNotNull(e.getException());
-    assertEquals(exception, e.getException());
-    assertEquals(e.getExceptionInfo().getException(), exception);
-    assertNotNull(e.getExceptionInfo().getKey());
-    assertNotNull(e.getExceptionInfo().toString());
+    assertThat(e.getException()).isNotNull();
+    assertThat(e.getException()).isEqualTo(exception);
+    assertThat(exception).isEqualTo(e.getExceptionInfo().getException());
+    assertThat(e.getExceptionInfo().getKey()).isNotNull();
+    assertThat(e.getExceptionInfo().toString()).isNotNull();
   }
 
   /*
@@ -902,23 +910,23 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void peekAll() {
     Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
-    assertEquals(0, m.size());
-    assertTrue(m.isEmpty());
+    assertThat(m.size()).isEqualTo(0);
+    assertThat(m.isEmpty()).isTrue();
     cache.put(KEY, VALUE);
     m = cache.peekAll(asList(KEY, OTHER_KEY));
-    assertEquals(1, m.size());
-    assertEquals(VALUE, m.get(KEY));
-    assertTrue(m.containsKey(KEY));
-    assertTrue(m.containsValue(VALUE));
-    assertNull(m.get(OTHER_KEY));
+    assertThat(m.size()).isEqualTo(1);
+    assertThat(m.get(KEY)).isEqualTo(VALUE);
+    assertThat(m.containsKey(KEY)).isTrue();
+    assertThat(m.containsValue(VALUE)).isTrue();
+    assertThat(m.get(OTHER_KEY)).isNull();
   }
 
   @Test
   public void peekAll_Null() {
     cache.put(KEY, null);
     Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
-    assertEquals(1, m.size());
-    assertNull(m.get(KEY));
+    assertThat(m.size()).isEqualTo(1);
+    assertThat(m.get(KEY)).isNull();
   }
 
   @Test(expected = NullPointerException.class)
@@ -928,33 +936,37 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void peekAll_Exception() {
-    if (!pars.keepExceptions) { return; }
+    if (!pars.keepExceptions) {
+      return;
+    }
     assignException(KEY);
     Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
-    assertEquals(1, m.size());
-    assertEquals(1, m.values().size());
-    assertEquals(1, m.keySet().size());
-    assertEquals(1, m.entrySet().size());
+    assertThat(m.size()).isEqualTo(1);
+    assertThat(m.values().size()).isEqualTo(1);
+    assertThat(m.keySet().size()).isEqualTo(1);
+    assertThat(m.entrySet().size()).isEqualTo(1);
     try {
       m.get(KEY);
       fail("Exception expected");
     } catch (CacheLoaderException ex) {
     }
     Iterator<Integer> it = m.keySet().iterator();
-    assertTrue(it.hasNext());
-    assertEquals(KEY, it.next());
-    assertFalse("one entry", it.hasNext());
+    assertThat(it.hasNext()).isTrue();
+    assertThat(it.next()).isEqualTo(KEY);
+    assertThat(it.hasNext())
+      .as("one entry")
+      .isFalse();
     it = m.values().iterator();
-    assertTrue(it.hasNext());
+    assertThat(it.hasNext()).isTrue();
     try {
-      assertEquals(KEY, it.next());
+      assertThat(it.next()).isEqualTo(KEY);
       fail("Exception expected");
     } catch (CacheLoaderException ex) {
     }
     Iterator<Map.Entry<Integer, Integer>> ei = m.entrySet().iterator();
-    assertTrue(ei.hasNext());
+    assertThat(ei.hasNext()).isTrue();
     Map.Entry<Integer, Integer> e = ei.next();
-    assertEquals(KEY, e.getKey());
+    assertThat(e.getKey()).isEqualTo(KEY);
     try {
       e.getValue();
       fail("Exception expected");
@@ -966,7 +978,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void peekAll_MutationMethodsUnsupported() {
     cache.put(KEY, VALUE);
     Map<Integer, Integer> m = cache.peekAll(asList(KEY, OTHER_KEY));
-    assertEquals(1, m.size());
+    assertThat(m.size()).isEqualTo(1);
     try {
       m.clear();
       fail("Exception expected");
@@ -1022,10 +1034,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, VALUE);
     Map<Integer, Integer> m = cache.getAll(asList(KEY, OTHER_KEY));
-    assertEquals(2, m.size());
-    assertEquals(VALUE, m.get(KEY));
-    assertTrue(m.containsKey(KEY));
-    assertTrue(m.containsValue(VALUE));
+    assertThat(m.size()).isEqualTo(2);
+    assertThat(m.get(KEY)).isEqualTo(VALUE);
+    assertThat(m.containsKey(KEY)).isTrue();
+    assertThat(m.containsValue(VALUE)).isTrue();
   }
 
   @Test(expected = NullPointerException.class)
@@ -1036,7 +1048,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void getAll_not_present_no_loader() {
     Map<Integer, Integer> m = cache.getAll(asList(KEY, OTHER_KEY));
-    assertEquals(0, m.size());
+    assertThat(m.size()).isEqualTo(0);
   }
 
   /*
@@ -1047,24 +1059,24 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void remove_NotExisting() {
     cache.remove(KEY);
     statistics().expectAllZero();
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test
   public void remove() {
     cache.put(KEY, VALUE);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
     statistics().reset();
     cache.remove(KEY);
     statistics().removeCount.expect(1).expectAllZero();
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test
   public void remove_Null() {
     cache.put(KEY, null);
     cache.remove(KEY);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test(expected = NullPointerException.class)
@@ -1082,13 +1094,13 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     statistics()
       .missCount.expect(0)
       .expectAllZero();
-    assertFalse(f);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(f).isFalse();
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, VALUE);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
     f = cache.containsAndRemove(KEY);
-    assertTrue(f);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(f).isTrue();
+    assertThat(cache.containsKey(KEY)).isFalse();
     statistics()
       .putCount.expect(1)
       .removeCount.expect(1)
@@ -1099,8 +1111,8 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void containsAndRemove_Null() {
     cache.put(KEY, null);
     boolean f = cache.containsAndRemove(KEY);
-    assertTrue(f);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(f).isTrue();
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test(expected = NullPointerException.class)
@@ -1115,43 +1127,43 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void removeIfEquals() {
     boolean f = cache.removeIfEquals(KEY, VALUE);
-    assertFalse(f);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(f).isFalse();
+    assertThat(cache.containsKey(KEY)).isFalse();
     statistics()
       .missCount.expect(1)
       .getCount.expect(1)
       .expectAllZero();
     cache.put(KEY, VALUE);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
     statistics().reset();
     f = cache.removeIfEquals(KEY, OTHER_VALUE);
     statistics()
       .missCount.expect(0)
       .getCount.expect(1)
       .expectAllZero();
-    assertFalse(f);
+    assertThat(f).isFalse();
     f = cache.removeIfEquals(KEY, VALUE);
     statistics()
       .missCount.expect(0)
       .getCount.expect(1)
       .removeCount.expect(1)
       .expectAllZero();
-    assertFalse(cache.containsKey(KEY));
-    assertTrue(f);
+    assertThat(cache.containsKey(KEY)).isFalse();
+    assertThat(f).isTrue();
     f = cache.removeIfEquals(KEY, VALUE);
-    assertFalse(f);
+    assertThat(f).isFalse();
   }
 
   @Test
   public void removeIfEquals_Null() {
     boolean f = cache.removeIfEquals(KEY, null);
-    assertFalse(f);
+    assertThat(f).isFalse();
     cache.put(KEY, null);
     f = cache.removeIfEquals(KEY, OTHER_VALUE);
-    assertFalse(f);
+    assertThat(f).isFalse();
     f = cache.removeIfEquals(KEY, null);
-    assertTrue(f);
-    assertFalse(cache.containsKey(KEY));
+    assertThat(f).isTrue();
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   @Test(expected = NullPointerException.class)
@@ -1165,44 +1177,44 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void replaceIfEquals() {
-    assertFalse(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE)).isFalse();
+    assertThat(cache.containsKey(KEY)).isFalse();
     cache.put(KEY, VALUE);
-    assertTrue(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE));
-    assertEquals(OTHER_VALUE, cache.peek(KEY));
+    assertThat(cache.replaceIfEquals(KEY, VALUE, OTHER_VALUE)).isTrue();
+    assertThat(cache.peek(KEY)).isEqualTo(OTHER_VALUE);
   }
 
   @Test
   public void replaceIfEquals_Different() {
     cache.put(KEY, VALUE);
-    assertEquals(VALUE, cache.peek(KEY));
-    assertFalse(cache.replaceIfEquals(KEY, OTHER_VALUE, OTHER_VALUE));
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
+    assertThat(cache.replaceIfEquals(KEY, OTHER_VALUE, OTHER_VALUE)).isFalse();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
   }
 
   @Test
   public void replaceIfEquals_NoMap() {
     cache.put(KEY, VALUE);
-    assertFalse(cache.replaceIfEquals(OTHER_KEY, OTHER_VALUE, OTHER_VALUE));
-    assertEquals(VALUE, cache.peek(KEY));
-    assertNull(cache.peek(OTHER_KEY));
-    assertFalse(cache.containsKey(OTHER_KEY));
+    assertThat(cache.replaceIfEquals(OTHER_KEY, OTHER_VALUE, OTHER_VALUE)).isFalse();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
+    assertThat(cache.peek(OTHER_KEY)).isNull();
+    assertThat(cache.containsKey(OTHER_KEY)).isFalse();
   }
 
   @Test
   public void replaceIfEquals_Null() {
     boolean f = cache.replaceIfEquals(KEY, null, null);
-    assertFalse(f);
+    assertThat(f).isFalse();
     cache.put(KEY, null);
     f = cache.replaceIfEquals(KEY, null, VALUE);
-    assertTrue(f);
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(f).isTrue();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     cache.replaceIfEquals(KEY, OTHER_VALUE, null);
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     cache.replaceIfEquals(KEY, null, null);
-    assertEquals(VALUE, cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
     cache.replaceIfEquals(KEY, VALUE, null);
-    assertTrue(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isTrue();
   }
 
   @Test(expected = NullPointerException.class)
@@ -1217,20 +1229,20 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void replace() {
     boolean f = cache.replace(KEY, VALUE);
-    assertFalse(f);
+    assertThat(f).isFalse();
     statistics()
       .getCount.expect(1)
       .missCount.expect(1)
       .expectAllZero();
     cache.put(KEY, VALUE);
     f = cache.replace(KEY, OTHER_VALUE);
-    assertTrue(f);
+    assertThat(f).isTrue();
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
       .putCount.expect(2)
       .expectAllZero();
-    assertEquals(OTHER_VALUE, cache.peek(KEY));
+    assertThat(cache.peek(KEY)).isEqualTo(OTHER_VALUE);
     statistics()
       .getCount.expect(1)
       .missCount.expect(0)
@@ -1242,21 +1254,21 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   @Test
   public void replace_NoMap() {
     cache.put(KEY, VALUE);
-    assertFalse(cache.replace(OTHER_KEY, OTHER_VALUE));
-    assertEquals(VALUE, cache.peek(KEY));
-    assertNull(cache.peek(OTHER_KEY));
-    assertFalse(cache.containsKey(OTHER_KEY));
+    assertThat(cache.replace(OTHER_KEY, OTHER_VALUE)).isFalse();
+    assertThat(cache.peek(KEY)).isEqualTo(VALUE);
+    assertThat(cache.peek(OTHER_KEY)).isNull();
+    assertThat(cache.containsKey(OTHER_KEY)).isFalse();
   }
 
   @Test
   public void replace_Null() {
     boolean f = cache.replace(KEY, null);
-    assertFalse(f);
+    assertThat(f).isFalse();
     cache.put(KEY, VALUE);
     f = cache.replace(KEY, null);
-    assertTrue(f);
-    assertNull(cache.peek(KEY));
-    assertTrue(cache.containsKey(KEY));
+    assertThat(f).isTrue();
+    assertThat(cache.peek(KEY)).isNull();
+    assertThat(cache.containsKey(KEY)).isTrue();
   }
 
   @Test(expected = NullPointerException.class)
@@ -1270,7 +1282,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
 
   @Test
   public void iterator() {
-    assertFalse(cache.entries().iterator().hasNext());
+    assertThat(cache.entries().iterator().hasNext()).isFalse();
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     statistics().reset();
@@ -1278,16 +1290,16 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     for (CacheEntry<Integer, Integer> ce : cache.entries()) {
       map.put(ce.getKey(), ce.getValue());
     }
-    assertEquals(2, map.size());
-    assertTrue(map.containsKey(KEY));
-    assertTrue(map.containsKey(OTHER_KEY));
+    assertThat(map.size()).isEqualTo(2);
+    assertThat(map.containsKey(KEY)).isTrue();
+    assertThat(map.containsKey(OTHER_KEY)).isTrue();
     statistics().expectAllZero();
   }
 
   @Test(expected = NoSuchElementException.class)
   public void iterator_Next_Exception() {
     Iterator it = cache.entries().iterator();
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext()).isFalse();
     it.next();
   }
 
@@ -1297,10 +1309,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     Iterator it = cache.entries().iterator();
-    assertTrue(it.hasNext());
+    assertThat(it.hasNext()).isTrue();
     it.next();
     cache.clear();
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext()).isFalse();
   }
 
   /*
@@ -1311,7 +1323,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void invoke_exists() {
     cache.put(KEY, VALUE);
     boolean f = cache.invoke(KEY, MutableCacheEntry::exists);
-    assertTrue(f);
+    assertThat(f).isTrue();
   }
 
   @Test
@@ -1328,10 +1340,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void invoke_mutateWithImmediateExpiry() {
     cache.invoke(KEY, e -> {
       e.setValue(VALUE);
-      e.setExpiryTime(ExpiryTimeValues.NOW);
+      e.setExpiryTime(NOW);
       return null;
     });
-    assertFalse(cache.containsKey(KEY));
+    assertThat(cache.containsKey(KEY)).isFalse();
   }
 
   static final long MILLIS_IN_FUTURE = (2345 - 1970) * 365L * 24 * 60 * 60 * 1000;
@@ -1350,9 +1362,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     }
     boolean resilienceEnabledTimer = pars.keepExceptions;
     if (pars.withExpiryAfterWrite || resilienceEnabledTimer) {
-      assertTrue(cache.containsKey(KEY));
+      assertThat(cache.containsKey(KEY)).isTrue();
     } else {
-      assertTrue(gotException);
+      assertThat(gotException).isTrue();
     }
   }
 
@@ -1367,9 +1379,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     }
     boolean resilienceEnabledTimer = pars.keepExceptions;
     if (pars.withExpiryAfterWrite || resilienceEnabledTimer) {
-      assertTrue(cache.containsKey(KEY));
+      assertThat(cache.containsKey(KEY)).isTrue();
     } else {
-      assertTrue(gotException);
+      assertThat(gotException).isTrue();
     }
   }
 
@@ -1378,9 +1390,9 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     Map<Integer, EntryProcessingResult<Boolean>> res =
       cache.invokeAll(cache.keys(), MutableCacheEntry::exists);
-    assertEquals(1, res.size());
-    assertNull(res.get(KEY).getException());
-    assertTrue(res.get(KEY).getResult());
+    assertThat(res.size()).isEqualTo(1);
+    assertThat(res.get(KEY).getException()).isNull();
+    assertThat(res.get(KEY).getResult()).isTrue();
   }
 
   /*
@@ -1392,7 +1404,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     cache.removeAll();
-    assertFalse(cache.keys().iterator().hasNext());
+    assertThat(cache.keys().iterator().hasNext()).isFalse();
   }
 
   @Test
@@ -1400,7 +1412,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     cache.put(KEY, VALUE);
     cache.put(OTHER_KEY, OTHER_VALUE);
     cache.removeAll(cache.keys());
-    assertFalse(cache.keys().iterator().hasNext());
+    assertThat(cache.keys().iterator().hasNext()).isFalse();
   }
 
   @Test(expected = UnsupportedOperationException.class)
@@ -1420,10 +1432,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     }
     InternalCache<Integer, Integer> c = (InternalCache<Integer, Integer>) cache;
     String s = c.getEntryState(KEY);
-    assertNull(s);
+    assertThat(s).isNull();
     cache.put(KEY, VALUE);
     s = c.getEntryState(KEY);
-    assertNotNull(s);
+    assertThat(s).isNotNull();
   }
 
   @Test
@@ -1438,7 +1450,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assignException(k);
     InternalCache<Integer, Integer> c = (InternalCache<Integer, Integer>) cache;
     String s = c.getEntryState(KEY);
-    assertTrue(s.contains("exception="));
+    assertThat(s.contains("exception=")).isTrue();
   }
 
   private void assignException(Integer key) {
@@ -1453,7 +1465,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
   public void requestInterface() {
     assertThatCode(() -> cache.requestInterface(Integer.class))
       .isInstanceOf(UnsupportedOperationException.class);
-    assertTrue(cache.requestInterface(Map.class) instanceof Map);
+    assertThat(cache.requestInterface(Map.class) instanceof Map).isTrue();
   }
 
   static class Pars {

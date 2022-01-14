@@ -30,8 +30,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.ConcurrentMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test ConcurrentMap methods with cache.
@@ -63,10 +62,10 @@ public class ConcurrentMapWithCacheNullValueTest {
   public void getOrDefault() {
     cache.put(1, null);
     cache.put(2, "abc");
-    assertEquals("xy", map.getOrDefault(3, "xy"));
-    assertEquals("abc", map.getOrDefault(2, "xy"));
-    assertTrue(map.containsKey(1));
-    assertEquals(null, map.getOrDefault(1, "xy"));
+    assertThat(map.getOrDefault(3, "xy")).isEqualTo("xy");
+    assertThat(map.getOrDefault(2, "xy")).isEqualTo("abc");
+    assertThat(map.containsKey(1)).isTrue();
+    assertThat(map.getOrDefault(1, "xy")).isEqualTo(null);
   }
 
 }

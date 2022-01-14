@@ -27,7 +27,7 @@ import org.cache2k.core.api.InternalCacheInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Abstract how to access counter values from the cache and a fluent API
@@ -48,8 +48,8 @@ public class Statistics {
 
   public Statistics() { }
 
-  public Statistics(boolean _disable) {
-    disable = _disable;
+  public Statistics(boolean disable) {
+    this.disable = disable;
   }
 
   public final Counter getCount = new Counter("get") {
@@ -115,17 +115,13 @@ public class Statistics {
 
   }
 
-  public void dump() {
-    System.err.println(info);
-  }
-
   public abstract class Counter {
 
     long baseValue;
     String name;
 
-    public Counter(String _name) {
-      name = _name;
+    public Counter(String name) {
+      this.name = name;
       counters.add(this);
     }
 
@@ -150,7 +146,9 @@ public class Statistics {
      */
     public final Statistics expect(long v) {
       if (!disable) {
-        assertEquals(name + " counter", v, get());
+        assertThat(get())
+          .as(name + " counter")
+          .isEqualTo(v);
       }
       reset();
       return Statistics.this;

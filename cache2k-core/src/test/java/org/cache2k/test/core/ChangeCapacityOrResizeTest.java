@@ -21,14 +21,14 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.core.eviction.AbstractEviction;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.eviction.AbstractEviction.MINIMUM_CAPACITY_FOR_CHUNKING;
 
 /**
  * @author Jens Wilke
@@ -43,23 +43,29 @@ public class ChangeCapacityOrResizeTest extends TestingBase {
     cache.put(2, 2);
     cache.put(3, 2);
     ((InternalCache) cache).getEviction().changeCapacity(1);
-    cache.put(1,1);
-    cache.put(2,1);
-    assertFalse("caching at capacity 1, previous insert is evicted", cache.containsKey(1));
+    cache.put(1, 1);
+    cache.put(2, 1);
+    assertThat(cache.containsKey(1))
+      .as("caching at capacity 1, previous insert is evicted")
+      .isFalse();
     ((InternalCache) cache).getEviction().changeCapacity(10);
     cache.put(1, 2);
     cache.put(2, 2);
     cache.put(3, 2);
-    assertTrue("caching all again", cache.asMap().size() >= 3);
+    assertThat(cache.asMap().size() >= 3)
+      .as("caching all again")
+      .isTrue();
   }
 
   @Test
   public void checkResizeBigCache() {
     final long size = 12003;
-    assertTrue(size > AbstractEviction.MINIMUM_CAPACITY_FOR_CHUNKING);
+    assertThat(size > MINIMUM_CAPACITY_FOR_CHUNKING).isTrue();
     Cache<Integer, Integer> cache = buildAndPopulate(size);
     ((InternalCache) cache).getEviction().changeCapacity(1);
-    assertTrue("Size is low, but typically not 1", cache.asMap().size() < 1000);
+    assertThat(cache.asMap().size() < 1000)
+      .as("Size is low, but typically not 1")
+      .isTrue();
   }
 
   private Cache<Integer, Integer> buildAndPopulate(long size) {
@@ -72,10 +78,10 @@ public class ChangeCapacityOrResizeTest extends TestingBase {
 
   @Test
   public void checkResizeSmallCache() {
-    final long size = AbstractEviction.MINIMUM_CAPACITY_FOR_CHUNKING - 1;
+    final long size = MINIMUM_CAPACITY_FOR_CHUNKING - 1;
     Cache<Integer, Integer> cache = buildAndPopulate(size);
     ((InternalCache) cache).getEviction().changeCapacity(1);
-    assertEquals(1, cache.asMap().size());
+    assertThat(cache.asMap().size()).isEqualTo(1);
   }
 
   @Test(expected = IllegalArgumentException.class)

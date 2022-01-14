@@ -22,10 +22,6 @@ package org.cache2k.core.log;
 
 import org.cache2k.test.util.ExpectedException;
 import org.junit.Test;
-import org.slf4j.Logger;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

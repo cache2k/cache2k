@@ -21,11 +21,9 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.operation.CacheInfo;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.pinpoint.stress.ThreadingStressTester;
 import org.cache2k.testing.category.SlowTests;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -33,7 +31,9 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static java.lang.Math.max;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.operation.CacheInfo.of;
 
 /**
  * @author Jens Wilke
@@ -51,7 +51,7 @@ public class ChangeCapacityStressTest extends TestingBase {
     Cache<Integer, Integer> c =
       builder()
         .entryCapacity(maximumSize)
-      .build();
+        .build();
     AtomicInteger offset = new AtomicInteger();
     AtomicLong shrinkCount = new AtomicLong();
     for (int i = 0; i < maximumSize + 123; i++) {
@@ -66,10 +66,10 @@ public class ChangeCapacityStressTest extends TestingBase {
       }
     };
     Runnable changeCapacity = () -> {
-      long currentCapacity = CacheInfo.of(c).getEntryCapacity();
+      long currentCapacity = of(c).getEntryCapacity();
       long newCapacity = currentCapacity
         + maximumSize / 5 - random.nextInt((int) maximumSize / 2);
-      newCapacity = Math.max(maximumSize / 4, newCapacity);
+      newCapacity = max(maximumSize / 4, newCapacity);
       if (newCapacity < currentCapacity) {
         shrinkCount.incrementAndGet();
       }
@@ -83,11 +83,10 @@ public class ChangeCapacityStressTest extends TestingBase {
     tst.setTestTimeMillis(5000);
     tst.run();
     long effectiveCapacity = getInfo().getHeapCapacity();
-    assertThat(
-      "cache meeting cap limit (flaky)",
-      (long) getInternalCache().getTotalEntryCount(),
-      Matchers.lessThanOrEqualTo(effectiveCapacity + threads));
-    assertEquals(getInfo().getSize(), countEntriesViaIteration());
+    assertThat(getInternalCache().getTotalEntryCount())
+      .as("cache meeting cap limit (flaky)")
+      .isLessThanOrEqualTo(effectiveCapacity + threads);
+    assertThat(countEntriesViaIteration()).isEqualTo(getInfo().getSize());
   }
 
 }

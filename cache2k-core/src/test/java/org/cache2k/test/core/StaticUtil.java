@@ -22,12 +22,12 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 
-import static org.junit.Assert.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.CacheManager.getInstance;
 
 /**
  * @author Jens Wilke
@@ -48,8 +48,9 @@ public class StaticUtil {
   }
 
   public static void allCachesClosed() {
-    assertFalse("all caches closed",
-      CacheManager.getInstance().getActiveCaches().iterator().hasNext());
+    assertThat(getInstance().getActiveCaches().iterator().hasNext())
+      .as("all caches closed")
+      .isFalse();
   }
 
   public static int count(Iterable<?> things) {

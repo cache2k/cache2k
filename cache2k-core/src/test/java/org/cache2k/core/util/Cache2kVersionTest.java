@@ -20,7 +20,6 @@ package org.cache2k.core.util;
  * #L%
  */
 
-import org.cache2k.core.log.Log;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,7 +27,9 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.log.Log.*;
+import static org.cache2k.core.util.Cache2kVersion.*;
 
 /**
  * @author Jens Wilke; created: 2015-06-11
@@ -38,31 +39,34 @@ public class Cache2kVersionTest {
 
   @Test
   public void testVersion() {
-    String v = Cache2kVersion.getVersion();
-    assertNotNull(v);
-    assertNotEquals("<unknown>", v);
-    assertTrue("Either version is not replaced or something that looks like a version",
-        v.equals("${version}") ||
-        v.matches("[0-9]+\\..*"));
+    String v = getVersion();
+    assertThat(v).isNotNull();
+    assertThat(v).isNotEqualTo("<unknown>");
+    assertThat(v.equals("${version}") ||
+      v.matches("[0-9]+\\..*"))
+      .as("Either version is not replaced or something that looks like a version")
+      .isTrue();
   }
 
   @Test
   public void skipVariables() {
-    assertFalse(Cache2kVersion.isDefined("${version}"));
+    assertThat(isDefined("${version}")).isFalse();
   }
 
   @Test
   public void exception() {
-    Log.SuppressionCounter l = new Log.SuppressionCounter();
-    Log.registerSuppression(Cache2kVersion.class.getName(), l);
-    Cache2kVersion.parse(new InputStream() {
+    SuppressionCounter l = new SuppressionCounter();
+    registerSuppression(Cache2kVersion.class.getName(), l);
+    parse(new InputStream() {
       @Override
       public int read() throws IOException {
         throw new IOException("ouch");
       }
     });
-    assertTrue("a warning", l.getWarnCount() > 0);
-    Log.deregisterSuppression(Cache2kVersion.class.getName());
+    assertThat(l.getWarnCount() > 0)
+      .as("a warning")
+      .isTrue();
+    deregisterSuppression(Cache2kVersion.class.getName());
   }
 
 }

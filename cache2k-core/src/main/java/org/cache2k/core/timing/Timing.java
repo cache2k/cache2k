@@ -52,18 +52,6 @@ public abstract class Timing<K, V> implements NeedsClose {
     return d != null && !Duration.ZERO.equals(d) && d != Cache2kConfig.EXPIRY_ETERNAL;
   }
 
-  static boolean realDuration(long t) {
-    return t > 0 && t < Long.MAX_VALUE;
-  }
-
-  static boolean zeroOrUnspecified(Duration t) {
-    return t == null || t.equals(Duration.ZERO);
-  }
-
-  static boolean zeroOrUnspecified(long t) {
-    return t == 0 || t == -1;
-  }
-
   public static <K, V> Timing<K, V> of(InternalCacheBuildContext<K, V> ctx) {
     Cache2kConfig<K, V> cfg = ctx.getConfig();
     if (Duration.ZERO.equals(cfg.getExpireAfterWrite())) {

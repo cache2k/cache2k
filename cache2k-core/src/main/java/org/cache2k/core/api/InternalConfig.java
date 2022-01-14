@@ -78,7 +78,7 @@ public class InternalConfig implements ConfigSection<InternalConfig, InternalCon
 
   public static class Builder implements SectionBuilder<Builder, InternalConfig> {
 
-    private InternalConfig cfg;
+    private final InternalConfig cfg;
 
     public Builder(InternalConfig cfg) {
       this.cfg = cfg;

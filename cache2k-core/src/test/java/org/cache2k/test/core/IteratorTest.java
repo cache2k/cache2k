@@ -34,7 +34,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * More thorough iterator tests, needing a separate cache.
@@ -65,7 +65,7 @@ public class IteratorTest {
         break;
       }
     }
-    assertEquals(10, _keysSeen.size());
+    assertThat(_keysSeen.size()).isEqualTo(10);
     for (int i = 20; i < 5555; i++) {
       c.put(i,i);
     }
@@ -73,19 +73,19 @@ public class IteratorTest {
       CacheEntry<Integer,Integer> e = it.next();
       _keysSeen.add(e.getKey());
     }
-    assertTrue(_keysSeen.contains(19));
+    assertThat(_keysSeen.contains(19)).isTrue();
   }
 
   @Test
   public void testIterateEmpty_hasNext() {
     Cache<Integer, Integer> c = createEmptyCache();
     Iterator<CacheEntry<Integer,Integer>> it = c.entries().iterator();
-    assertFalse(it.hasNext());
-    assertFalse(it.hasNext());
-    assertFalse(it.hasNext());
-    assertFalse(it.hasNext());
-    assertFalse(it.hasNext());
-    assertFalse(it.hasNext());
+    assertThat(it.hasNext()).isFalse();
+    assertThat(it.hasNext()).isFalse();
+    assertThat(it.hasNext()).isFalse();
+    assertThat(it.hasNext()).isFalse();
+    assertThat(it.hasNext()).isFalse();
+    assertThat(it.hasNext()).isFalse();
   }
 
   @Test(expected = NoSuchElementException.class)
@@ -118,7 +118,7 @@ public class IteratorTest {
     for (Integer i : c.keys()) {
       _keysSeen.add(i);
     }
-    assertEquals(20, _keysSeen.size());
+    assertThat(_keysSeen.size()).isEqualTo(20);
     c.close();
   }
 
@@ -135,9 +135,9 @@ public class IteratorTest {
       }
     }
     c.close();
-    assertTrue(it.hasNext());
+    assertThat(it.hasNext()).isTrue();
     CacheEntry<Integer, Integer> e = it.next();
-    assertNotNull(e);
+    assertThat(e).isNotNull();
   }
 
 }

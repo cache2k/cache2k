@@ -25,8 +25,9 @@ import org.junit.Test;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.IntegerTo16BitFloatingPoint.compress;
+import static org.cache2k.core.IntegerTo16BitFloatingPoint.expand;
 
 /**
  * @author Jens Wilke
@@ -48,8 +49,8 @@ public class IntegerTo16BitFloatingPointTest {
   }
 
   void check(long l1, int c1, long l2, int c2) {
-    assertTrue(!(l1 > l2) || (c1 >= c2));
-    assertTrue(!(l1 < l2) || (c1 <= c2));
+    assertThat(!(l1 > l2) || (c1 >= c2)).isTrue();
+    assertThat(!(l1 < l2) || (c1 <= c2)).isTrue();
   }
 
   @Test
@@ -67,8 +68,8 @@ public class IntegerTo16BitFloatingPointTest {
   }
 
   void checkExp0(int v) {
-    assertEquals(v, IntegerTo16BitFloatingPoint.compress(v));
-    assertEquals(v, IntegerTo16BitFloatingPoint.expand(v));
+    assertThat(compress(v)).isEqualTo(v);
+    assertThat(expand(v)).isEqualTo(v);
   }
 
   @Test
@@ -80,8 +81,7 @@ public class IntegerTo16BitFloatingPointTest {
   }
 
   void checkPair(long v1, long v2) {
-    assertEquals(v2,
-      IntegerTo16BitFloatingPoint.expand(IntegerTo16BitFloatingPoint.compress((int) v1)));
+    assertThat(expand(compress((int) v1))).isEqualTo(v2);
   }
 
   @Test
@@ -109,16 +109,14 @@ public class IntegerTo16BitFloatingPointTest {
 
   @Test
   public void test1() {
-    assertEquals(1, IntegerTo16BitFloatingPoint.compress(1));
-    assertEquals(2, IntegerTo16BitFloatingPoint.compress(2));
-    assertEquals(3584, IntegerTo16BitFloatingPoint.compress(4096));
+    assertThat(compress(1)).isEqualTo(1);
+    assertThat(compress(2)).isEqualTo(2);
+    assertThat(compress(4096)).isEqualTo(3584);
   }
 
   @Test
   public void testCheck() {
-    Assertions.assertThatCode(() -> {
-      IntegerTo16BitFloatingPoint.compress(-1);
-    }).isInstanceOf(IllegalArgumentException.class);
+    Assertions.assertThatCode(() -> IntegerTo16BitFloatingPoint.compress(-1)).isInstanceOf(IllegalArgumentException.class);
   }
 
 }

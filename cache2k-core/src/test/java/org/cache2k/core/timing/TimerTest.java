@@ -20,15 +20,15 @@ package org.cache2k.core.timing;
  * #L%
  */
 
+import static java.lang.Long.MAX_VALUE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.Condition;
-import org.cache2k.Cache2kBuilder;
-import org.cache2k.config.Cache2kConfig;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.testing.category.FastTests;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -38,9 +38,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.fail;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
+import static org.cache2k.config.Cache2kConfig.EXPIRY_ETERNAL;
+import static org.cache2k.core.timing.TimerTask.Sentinel;
 
 /**
  * Only test special cases not covered by normal testing.
@@ -95,19 +97,19 @@ public class TimerTest {
     Timer st =
       new DefaultTimer(simulatedClock, simulatedClock, 1);
     TimerTask t = new MyTimerTask();
-    assertEquals("unscheduled", t.getState());
+    assertThat(t.getState()).isEqualTo("unscheduled");
     try {
       st.schedule(t, -5);
-      Assert.fail("exception expected");
+      fail("exception expected");
     } catch (IllegalArgumentException ex) {
     }
     st.schedule(t, 10);
     try {
       st.schedule(t, 15);
-      Assert.fail("exception expected, already scheduled");
+      fail("exception expected, already scheduled");
     } catch (IllegalStateException ex) {
     }
-    t = new TimerTask.Sentinel();
+    t = new Sentinel();
     t.execute();
     t.next = null;
     t.run();
@@ -120,17 +122,17 @@ public class TimerTest {
   public void immediateExecution() {
     MyTimerTask t = new MyTimerTask();
     t.markForImmediateExecution();
-    assertTrue(t.isScheduled());
+    assertThat(t.isScheduled()).isTrue();
     t.run();
-    assertTrue(t.isExecuted());
-    assertTrue(t.executed);
+    assertThat(t.isExecuted()).isTrue();
+    assertThat(t.executed).isTrue();
     t = new MyTimerTask();
     t.markForImmediateExecution();
-    assertTrue(t.isExecuted());
-    assertFalse(t.executed);
+    assertThat(t.isExecuted()).isTrue();
+    assertThat(t.executed).isFalse();
     t.run();
-    assertTrue(t.isExecuted());
-    assertTrue(t.executed);
+    assertThat(t.isExecuted()).isTrue();
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -142,30 +144,30 @@ public class TimerTest {
     MyTimerTask tt1 = new MyTimerTask();
     long t1 = 123456789;
     st.schedule(tt1, t1);
-    assertNotNull("something scheduled", clock.scheduled);
+    assertThat(clock.scheduledTime).isNotNull();
     MyTimerTask tt2 = new MyTimerTask();
     long t2 = 543;
     st.schedule(tt2, t2);
     clock.moveTo(t2 + lagTime);
     clock.scheduled.run();
-    assertTrue(tt2.executed);
-    assertFalse(tt1.executed);
+    assertThat(tt2.executed).isTrue();
+    assertThat(tt1.executed).isFalse();
     clock.scheduled.run(); // stray
-    assertFalse(tt1.executed);
+    assertThat(tt1.executed).isFalse();
     clock.moveTo(t1 - 1);
     clock.scheduled.run(); // stray
-    assertFalse(tt1.executed);
+    assertThat(tt1.executed).isFalse();
     clock.moveTo(t1 + lagTime);
     clock.scheduled.run();
-    assertTrue(tt1.executed);
+    assertThat(tt1.executed).isTrue();
   }
 
   @Test
   public void scheduleInPast() {
     init(100, 10, 10);
     MyTimerTask t = schedule(50).get(0);
-    assertTrue(t.executed);
-    assertEquals("executed", t.getState());
+    assertThat(t.executed).isTrue();
+    assertThat(t.getState()).isEqualTo("executed");
   }
 
   /**
@@ -176,7 +178,7 @@ public class TimerTest {
     long startTime = 100;
     init(startTime, 10, 10);
     MyTimerTask t = schedule(startTime).get(0);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -184,9 +186,9 @@ public class TimerTest {
     long startTime = 100;
     init(startTime, 10, 10);
     MyTimerTask t = schedule(140).get(0);
-    assertTrue(t.isScheduled());
+    assertThat(t.isScheduled()).isTrue();
     clock.run(150);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -194,12 +196,12 @@ public class TimerTest {
     long startTime = 100;
     init(startTime, 10, 10);
     MyTimerTask t = schedule(140).get(0);
-    assertTrue(t.isScheduled());
-    assertTrue(t.cancel());
-    assertEquals("cancelled", t.getState());
-    assertFalse(t.cancel());
+    assertThat(t.isScheduled()).isTrue();
+    assertThat(t.cancel()).isTrue();
+    assertThat(t.getState()).isEqualTo("cancelled");
+    assertThat(t.cancel()).isFalse();
     clock.run(150);
-    assertFalse(t.executed);
+    assertThat(t.executed).isFalse();
   }
 
   @Test
@@ -207,10 +209,10 @@ public class TimerTest {
     long startTime = 100;
     init(startTime, 10, 10);
     MyTimerTask t = schedule(140).get(0);
-    assertTrue(t.isScheduled());
+    assertThat(t.isScheduled()).isTrue();
     timer.cancelAll();
     clock.run(150);
-    assertFalse(t.executed);
+    assertThat(t.executed).isFalse();
   }
 
   @Test
@@ -219,9 +221,11 @@ public class TimerTest {
     init(startTime, 10, 10);
     clock.run(145);
     MyTimerTask t = schedule(140).get(0);
-    assertFalse("inserted in timer, since timer structure was not advanced", t.executed);
+    assertThat(t.executed)
+      .as("inserted in timer, since timer structure was not advanced")
+      .isFalse();
     clock.run(140 + 10);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -230,11 +234,11 @@ public class TimerTest {
     init(startTime, 10, 10);
     clock.run(145);
     MyTimerTask t = schedule(987654).get(0);
-    assertFalse(t.executed);
-    assertEquals("scheduled", t.getState());
-    assertTrue(t.isScheduled());
+    assertThat(t.executed).isFalse();
+    assertThat(t.getState()).isEqualTo("scheduled");
+    assertThat(t.isScheduled()).isTrue();
     clock.run(987654 + 27);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -262,14 +266,14 @@ public class TimerTest {
   public void scheduleNow() {
     init(100, 10, 10);
     MyTimerTask t = schedule(0).get(0);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
   public void startTime0() {
     init(0, 10, 10);
     MyTimerTask t = schedule(0).get(0);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -314,7 +318,7 @@ public class TimerTest {
     init(startTime, lagMillis, 123);
     MyTimerTask t = schedule(startTime + offset).get(0);
     clock.run(startTime + offset + lagMillis);
-    assertTrue(t.executed);
+    assertThat(t.executed).isTrue();
   }
 
   @Test
@@ -341,15 +345,18 @@ public class TimerTest {
   @Test
   public void config() {
     long lag = hashCode();
-    assertEquals("builder and config bean working", lag,
-      Cache2kBuilder.forUnknownTypes()
-      .timerLag(lag, TimeUnit.MILLISECONDS).config().getTimerLag().toMillis());
-    assertEquals("eternal / overflow", Long.MAX_VALUE,
-      Cache2kBuilder.forUnknownTypes()
-        .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).config().getTimerLag().toMillis());
-    assertSame("eternal / overflow", Cache2kConfig.EXPIRY_ETERNAL,
-      Cache2kBuilder.forUnknownTypes()
-        .timerLag(Long.MAX_VALUE, TimeUnit.SECONDS).config().getTimerLag());
+    assertThat(forUnknownTypes()
+      .timerLag(lag, MILLISECONDS).config().getTimerLag().toMillis())
+      .as("builder and config bean working")
+      .isEqualTo(lag);
+    assertThat(forUnknownTypes()
+      .timerLag(MAX_VALUE, SECONDS).config().getTimerLag().toMillis())
+      .as("eternal / overflow")
+      .isEqualTo(MAX_VALUE);
+    assertThat(forUnknownTypes()
+      .timerLag(MAX_VALUE, SECONDS).config().getTimerLag())
+      .as("eternal / overflow")
+      .isSameAs(EXPIRY_ETERNAL);
   }
 
   static long taskIdCounter = 0;

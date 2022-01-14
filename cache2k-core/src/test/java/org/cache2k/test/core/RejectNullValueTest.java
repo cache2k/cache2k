@@ -35,7 +35,7 @@ import org.junit.experimental.categories.Category;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Jens Wilke
@@ -100,7 +100,7 @@ public class RejectNullValueTest {
   public void get_nonNull() {
     Cache<Integer, Integer> c = target.cache();
     Integer v = c.get(1);
-    assertEquals((Integer) 1, v);
+    assertThat(v).isEqualTo((Integer) 1);
   }
 
   /**
@@ -119,9 +119,9 @@ public class RejectNullValueTest {
   public void get_no_cache() throws ExecutionException, InterruptedException {
     Cache<Integer, Integer> c = target.cache();
     c.put(4, 1);
-    assertTrue(c.containsKey(4));
+    assertThat(c.containsKey(4)).isTrue();
     c.reloadAll(asList(4)).get();
-    assertFalse(c.containsKey(4));
+    assertThat(c.containsKey(4)).isFalse();
   }
 
   @Test(expected = CacheLoaderException.class)

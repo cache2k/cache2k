@@ -26,8 +26,9 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.*;
+import static java.lang.Math.max;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.eviction.ClockProPlusEviction.HIT_COUNTER_DECREASE_SHIFT;
 
 /**
  * Run simple access patterns that provide test coverage on the clock pro
@@ -56,14 +57,16 @@ public class ClockProEvictionTest extends TestingBase {
       c.put(i, 1);
       int size = c.asMap().size();
       if (size < previousSize + 1) {
-        evictionChunk = Math.max((previousSize + 1) - size, evictionChunk);
+        evictionChunk = max((previousSize + 1) - size, evictionChunk);
       }
       if (evictionChunk > minChunkSize) {
         break;
       }
       previousSize = size;
     }
-    assertThat("chunked eviction happened", evictionChunk, greaterThan(minChunkSize));
+    assertThat(evictionChunk)
+      .as("chunked eviction happened")
+      .isGreaterThan(minChunkSize);
   }
 
   @Test
@@ -80,7 +83,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int k : c.keys()) {
       count++;
     }
-    assertEquals(size, count);
+    assertThat(count).isEqualTo(size);
   }
 
   @Test
@@ -97,7 +100,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int k : c.keys()) {
       count++;
     }
-    assertEquals(size, count);
+    assertThat(count).isEqualTo(size);
   }
 
   @Test
@@ -117,7 +120,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int k : c.keys()) {
       count++;
     }
-    assertEquals(size, count);
+    assertThat(count).isEqualTo(size);
   }
 
   @Test
@@ -146,7 +149,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int k : c.keys()) {
       count++;
     }
-    assertEquals(size, count);
+    assertThat(count).isEqualTo(size);
   }
 
   /**
@@ -165,7 +168,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    assertEquals(size, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(size);
     for (int i = size / 2; i < size; i++) {
       c.put(i, i);
     }
@@ -175,7 +178,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int i = 0; i < size / 3; i++) {
       c.put(i, i);
     }
-    int hitCounterDecreaseShift = ClockProPlusEviction.HIT_COUNTER_DECREASE_SHIFT;
+    int hitCounterDecreaseShift = HIT_COUNTER_DECREASE_SHIFT;
     for (int j = 0; j < 1 << hitCounterDecreaseShift + 1; j++) {
       for (int i = 0; i < size / 4; i++) {
         c.put(i, i);
@@ -184,7 +187,7 @@ public class ClockProEvictionTest extends TestingBase {
     for (int i = 0; i < size * 2; i++) {
       c.put(i, i);
     }
-    assertEquals(size, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(size);
   }
 
 }

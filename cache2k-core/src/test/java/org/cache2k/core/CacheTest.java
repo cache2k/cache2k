@@ -21,14 +21,14 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.of;
 
 /**
  * Basic sanity checks and examples.
@@ -41,14 +41,14 @@ public class CacheTest {
   @Test
   public void testPeekAndPut() {
     Cache<String, String> c =
-      Cache2kBuilder.of(String.class, String.class)
+      of(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");
-    assertNull(val);
+    assertThat(val).isNull();
     c.put("something", "hello");
     val = c.get("something");
-    assertNotNull(val);
+    assertThat(val).isNotNull();
     c.close();
   }
 
@@ -56,54 +56,54 @@ public class CacheTest {
   public void testGetWithLoader() {
     CacheLoader<String, Integer> lengthCountingSource = String::length;
     Cache<String, Integer> c =
-      Cache2kBuilder.of(String.class, Integer.class)
+      of(String.class, Integer.class)
         .loader(lengthCountingSource)
         .eternal(true)
         .build();
     int v = c.get("hallo");
-    assertEquals(5, v);
+    assertThat(v).isEqualTo(5);
     v = c.get("long string");
-    assertEquals(11, v);
+    assertThat(v).isEqualTo(11);
     c.close();
   }
 
   @Test
   public void testGetEntry() {
     Cache<String, String> c =
-      Cache2kBuilder.of(String.class, String.class)
+      of(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");
-    assertNull(val);
+    assertThat(val).isNull();
     c.put("something", "hello");
     CacheEntry<String, String> e = c.getEntry("something");
-    assertNotNull(e);
-    assertEquals("hello", e.getValue());
+    assertThat(e).isNotNull();
+    assertThat(e.getValue()).isEqualTo("hello");
     c.close();
   }
 
   @Test
   public void testContains() {
     Cache<String, String> c =
-      Cache2kBuilder.of(String.class, String.class)
+      of(String.class, String.class)
         .eternal(true)
         .build();
     String val = c.peek("something");
-    assertNull(val);
+    assertThat(val).isNull();
     c.put("something", "hello");
-    assertTrue(c.containsKey("something"));
-    assertFalse(c.containsKey("dsaf"));
+    assertThat(c.containsKey("something")).isTrue();
+    assertThat(c.containsKey("dsaf")).isFalse();
     c.close();
   }
 
   @Test
   public void testEntryToString() {
     Cache<Integer, Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .eternal(true)
         .build();
     c.put(1, 2);
-    assertEquals("CacheEntry(key=1, valueHashCode=2)", c.getEntry(1).toString());
+    assertThat(c.getEntry(1).toString()).isEqualTo("CacheEntry(key=1, valueHashCode=2)");
   }
 
 }

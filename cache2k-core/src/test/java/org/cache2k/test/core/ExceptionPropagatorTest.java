@@ -32,6 +32,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
 /**
@@ -90,7 +91,7 @@ public class ExceptionPropagatorTest {
       });
       fail();
     } catch (EntryProcessingException ex) {
-      assertEquals(CacheLoaderException.class, ex.getCause().getClass());
+      assertThat(ex.getCause().getClass()).isEqualTo(CacheLoaderException.class);
     }
   }
 
@@ -100,7 +101,7 @@ public class ExceptionPropagatorTest {
       e.setException(new IllegalArgumentException("Test"));
       return null;
     });
-    assertTrue(c.containsKey(KEY));
+    assertThat(c.containsKey(KEY)).isTrue();
     return c;
   }
 

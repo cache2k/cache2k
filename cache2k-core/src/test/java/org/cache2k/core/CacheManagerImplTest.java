@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.fail;
+import static org.cache2k.core.CacheManagerImpl.eventuallyThrowException;
 
 /**
  * @author Jens Wilke
@@ -47,7 +48,7 @@ public class CacheManagerImplTest {
   public void eventuallyThrowException_normalException() {
     List<Throwable> li = new ArrayList<>();
     li.add(new IllegalArgumentException());
-    CacheManagerImpl.eventuallyThrowException(li);
+    eventuallyThrowException(li);
     fail("exception expected");
   }
 
@@ -55,7 +56,7 @@ public class CacheManagerImplTest {
   public void eventuallyThrowException_error() {
     List<Throwable> li = new ArrayList<>();
     li.add(new LinkageError());
-    CacheManagerImpl.eventuallyThrowException(li);
+    eventuallyThrowException(li);
     fail("exception expected");
   }
 
@@ -63,7 +64,7 @@ public class CacheManagerImplTest {
   public void eventuallyThrowException_ExecutionExceptionWithEWrror() {
     List<Throwable> li = new ArrayList<>();
     li.add(new ExecutionException(new LinkageError()));
-    CacheManagerImpl.eventuallyThrowException(li);
+    eventuallyThrowException(li);
     fail("exception expected");
   }
 
@@ -72,7 +73,7 @@ public class CacheManagerImplTest {
     List<Throwable> li = new ArrayList<>();
     li.add(new IllegalArgumentException());
     li.add(new LinkageError());
-    CacheManagerImpl.eventuallyThrowException(li);
+    eventuallyThrowException(li);
     fail("exception expected");
   }
 

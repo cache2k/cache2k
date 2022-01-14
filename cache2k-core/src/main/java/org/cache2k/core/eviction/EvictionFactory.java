@@ -20,11 +20,9 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
-import org.cache2k.core.api.InternalConfig;
 import org.cache2k.operation.Weigher;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.api.InternalCacheBuildContext;
-import org.cache2k.core.HeapCache;
 import org.cache2k.core.SegmentedEviction;
 
 /**

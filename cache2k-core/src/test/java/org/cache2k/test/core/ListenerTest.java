@@ -24,7 +24,6 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.core.CacheClosedException;
 import org.cache2k.core.api.InternalCache;
-import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.test.util.CacheRule;
@@ -43,7 +42,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.of;
+import static org.cache2k.expiry.ExpiryTimeValues.ETERNAL;
 import static org.cache2k.test.core.StaticUtil.*;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,11 +91,11 @@ public class ListenerTest {
 
       @Override
       public void run() {
-        assertEquals(0, evicted.get());
+        assertThat(evicted.get()).isEqualTo(0);
         cache.put(1, 2);
-        assertEquals(0, evicted.get());
+        assertThat(evicted.get()).isEqualTo(0);
         cache.put(2, 2);
-        assertEquals(1, evicted.get());
+        assertThat(evicted.get()).isEqualTo(1);
       }
     });
 
@@ -117,9 +118,9 @@ public class ListenerTest {
         cache.put(1, 2);
         cache.put(2, 2);
         cache.put(3, 2);
-        assertEquals(0, evicted.get());
+        assertThat(evicted.get()).isEqualTo(0);
         ((InternalCache) cache).getEviction().changeCapacity(1);
-        assertEquals(2, evicted.get());
+        assertThat(evicted.get()).isEqualTo(2);
       }
 
     });
@@ -131,9 +132,9 @@ public class ListenerTest {
     target.run(new CountSyncEvents() {
       @Override
       public void run() {
-        assertEquals(0, created.get());
+        assertThat(created.get()).isEqualTo(0);
         cache.put(1, 2);
-        assertEquals(1, created.get());
+        assertThat(created.get()).isEqualTo(1);
       }
     });
   }
@@ -150,12 +151,12 @@ public class ListenerTest {
 
       @Override
       public void run() {
-        assertEquals(0, created.get());
+        assertThat(created.get()).isEqualTo(0);
         cache.put(1, 2);
-        assertEquals(0, created.get());
-        assertEquals(123, (int) cache.get(123));
-        assertEquals(0, created.get());
-        assertEquals(0, expired.get());
+        assertThat(created.get()).isEqualTo(0);
+        assertThat((int) cache.get(123)).isEqualTo(123);
+        assertThat(created.get()).isEqualTo(0);
+        assertThat(expired.get()).isEqualTo(0);
       }
     });
   }
@@ -166,9 +167,9 @@ public class ListenerTest {
       @Override
       public void run() {
         cache.put(1, 2);
-        assertEquals(0, updated.get());
+        assertThat(updated.get()).isEqualTo(0);
         cache.put(1, 2);
-        assertEquals(1, updated.get());
+        assertThat(updated.get()).isEqualTo(1);
       }
     });
   }
@@ -179,11 +180,11 @@ public class ListenerTest {
       @Override
       public void run() {
         cache.put(1, 2);
-        assertEquals(0, removed.get());
+        assertThat(removed.get()).isEqualTo(0);
         cache.put(1, 2);
-        assertEquals(0, removed.get());
+        assertThat(removed.get()).isEqualTo(0);
         cache.remove(1);
-        assertEquals(1, removed.get());
+        assertThat(removed.get()).isEqualTo(1);
       }
     });
   }
@@ -203,7 +204,7 @@ public class ListenerTest {
       callCount.incrementAndGet();
     }));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     fire.countDown();
     await(() -> callCount.get() == 1);
   }
@@ -227,9 +228,9 @@ public class ListenerTest {
       callCount.incrementAndGet();
     }));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     fire.countDown();
     await(() -> callCount.get() == 1);
   }
@@ -249,11 +250,11 @@ public class ListenerTest {
       callCount.incrementAndGet();
     }));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.remove(1);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     fire.countDown();
     await(() -> callCount.get() == 1);
   }
@@ -274,13 +275,13 @@ public class ListenerTest {
       })
       .entryCapacity(1));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(2, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(2, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
 
     block.countDown();
     await(() -> callCount.get() >= 1);
@@ -300,9 +301,9 @@ public class ListenerTest {
         })
         .entryCapacity(2));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(2, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     Thread t = new Thread(() -> {
       try {
         c.put(3, 2);
@@ -312,11 +313,11 @@ public class ListenerTest {
     t.start();
     await(() -> callCount.get() >= 1);
     if (isEvicting(c, 1)) {
-      assertTrue(c.containsKey(2));
+      assertThat(c.containsKey(2)).isTrue();
       c.put(2, 88); // update works!
       c.remove(2);
     } else {
-      assertTrue(c.containsKey(1));
+      assertThat(c.containsKey(1)).isTrue();
       c.put(1, 88); // update works!
       c.remove(1);
     }
@@ -339,11 +340,11 @@ public class ListenerTest {
         })
         .entryCapacity(2));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(2, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     c.put(3, 2);
-    assertEquals(1, callCount.get());
+    assertThat(callCount.get()).isEqualTo(1);
   }
 
   /**
@@ -359,13 +360,15 @@ public class ListenerTest {
         callCount.incrementAndGet();
       }));
     c.put(1, 2);
-    assertEquals(0, callCount.get());
+    assertThat(callCount.get()).isEqualTo(0);
     final int updateCount = 123;
     for (int i = 0; i < updateCount; i++) {
       c.put(1, i);
     }
     await(() -> callCount.get() == updateCount);
-    assertEquals("Event dispatching is using copied events", 123, seenValues.size());
+    assertThat(seenValues.size())
+      .as("Event dispatching is using copied events")
+      .isEqualTo(123);
   }
 
   @Test(expected = Exception.class)
@@ -409,12 +412,12 @@ public class ListenerTest {
         if (currentEntry != null) {
           return 0;
         }
-        return ExpiryTimeValues.ETERNAL;
+        return ETERNAL;
       }));
     c.put(1, 1);
     c.put(1, 2);
     await(() -> expireCallCount.get() == 1);
-    assertEquals(0, latestInfo(c).getSize());
+    assertThat(latestInfo(c).getSize()).isEqualTo(0);
   }
 
   /**
@@ -431,13 +434,13 @@ public class ListenerTest {
         if (currentEntry != null) {
           return startTime;
         }
-        return ExpiryTimeValues.ETERNAL;
+        return ETERNAL;
       }));
     c.put(1, 1);
     c.put(1, 2);
     await(() -> expireCallCount.get() == 1);
-    assertEquals(0, latestInfo(c).getSize());
-    assertEquals(1, latestInfo(c).getExpiredCount());
+    assertThat(latestInfo(c).getSize()).isEqualTo(0);
+    assertThat(latestInfo(c).getExpiredCount()).isEqualTo(1);
   }
 
   /**
@@ -454,13 +457,13 @@ public class ListenerTest {
         if (currentEntry != null) {
           return startTime;
         }
-        return ExpiryTimeValues.ETERNAL;
+        return ETERNAL;
       }));
     c.put(1, 1);
     c.put(1, 2);
-    assertEquals(1, expireCallCount.get());
-    assertEquals(0, latestInfo(c).getSize());
-    assertEquals(1, latestInfo(c).getExpiredCount());
+    assertThat(expireCallCount.get()).isEqualTo(1);
+    assertThat(latestInfo(c).getSize()).isEqualTo(0);
+    assertThat(latestInfo(c).getExpiredCount()).isEqualTo(1);
   }
 
   @Test
@@ -473,14 +476,14 @@ public class ListenerTest {
   public void customExecutor() {
     AtomicInteger counter = new AtomicInteger();
     Cache<Integer, Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .addAsyncListener((CacheEntryCreatedListener<Integer, Integer>) (cache, entry) -> {
         })
         .asyncListenerExecutor(command -> counter.incrementAndGet())
         .build();
     c.put(1, 2);
     c.close();
-    assertEquals(1, counter.get());
+    assertThat(counter.get()).isEqualTo(1);
   }
 
   /**
@@ -508,8 +511,12 @@ public class ListenerTest {
       @Override
       public void run() {
         cache.get(123);
-        assertEquals("created", 1, created.get());
-        assertEquals("expired", 1, expired.get());
+        assertThat(created.get())
+          .as("created")
+          .isEqualTo(1);
+        assertThat(expired.get())
+          .as("expired")
+          .isEqualTo(1);
       }
     });
 
@@ -537,13 +544,17 @@ public class ListenerTest {
       @Override
       public void run() {
         cache.put(123, 5);
-        assertEquals("created", 1, created.get());
+        assertThat(created.get())
+          .as("created")
+          .isEqualTo(1);
         try {
           cache.reloadAll(asList(123)).get();
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
-        assertEquals("expired", 1, expired.get());
+        assertThat(expired.get())
+          .as("expired")
+          .isEqualTo(1);
       }
     });
   }
@@ -576,13 +587,17 @@ public class ListenerTest {
           clock.sleep(expireAfterWrite / 3 * 2);
         } catch (InterruptedException ignore) {
         }
-        assertEquals("created", 1, created.get());
+        assertThat(created.get())
+          .as("created")
+          .isEqualTo(1);
         try {
           cache.reloadAll(asList(123)).get();
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
-        assertEquals("updated", 1, updated.get());
+        assertThat(updated.get())
+          .as("updated")
+          .isEqualTo(1);
       }
     });
   }
@@ -596,8 +611,9 @@ public class ListenerTest {
     final AtomicInteger expired = new AtomicInteger();
 
     private void checkCondition() {
-      assertTrue("Get a created event before something is removed, evicted or expired",
-        created.get() >= (evicted.get() + expired.get() + removed.get()));
+      assertThat(created.get() >= (evicted.get() + expired.get() + removed.get()))
+        .as("Get a created event before something is removed, evicted or expired")
+        .isTrue();
     }
 
     @Override

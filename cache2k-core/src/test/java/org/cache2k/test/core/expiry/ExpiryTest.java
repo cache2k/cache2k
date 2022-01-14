@@ -20,10 +20,6 @@ package org.cache2k.test.core.expiry;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
-import org.cache2k.operation.CacheControl;
-import org.cache2k.test.core.BasicCacheTest;
-import org.cache2k.test.core.Constants;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.core.ResiliencePolicyException;
@@ -40,7 +36,6 @@ import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.testing.category.FastTests;
-import org.hamcrest.Matchers;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 
@@ -58,9 +53,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static java.lang.Long.MAX_VALUE;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.*;
+import static org.cache2k.expiry.ExpiryTimeValues.*;
+import static org.cache2k.operation.CacheControl.of;
+import static org.cache2k.test.core.BasicCacheTest.AlwaysExceptionSource;
+import static org.cache2k.test.core.BasicCacheTest.OccasionalExceptionSource;
+import static org.cache2k.test.core.Constants.resilienceCacheAndSuppressExceptions;
+import static org.cache2k.test.core.Constants.resilienceCacheExceptions;
+import static org.cache2k.test.core.TestingParameters.MINIMAL_TICK_MILLIS;
 
 /**
  * @author Jens Wilke
@@ -93,15 +97,25 @@ public class ExpiryTest extends TestingBase {
   }
 
   private void checkAlwaysLoaded(IntCountingCacheSource g, Cache<Integer, Integer> c) {
-    assertEquals("no miss yet", 0, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss yet")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss yet", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss yet")
+      .isEqualTo(1);
     c.get(1802);
-    assertEquals("additional miss", 2, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("additional miss")
+      .isEqualTo(2);
     c.get(1802);
-    assertEquals("additional miss", 3, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("additional miss")
+      .isEqualTo(3);
     c.get(1802);
-    assertEquals("additional miss", 4, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("additional miss")
+      .isEqualTo(4);
   }
 
   @Test
@@ -154,26 +168,36 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .resiliencePolicy(new EnableExceptionCaching())
       .build();
-    assertEquals("no miss", 0, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL"));
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
+    assertThat(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL")).isTrue();
     CacheEntry<Integer, Integer> e = c.getEntry(99);
     entryHasException(e);
-    assertEquals(RuntimeException.class, e.getException().getClass());
-    assertEquals("two miss", 2, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(99).contains("nextRefreshTime=ETERNAL"));
+    assertThat(e.getException().getClass()).isEqualTo(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount())
+      .as("two miss")
+      .isEqualTo(2);
+    assertThat(((InternalCache) c).getEntryState(99).contains("nextRefreshTime=ETERNAL")).isTrue();
     e = c.getEntry(99);
     entryHasException(e);
-    assertEquals(RuntimeException.class, e.getException().getClass());
-    assertEquals("two miss", 2, g.getLoaderCalledCount());
+    assertThat(e.getException().getClass()).isEqualTo(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount())
+      .as("two miss")
+      .isEqualTo(2);
     try {
       c.get(99);
       fail("expect exception");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("expiry=ETERNAL"));
+      assertThat(ex.toString()).contains("expiry=ETERNAL");
     }
   }
 
@@ -200,26 +224,27 @@ public class ExpiryTest extends TestingBase {
       .eternal(true)
       .keepDataAfterExpired(true)
       .build();
-    assertEquals("no miss", 0, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount()).as("no miss").isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount()).as("one miss").isEqualTo(1);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL"));
-    try {
-      c.get(exceptionKey);
-      fail("exception expected");
-    } catch (CacheLoaderException ex) {
-      assertThat("no expiry on exception", ex.toString(),
-        Matchers.not(Matchers.containsString(EXPIRY_MARKER)));
-      assertTrue(ex.getCause() instanceof RuntimeException);
-    }
-    assertEquals("miss", 2, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(exceptionKey).contains("state=4"));
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
+    assertThat(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL")).isTrue();
+    assertThatCode(() ->
+      c.get(exceptionKey))
+      .isInstanceOf(CacheLoaderException.class)
+      .hasMessageNotContainingAny(EXPIRY_MARKER)
+      .getCause().isInstanceOf(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount()).as("miss").isEqualTo(2);
+    assertThat(((InternalCache) c).getEntryState(exceptionKey).contains("state=4")).isTrue();
     CacheEntry<Integer, Integer> e = c.getEntry(exceptionKey);
     entryHasException(e);
-    assertEquals(RuntimeException.class, e.getException().getClass());
-    assertEquals("miss", 3, g.getLoaderCalledCount());
+    assertThat(e.getException().getClass()).isEqualTo(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount())
+      .as("miss")
+      .isEqualTo(3);
   }
 
   @Test
@@ -237,10 +262,10 @@ public class ExpiryTest extends TestingBase {
     };
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .resiliencePolicy(new EnableExceptionCaching(Long.MAX_VALUE))
+      .resiliencePolicy(new EnableExceptionCaching(MAX_VALUE))
       .expiryPolicy((key, value, startTime, currentEntry) -> {
         if (g.getLoaderCalledCount() == 2) {
-          assertNull(currentEntry);
+          assertThat(currentEntry).isNull();
           success.set(true);
         }
         return 0;
@@ -252,7 +277,7 @@ public class ExpiryTest extends TestingBase {
     } catch (CacheLoaderException expected) {
     }
     c.reloadAll(asList(1)).get();
-    assertTrue(success.get());
+    assertThat(success.get()).isTrue();
   }
 
   @Test
@@ -274,10 +299,12 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader((key, startTime, currentEntry) -> {
         if (loadCount.incrementAndGet() == 1) {
-          assertNull(currentEntry);
+          assertThat(currentEntry).isNull();
           throw new RuntimeException("ouch");
         }
-        assertNull("entry is null, if exception happened previously", currentEntry);
+        assertThat(currentEntry)
+          .as("entry is null, if exception happened previously")
+          .isNull();
         success.set(true);
         return key;
       })
@@ -289,7 +316,7 @@ public class ExpiryTest extends TestingBase {
     } catch (CacheLoaderException expected) {
     }
     c.reloadAll(asList(1)).get();
-    assertTrue(success.get());
+    assertThat(success.get()).isTrue();
   }
 
   @Test
@@ -311,10 +338,12 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader((key, context, callback) -> {
         if (loadCount.incrementAndGet() == 1) {
-          assertNull(context.getCurrentEntry());
+          assertThat(context.getCurrentEntry()).isNull();
           throw new RuntimeException("ouch");
         }
-        assertNull("entry is null, if exception happened previously", context.getCurrentEntry());
+        assertThat(context.getCurrentEntry())
+          .as("entry is null, if exception happened previously")
+          .isNull();
         success.set(true);
         callback.onLoadSuccess(key);
       })
@@ -326,7 +355,7 @@ public class ExpiryTest extends TestingBase {
     } catch (CacheLoaderException expected) {
     }
     c.reloadAll(asList(1)).get();
-    assertTrue(success.get());
+    assertThat(success.get()).isTrue();
   }
 
   /**
@@ -349,25 +378,32 @@ public class ExpiryTest extends TestingBase {
       .loader(g)
       .eternal(true)
       .build();
-    assertEquals("no miss", 0, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL"));
-    try {
-      c.get(exceptionKey);
-      fail("exception expected");
-    } catch (CacheLoaderException ex) {
-      assertThat("no expiry on exception", ex.toString(),
-        Matchers.not(Matchers.containsString(EXPIRY_MARKER)));
-      assertTrue(ex.getCause() instanceof RuntimeException);
-    }
-    assertEquals("miss", 2, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
+    assertThat(((InternalCache) c).getEntryState(1802).contains("nextRefreshTime=ETERNAL")).isTrue();
+    assertThatCode(() ->
+      c.get(exceptionKey))
+      .isInstanceOf(CacheLoaderException.class)
+      .hasMessageNotContainingAny(EXPIRY_MARKER)
+      .getCause().isInstanceOf(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount())
+      .as("miss")
+      .isEqualTo(2);
     CacheEntry<Integer, Integer> e = c.getEntry(exceptionKey);
     entryHasException(e);
-    assertEquals(RuntimeException.class, e.getException().getClass());
-    assertEquals("miss", 3, g.getLoaderCalledCount());
+    assertThat(e.getException().getClass()).isEqualTo(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount())
+      .as("miss")
+      .isEqualTo(3);
   }
 
   @Test
@@ -391,14 +427,16 @@ public class ExpiryTest extends TestingBase {
       c.get(99);
       fail("exception expected");
     } catch (Exception ex) {
-      assertTrue(ex instanceof CacheLoaderException);
-      assertTrue("expiry on exception", ex.toString().contains(EXPIRY_MARKER));
-      assertTrue(ex.getCause() instanceof RuntimeException);
+      assertThat(ex instanceof CacheLoaderException).isTrue();
+      assertThat(ex.toString().contains(EXPIRY_MARKER))
+        .as("expiry on exception")
+        .isTrue();
+      assertThat(ex.getCause() instanceof RuntimeException).isTrue();
     }
     await(() -> {
       if (getInfo().getExpiredCount() > 0) {
         c.getEntry(99);
-        assertTrue(g.getLoaderCalledCount() > 1);
+        assertThat(g.getLoaderCalledCount() > 1).isTrue();
         return true;
       }
       return false;
@@ -449,13 +487,13 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
       .eternal(true)
-      .resiliencePolicy(new EnableExceptionCaching(TestingParameters.MINIMAL_TICK_MILLIS))
+      .resiliencePolicy(new EnableExceptionCaching(MINIMAL_TICK_MILLIS))
       .build();
     c.put(99, 1);
     int v = c.peek(99);
-    assertEquals(1, v);
-    within(TestingParameters.MINIMAL_TICK_MILLIS)
-      .perform(() -> Assertions.assertThatCode(() -> c.reloadAll(asList(99)).get())
+    assertThat(v).isEqualTo(1);
+    within(MINIMAL_TICK_MILLIS)
+      .perform(() -> assertThatCode(() -> c.reloadAll(asList(99)).get())
         .isInstanceOf(ExecutionException.class)
         .getCause()
         .isInstanceOf(CacheLoaderException.class))
@@ -464,12 +502,14 @@ public class ExpiryTest extends TestingBase {
           c.get(99);
           fail("exception expected");
         } catch (Exception ex) {
-          assertTrue(ex instanceof CacheLoaderException);
-          assertTrue("expiry on exception", ex.toString().contains(EXPIRY_MARKER));
-          assertTrue(ex.getCause() instanceof RuntimeException);
+          assertThat(ex instanceof CacheLoaderException).isTrue();
+          assertThat(ex.toString().contains(EXPIRY_MARKER))
+            .as("expiry on exception")
+            .isTrue();
+          assertThat(ex.getCause() instanceof RuntimeException).isTrue();
         }
       });
-    assertTrue(g.getLoaderCalledCount() > 0);
+    assertThat(g.getLoaderCalledCount() > 0).isTrue();
   }
 
 
@@ -487,18 +527,26 @@ public class ExpiryTest extends TestingBase {
     };
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .resiliencePolicy(Constants.resilienceCacheExceptions())
+      .resiliencePolicy(resilienceCacheExceptions())
       .build();
-    assertEquals("no miss", 0, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
     c.get(1802);
-    assertEquals("one miss", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss")
+      .isEqualTo(1);
     CacheEntry<Integer, Integer> e = c.getEntry(99);
     entryHasException(e);
-    assertEquals(RuntimeException.class, e.getException().getClass());
-    assertEquals("two miss", 2, g.getLoaderCalledCount());
-    assertTrue(((InternalCache) c).getEntryState(99).contains("nextRefreshTime=ETERNAL"));
+    assertThat(e.getException().getClass()).isEqualTo(RuntimeException.class);
+    assertThat(g.getLoaderCalledCount())
+      .as("two miss")
+      .isEqualTo(2);
+    assertThat(((InternalCache) c).getEntryState(99).contains("nextRefreshTime=ETERNAL")).isTrue();
   }
 
   /**
@@ -517,15 +565,15 @@ public class ExpiryTest extends TestingBase {
         return o;
       }
     };
-    long expiryMillis = Long.MAX_VALUE / 10000;
+    long expiryMillis = MAX_VALUE / 10000;
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS)
-      .resiliencePolicy(Constants.resilienceCacheExceptions())
+      .expireAfterWrite(expiryMillis, MILLISECONDS)
+      .resiliencePolicy(resilienceCacheExceptions())
       .build();
     CacheEntry<Integer, Integer> e = c.getEntry(99);
     LoadExceptionInfo<Integer, Integer> info = e.getExceptionInfo();
-    assertEquals(info.getLoadTime() + expiryMillis, info.getUntil());
+    assertThat(info.getUntil()).isEqualTo(info.getLoadTime() + expiryMillis);
   }
 
   /**
@@ -544,17 +592,22 @@ public class ExpiryTest extends TestingBase {
         return o;
       }
     };
-    long expiryMillis = Long.MAX_VALUE / 10000;
+    long expiryMillis = MAX_VALUE / 10000;
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(g)
-      .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS)
-      .resiliencePolicy(Constants.resilienceCacheAndSuppressExceptions())
+      .expireAfterWrite(expiryMillis, MILLISECONDS)
+      .resiliencePolicy(resilienceCacheAndSuppressExceptions())
       .build();
     c.get(1);
-    long loadTime = c.invoke(1, entry -> { entry.load(); return entry.getStartTime(); });
+    long loadTime = c.invoke(1, entry -> {
+      entry.load();
+      return entry.getStartTime();
+    });
     long expiryTime = c.invoke(1, MutableCacheEntry::getExpiryTime);
-    assertEquals("two loads", 2, g.getLoaderCalledCount());
-    assertEquals(loadTime + expiryMillis, expiryTime);
+    assertThat(g.getLoaderCalledCount())
+      .as("two loads")
+      .isEqualTo(2);
+    assertThat(expiryTime).isEqualTo(loadTime + expiryMillis);
   }
 
   private static void entryHasException(CacheEntry<Integer, Integer> e) {
@@ -563,22 +616,22 @@ public class ExpiryTest extends TestingBase {
       fail("exception expected");
     } catch (CacheLoaderException ex) {
     }
-    assertNotNull(e.getException());
+    assertThat(e.getException()).isNotNull();
   }
 
   @Test
   public void testImmediateExpire() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
-      .expireAfterWrite(0, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(0, MILLISECONDS)
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
     c.get(1);
-    assertEquals(0, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(0);
     c.put(3, 3);
-    assertEquals(0, getInfo().getSize());
-    assertEquals(0, getInfo().getPutCount());
+    assertThat(getInfo().getSize()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(0);
   }
 
   @Test
@@ -588,17 +641,17 @@ public class ExpiryTest extends TestingBase {
       .keepDataAfterExpired(false)
       .build();
     c.get(1);
-    assertEquals(1, getInfo().getSize());
-    CacheControl.of(c).changeCapacity(0);
-    assertEquals(0, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(1);
+    of(c).changeCapacity(0);
+    assertThat(getInfo().getSize()).isEqualTo(0);
     c.put(3, 3);
-    assertEquals(0, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(0);
     c.get(2);
-    assertEquals(0, getInfo().getSize());
-    assertEquals(2, getInfo().getGetCount());
-    CacheControl.of(c).changeCapacity(123);
+    assertThat(getInfo().getSize()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(2);
+    of(c).changeCapacity(123);
     c.get(4);
-    assertEquals(1, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(1);
   }
 
   @Test
@@ -610,9 +663,9 @@ public class ExpiryTest extends TestingBase {
       .sharpExpiry(true)
       .build();
     c.get(1);
-    assertEquals(0, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(0);
     c.put(3, 3);
-    assertEquals(0, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(0);
   }
 
   @Test
@@ -621,18 +674,18 @@ public class ExpiryTest extends TestingBase {
       .loader(new IntCountingCacheSource())
       .expiryPolicy((key, value, startTime, currentEntry) -> {
         if (currentEntry == null) {
-          return ExpiryTimeValues.ETERNAL;
+          return ETERNAL;
         }
-        return ExpiryTimeValues.NOW;
+        return NOW;
       })
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
     c.get(1);
-    assertEquals(1, getInfo().getSize());
+    assertThat(getInfo().getSize()).isEqualTo(1);
     c.put(1, 3);
-    assertEquals(0, getInfo().getSize());
-    assertEquals(0, getInfo().getPutCount());
+    assertThat(getInfo().getSize()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(0);
   }
 
   @Test
@@ -640,19 +693,19 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .expiryPolicy((key, value, startTime, currentEntry) -> {
         if (currentEntry == null) {
-          return ExpiryTimeValues.ETERNAL;
+          return ETERNAL;
         }
-        return ExpiryTimeValues.NOW;
+        return NOW;
       })
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();
     c.put(1, 1);
-    assertEquals(1, getInfo().getPutCount());
-    assertEquals(1, getInfo().getSize());
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
+    assertThat(getInfo().getSize()).isEqualTo(1);
     c.put(1, 3);
-    assertEquals(0, getInfo().getSize());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getSize()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
   }
 
   @Test
@@ -674,11 +727,11 @@ public class ExpiryTest extends TestingBase {
           throw new NullPointerException("test");
         }
       })
-      .loader(new BasicCacheTest.OccasionalExceptionSource())
+      .loader(new OccasionalExceptionSource())
       .build();
     CacheEntry e = c.getEntry(1);
-    assertEquals(ResiliencePolicyException.class, e.getException().getClass());
-    assertEquals(NullPointerException.class, e.getException().getCause().getClass());
+    assertThat(e.getException().getClass()).isEqualTo(ResiliencePolicyException.class);
+    assertThat(e.getException().getCause().getClass()).isEqualTo(NullPointerException.class);
   }
 
   @Test
@@ -695,9 +748,9 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
                                            CacheEntry<Integer, Integer> cachedEntry) {
-          assertTrue(inf.getException() instanceof IllegalStateException);
-          assertEquals(key, cachedEntry.getValue());
-          assertEquals(key, cachedEntry.getKey());
+          assertThat(inf.getException() instanceof IllegalStateException).isTrue();
+          assertThat(cachedEntry.getValue()).isEqualTo(key);
+          assertThat(cachedEntry.getKey()).isEqualTo(key);
           suppressRetryCount.set(inf.getRetryCount());
           return 0;
         }
@@ -706,35 +759,37 @@ public class ExpiryTest extends TestingBase {
         public long retryLoadAfter(Integer key, LoadExceptionInfo inf) {
           cacheRetryCount.set(inf.getRetryCount());
           if (inf.getRetryCount() == 0) {
-            assertEquals(inf.getSinceTime(), inf.getLoadTime());
+            assertThat(inf.getLoadTime()).isEqualTo(inf.getSinceTime());
           } else {
-            assertTrue("2 ms pause, time different", inf.getLoadTime() > inf.getSinceTime());
+            assertThat(inf.getLoadTime() > inf.getSinceTime())
+              .as("2 ms pause, time different")
+              .isTrue();
           }
-          assertTrue(inf.getLoadTime() >= t0);
-          assertEquals(0, inf.getUntil());
+          assertThat(inf.getLoadTime() >= t0).isTrue();
+          assertThat(inf.getUntil()).isEqualTo(0);
           return 0;
         }
       })
       .loader(new Every1ExceptionLoader())
       .build();
     CacheEntry e = c.getEntry(0xff);
-    assertNotNull(e.getException());
-    assertEquals(initial, suppressRetryCount.get());
-    assertEquals(0, cacheRetryCount.get());
+    assertThat(e.getException()).isNotNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(initial);
+    assertThat(cacheRetryCount.get()).isEqualTo(0);
     sleep(2);
     c.getEntry(0xff);
-    assertEquals(1, cacheRetryCount.get());
+    assertThat(cacheRetryCount.get()).isEqualTo(1);
     e = c.getEntry(0x06);
-    assertNull(e.getException());
+    assertThat(e.getException()).isNull();
     e = c.getEntry(0x06);
-    assertNotNull(e.getException());
-    assertEquals(0, suppressRetryCount.get());
-    assertEquals(0, cacheRetryCount.get());
+    assertThat(e.getException()).isNotNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(0);
+    assertThat(cacheRetryCount.get()).isEqualTo(0);
     sleep(2);
     e = c.getEntry(0x06);
-    assertNotNull(e.getException());
-    assertEquals(0, suppressRetryCount.get());
-    assertEquals(1, cacheRetryCount.get());
+    assertThat(e.getException()).isNotNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(0);
+    assertThat(cacheRetryCount.get()).isEqualTo(1);
   }
 
   @Test
@@ -751,9 +806,9 @@ public class ExpiryTest extends TestingBase {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
                                            CacheEntry<Integer, Integer> cachedEntry) {
-          assertTrue(inf.getException() instanceof IllegalStateException);
-          assertEquals(key, cachedEntry.getValue());
-          assertEquals(key, cachedEntry.getKey());
+          assertThat(inf.getException() instanceof IllegalStateException).isTrue();
+          assertThat(cachedEntry.getValue()).isEqualTo(key);
+          assertThat(cachedEntry.getKey()).isEqualTo(key);
           suppressRetryCount.set(inf.getRetryCount());
           return 0;
         }
@@ -762,35 +817,41 @@ public class ExpiryTest extends TestingBase {
         public long retryLoadAfter(Integer key, LoadExceptionInfo inf) {
           cacheRetryCount.set(inf.getRetryCount());
           if (inf.getRetryCount() == 0) {
-            assertEquals(inf.getSinceTime(), inf.getLoadTime());
+            assertThat(inf.getLoadTime()).isEqualTo(inf.getSinceTime());
           } else {
-            assertTrue("2 ms pause, time different", inf.getLoadTime() > inf.getSinceTime());
+            assertThat(inf.getLoadTime() > inf.getSinceTime())
+              .as("2 ms pause, time different")
+              .isTrue();
           }
-          assertTrue(inf.getLoadTime() >= t0);
-          assertEquals(0, inf.getUntil());
+          assertThat(inf.getLoadTime() >= t0).isTrue();
+          assertThat(inf.getUntil()).isEqualTo(0);
           return 0;
         }
       })
       .loader(new Every1ExceptionLoader())
       .build();
     CacheEntry e = c.getEntry(0xff);
-    assertNotNull(e.getException());
-    assertEquals(initial, suppressRetryCount.get());
-    assertEquals(0, cacheRetryCount.get());
+    assertThat(e.getException()).isNotNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(initial);
+    assertThat(cacheRetryCount.get()).isEqualTo(0);
     sleep(2);
     c.getEntry(0xff);
-    assertEquals(0, cacheRetryCount.get());
+    assertThat(cacheRetryCount.get()).isEqualTo(0);
     e = c.getEntry(0x06);
-    assertNull(e.getException());
+    assertThat(e.getException()).isNull();
     e = c.getEntry(0x06);
-    assertNotNull(e.getException());
-    assertEquals("valid entry expired immediately", initial, suppressRetryCount.get());
-    assertEquals(0, cacheRetryCount.get());
+    assertThat(e.getException()).isNotNull();
+    assertThat(suppressRetryCount.get())
+      .as("valid entry expired immediately")
+      .isEqualTo(initial);
+    assertThat(cacheRetryCount.get()).isEqualTo(0);
     sleep(2);
     e = c.getEntry(0x06);
-    assertNotNull(e.getException());
-    assertEquals("valid entry expired immediately", initial, suppressRetryCount.get());
-    assertEquals(0, cacheRetryCount.get());
+    assertThat(e.getException()).isNotNull();
+    assertThat(suppressRetryCount.get())
+      .as("valid entry expired immediately")
+      .isEqualTo(initial);
+    assertThat(cacheRetryCount.get()).isEqualTo(0);
   }
 
   @Test
@@ -816,29 +877,29 @@ public class ExpiryTest extends TestingBase {
           return 0;
         }
       })
-      .loader(new BasicCacheTest.AlwaysExceptionSource())
+      .loader(new AlwaysExceptionSource())
       .build();
     c.put(1, 1);
-    assertEquals(initial, suppressRetryCount.get());
-    assertEquals(initial, cacheRetryCount.get());
+    assertThat(suppressRetryCount.get()).isEqualTo(initial);
+    assertThat(cacheRetryCount.get()).isEqualTo(initial);
     c.getEntry(1);
-    assertEquals(0, suppressRetryCount.get());
-    assertEquals(initial, cacheRetryCount.get());
-    assertEquals(1, getInfo().getSuppressedExceptionCount());
+    assertThat(suppressRetryCount.get()).isEqualTo(0);
+    assertThat(cacheRetryCount.get()).isEqualTo(initial);
+    assertThat(getInfo().getSuppressedExceptionCount()).isEqualTo(1);
     c.reloadAll(asList(1)).get();
-    assertEquals(1, suppressRetryCount.get());
-    assertEquals(initial, cacheRetryCount.get());
+    assertThat(suppressRetryCount.get()).isEqualTo(1);
+    assertThat(cacheRetryCount.get()).isEqualTo(initial);
     c.reloadAll(asList(1)).get();
-    assertEquals(2, suppressRetryCount.get());
-    assertEquals(initial, cacheRetryCount.get());
+    assertThat(suppressRetryCount.get()).isEqualTo(2);
+    assertThat(cacheRetryCount.get()).isEqualTo(initial);
   }
 
   @Test
   public void testPolicyNotCalledIfExpire0() {
     AtomicLong policyCalled = new AtomicLong();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .loader(new BasicCacheTest.AlwaysExceptionSource())
-      .expireAfterWrite(0, TimeUnit.SECONDS)
+      .loader(new AlwaysExceptionSource())
+      .expireAfterWrite(0, SECONDS)
       .keepDataAfterExpired(true)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
@@ -858,15 +919,15 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 1);
     c.getEntry(1);
-    assertEquals(0, policyCalled.get());
-    assertEquals(0, getInfo().getSuppressedExceptionCount());
+    assertThat(policyCalled.get()).isEqualTo(0);
+    assertThat(getInfo().getSuppressedExceptionCount()).isEqualTo(0);
   }
 
   @Test
   public void testImmediateExpireButKeepDataDoesSuppress() {
     AtomicLong policyCalled = new AtomicLong();
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .loader(new BasicCacheTest.AlwaysExceptionSource())
+      .loader(new AlwaysExceptionSource())
       .expiryPolicy((key, value, startTime, currentEntry) -> 0)
       .keepDataAfterExpired(true)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
@@ -887,8 +948,8 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 1);
     c.getEntry(1);
-    assertEquals(1, policyCalled.get());
-    assertEquals(1, getInfo().getSuppressedExceptionCount());
+    assertThat(policyCalled.get()).isEqualTo(1);
+    assertThat(getInfo().getSuppressedExceptionCount()).isEqualTo(1);
   }
 
   @Test
@@ -898,7 +959,7 @@ public class ExpiryTest extends TestingBase {
     AtomicInteger suppressRetryCount = new AtomicInteger(initial);
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .keepDataAfterExpired(true)
-      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
+      .expiryPolicy((key, value, startTime, currentEntry) -> NOW)
       .resiliencePolicy(new ResiliencePolicy<Integer, Integer>() {
         @Override
         public long suppressExceptionUntil(Integer key, LoadExceptionInfo<Integer, Integer> inf,
@@ -917,22 +978,24 @@ public class ExpiryTest extends TestingBase {
       .build();
     int key = 2 + 8;
     CacheEntry<Integer, Integer> e = c.getEntry(key);
-    assertNull(e.getException());
+    assertThat(e.getException()).isNull();
     e = c.getEntry(key);
-    assertNull("suppressed", e.getException());
-    assertEquals(0, suppressRetryCount.get());
-    assertEquals(-4711, cacheRetryCount.get());
+    assertThat(e.getException()).as("Exception was suppressed").isNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(0);
+    assertThat(cacheRetryCount.get()).isEqualTo(-4711);
     e = c.getEntry(key);
-    assertNull("still suppressed", e.getException());
-    assertEquals("no additional loader call", 0, suppressRetryCount.get());
-    assertEquals(-4711, cacheRetryCount.get());
+    assertThat(e.getException()).as("still suppressed").isNull();
+    assertThat(suppressRetryCount.get())
+      .as("no additional loader call")
+      .isEqualTo(0);
+    assertThat(cacheRetryCount.get()).isEqualTo(-4711);
     c.put(key, 123);
     e = c.getEntry(key);
-    assertNull(e.getException());
-    assertEquals(0, suppressRetryCount.get());
+    assertThat(e.getException()).isNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(0);
     e = c.getEntry(key);
-    assertNull(e.getException());
-    assertEquals(0, suppressRetryCount.get());
+    assertThat(e.getException()).isNull();
+    assertThat(suppressRetryCount.get()).isEqualTo(0);
   }
 
   /**
@@ -947,16 +1010,16 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
+      .expiryPolicy((key, value, startTime, currentEntry) -> NOW)
       .loader(countingLoader)
       .build();
     c.get(1);
     c.get(2);
     c.get(3);
     await("All expired", () -> getInfo().getExpiredCount() >= count);
-    assertEquals(0, getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount());
-    assertEquals(count, countingLoader.getLoaderCalledCount());
-    assertEquals(count, getInfo().getExpiredCount());
+    assertThat(getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount()).isEqualTo(0);
+    assertThat(countingLoader.getLoaderCalledCount()).isEqualTo(count);
+    assertThat(getInfo().getExpiredCount()).isEqualTo(count);
   }
 
   /**
@@ -971,7 +1034,7 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
+      .expiryPolicy((key, value, startTime, currentEntry) -> NOW)
       .loader(countingLoader)
       .keepDataAfterExpired(false)
       .build();
@@ -979,10 +1042,9 @@ public class ExpiryTest extends TestingBase {
     c.get(2);
     c.get(3);
     await("All expired", () -> getInfo().getExpiredCount() >= count);
-    assertEquals(0,
-      getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount());
-    assertEquals(count, countingLoader.getLoaderCalledCount());
-    assertEquals(count, getInfo().getExpiredCount());
+    assertThat(getInfo().getRefreshCount() + getInfo().getRefreshRejectedCount()).isEqualTo(0);
+    assertThat(countingLoader.getLoaderCalledCount()).isEqualTo(count);
+    assertThat(getInfo().getExpiredCount()).isEqualTo(count);
   }
 
   /**
@@ -996,11 +1058,11 @@ public class ExpiryTest extends TestingBase {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .eternal(true)
-      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW)
+      .expiryPolicy((key, value, startTime, currentEntry) -> NOW)
       .loader(countingLoader)
       .build();
     c.get(1);
-    assertFalse(c.containsKey(1));
+    assertThat(c.containsKey(1)).isFalse();
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -1049,18 +1111,18 @@ public class ExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     c.expireAt(1, 0);
-    assertFalse(c.containsKey(1));
+    assertThat(c.containsKey(1)).isFalse();
   }
 
   @Test
   public void manualExpire_aboutNow() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
-      .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(LONG_DELTA, MILLISECONDS)
       .build();
     c.put(1, 2);
-    assertTrue(c.containsKey(1));
+    assertThat(c.containsKey(1)).isTrue();
     c.expireAt(1, ticks());
-    assertFalse(c.containsKey(1));
+    assertThat(c.containsKey(1)).isFalse();
     statistics()
       .putCount.expect(1)
       .expiredCount.expect(1)
@@ -1097,13 +1159,13 @@ public class ExpiryTest extends TestingBase {
     abstract void test() throws Exception;
 
     void likeRefreshImmediately() {
-      assertTrue(cache.containsKey(1));
-      assertEquals(0, count.get());
+      assertThat(cache.containsKey(1)).isTrue();
+      assertThat(count.get()).isEqualTo(0);
       sem.release();
       await("loader called", () -> count.get() == 1);
       await("load complete", () -> !cache.containsKey(1));
       try {
-        assertEquals(1, getInfo().getSize());
+        assertThat(getInfo().getSize()).isEqualTo(1);
       } catch (AssertionError e) {
         if (ticks() < (startTime + LONG_DELTA)) {
           throw e;
@@ -1121,10 +1183,10 @@ public class ExpiryTest extends TestingBase {
       @Override
       void test() {
         cache.put(1, 2);
-        cache.expireAt(1, ExpiryTimeValues.NOW);
-        assertFalse(cache.containsKey(1));
-        assertEquals(0, count.get());
-        assertEquals(0, getInfo().getSize());
+        cache.expireAt(1, NOW);
+        assertThat(cache.containsKey(1)).isFalse();
+        assertThat(count.get()).isEqualTo(0);
+        assertThat(getInfo().getSize()).isEqualTo(0);
       }
     }.test();
   }
@@ -1214,32 +1276,32 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void manualExpire_refreshAhead_sharp() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(LONG_DELTA, MILLISECONDS)
       .refreshAhead(true)
       .keepDataAfterExpired(false)
       .loader(key -> 4711)
       .build();
     c.put(1, 2);
     c.expireAt(1, -ticks());
-    assertFalse(c.containsKey(1));
+    assertThat(c.containsKey(1)).isFalse();
     await(() -> getInfo().getRefreshCount() > 0);
   }
 
   @Test
   public void manualExpire_sharp() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(LONG_DELTA, MILLISECONDS)
       .loader(key -> 4711)
       .build();
     c.put(1, 2);
     c.expireAt(1, -ticks());
-    assertFalse(c.containsKey(1));
+    assertThat(c.containsKey(1)).isFalse();
   }
 
   @Test
   public void manualExpire_refreshAhead_expireAt_NOW_gone() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(LONG_DELTA, MILLISECONDS)
       .refreshAhead(true)
       .keepDataAfterExpired(false)
       .loader(key -> 4711)
@@ -1248,12 +1310,16 @@ public class ExpiryTest extends TestingBase {
       c.put(1, 2);
       c.expireAt(1, -ticks());
     }).expectMaybe(() -> {
-      assertFalse(c.containsKey(1));
+      assertThat(c.containsKey(1)).isFalse();
       await(() -> getInfo().getRefreshCount() > 0);
-      assertEquals("in cache if within delta time", 1, getInfo().getSize());
+      assertThat(getInfo().getSize())
+        .as("in cache if within delta time")
+        .isEqualTo(1);
     });
-    c.expireAt(1, ExpiryTimeValues.NOW);
-    assertEquals("empty after expired immediately", 0, getInfo().getSize());
+    c.expireAt(1, NOW);
+    assertThat(getInfo().getSize())
+      .as("empty after expired immediately")
+      .isEqualTo(0);
   }
 
   @Test
@@ -1269,30 +1335,36 @@ public class ExpiryTest extends TestingBase {
     within(LONG_DELTA)
       .perform(() -> {
         c.expireAt(1, -ticks());
-        assertFalse(
-          "entry not visible after expireAt, during refresh and after refresh",
-          c.containsKey(1));
+        assertThat(c.containsKey(1))
+          .as("entry not visible after expireAt, during refresh and after refresh")
+          .isFalse();
         await(() -> getInfo().getRefreshCount() == 1);
       }).expectMaybe(() -> {
-        assertEquals(1, getInfo().getSize());
-        assertFalse("Still invisible", c.containsKey(1));
-        c.expireAt(1, ExpiryTimeValues.ETERNAL);
-        assertTrue("Visible, when expiry extended", c.containsKey(1));
-        assertEquals(4711, (int) c.peek(1));
-        assertEquals(1, getInfo().getSize());
-        assertEquals(1, getInfo().getRefreshCount());
-        c.expireAt(1, ExpiryTimeValues.REFRESH);
-        assertEquals(1, getInfo().getSize());
+        assertThat(getInfo().getSize()).isEqualTo(1);
+        assertThat(c.containsKey(1))
+          .as("Still invisible")
+          .isFalse();
+        c.expireAt(1, ETERNAL);
+        assertThat(c.containsKey(1))
+          .as("Visible, when expiry extended")
+          .isTrue();
+        assertThat((int) c.peek(1)).isEqualTo(4711);
+        assertThat(getInfo().getSize()).isEqualTo(1);
+        assertThat(getInfo().getRefreshCount()).isEqualTo(1);
+        c.expireAt(1, REFRESH);
+        assertThat(getInfo().getSize()).isEqualTo(1);
         await(() -> getInfo().getRefreshCount() == 2);
-        assertFalse("Invisible", c.containsKey(1));
-        assertEquals(4712, (int) c.get(1));
+        assertThat(c.containsKey(1))
+          .as("Invisible")
+          .isFalse();
+        assertThat((int) c.get(1)).isEqualTo(4712);
       });
   }
 
   @Test
   public void manualExpiryPut_sharp() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(LONG_DELTA, MILLISECONDS)
       .refreshAhead(true)
       .loader(key -> 4711)
       .build();
@@ -1301,14 +1373,14 @@ public class ExpiryTest extends TestingBase {
       e.setValue(7);
       return null;
     });
-    assertTrue(c.containsKey(1));
-    assertEquals((Integer) 7, c.peek(1));
+    assertThat(c.containsKey(1)).isTrue();
+    assertThat(c.peek(1)).isEqualTo((Integer) 7);
   }
 
   @Test
   public void manualExpireWithEntryProcessor_sharp() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(LONG_DELTA, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(LONG_DELTA, MILLISECONDS)
       .refreshAhead(true)
       .loader(key -> 4711)
       .build();
@@ -1317,7 +1389,7 @@ public class ExpiryTest extends TestingBase {
       e.setExpiryTime(-ticks());
       return null;
     });
-    assertFalse(c.containsKey(1));
+    assertThat(c.containsKey(1)).isFalse();
   }
 
   /**
@@ -1329,10 +1401,10 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void nullFromLoaderRemoves_get_getEntry_getAll() {
     Cache<Integer, Integer> c = cacheNoNullNoLoaderException();
-    assertNull(c.get(1));
-    assertNull(c.getEntry(2));
+    assertThat(c.get(1)).isNull();
+    assertThat(c.getEntry(2)).isNull();
     Map<Integer, Integer> map = c.getAll(asList(3, 4, 5));
-    assertEquals(0, map.size());
+    assertThat(map.size()).isEqualTo(0);
   }
 
   @Test
@@ -1347,9 +1419,9 @@ public class ExpiryTest extends TestingBase {
           c.put(i, i);
         }
       }).expectMaybe(() -> {
-        assertEquals(3, getCache().asMap().size());
-        sleep(TestingParameters.MINIMAL_TICK_MILLIS);
-        assertEquals(3, getCache().asMap().size());
+        assertThat(getCache().asMap().size()).isEqualTo(3);
+        sleep(MINIMAL_TICK_MILLIS);
+        assertThat(getCache().asMap().size()).isEqualTo(3);
       });
   }
 
@@ -1357,10 +1429,10 @@ public class ExpiryTest extends TestingBase {
   @Test
   public void high_expiry() {
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
-      .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(MAX_VALUE - 47, MILLISECONDS)
       .build();
     c.put(1, 1);
-    assertTrue(c.containsKey(1));
+    assertThat(c.containsKey(1)).isTrue();
   }
 
   private Cache<Integer, Integer> cacheNoNullNoLoaderException() {
@@ -1420,7 +1492,7 @@ public class ExpiryTest extends TestingBase {
   public void close_called() {
     ClosingExpiryPolicy<Integer, Integer> ep = new ClosingExpiryPolicy();
     builder().expiryPolicy(ep).build().close();
-    assertTrue(ep.closeCalled.get());
+    assertThat(ep.closeCalled.get()).isTrue();
   }
 
 }

@@ -28,9 +28,10 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.timing.TimeAgnosticTiming.EternalImmediate;
+import static org.cache2k.core.timing.TimeAgnosticTiming.Immediate;
 
 /**
  * @author Jens Wilke
@@ -61,16 +62,16 @@ public class DefaultResiliencePolicyTest {
       .eternal(true)
       /* ... set loader ... */
       .build();
-    assertTrue(extractHandler() instanceof TimeAgnosticTiming.EternalImmediate);
+    assertThat(extractHandler() instanceof EternalImmediate).isTrue();
   }
 
   @Test
   public void expiry0() {
     cache = new Cache2kBuilder<Integer, Integer>() { }
-      .expireAfterWrite(0, TimeUnit.MINUTES)
+      .expireAfterWrite(0, MINUTES)
       /* ... set loader ... */
       .build();
-    assertTrue(extractHandler() instanceof TimeAgnosticTiming.Immediate);
+    assertThat(extractHandler() instanceof Immediate).isTrue();
   }
 
 }

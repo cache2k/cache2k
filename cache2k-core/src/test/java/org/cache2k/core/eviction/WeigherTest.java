@@ -29,10 +29,9 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.ExecutionException;
 
+import static java.lang.Long.MAX_VALUE;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Run simple access patterns that provide test coverage on the clock pro
@@ -58,7 +57,7 @@ public class WeigherTest extends TestingBase {
    */
   @Test
   public void illegalConfigOkay() {
-    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+    builder(Integer.class, Integer.class)
       .eternal(true)
       .entryCapacity(123)
       .weigher((key, value) -> 1)
@@ -84,7 +83,7 @@ public class WeigherTest extends TestingBase {
       .build();
     c.put(1, 1);
     c.put(2, 1);
-    assertEquals(1, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(1);
   }
 
   /**
@@ -104,7 +103,7 @@ public class WeigherTest extends TestingBase {
       .build();
     c.put(1, 1);
     c.put(2, 1);
-    assertEquals(2, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(2);
   }
 
   @Test
@@ -113,9 +112,9 @@ public class WeigherTest extends TestingBase {
       .eternal(true)
       .entryCapacity(-1)
       .weigher((key, value) -> 0)
-      .maximumWeight(Long.MAX_VALUE)
+      .maximumWeight(MAX_VALUE)
       .build();
-    assertEquals(Long.MAX_VALUE, getInfo().getMaximumWeight());
+    assertThat(getInfo().getMaximumWeight()).isEqualTo(MAX_VALUE);
   }
 
   @Test
@@ -134,12 +133,14 @@ public class WeigherTest extends TestingBase {
     c.put(13, 1);
     c.put(14, 1);
     c.put(2, 1);
-    assertEquals(6, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(6);
     c.put(2, size * 2);
-    assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration())
+      .as("big entry, everything removed")
+      .isEqualTo(0);
     c.put(1, 1);
-    assertEquals(1, countEntriesViaIteration());
-    assertFalse("the other entry is removed", c.containsKey(2));
+    assertThat(countEntriesViaIteration()).isEqualTo(1);
+    assertThat(c.containsKey(2)).as("the other entry is removed").isFalse();
   }
 
   @Test
@@ -157,12 +158,14 @@ public class WeigherTest extends TestingBase {
     c.put(12, 1);
     c.put(13, 1);
     c.put(14, 1);
-    assertEquals(5, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(5);
     c.put(2, size * 2);
-    assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration())
+      .as("big entry, everything removed")
+      .isEqualTo(0);
     c.put(1, 1);
-    assertEquals(1, countEntriesViaIteration());
-    assertFalse("the other entry is removed", c.containsKey(2));
+    assertThat(countEntriesViaIteration()).isEqualTo(1);
+    assertThat(c.containsKey(2)).as("the other entry is removed").isFalse();
   }
 
   @Test
@@ -182,7 +185,7 @@ public class WeigherTest extends TestingBase {
     for (int i = 0; i < numEntries; i++) {
       c.remove(i);
     }
-    assertEquals(0, getInfo().getTotalWeight());
+    assertThat(getInfo().getTotalWeight()).isEqualTo(0);
   }
 
   @Test
@@ -197,12 +200,12 @@ public class WeigherTest extends TestingBase {
       .build();
     c.put(1, 1);
     c.put(2, 1);
-    assertEquals(2, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(2);
     c.remove(2);
     c.put(1, 2);
-    assertEquals(1, countEntriesViaIteration());
-    assertTrue(c.containsKey(1));
-    assertEquals(1, getInfo().getEvictedWeight());
+    assertThat(countEntriesViaIteration()).isEqualTo(1);
+    assertThat(c.containsKey(1)).isTrue();
+    assertThat(getInfo().getEvictedWeight()).isEqualTo(1);
   }
 
   @Test
@@ -218,7 +221,7 @@ public class WeigherTest extends TestingBase {
       .build();
     c.get(1);
     c.get(1);
-    assertEquals(1, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(1);
   }
 
   @Test
@@ -234,12 +237,14 @@ public class WeigherTest extends TestingBase {
       .build();
     c.get(1);
     c.get(2);
-    assertEquals(2, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration()).isEqualTo(2);
     c.reloadAll(asList(2)).get(); // 100
-    assertEquals("big entry, everything removed", 0, countEntriesViaIteration());
+    assertThat(countEntriesViaIteration())
+      .as("big entry, everything removed")
+      .isEqualTo(0);
     c.reloadAll(asList(1)).get();
-    assertEquals(1, countEntriesViaIteration());
-    assertFalse("the other entry is removed", c.containsKey(2));
+    assertThat(countEntriesViaIteration()).isEqualTo(1);
+    assertThat(c.containsKey(2)).as("the other entry is removed").isFalse();
   }
 
   /**

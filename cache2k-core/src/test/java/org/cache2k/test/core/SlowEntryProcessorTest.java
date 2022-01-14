@@ -25,13 +25,14 @@ import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.test.util.IntCacheRule;
 import org.cache2k.testing.category.SlowTests;
-import org.hamcrest.Matchers;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.*;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.sleep;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for the entry processor, timing related.
@@ -56,13 +57,14 @@ public class SlowEntryProcessorTest {
   @Test @Ignore("TODO: SlowEntryProcessorTest.modificationTime_reference_before_invoke")
   public void modificationTime_reference_before_invoke() {
     Cache<Integer, Integer> c = target.cache();
-    long t0 = System.currentTimeMillis();
+    long t0 = currentTimeMillis();
     c.invoke(KEY, e -> {
-      e.setValue((int) (System.currentTimeMillis() - t0));
-      Thread.sleep(1);
+      e.setValue((int) (currentTimeMillis() - t0));
+      sleep(1);
       return null;
     });
-    assertThat(c.invoke(KEY, MutableCacheEntry::getModificationTime), Matchers.lessThanOrEqualTo((t0 + c.peek(KEY))));
+    assertThat((Long) c.invoke(KEY, MutableCacheEntry::getModificationTime))
+      .isLessThanOrEqualTo((t0 + c.peek(KEY)));
   }
 
 }

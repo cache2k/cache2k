@@ -29,7 +29,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
@@ -51,8 +52,8 @@ public class CacheWriterTest extends TestingBase {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = createIntegerCacheWithWriter(w);
     c.put(1, 1);
-    assertEquals(1, (int) w.count.get(1));
-    assertEquals(1, (int) w.content.get(1));
+    assertThat((int) w.count.get(1)).isEqualTo(1);
+    assertThat((int) w.content.get(1)).isEqualTo(1);
   }
 
   @Test
@@ -61,8 +62,8 @@ public class CacheWriterTest extends TestingBase {
     Cache<Integer, Integer> c = createIntegerCacheWithWriter(w);
     c.put(1, 1);
     c.put(1, 2);
-    assertEquals(2, (int) w.count.get(1));
-    assertEquals(2, (int) w.content.get(1));
+    assertThat((int) w.count.get(1)).isEqualTo(2);
+    assertThat((int) w.content.get(1)).isEqualTo(2);
   }
 
   @Test
@@ -73,7 +74,7 @@ public class CacheWriterTest extends TestingBase {
       .loader(key -> key)
       .build();
     c.get(1);
-    assertNull(w.count.get(1));
+    assertThat(w.count.get(1)).isNull();
   }
 
   @Test
@@ -84,7 +85,7 @@ public class CacheWriterTest extends TestingBase {
       .loader(key -> key)
       .build();
     c.reloadAll(asList(1)).get();
-    assertNull(w.count.get(1));
+    assertThat(w.count.get(1)).isNull();
   }
 
   @Test
@@ -98,7 +99,7 @@ public class CacheWriterTest extends TestingBase {
       entry.getValue();
       return null;
     });
-    assertNull(w.count.get(1));
+    assertThat(w.count.get(1)).isNull();
   }
 
   @Test
@@ -113,7 +114,7 @@ public class CacheWriterTest extends TestingBase {
       entry.setValue(123);
       return null;
     });
-    assertEquals(1, (int) w.count.get(1));
+    assertThat((int) w.count.get(1)).isEqualTo(1);
   }
 
   @Test
@@ -122,9 +123,9 @@ public class CacheWriterTest extends TestingBase {
     Cache<Integer, Integer> c = createIntegerCacheWithWriter(w);
     c.put(1, 1);
     c.remove(1);
-    assertEquals(1, (int) w.count.get(1));
-    assertEquals(1, (int) w.deletedCount.get(1));
-    assertNull(w.content.get(1));
+    assertThat((int) w.count.get(1)).isEqualTo(1);
+    assertThat((int) w.deletedCount.get(1)).isEqualTo(1);
+    assertThat(w.content.get(1)).isNull();
   }
 
   @Test(expected = RuntimeException.class)
@@ -132,8 +133,8 @@ public class CacheWriterTest extends TestingBase {
     MyWriter w = new MyWriter();
     Cache<Integer, Integer> c = createIntegerCacheWithWriter(w);
     c.put(1, 1);
-    assertEquals(1, (int) w.count.get(1));
-    assertEquals(1, (int) w.content.get(1));
+    assertThat((int) w.count.get(1)).isEqualTo(1);
+    assertThat((int) w.content.get(1)).isEqualTo(1);
     c.put(1, 777);
   }
 
@@ -144,14 +145,14 @@ public class CacheWriterTest extends TestingBase {
       c.put(1, 777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT, ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT);
     }
     checkState(c);
   }
 
   private void checkState(Cache<Integer, Integer> c) {
-    assertTrue(c.containsKey(1));
-    assertEquals(1, (int) c.peek(1));
+    assertThat(c.containsKey(1)).isTrue();
+    assertThat((int) c.peek(1)).isEqualTo(1);
   }
 
   @Test
@@ -161,7 +162,7 @@ public class CacheWriterTest extends TestingBase {
       c.replace(1, 777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT, ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT);
     }
     checkState(c);
   }
@@ -173,7 +174,7 @@ public class CacheWriterTest extends TestingBase {
       c.replaceIfEquals(1, 1, 777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT, ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT);
     }
     checkState(c);
   }
@@ -185,7 +186,7 @@ public class CacheWriterTest extends TestingBase {
       c.peekAndReplace(1, 777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT, ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT);
     }
     checkState(c);
   }
@@ -208,7 +209,7 @@ public class CacheWriterTest extends TestingBase {
       c.peekAndReplace(1, 777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT, ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT);
     }
     checkState(c);
   }
@@ -233,7 +234,7 @@ public class CacheWriterTest extends TestingBase {
       c.putAll(map);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT + '7', ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT + '7');
     }
     checkState(c);
   }
@@ -245,14 +246,14 @@ public class CacheWriterTest extends TestingBase {
       c.put(123, 7777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT + '7', ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT + '7');
     }
     checkState(c);
     try {
       c.put(123, 7777);
       fail("exception expected");
     } catch (Exception ex) {
-      assertEquals(EXCEPTION_TEXT + '7', ex.toString());
+      assertThat(ex.toString()).isEqualTo(EXCEPTION_TEXT + '7');
     }
     checkState(c);
   }
@@ -294,8 +295,8 @@ public class CacheWriterTest extends TestingBase {
     Cache<Integer, Integer> c = createIntegerCacheWithWriter(w);
     c.put(1, 1);
     checkState(c);
-    assertEquals(1, (int) w.count.get(1));
-    assertEquals(1, (int) w.content.get(1));
+    assertThat((int) w.count.get(1)).isEqualTo(1);
+    assertThat((int) w.content.get(1)).isEqualTo(1);
     return c;
   }
 

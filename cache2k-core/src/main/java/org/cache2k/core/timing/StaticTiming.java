@@ -26,7 +26,6 @@ import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
-import org.cache2k.core.api.InternalConfig;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -71,7 +70,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final long expiryTicks;
   private final Timer timer;
   private TimerEventListener<K, V> target;
-  private long safetyGapTicks;
+  private final long safetyGapTicks;
 
   StaticTiming(InternalCacheBuildContext<K, V> buildContext,
                ResiliencePolicy<K, V> resiliencePolicy) {

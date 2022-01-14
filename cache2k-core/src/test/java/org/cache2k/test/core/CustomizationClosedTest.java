@@ -36,7 +36,7 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Jens Wilke
@@ -79,7 +79,9 @@ public class CustomizationClosedTest extends TestingBase {
 
   void check(Cache2kBuilder b) {
     b.build().close();
-    assertEquals("all closed", 0, unclosed.get());
+    assertThat(unclosed.get())
+      .as("all closed")
+      .isEqualTo(0);
   }
 
   class Common implements AutoCloseable {

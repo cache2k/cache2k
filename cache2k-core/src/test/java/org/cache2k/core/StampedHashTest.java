@@ -20,7 +20,7 @@ package org.cache2k.core;
  * #L%
  */
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class StampedHashTest {
         ht.rehash();
         return null;
       });
-      assertTrue(ht.getSegmentMaxFill() >= 0);
+      assertThat(ht.getSegmentMaxFill() >= 0).isTrue();
     }
   }
 

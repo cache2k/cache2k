@@ -26,9 +26,12 @@ import org.junit.experimental.categories.Category;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
-import static org.junit.Assert.*;
+import static java.lang.Integer.MAX_VALUE;
+import static java.util.TimeZone.getTimeZone;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.Entry.ProcessingState.*;
+import static org.cache2k.core.Entry.num2processingStateText;
 
 /**
  * @author Jens Wilke
@@ -42,9 +45,9 @@ public class EntryTest {
     Entry e = new Entry();
     synchronized (e) {
       e.setRefreshTime(4711);
-      assertEquals(4711, e.getModificationTime());
+      assertThat(e.getModificationTime()).isEqualTo(4711);
       e.setRefreshTime(123456);
-      assertEquals(123456, e.getModificationTime());
+      assertThat(e.getModificationTime()).isEqualTo(123456);
     }
   }
 
@@ -55,7 +58,7 @@ public class EntryTest {
     Entry e = new Entry();
     synchronized (e) {
       e.setRefreshTime(t);
-      assertEquals(t, e.getModificationTime());
+      assertThat(e.getModificationTime()).isEqualTo(t);
     }
   }
 
@@ -65,15 +68,15 @@ public class EntryTest {
     synchronized (e) {
       e.setRefreshTime(Long.MAX_VALUE);
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      df.setTimeZone(TimeZone.getTimeZone("GMT"));
-      assertEquals("2248-09-26 15:10:22", df.format(new Date(e.getModificationTime())));
+      df.setTimeZone(getTimeZone("GMT"));
+      assertThat(df.format(new Date(e.getModificationTime()))).isEqualTo("2248-09-26 15:10:22");
     }
   }
 
   @Test
   public void testProcessingStateInitial() {
     Entry e = new Entry();
-    assertEquals(Entry.ProcessingState.DONE, e.getProcessingState());
+    assertThat(e.getProcessingState()).isEqualTo(DONE);
   }
 
   @Test
@@ -81,21 +84,21 @@ public class EntryTest {
     Entry e = new Entry();
     synchronized (e) {
       e.setNextRefreshTime(4711);
-      e.startProcessing(Entry.ProcessingState.REFRESH, null);
-      assertTrue(e.isGettingRefresh());
+      e.startProcessing(REFRESH, null);
+      assertThat(e.isGettingRefresh()).isTrue();
       e.processingDone();
     }
-    assertEquals(Entry.ProcessingState.DONE, e.getProcessingState());
+    assertThat(e.getProcessingState()).isEqualTo(DONE);
   }
 
   @Test
   public void testHot() {
     Entry e = new Entry();
-    assertFalse(e.isHot());
+    assertThat(e.isHot()).isFalse();
     e.setHot(true);
-    assertTrue(e.isHot());
+    assertThat(e.isHot()).isTrue();
     e.setHot(false);
-    assertFalse(e.isHot());
+    assertThat(e.isHot()).isFalse();
   }
 
   /**
@@ -109,47 +112,43 @@ public class EntryTest {
 
   @Test
   public void timeSpan32Bit() {
-    int days = Integer.MAX_VALUE
+    int days = MAX_VALUE
       / 1000
       / 60
       / 60
       / 24;
-    assertEquals(24, days);
+    assertThat(days).isEqualTo(24);
   }
 
   @Test
   public void num2processingState() {
-    assertEquals("DONE", Entry.num2processingStateText(Entry.ProcessingState.DONE));
-    assertEquals("READ", Entry.num2processingStateText(Entry.ProcessingState.READ));
-    assertEquals("READ_COMPLETE",
-      Entry.num2processingStateText(Entry.ProcessingState.READ_COMPLETE));
-    assertEquals("MUTATE", Entry.num2processingStateText(Entry.ProcessingState.MUTATE));
-    assertEquals("LOAD", Entry.num2processingStateText(Entry.ProcessingState.LOAD));
-    assertEquals("COMPUTE", Entry.num2processingStateText(Entry.ProcessingState.COMPUTE));
-    assertEquals("REFRESH", Entry.num2processingStateText(Entry.ProcessingState.REFRESH));
-    assertEquals("EXPIRY", Entry.num2processingStateText(Entry.ProcessingState.EXPIRY));
-    assertEquals("EXPIRY_COMPLETE",
-      Entry.num2processingStateText(Entry.ProcessingState.EXPIRY_COMPLETE));
-    assertEquals("WRITE", Entry.num2processingStateText(Entry.ProcessingState.WRITE));
-    assertEquals("WRITE_COMPLETE",
-      Entry.num2processingStateText(Entry.ProcessingState.WRITE_COMPLETE));
-    assertEquals("STORE", Entry.num2processingStateText(Entry.ProcessingState.STORE));
-    assertEquals("STORE_COMPLETE",
-      Entry.num2processingStateText(Entry.ProcessingState.STORE_COMPLETE));
-    assertEquals("NOTIFY", Entry.num2processingStateText(Entry.ProcessingState.NOTIFY));
-    assertEquals("PINNED", Entry.num2processingStateText(Entry.ProcessingState.PINNED));
-    assertEquals("LAST", Entry.num2processingStateText(Entry.ProcessingState.LAST));
+    assertThat(num2processingStateText(DONE)).isEqualTo("DONE");
+    assertThat(num2processingStateText(READ)).isEqualTo("READ");
+    assertThat(num2processingStateText(READ_COMPLETE)).isEqualTo("READ_COMPLETE");
+    assertThat(num2processingStateText(MUTATE)).isEqualTo("MUTATE");
+    assertThat(num2processingStateText(LOAD)).isEqualTo("LOAD");
+    assertThat(num2processingStateText(COMPUTE)).isEqualTo("COMPUTE");
+    assertThat(num2processingStateText(REFRESH)).isEqualTo("REFRESH");
+    assertThat(num2processingStateText(EXPIRY)).isEqualTo("EXPIRY");
+    assertThat(num2processingStateText(EXPIRY_COMPLETE)).isEqualTo("EXPIRY_COMPLETE");
+    assertThat(num2processingStateText(WRITE)).isEqualTo("WRITE");
+    assertThat(num2processingStateText(WRITE_COMPLETE)).isEqualTo("WRITE_COMPLETE");
+    assertThat(num2processingStateText(STORE)).isEqualTo("STORE");
+    assertThat(num2processingStateText(STORE_COMPLETE)).isEqualTo("STORE_COMPLETE");
+    assertThat(num2processingStateText(NOTIFY)).isEqualTo("NOTIFY");
+    assertThat(num2processingStateText(PINNED)).isEqualTo("PINNED");
+    assertThat(num2processingStateText(LAST)).isEqualTo("LAST");
   }
 
   @Test
   public void scanRound() {
     Entry e = new Entry();
-    assertEquals(0, e.getScanRound());
+    assertThat(e.getScanRound()).isEqualTo(0);
     e.setScanRound(15);
-    assertEquals(15, e.getScanRound());
+    assertThat(e.getScanRound()).isEqualTo(15);
     e.setHot(true);
     e.setCompressedWeight(4711);
-    assertEquals(15, e.getScanRound());
+    assertThat(e.getScanRound()).isEqualTo(15);
   }
 
 }

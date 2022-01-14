@@ -20,10 +20,11 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static java.lang.Thread.currentThread;
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.EMPTY_SET;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
-import org.cache2k.core.HeapCache;
-import org.cache2k.core.concurrency.ThreadFactoryProvider;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
@@ -59,8 +60,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -70,8 +69,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.junit.Assert.*;
+import static java.util.concurrent.ForkJoinPool.commonPool;
+import static java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.*;
+import static org.cache2k.core.concurrency.ThreadFactoryProvider.DEFAULT;
+import static org.cache2k.expiry.ExpiryTimeValues.NOW;
+import static org.cache2k.expiry.ExpiryTimeValues.REFRESH;
+import static org.cache2k.test.core.TestingParameters.MAX_FINISH_WAIT_MILLIS;
+import static org.cache2k.test.core.expiry.ExpiryTest.EnableExceptionCaching;
 
 /**
  * Test the cache loader.
@@ -112,11 +119,13 @@ public class CacheLoaderTest extends TestingBase {
         getLoaderExecutor().execute(command);
       });
     });
-    assertEquals((Integer) 10, c.get(5));
-    assertEquals((Integer) 20, c.get(10));
-    assertEquals(0, executionCount.get());
+    assertThat(c.get(5)).isEqualTo((Integer) 10);
+    assertThat(c.get(10)).isEqualTo((Integer) 20);
+    assertThat(executionCount.get()).isEqualTo(0);
     c.loadAll(asList(1, 2, 3)).get();
-    assertEquals("executor is used", 3, executionCount.get());
+    assertThat(executionCount.get())
+      .as("executor is used")
+      .isEqualTo(3);
   }
 
   @Test
@@ -134,28 +143,30 @@ public class CacheLoaderTest extends TestingBase {
         getLoaderExecutor().execute(command);
       });
     });
-    assertEquals((Integer) 10, c.get(5));
-    assertEquals((Integer) 20, c.get(10));
-    assertEquals(0, executionCount.get());
+    assertThat(c.get(5)).isEqualTo((Integer) 10);
+    assertThat(c.get(10)).isEqualTo((Integer) 20);
+    assertThat(executionCount.get()).isEqualTo(0);
     c.loadAll(asList(1, 2, 3)).get();
-    assertEquals("executor is used", 3, executionCount.get());
+    assertThat(executionCount.get())
+      .as("executor is used")
+      .isEqualTo(3);
   }
 
   @Test
   public void testLoader() {
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> key * 2));
-    assertEquals((Integer) 10, c.get(5));
-    assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.containsKey(2));
-    assertTrue(c.containsKey(5));
+    assertThat(c.get(5)).isEqualTo((Integer) 10);
+    assertThat(c.get(10)).isEqualTo((Integer) 20);
+    assertThat(c.containsKey(2)).isFalse();
+    assertThat(c.containsKey(5)).isTrue();
   }
 
   @Test
   public void testLoadNull() {
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> null)
       .permitNullValues(true));
-    assertNull(c.get(5));
-    assertTrue(c.containsKey(5));
+    assertThat(c.get(5)).isNull();
+    assertThat(c.containsKey(5)).isTrue();
   }
 
   static class MarkerException extends RuntimeException { }
@@ -259,25 +270,25 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> null));
     try {
       c.get(5);
-      fail();
+      fail("exception expected");
     } catch (CacheLoaderException expected) { }
   }
 
   @Test
   public void testLoadNull_NoCache() {
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> null)
-      .expiryPolicy((key, value, startTime, currentEntry) -> ExpiryTimeValues.NOW));
-    assertNull(c.get(5));
-    assertFalse(c.containsKey(5));
+      .expiryPolicy((key, value, startTime, currentEntry) -> NOW));
+    assertThat(c.get(5)).isNull();
+    assertThat(c.containsKey(5)).isFalse();
   }
 
   @Test
   public void testAdvancedLoader() {
     Cache<Integer, Integer> c = target.cache(b -> b.loader((key, startTime, e) -> key * 2));
-    assertEquals((Integer) 10, c.get(5));
-    assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.containsKey(2));
-    assertTrue(c.containsKey(5));
+    assertThat(c.get(5)).isEqualTo((Integer) 10);
+    assertThat(c.get(10)).isEqualTo((Integer) 20);
+    assertThat(c.containsKey(2)).isFalse();
+    assertThat(c.containsKey(5)).isTrue();
   }
 
   @Test
@@ -286,10 +297,10 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> countLoad.incrementAndGet()));
     c.get(5);
     c.loadAll(asList(5, 6)).get();
-    assertEquals(2, countLoad.get());
-    assertEquals((Integer) 2, c.get(6));
+    assertThat(countLoad.get()).isEqualTo(2);
+    assertThat(c.get(6)).isEqualTo((Integer) 2);
     c.loadAll(asList(5, 6)).get();
-    c.loadAll(Collections.EMPTY_SET);
+    c.loadAll(EMPTY_SET);
   }
 
   @Test
@@ -297,11 +308,11 @@ public class CacheLoaderTest extends TestingBase {
     AtomicInteger countLoad = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> countLoad.incrementAndGet()));
     c.get(5);
-    assertEquals(1, countLoad.get());
+    assertThat(countLoad.get()).isEqualTo(1);
     c.reloadAll(asList(5, 6)).get();
-    assertEquals(3, countLoad.get());
+    assertThat(countLoad.get()).isEqualTo(3);
     c.reloadAll(asList(5, 6));
-    c.reloadAll(Collections.EMPTY_SET);
+    c.reloadAll(EMPTY_SET);
   }
 
   /**
@@ -313,10 +324,10 @@ public class CacheLoaderTest extends TestingBase {
     CountDownLatch releaseLoader = new CountDownLatch(1);
     String namePrefix = CacheLoader.class.getName() + ".testTwoLoaderThreadsAndPoolInfo";
     ThreadPoolExecutor pool = new ThreadPoolExecutor(0, 10,
-      21, TimeUnit.SECONDS,
+      21, SECONDS,
       new SynchronousQueue<>(),
-      ThreadFactoryProvider.DEFAULT.newThreadFactory(namePrefix),
-      new ThreadPoolExecutor.AbortPolicy());
+      DEFAULT.newThreadFactory(namePrefix),
+      new AbortPolicy());
     Cache<Integer, Integer> c = target.cache(b -> {
       b.loaderExecutor(pool);
       b.loader(key -> {
@@ -328,9 +339,9 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(asList(1));
     c.loadAll(asList(2));
     inLoader.await();
-    assertEquals(2, pool.getTaskCount());
-    assertEquals(2, pool.getActiveCount());
-    assertEquals(2, pool.getLargestPoolSize());
+    assertThat(pool.getTaskCount()).isEqualTo(2);
+    assertThat(pool.getActiveCount()).isEqualTo(2);
+    assertThat(pool.getLargestPoolSize()).isEqualTo(2);
     /* old version
     assertEquals(2, latestInfo(c).getAsyncLoadsStarted());
     assertEquals(2, latestInfo(c).getAsyncLoadsInFlight());
@@ -346,19 +357,19 @@ public class CacheLoaderTest extends TestingBase {
    */
   @Test
   public void testOneLoaderThreadsAndPoolInfo() throws Exception {
-    Thread callingThread = Thread.currentThread();
+    Thread callingThread = currentThread();
     CountDownLatch inLoader = new CountDownLatch(1);
     CountDownLatch releaseLoader = new CountDownLatch(1);
     AtomicInteger asyncCount = new AtomicInteger();
     String namePrefix = CacheLoader.class.getName() + ".testOneLoaderThreadsAndPoolInfo";
     ThreadPoolExecutor pool = new ThreadPoolExecutor(0, 1,
-      21, TimeUnit.SECONDS,
+      21, SECONDS,
       new SynchronousQueue<>(),
-      ThreadFactoryProvider.DEFAULT.newThreadFactory(namePrefix),
-      new ThreadPoolExecutor.AbortPolicy());
+      DEFAULT.newThreadFactory(namePrefix),
+      new AbortPolicy());
     Cache<Integer, Integer> c = target.cache(b -> b.loaderExecutor(pool)
       .loader(key -> {
-        if (callingThread != Thread.currentThread()) {
+        if (callingThread != currentThread()) {
           asyncCount.incrementAndGet();
           inLoader.countDown();
           releaseLoader.await();
@@ -368,10 +379,14 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(asList(1));
     c.loadAll(asList(2));
     inLoader.await();
-    assertEquals("only one load is separate thread", 1, pool.getTaskCount());
-    assertEquals("only one load is separate thread", 1, asyncCount.get());
-    assertEquals(1, pool.getActiveCount());
-    assertEquals(1, pool.getLargestPoolSize());
+    assertThat(pool.getTaskCount())
+      .as("only one load is separate thread")
+      .isEqualTo(1);
+    assertThat(asyncCount.get())
+      .as("only one load is separate thread")
+      .isEqualTo(1);
+    assertThat(pool.getActiveCount()).isEqualTo(1);
+    assertThat(pool.getLargestPoolSize()).isEqualTo(1);
     /* old version
     assertEquals("only one load is separate thread", 1, latestInfo(c).getAsyncLoadsStarted());
     assertEquals("only one load is separate thread", 1, asyncCount.get());
@@ -422,7 +437,7 @@ public class CacheLoaderTest extends TestingBase {
     AtomicInteger loaderCallCount = new AtomicInteger();
     Cache2kBuilder<Integer, Integer> b = builder(Integer.class, Integer.class);
     if (async) {
-      b.loader((AsyncCacheLoader<Integer, Integer>) (key, context, callback) -> {
+      b.loader((key, context, callback) -> {
         loaderCallCount.incrementAndGet();
         context.getLoaderExecutor().execute(() -> {
           try {
@@ -476,9 +491,9 @@ public class CacheLoaderTest extends TestingBase {
     awaitCountdown(complete);
     exceptionCollector.assertNoException();
     if (reload) {
-      assertEquals(waiterCount, loaderCallCount.get());
+      assertThat(loaderCallCount.get()).isEqualTo(waiterCount);
     } else {
-      assertEquals(1, loaderCallCount.get());
+      assertThat(loaderCallCount.get()).isEqualTo(1);
     }
   }
 
@@ -499,13 +514,14 @@ public class CacheLoaderTest extends TestingBase {
     CountDownLatch complete = new CountDownLatch(1);
     CompletableFuture<Void> chained =
       future.handle((unused, throwable) -> {
-        complete.countDown(); return null;
+        complete.countDown();
+        return null;
       });
     boolean okay = false;
     try {
-      okay = complete.await(3, TimeUnit.SECONDS);
+      okay = complete.await(3, SECONDS);
     } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+      currentThread().interrupt();
     }
     if (chained.isCompletedExceptionally()) {
       try {
@@ -514,7 +530,9 @@ public class CacheLoaderTest extends TestingBase {
         throw new RuntimeException(ex);
       }
     }
-    assertTrue("no timeout", okay);
+    assertThat(okay)
+      .as("no timeout")
+      .isTrue();
   }
 
   @Test
@@ -547,8 +565,8 @@ public class CacheLoaderTest extends TestingBase {
     AtomicInteger loaderExecuted = new AtomicInteger();
     CountDownLatch releaseLoader = new CountDownLatch(1);
     Cache<Integer, Integer> c = target.cache(b -> {
-      b.loaderExecutor(ForkJoinPool.commonPool());
-      b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+      b.loaderExecutor(commonPool());
+      b.loader((key, ctx, callback) -> {
         loaderCalled.incrementAndGet();
         ctx.getLoaderExecutor().execute(() -> {
           try {
@@ -570,9 +588,11 @@ public class CacheLoaderTest extends TestingBase {
       });
     }
     releaseLoader.countDown();
-    boolean okay = complete.await(3, TimeUnit.SECONDS);
+    boolean okay = complete.await(3, SECONDS);
     exceptionCollector.assertNoException();
-    assertTrue("no timeout", okay);
+    assertThat(okay)
+      .as("no timeout")
+      .isTrue();
   }
 
   /**
@@ -582,7 +602,7 @@ public class CacheLoaderTest extends TestingBase {
   public void asyncLoaderLoadViaExecutor() {
     AtomicInteger loaderCalled = new AtomicInteger();
     AtomicInteger loaderExecuted = new AtomicInteger();
-    Cache<Integer, Integer> c = target.cache(b -> b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+    Cache<Integer, Integer> c = target.cache(b -> b.loader((key, ctx, callback) -> {
       loaderCalled.incrementAndGet();
       ctx.getLoaderExecutor().execute(() -> {
         loaderExecuted.incrementAndGet();
@@ -590,7 +610,7 @@ public class CacheLoaderTest extends TestingBase {
       });
     }));
     Integer v = c.get(1);
-    assertEquals(1, (int) v);
+    assertThat((int) v).isEqualTo(1);
   }
 
   /**
@@ -604,7 +624,7 @@ public class CacheLoaderTest extends TestingBase {
       callback.onLoadSuccess(key);
     }));
     Integer v = c.get(1);
-    assertEquals(1, (int) v);
+    assertThat((int) v).isEqualTo(1);
   }
 
   /**
@@ -620,12 +640,12 @@ public class CacheLoaderTest extends TestingBase {
         fail("loader executor use unexpected");
       })
       .refreshAhead(true)
-      .expireAfterWrite(1, TimeUnit.MILLISECONDS));
+      .expireAfterWrite(1, MILLISECONDS));
     Integer v = c.get(1);
     c.loadAll(asList(1, 2, 3, 4, 5)).get();
     c.reloadAll(asList(1, 2, 3, 4, 5)).get();
-    c.invokeAll(asList(2, 3, 4), e -> e.setExpiryTime(ExpiryTimeValues.REFRESH));
-    assertFalse(executorUsed.get() > 0);
+    c.invokeAll(asList(2, 3, 4), e -> e.setExpiryTime(REFRESH));
+    assertThat(executorUsed.get() > 0).isFalse();
   }
 
   @Test
@@ -649,25 +669,25 @@ public class CacheLoaderTest extends TestingBase {
   @Test
   public void asyncLoaderContextProperties() throws ExecutionException, InterruptedException {
     AtomicInteger loaderCalled = new AtomicInteger();
-    Cache<Integer, Integer> c = target.cache(b -> b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+    Cache<Integer, Integer> c = target.cache(b -> b.loader((key, ctx, callback) -> {
       int cnt = loaderCalled.getAndIncrement();
       if (cnt == 0) {
-        assertNull(ctx.getCurrentEntry());
+        assertThat(ctx.getCurrentEntry()).isNull();
       } else {
-        assertEquals(key, ctx.getCurrentEntry().getValue());
-        assertNull(ctx.getCurrentEntry().getException());
+        assertThat(ctx.getCurrentEntry().getValue()).isEqualTo(key);
+        assertThat(ctx.getCurrentEntry().getException()).isNull();
       }
       callback.onLoadSuccess(key);
     }));
     Integer v = c.get(1);
-    assertEquals(1, (int) v);
+    assertThat((int) v).isEqualTo(1);
     c.reloadAll(asList(1)).get();
   }
 
   @Test(expected = IllegalStateException.class)
   public void exceptionOnEntryAccessOutSideProcessing() {
     AtomicReference<AsyncCacheLoader.Context<Integer, Integer>> contextRef = new AtomicReference<>();
-    Cache<Integer, Integer> c = target.cache(b -> b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+    Cache<Integer, Integer> c = target.cache(b -> b.loader((key, ctx, callback) -> {
       contextRef.set(ctx);
       callback.onLoadSuccess(key);
     }));
@@ -679,17 +699,19 @@ public class CacheLoaderTest extends TestingBase {
   public void testAsyncLoaderContextProperties_withException() {
     AtomicInteger loaderCalled = new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(b -> {
-      b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-      b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
+      b.expireAfterWrite(MAX_FINISH_WAIT_MILLIS, MILLISECONDS);
+      b.resiliencePolicy(new EnableExceptionCaching());
       b.loader((key, ctx, callback) -> {
         int cnt = loaderCalled.getAndIncrement();
-        assertNull(ctx.getCurrentEntry());
+        assertThat(ctx.getCurrentEntry()).isNull();
         callback.onLoadFailure(new ExpectedException());
       });
     });
     assertThatCode(() -> c.get(1))
       .getRootCause().isInstanceOf(ExpectedException.class);
-    assertNotNull("exception cached", c.peekEntry(1).getException());
+    assertThat(c.peekEntry(1).getException())
+      .as("exception cached")
+      .isNotNull();
     assertThatCode(() -> c.reloadAll(asList(1)).get())
       .getRootCause().isInstanceOf(ExpectedException.class);
   }
@@ -703,8 +725,8 @@ public class CacheLoaderTest extends TestingBase {
   @Test
   public void asyncLoader_loadAll_reloadAll_propagate_exception() {
     Cache<Integer, Integer> c = target.cache(b -> {
-      b.expireAfterWrite(TestingParameters.MAX_FINISH_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-      b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
+      b.expireAfterWrite(MAX_FINISH_WAIT_MILLIS, MILLISECONDS);
+      b.resiliencePolicy(new EnableExceptionCaching());
       b.loader((key, ctx, callback) -> {
         callback.onLoadFailure(new ExpectedException());
       });
@@ -719,7 +741,9 @@ public class CacheLoaderTest extends TestingBase {
     assertThatCode(() -> c.loadAll(asList(1)).get())
       .as("Previous load exception propagated")
       .getRootCause().isInstanceOf(ExpectedException.class);
-    assertNotNull("exception cached", c.peekEntry(1).getException());
+    assertThat(c.peekEntry(1).getException())
+      .as("exception cached")
+      .isNotNull();
     assertThatCode(() -> c.reloadAll(asList(1)).get())
       .getRootCause().isInstanceOf(ExpectedException.class);
   }
@@ -771,10 +795,10 @@ public class CacheLoaderTest extends TestingBase {
       c.get(1);
       fail("exception expected");
     } catch (CacheLoaderException expected) {
-      assertTrue(expected.getCause() instanceof ExpectedException);
+      assertThat(expected.getCause() instanceof ExpectedException).isTrue();
     }
     c.put(1, 1);
-    assertNotNull(c.get(1));
+    assertThat(c.get(1)).isNotNull();
   }
 
   @Test
@@ -817,7 +841,7 @@ public class CacheLoaderTest extends TestingBase {
   public void asyncLoader_viaExecutor() throws ExecutionException, InterruptedException {
     AtomicInteger loaderCalled = new AtomicInteger();
     AtomicInteger loaderExecuted = new AtomicInteger();
-    Cache<Integer, Integer> c = target.cache(b -> b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+    Cache<Integer, Integer> c = target.cache(b -> b.loader((key, ctx, callback) -> {
       loaderCalled.incrementAndGet();
       ctx.getExecutor().execute(() -> {
         loaderExecuted.incrementAndGet();
@@ -825,12 +849,12 @@ public class CacheLoaderTest extends TestingBase {
       });
     }));
     c.loadAll(asList(1, 2, 1802)).get();
-    assertEquals(1, (int) c.peek(1));
+    assertThat((int) c.peek(1)).isEqualTo(1);
     Object o1 = c.peek(1802);
-    assertTrue(c.peek(1802) == o1);
+    assertThat(c.peek(1802) == o1).isTrue();
     c.reloadAll(asList(1802, 4, 5)).get();
-    assertNotNull(c.peek(1802));
-    assertTrue(c.peek(1802) != o1);
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat(c.peek(1802) != o1).isTrue();
   }
 
   @Test
@@ -838,13 +862,13 @@ public class CacheLoaderTest extends TestingBase {
     Cache<Integer, Integer> c = target.cache(b -> b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) ->
       ctx.getLoaderExecutor().execute(() -> callback.onLoadSuccess(key))));
     c.loadAll(asList(1, 2, 1802)).get();
-    assertNotNull(c.peek(1802));
-    assertEquals(1, (int) c.peek(1));
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat((int) c.peek(1)).isEqualTo(1);
     Object o1 = c.peek(1802);
-    assertTrue(c.peek(1802) == o1);
+    assertThat(c.peek(1802) == o1).isTrue();
     c.reloadAll(asList(1802, 4, 5)).get();
-    assertNotNull(c.peek(1802));
-    assertTrue(c.peek(1802) != o1);
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat(c.peek(1802) != o1).isTrue();
   }
 
   @Test
@@ -870,20 +894,26 @@ public class CacheLoaderTest extends TestingBase {
       });
       loaderCalled.incrementAndGet();
     }));
-    c.loadAll(Collections.EMPTY_LIST).get();
+    c.loadAll(EMPTY_LIST).get();
     c.loadAll(asList(1, 2, 1802)).get();
-    assertNull(otherException.get());
-    assertEquals("loader called", 3, loaderCalled.get());
-    assertEquals("loader Executed", 3, loaderExecuted.get());
+    assertThat(otherException.get()).isNull();
+    assertThat(loaderCalled.get())
+      .as("loader called")
+      .isEqualTo(3);
+    assertThat(loaderExecuted.get())
+      .as("loader Executed")
+      .isEqualTo(3);
     await("wait for 3 exceptions", () -> gotException.get() == 3);
-    assertEquals("always throws exception", 0, gotNoException.get());
+    assertThat(gotNoException.get())
+      .as("always throws exception")
+      .isEqualTo(0);
     c.loadAll(asList(1, 2, 1802)).get();
-    assertEquals(1, (int) c.peek(1));
+    assertThat((int) c.peek(1)).isEqualTo(1);
     Object o1 = c.peek(1802);
-    assertTrue(c.peek(1802) == o1);
+    assertThat(c.peek(1802) == o1).isTrue();
     c.reloadAll(asList(1802, 4, 5)).get();
-    assertNotNull(c.peek(1802));
-    assertTrue(c.peek(1802) != o1);
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat(c.peek(1802) != o1).isTrue();
   }
 
   @Test
@@ -894,8 +924,8 @@ public class CacheLoaderTest extends TestingBase {
     AtomicInteger gotNoException = new AtomicInteger();
     AtomicReference<Throwable> otherException = new AtomicReference<>();
     Cache<Integer, Integer> c = target.cache(b -> {
-      b.loaderExecutor(Executors.newCachedThreadPool());
-      b.loader((AsyncCacheLoader<Integer, Integer>) (key, ctx, callback) -> {
+      b.loaderExecutor(newCachedThreadPool());
+      b.loader((key, ctx, callback) -> {
         Runnable command = () -> {
           loaderExecuted.incrementAndGet();
           try {
@@ -913,23 +943,22 @@ public class CacheLoaderTest extends TestingBase {
         loaderCalled.incrementAndGet();
       });
     });
-    c.loadAll(Collections.EMPTY_LIST).get();
+    c.loadAll(EMPTY_LIST).get();
     c.loadAll(asList(1, 2, 1802)).get();
-    if (otherException.get() != null) {
-      otherException.get().printStackTrace();
-      assertNull(otherException.get().toString(), otherException.get());
-    }
-    assertEquals("loader called", 3, loaderCalled.get());
+    assertThat(otherException.get()).isNull();
+    assertThat(loaderCalled.get())
+      .as("loader called")
+      .isEqualTo(3);
     await("wait for 6 executions", () -> loaderExecuted.get() == 6);
     await("wait for 3 exceptions", () -> gotException.get() == 3);
     await("wait for 3 successful executions", () -> gotNoException.get() == 3);
     c.loadAll(asList(1, 2, 1802)).get();
-    assertEquals(1, (int) c.peek(1));
+    assertThat((int) c.peek(1)).isEqualTo(1);
     Object o1 = c.peek(1802);
-    assertTrue(c.peek(1802) == o1);
+    assertThat(c.peek(1802) == o1).isTrue();
     c.reloadAll(asList(1802, 4, 5)).get();
-    assertNotNull(c.peek(1802));
-    assertTrue(c.peek(1802) != o1);
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat(c.peek(1802) != o1).isTrue();
   }
 
   protected Cache<Integer, Integer> cacheWithLoader() {
@@ -943,10 +972,10 @@ public class CacheLoaderTest extends TestingBase {
   public void asyncBulkLoader_direct() throws Exception {
     final int assertKey = 987;
     final int exceptionKey = 789;
-    Cache<Integer, Integer> c = target.cache(b -> b.loader((AsyncBulkCacheLoader<Integer, Integer>) (keys, context, callback) ->
-      {
+    Cache<Integer, Integer> c = target.cache(b ->
+      b.loader((AsyncBulkCacheLoader<Integer, Integer>) (keys, context, callback) -> {
         int firstKey = keys.iterator().next();
-        assertNotEquals("No assertion provoked", assertKey, firstKey);
+        assertThat(firstKey).as("No assertion provoked").isNotEqualTo(assertKey);
         if (exceptionKey == firstKey) {
           throw new ExpectedException();
         }
@@ -955,13 +984,13 @@ public class CacheLoaderTest extends TestingBase {
     ));
     
     c.loadAll(asList(1, 2, 1802)).get();
-    assertNotNull(c.peek(1802));
-    assertEquals(1, (int) c.peek(1));
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat((int) c.peek(1)).isEqualTo(1);
     Object o1 = c.peek(1802);
-    assertTrue(c.peek(1802) == o1);
+    assertThat(c.peek(1802) == o1).isTrue();
     c.reloadAll(asList(1802, 4, 5)).get();
-    assertNotNull(c.peek(1802));
-    assertTrue(c.peek(1802) != o1);
+    assertThat(c.peek(1802)).isNotNull();
+    assertThat(c.peek(1802) != o1).isTrue();
   }
 
   public static class AsyncLoadBuffer<K, V> {
@@ -972,7 +1001,7 @@ public class CacheLoaderTest extends TestingBase {
     public synchronized void put(K key, AsyncCacheLoader.Callback<V> cb) {
       startedLoadRequests++;
       cb = pending.putIfAbsent(key, cb);
-      assertNull("no request pending for " + key, cb);
+      assertThat(cb).as("no request pending for %s", key).isNull();
       notifyAll();
     }
     public void put(K key, AsyncBulkCacheLoader.BulkCallback<K, V> cb) {
@@ -981,7 +1010,9 @@ public class CacheLoaderTest extends TestingBase {
     public synchronized void complete(K key) {
       notifyAll();
       pending.compute(key, (k, vCallback) -> {
-        assertNotNull("Expected pending. Exception?! Key: " + key, vCallback);
+        assertThat(vCallback)
+          .as("Expected pending. Exception?! Key: " + key)
+          .isNotNull();
         vCallback.onLoadSuccess(loader.apply(k));
         return null;
       });
@@ -1008,7 +1039,7 @@ public class CacheLoaderTest extends TestingBase {
         for (int i = 1; i < keys.length; i++) {
           key = keys[i];
           AsyncBulkCacheLoader.BulkCallback<K, V> cb2 = getBulkCallback(key);
-          assertSame("belongs to same bulk request", cb, cb2);
+          assertThat(cb2).as("belongs to same bulk request").isSameAs(cb2);
           map.put(key, loader.apply(key));
         }
         for (K k : keys) { pending.remove(k); }
@@ -1018,7 +1049,9 @@ public class CacheLoaderTest extends TestingBase {
     /** Expect that async load is started for the set of keys */
     public synchronized void assertStarted(K... keys) {
       for (K k : keys) {
-        assertNotNull("load request pending for " + k, pending.get(k));
+        assertThat(pending.get(k))
+          .as("load request pending for " + k)
+          .isNotNull();
       }
     }
     /** Wait until async load is started for the set of keys */
@@ -1075,7 +1108,9 @@ public class CacheLoaderTest extends TestingBase {
     CompletableFuture<Void> reqB = cache.loadAll(asList(8, 9));
     buffer.bulkComplete(9);
     buffer.bulkComplete(8);
-    assertTrue("completed in our thread", reqA.isDone());
+    assertThat(reqA.isDone())
+      .as("completed in our thread")
+      .isTrue();
     await("completed via executor", reqB::isDone);
     CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
     buffer.assertStarted(1, 2, 3);
@@ -1084,25 +1119,29 @@ public class CacheLoaderTest extends TestingBase {
     buffer.assertStarted(4, 5);
     buffer.bulkComplete(1, 2, 3);
     CompletableFuture<Void> req4 = cache.loadAll(asList(1, 2, 3, 4, 5, 6, 7));
-    assertTrue("completed in our thread", req1.isDone());
+    assertThat(req1.isDone())
+      .as("completed in our thread")
+      .isTrue();
     await("completed via executor", req2::isDone);
-    assertFalse(req3.isDone());
+    assertThat(req3.isDone()).isFalse();
     buffer.complete(4);
     buffer.bulkComplete(5);
-    assertTrue("completed in our thread", req3.isDone());
+    assertThat(req3.isDone())
+      .as("completed in our thread")
+      .isTrue();
     Map<Integer, Integer> res = cache.getAll(asList(1, 2, 3, 4, 5));
     buffer.bulkComplete(6, 7);
-    assertEquals(9, buffer.getStartedLoadRequests());
-    assertEquals(5, bulkRequests.get());
+    assertThat(buffer.getStartedLoadRequests()).isEqualTo(9);
+    assertThat(bulkRequests.get()).isEqualTo(5);
   }
 
   @Test
   public void asyncBulkLoader_singleLoad() throws Exception {
     AsyncLoadBuffer<Integer, Integer> buffer = new AsyncLoadBuffer<>(k -> k);
     Cache<Integer, Integer> cache = target.cache(b -> b.bulkLoader((keys, context, callback) -> {
-      assertEquals(keys.size(), context.getContextMap().size());
+      assertThat(context.getContextMap().size()).isEqualTo(keys.size());
       keys.forEach(key -> {
-        assertTrue(keys.contains(key));
+        assertThat(keys.contains(key)).isTrue();
         buffer.put(key, callback);
       });
     }));
@@ -1121,12 +1160,18 @@ public class CacheLoaderTest extends TestingBase {
       throw new ExpectedException();
     }));
     CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
-    assertTrue("exception expected", req1.isCompletedExceptionally());
+    assertThat(req1.isCompletedExceptionally())
+      .as("exception expected")
+      .isTrue();
     CompletableFuture<Void> req2 = cache.loadAll(asList(4));
-    assertTrue("exception expected", req2.isCompletedExceptionally());
+    assertThat(req2.isCompletedExceptionally())
+      .as("exception expected")
+      .isTrue();
     for (int i = 1; i < 6; i++) {
       CacheEntry<Integer, Integer> entry = cache.getEntry(i);
-      assertNotNull("expect exception", entry.getException());
+      assertThat(entry.getException())
+        .as("expect exception")
+        .isNotNull();
       assertThat(entry.getException()).isInstanceOf(ExpectedException.class);
     }
     assertThatCode(() -> cache.getAll(asList(1, 2, 3))).describedAs("Expect exception if all requested keys yield and exception")
@@ -1150,7 +1195,7 @@ public class CacheLoaderTest extends TestingBase {
     buffer.bulkComplete(1, 3);
     buffer.complete(4);
     exe.join();
-    assertEquals(2, bulkRequests.get());
+    assertThat(bulkRequests.get()).isEqualTo(2);
   }
 
   @Test
@@ -1167,15 +1212,15 @@ public class CacheLoaderTest extends TestingBase {
     CompletableFuture<Void> req4 = cache.loadAll(asList(1, 2, 3, 4, 5, 6, 7));
     req4.get();
     req1.get(); req2.get(); req3.get();
-    assertEquals(7, target.info().getLoadCount());
+    assertThat(target.info().getLoadCount()).isEqualTo(7);
     int bulkRequests0 = bulkRequests.get();
     assertThat(bulkRequests.get())
       .describedAs("May as well be just one bulk request, if execution gets delayed")
       .isIn(1, 2, 3, 4);
     CompletableFuture<Void> req5 = cache.reloadAll(asList(2, 3, 9));
     req5.get();
-    assertEquals(10, target.info().getLoadCount());
-    assertEquals(bulkRequests0 + 1, bulkRequests.get());
+    assertThat(target.info().getLoadCount()).isEqualTo(10);
+    assertThat(bulkRequests.get()).isEqualTo(bulkRequests0 + 1);
   }
 
   @Test
@@ -1190,11 +1235,11 @@ public class CacheLoaderTest extends TestingBase {
     Map<Integer, Integer> result = cache.getAll(asList(3, 4, 5));
     req1.get();
     Map<Integer, Integer> result2 = cache.getAll(asList(1, 2, 3, 4, 5));
-    result2.forEach((k, v) -> assertEquals((int) k, (int) v));
-    assertEquals(5, target.info().getLoadCount());
-    assertEquals(2, bulkRequests.get());
+    result2.forEach((k, v) -> assertThat(v).isEqualTo(k));
+    assertThat(target.info().getLoadCount()).isEqualTo(5);
+    assertThat(bulkRequests.get()).isEqualTo(2);
     Map<Integer, Integer> result3 = cache.getAll(asList(4, 5, 6, 7));
-    result3.forEach((k, v) -> assertEquals((int) k, (int) v));
+    result3.forEach((k, v) -> assertThat(v).isEqualTo(k));
   }
 
   @Test
@@ -1218,7 +1263,7 @@ public class CacheLoaderTest extends TestingBase {
     }));
     execute(() -> cache.getAll(asList(1, 2, 3)));
     Map<Integer, Integer> result2 = cache.getAll(asList(1, 2, 3));
-    result2.forEach((k, v) -> assertEquals((int) k, (int) v));
+    result2.forEach((k, v) -> assertThat(v).isEqualTo(k));
     join();
   }
 
@@ -1236,14 +1281,14 @@ public class CacheLoaderTest extends TestingBase {
     req1.get();
     Map<Integer, EntryProcessingResult<Integer>> result2 =
       cache.invokeAll(asList(1, 2, 3, 4, 5), MutableCacheEntry::getValue);
-    assertEquals(5, target.info().getLoadCount());
-    assertEquals(2, bulkRequests.get());
-    assertEquals(5, result2.size());
-    assertEquals((Integer) 2, result2.get(2).getResult());
-    assertNull(result2.get(2).getException());
+    assertThat(target.info().getLoadCount()).isEqualTo(5);
+    assertThat(bulkRequests.get()).isEqualTo(2);
+    assertThat(result2.size()).isEqualTo(5);
+    assertThat(result2.get(2).getResult()).isEqualTo((Integer) 2);
+    assertThat(result2.get(2).getException()).isNull();
     Map<Integer, EntryProcessingResult<Integer>> result3 =
       cache.invokeAll(asList(1, 2, 3), entry -> { throw new ExpectedException(); });
-    assertEquals(3, result3.size());
+    assertThat(result3.size()).isEqualTo(3);
     assertThat(result3.get(2).getException())
       .as("Propagates exception")
       .isInstanceOf(ExpectedException.class);
@@ -1278,14 +1323,18 @@ public class CacheLoaderTest extends TestingBase {
     req1.get();
     Map<Integer, EntryProcessingResult<Integer>> result2 =
       cache.invokeAll(asList(1, 2, 3, 4, 5), MutableCacheEntry::getValue);
-    assertEquals(5, target.info().getLoadCount());
-    assertEquals("number of bulk requests",2, bulkRequests.get());
-    assertEquals(5, result2.size());
-    assertEquals((Integer) 2, result2.get(2).getResult());
-    assertNull(result2.get(2).getException());
+    assertThat(target.info().getLoadCount()).isEqualTo(5);
+    assertThat(bulkRequests.get())
+      .as("number of bulk requests")
+      .isEqualTo(2);
+    assertThat(result2.size()).isEqualTo(5);
+    assertThat(result2.get(2).getResult()).isEqualTo((Integer) 2);
+    assertThat(result2.get(2).getException()).isNull();
     Map<Integer, EntryProcessingResult<Integer>> result3 =
-      cache.invokeAll(asList(1, 2, 3), entry -> { throw new ExpectedException(); });
-    assertEquals(3, result3.size());
+      cache.invokeAll(asList(1, 2, 3), entry -> {
+        throw new ExpectedException();
+      });
+    assertThat(result3.size()).isEqualTo(3);
     assertThat(result3.get(2).getException())
       .as("Propagates exception")
       .isInstanceOf(ExpectedException.class);
@@ -1309,13 +1358,13 @@ public class CacheLoaderTest extends TestingBase {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.bulkLoader((keys, context, callback) -> {
-          assertTrue(t <= context.getStartTime());
-          assertTrue(keys == context.getKeys());
-          assertNotNull(context.getExecutor());
-          assertNotNull(context.getLoaderExecutor());
-          assertNotNull(context.getContextMap());
-          assertSame(cacheRef.get(), context.getCache());
-          assertSame(callback, context.getCallback());
+          assertThat(t <= context.getStartTime()).isTrue();
+          assertThat(keys == context.getKeys()).isTrue();
+          assertThat(context.getExecutor()).isNotNull();
+          assertThat(context.getLoaderExecutor()).isNotNull();
+          assertThat(context.getContextMap()).isNotNull();
+          assertThat(context.getCache()).isSameAs(cacheRef.get());
+          assertThat(context.getCallback()).isSameAs(callback);
           for (Integer key : keys) {
             callback.onLoadSuccess(key, key);
           }
@@ -1325,10 +1374,13 @@ public class CacheLoaderTest extends TestingBase {
     });
     cacheRef.set(c);
     c.get(123);
-    assertEquals("Check context from default single load implementation in API",
-      1, checkCount.get());
+    assertThat(checkCount.get())
+      .as("Check context from default single load implementation in API")
+      .isEqualTo(1);
     c.loadAll(asList(1, 2, 3)).get();
-    assertEquals("Check context of bulk request",2, checkCount.get());
+    assertThat(checkCount.get())
+      .as("Check context of bulk request")
+      .isEqualTo(2);
   }
 
   @Test
@@ -1354,7 +1406,7 @@ public class CacheLoaderTest extends TestingBase {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.loader((key, startTime, currentEntry) -> {
-          assertNull(currentEntry);
+          assertThat(currentEntry).isNull();
           return key;
         });
       }
@@ -1373,9 +1425,9 @@ public class CacheLoaderTest extends TestingBase {
         b.keepDataAfterExpired(true);
         b.loader((key, startTime, currentEntry) -> {
           if (expectEntry.get()) {
-            assertNotNull(currentEntry);
+            assertThat(currentEntry).isNotNull();
           } else {
-            assertNull(currentEntry);
+            assertThat(currentEntry).isNull();
           }
           return key;
         });

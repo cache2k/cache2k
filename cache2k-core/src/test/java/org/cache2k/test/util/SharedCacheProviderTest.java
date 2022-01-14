@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Jens Wilke
@@ -48,18 +48,18 @@ public class SharedCacheProviderTest {
 
   @Test
   public void test() {
-    assertEquals("org.cache2k.test.util.SharedCacheProviderTest", target.cache().getName());
+    assertThat(target.cache().getName()).isEqualTo("org.cache2k.test.util.SharedCacheProviderTest");
   }
 
   @Test
   public void testEmptyAndPut() {
-    assertFalse(cache.entries().iterator().hasNext());
+    assertThat(cache.entries().iterator().hasNext()).isFalse();
     cache.put(1,2);
   }
 
   @Test
   public void testEmptyAndPut2() {
-    assertFalse(cache.entries().iterator().hasNext());
+    assertThat(cache.entries().iterator().hasNext()).isFalse();
     cache.put(1,2);
   }
 

@@ -21,7 +21,6 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.ForwardingCache;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CacheWrapper;
@@ -30,14 +29,15 @@ import org.cache2k.event.CacheEntryEvictedListener;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.event.CacheEntryRemovedListener;
 import org.cache2k.event.CacheEntryUpdatedListener;
-import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.of;
+import static org.cache2k.expiry.ExpiryTimeValues.NOW;
 import static org.junit.Assert.assertSame;
 
 /**
@@ -49,7 +49,7 @@ public class CacheWrapperTest {
   @Test
   public void tracing() {
     Cache<Integer, Integer> cache =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .setup(b -> b.config().setTraceCacheWrapper(new CacheWrapper() {
           @Override
           public <K, V> Cache<K, V> wrap(CacheBuildContext<K, V> context, Cache<K, V> cache) {
@@ -67,15 +67,15 @@ public class CacheWrapperTest {
           }
         })).build();
     cache.put(1, 1);
-    assertEquals("tracing", cache.toString());
-    assertSame(cache, cache.getCacheManager().getCache(cache.getName()));
+    assertThat(cache.toString()).isEqualTo("tracing");
+    assertThat(cache.getCacheManager().getCache(cache.getName())).isSameAs(cache);
     cache.close();
   }
 
   @Test
   public void general() {
     Cache<Integer, Integer> cache =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .setup(b -> b.config().setCacheWrapper(new CacheWrapper() {
           @Override
           public <K, V> Cache<K, V> wrap(CacheBuildContext<K, V> context, Cache<K, V> cache) {
@@ -93,8 +93,8 @@ public class CacheWrapperTest {
           }
         })).build();
     cache.put(1, 1);
-    assertEquals("general", cache.toString());
-    assertSame(cache, cache.getCacheManager().getCache(cache.getName()));
+    assertThat(cache.toString()).isEqualTo("general");
+    assertThat(cache.getCacheManager().getCache(cache.getName())).isSameAs(cache);
     cache.close();
   }
 
@@ -109,7 +109,7 @@ public class CacheWrapperTest {
     AtomicReference<Cache> evictedEventCache = new AtomicReference<>();
     AtomicReference<Cache> expiredEventCache = new AtomicReference<>();
     Cache<Integer, Integer> cache =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .addListener((CacheEntryCreatedListener<Integer, Integer>) (cache2, entry)
           -> createdEventCache.set(cache2))
         .addListener((CacheEntryUpdatedListener<Integer, Integer>) (cache2, currentEntry, newEntry)
@@ -146,9 +146,9 @@ public class CacheWrapperTest {
       cache.put(i, i);
     }
     cache.put(1, 1);
-    cache.invoke(1, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
-    assertEquals("general", cache.toString());
-    assertSame(cache, cache.getCacheManager().getCache(cache.getName()));
+    cache.invoke(1, entry -> entry.setExpiryTime(NOW));
+    assertThat(cache.toString()).isEqualTo("general");
+    assertThat(cache.getCacheManager().getCache(cache.getName())).isSameAs(cache);
     assertSame("created event got wrapped cache", cache, createdEventCache.get());
     assertSame("updated event got wrapped cache", cache, updatedEventCache.get());
     assertSame("removed event got wrapped cache", cache, removedEventCache.get());

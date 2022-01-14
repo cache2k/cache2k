@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Additional loader tests with listeners. Generally add always a dummy listener
@@ -53,12 +53,12 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
     AtomicInteger _countCreated =  new AtomicInteger();
     Cache<Integer, Integer> c = target.cache(b -> b.loader(key -> key * 2)
       .addListener((CacheEntryCreatedListener<Integer, Integer>) (c1, e) -> _countCreated.incrementAndGet()));
-    assertEquals(0, _countCreated.get());
-    assertEquals((Integer) 10, c.get(5));
-    assertEquals(1, _countCreated.get());
-    assertEquals((Integer) 20, c.get(10));
-    assertFalse(c.containsKey(2));
-    assertTrue(c.containsKey(5));
+    assertThat(_countCreated.get()).isEqualTo(0);
+    assertThat(c.get(5)).isEqualTo((Integer) 10);
+    assertThat(_countCreated.get()).isEqualTo(1);
+    assertThat(c.get(10)).isEqualTo((Integer) 20);
+    assertThat(c.containsKey(2)).isFalse();
+    assertThat(c.containsKey(5)).isTrue();
     c.close();
   }
 
@@ -71,7 +71,7 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
       @Override
       public void extend(Cache2kBuilder<Integer, Integer> b) {
         b.loader((key, context, callback) -> {
-          assertNull(context.getCurrentEntry());
+          assertThat(context.getCurrentEntry()).isNull();
           callback.onLoadSuccess(key);
         });
       }
@@ -93,9 +93,9 @@ public class CacheLoaderWiredCacheTest extends CacheLoaderTest {
         b.keepDataAfterExpired(true);
         b.loader((key, context, callback) -> {
           if (expectEntry.get()) {
-            assertNotNull(context.getCurrentEntry());
+            assertThat(context.getCurrentEntry()).isNotNull();
           } else {
-            assertNull(context.getCurrentEntry());
+            assertThat(context.getCurrentEntry()).isNull();
           }
           callback.onLoadSuccess(key);
         });

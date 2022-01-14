@@ -21,15 +21,14 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.ConcurrentMap;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.of;
 
 /**
  * Check special cases that the cache does in contrast to a
@@ -42,16 +41,16 @@ public class ConcurrentMapExtraTest {
 
   @Test
   public void checkForNull() {
-    Cache<Integer, String> cache = Cache2kBuilder.of(Integer.class, String.class)
+    Cache<Integer, String> cache = of(Integer.class, String.class)
       .eternal(true)
       .permitNullValues(true)
       .build();
     ConcurrentMap<Integer, String> map = cache.asMap();
-    assertFalse(map.containsValue(null));
+    assertThat(map.containsValue(null)).isFalse();
     cache.put(123, "hello");
-    assertFalse(map.containsValue(null));
+    assertThat(map.containsValue(null)).isFalse();
     cache.put(4711, null);
-    assertTrue(map.containsValue(null));
+    assertThat(map.containsValue(null)).isTrue();
     cache.close();
   }
 

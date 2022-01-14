@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import static java.lang.Long.MAX_VALUE;
+import static java.lang.System.currentTimeMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ExceptionPropagator;
@@ -27,9 +29,6 @@ import org.junit.Test;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Check all variants the standard propagator supports
@@ -47,10 +46,10 @@ public class DefaultExceptionPropagatorTest {
 
   @Test
   public void propagate_eternal() {
-    System.currentTimeMillis();
+    currentTimeMillis();
     RuntimeException t = DEFAULT_PROPAGATOR.propagateException(
-      toInfo(new RuntimeException("serious thing"), Long.MAX_VALUE));
-    assertTrue(t.toString().contains("expiry=ETERNAL"));
+      toInfo(new RuntimeException("serious thing"), MAX_VALUE));
+    assertThat(t.toString().contains("expiry=ETERNAL")).isTrue();
   }
 
   @Test
@@ -64,7 +63,7 @@ public class DefaultExceptionPropagatorTest {
   public void propagate_notime() {
     RuntimeException t = DEFAULT_PROPAGATOR.propagateException(
       toInfo(new RuntimeException("serious thing"), 0));
-    assertFalse(t.toString().contains("expiry="));
+    assertThat(t.toString().contains("expiry=")).isFalse();
   }
 
   private LoadExceptionInfo toInfo(Throwable ex, long t) {

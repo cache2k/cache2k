@@ -25,7 +25,8 @@ import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
 import org.cache2k.test.util.TestingBase;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -73,11 +74,13 @@ public class EntryActionTest extends TestingBase {
       }
     };
     bc.execute(1, op);
-    assertFalse(bc.containsKey(1));
-    assertTrue(bc.asMap().size() == 0);
+    assertThat(bc.containsKey(1)).isFalse();
+    assertThat(bc.asMap().size() == 0).isTrue();
     bc.put(1, 987);
     bc.execute(1, op);
-    assertEquals("unchanged", 987, (int) bc.peek(1));
+    assertThat((int) bc.peek(1))
+      .as("unchanged")
+      .isEqualTo(987);
   }
 
 }

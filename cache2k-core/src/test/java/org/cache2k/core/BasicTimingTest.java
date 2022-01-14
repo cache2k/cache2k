@@ -21,14 +21,13 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.testing.category.TimingTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.of;
 
 /**
  * Tests that need to run separately to test some assumption on timings of current machines.
@@ -46,21 +45,21 @@ public class BasicTimingTest {
   public void testBigCacheTiming() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .entryCapacity(_CACHE_SIZE)
         .eternal(true)
         .build();
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
-    assertNotNull(c.toString());
+    assertThat(c.toString()).isNotNull();
   }
 
   @Test
   public void testBigCacheTimingWithUpdate() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .entryCapacity(_CACHE_SIZE)
         .eternal(true)
         .build();
@@ -70,14 +69,14 @@ public class BasicTimingTest {
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
-    assertNotNull(c.toString());
+    assertThat(c.toString()).isNotNull();
   }
 
   @Test
   public void testBigCacheTimingPutRemovePut() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .entryCapacity(_CACHE_SIZE)
         .eternal(true)
         .build();
@@ -90,21 +89,21 @@ public class BasicTimingTest {
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
-    assertNotNull(c.toString());
+    assertThat(c.toString()).isNotNull();
   }
 
   @Test
   public void testBigCacheTimingWithExpiry() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .entryCapacity(_CACHE_SIZE)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .expireAfterWrite(5, MINUTES)
         .build();
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
-    assertNotNull(c.toString());
+    assertThat(c.toString()).isNotNull();
   }
 
   /**
@@ -115,9 +114,9 @@ public class BasicTimingTest {
   public void testBigCacheTimingWithExpiryWithUpdate() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .entryCapacity(_CACHE_SIZE)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .expireAfterWrite(5, MINUTES)
         .build();
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
@@ -125,21 +124,21 @@ public class BasicTimingTest {
     for (int i = 0; i < _CACHE_SIZE; i++) {
       c.put(i, i);
     }
-    assertNotNull(c.toString());
+    assertThat(c.toString()).isNotNull();
   }
 
   @Test
   public void testBigCacheWithEviction() {
     final int _CACHE_SIZE = 1000000;
     Cache<Integer,Integer> c =
-      Cache2kBuilder.of(Integer.class, Integer.class)
+      of(Integer.class, Integer.class)
         .entryCapacity(_CACHE_SIZE)
         .eternal(true)
         .build();
     for (int i = 0; i < _CACHE_SIZE * 10; i++) {
       c.put(i, i);
     }
-    assertNotNull(c.toString());
+    assertThat(c.toString()).isNotNull();
   }
 
 }

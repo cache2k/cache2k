@@ -165,9 +165,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   private EntryAction<K, V, ?> nextAction = null;
 
-  /**
-   * @see {@link #start()}
-   */
   private int semanticCallback = 0;
 
   /**

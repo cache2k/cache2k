@@ -39,17 +39,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static java.lang.Long.MAX_VALUE;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.cache2k.test.core.Constants.resilienceCacheAndSuppressExceptions;
 import static org.junit.Assert.*;
 
 /**
@@ -65,34 +68,34 @@ public class BasicCacheTest extends TestingBase {
   @Test
   public void testPeekAndReplaceWoExisting() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
-    assertNull(c.peekAndReplace(1, 1));
-    assertFalse(c.containsKey(1));
-    assertNull(c.peek(1));
+    assertThat(c.peekAndReplace(1, 1)).isNull();
+    assertThat(c.containsKey(1)).isFalse();
+    assertThat(c.peek(1)).isNull();
   }
 
   @Test
   public void testPeekAndReplaceWoExistingTwice() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
-    assertNull(c.peekAndReplace(1, 1));
-    assertFalse(c.containsKey(1));
-    assertNull(c.peek(1));
-    assertNull(c.peekAndReplace(1, 1));
+    assertThat(c.peekAndReplace(1, 1)).isNull();
+    assertThat(c.containsKey(1)).isFalse();
+    assertThat(c.peek(1)).isNull();
+    assertThat(c.peekAndReplace(1, 1)).isNull();
   }
 
   @Test
   public void testPeekAndReplaceWithExisting() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
-    assertNull(c.peekAndReplace(1, 1));
+    assertThat(c.peekAndReplace(1, 1)).isNull();
     c.put(1, 1);
-    assertEquals((Integer) 1, c.peekAndReplace(1, 2));
-    assertTrue(c.containsKey(1));
-    assertEquals((Integer) 2, c.peek(1));
+    assertThat(c.peekAndReplace(1, 2)).isEqualTo((Integer) 1);
+    assertThat(c.containsKey(1)).isTrue();
+    assertThat(c.peek(1)).isEqualTo((Integer) 2);
   }
 
   @Test
   public void testIteratorOnEmptyCacheCallHasNext() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
-    assertFalse(c.entries().iterator().hasNext());
+    assertThat(c.entries().iterator().hasNext()).isFalse();
   }
 
   @Test(expected = NoSuchElementException.class)
@@ -105,69 +108,69 @@ public class BasicCacheTest extends TestingBase {
   public void testIteratorOnOneEntryCallNext() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(47, 11);
-    assertEquals((Integer) 11, c.entries().iterator().next().getValue());
+    assertThat(c.entries().iterator().next().getValue()).isEqualTo((Integer) 11);
   }
 
   @Test
   public void testReplace() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
-    assertFalse(c.replace(1, 1));
+    assertThat(c.replace(1, 1)).isFalse();
     c.put(1, 1);
-    assertTrue(c.replace(1, 2));
-    assertTrue(c.replace(1, 1));
-    assertFalse(c.replace(2, 2));
+    assertThat(c.replace(1, 2)).isTrue();
+    assertThat(c.replace(1, 1)).isTrue();
+    assertThat(c.replace(2, 2)).isFalse();
   }
 
   @Test
   public void testCompareAndReplace() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
-    assertFalse(c.replaceIfEquals(1, 1, 2));
+    assertThat(c.replaceIfEquals(1, 1, 2)).isFalse();
     c.put(1, 1);
-    assertTrue(c.replaceIfEquals(1, 1, 2));
-    assertTrue(c.replaceIfEquals(1, 2, 1));
-    assertFalse(c.replaceIfEquals(1, 2, 3));
+    assertThat(c.replaceIfEquals(1, 1, 2)).isTrue();
+    assertThat(c.replaceIfEquals(1, 2, 1)).isTrue();
+    assertThat(c.replaceIfEquals(1, 2, 3)).isFalse();
   }
 
   @Test
   public void testPeekAndRemove() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(1, 1);
-    assertEquals((Integer) 1, c.peekAndRemove(1));
-    assertNull(c.peekAndRemove(1));
+    assertThat(c.peekAndRemove(1)).isEqualTo((Integer) 1);
+    assertThat(c.peekAndRemove(1)).isNull();
   }
 
   @Test
   public void testCompareAndRemove() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(1, 1);
-    assertFalse(c.removeIfEquals(1, 2));
-    assertTrue(c.removeIfEquals(1, 1));
+    assertThat(c.removeIfEquals(1, 2)).isFalse();
+    assertThat(c.removeIfEquals(1, 1)).isTrue();
   }
 
   @Test
   public void testPutAndPeek() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(1, 1);
-    assertEquals((Integer) 1, c.peek(1));
+    assertThat(c.peek(1)).isEqualTo((Integer) 1);
   }
 
   @Test
   public void testPeekAndPut() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(1, 1);
-    assertEquals((Integer) 1, c.peekAndPut(1, 2));
-    assertEquals((Integer) 2, c.peekAndPut(1, 1));
+    assertThat(c.peekAndPut(1, 2)).isEqualTo((Integer) 1);
+    assertThat(c.peekAndPut(1, 1)).isEqualTo((Integer) 2);
   }
 
   @Test
   public void testBulkGetAllReadThrough() {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, new IdentIntSource(), 100, -1);
-    Set<Integer> _requestedKeys = new HashSet<>(Arrays.asList(2, 3));
+    Set<Integer> _requestedKeys = new HashSet<>(asList(2, 3));
     Map<Integer, Integer> m = c.getAll(_requestedKeys);
-    assertEquals(2, m.size());
-    assertEquals(2, (int) m.get(2));
-    assertEquals(3, (int) m.get(3));
-    assertNull(m.get(47));
+    assertThat(m.size()).isEqualTo(2);
+    assertThat((int) m.get(2)).isEqualTo(2);
+    assertThat((int) m.get(3)).isEqualTo(3);
+    assertThat(m.get(47)).isNull();
   }
 
   @Test
@@ -175,10 +178,10 @@ public class BasicCacheTest extends TestingBase {
     Cache<Integer, Integer> c = freshCache(Integer.class, Integer.class, null, 100, -1);
     c.put(1, 1);
     c.put(2, 2);
-    Set<Integer> _requestedKeys = new HashSet<>(Arrays.asList(2, 3));
+    Set<Integer> _requestedKeys = new HashSet<>(asList(2, 3));
     Map<Integer, Integer> m = c.peekAll(_requestedKeys);
-    assertEquals(1, m.size());
-    assertEquals(2, (int) m.get(2));
+    assertThat(m.size()).isEqualTo(1);
+    assertThat((int) m.get(2)).isEqualTo(2);
   }
 
   @Test
@@ -186,7 +189,7 @@ public class BasicCacheTest extends TestingBase {
     Cache<FaultyKey, String> c =
       freshCache(FaultyKey.class, String.class, null, 100, -1);
     c.put(new FaultyKey("abc"), "abc");
-    assertNull(c.peekEntry(new FaultyKey("abc")));
+    assertThat(c.peekEntry(new FaultyKey("abc"))).isNull();
   }
 
   /**
@@ -254,58 +257,60 @@ public class BasicCacheTest extends TestingBase {
   public void testEntryExpiryCalculatorNoCache() {
     MyExpiryPolicy _expiryCalc = new MyExpiryPolicy();
     Cache<String, String> c = builder(String.class, String.class)
-        .expireAfterWrite(0, TimeUnit.MILLISECONDS)
+        .expireAfterWrite(0, MILLISECONDS)
         .expiryPolicy(_expiryCalc)
         .build();
     c.put("eternal", "eternal");
     c.put("nocache", "nocache");
     c.put("1234", "foo");
-    assertNull(c.peek("1234"));
-    assertNull(c.peek("nocache"));
-    assertNull(c.peek("eternal"));
+    assertThat(c.peek("1234")).isNull();
+    assertThat(c.peek("nocache")).isNull();
+    assertThat(c.peek("eternal")).isNull();
   }
 
   @Test
   public void testEntryExpiryCalculator8Min() {
     MyExpiryPolicy _expiryCalc = new MyExpiryPolicy();
     Cache<String, String> c = builder(String.class, String.class)
-        .expireAfterWrite(8, TimeUnit.MINUTES)
+        .expireAfterWrite(8, MINUTES)
         .expiryPolicy(_expiryCalc)
         .build();
     c.put("eternal", "foo");
     c.put("nocache", "foo");
     c.put("8888", "foo");
-    assertNotNull(c.peek("eternal"));
-    assertNull(c.peek("nocache"));
-    assertNotNull(c.peek("8888"));
+    assertThat(c.peek("eternal")).isNotNull();
+    assertThat(c.peek("nocache")).isNull();
+    assertThat(c.peek("8888")).isNotNull();
   }
 
   @Test
   public void testEntryExpiryCalculator8MinKeepOldEntry() {
     MyExpiryPolicy _expiryCalc = new MyExpiryPolicy();
     Cache<String, String> c = builder(String.class, String.class)
-      .expireAfterWrite(8, TimeUnit.MINUTES)
+      .expireAfterWrite(8, MINUTES)
       .expiryPolicy(_expiryCalc)
       .keepDataAfterExpired(true)
       .build();
     c.put("nocache", "foo");
     c.put("nocache", "foo");
-    assertEquals(1, _expiryCalc.oldEntrySeen.get());
+    assertThat(_expiryCalc.oldEntrySeen.get()).isEqualTo(1);
   }
 
   @Test
   public void testPeekGetPutSequence() {
     MyExpiryPolicy _expiryCalc = new MyExpiryPolicy();
     Cache<String, String> c = builder(String.class, String.class)
-        .expireAfterWrite(8, TimeUnit.MINUTES)
-        .expiryPolicy(_expiryCalc)
-        .build();
-    assertFalse(c.containsKey("88"));
+      .expireAfterWrite(8, MINUTES)
+      .expiryPolicy(_expiryCalc)
+      .build();
+    assertThat(c.containsKey("88")).isFalse();
     String s = c.peekAndReplace("88", "ab");
     assertNull("no existing value", s);
-    assertFalse("still no mapping", c.containsKey("88"));
+    assertThat(c.containsKey("88"))
+      .as("still no mapping")
+      .isFalse();
     c.put("88", "ab");
-    assertEquals(1, _expiryCalc.key2count.size());
+    assertThat(_expiryCalc.key2count.size()).isEqualTo(1);
   }
 
   public static class MyExpiryPolicy implements ExpiryPolicy<String, String> {
@@ -346,10 +351,10 @@ public class BasicCacheTest extends TestingBase {
     c.put("nocache", new MyValueWithExpiryTime(0));
     final long _DISTANT_FUTURE = 500L * 365 * 24 * 60 * 60 * 1000;
     c.put("cache", new MyValueWithExpiryTime(_DISTANT_FUTURE));
-    c.put("cache2", new MyValueWithExpiryTime(Long.MAX_VALUE));
-    assertNull(c.peek("nocache"));
-    assertNotNull(c.peek("cache"));
-    assertNotNull(c.peek("cache2"));
+    c.put("cache2", new MyValueWithExpiryTime(MAX_VALUE));
+    assertThat(c.peek("nocache")).isNull();
+    assertThat(c.peek("cache")).isNotNull();
+    assertThat(c.peek("cache2")).isNotNull();
   }
 
   static class MyValueWithExpiryTime implements ValueWithExpiryTime {
@@ -370,7 +375,7 @@ public class BasicCacheTest extends TestingBase {
   public void testExceptionExpiryCalculatorNoCache() {
     MyResiliencePolicy _expiryCalc = new MyResiliencePolicy();
     Cache<String, String> c = builder(String.class, String.class)
-      .expireAfterWrite(0, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(0, MILLISECONDS)
       .loader(new AlwaysExceptionStringSource())
       .resiliencePolicy(_expiryCalc)
       .keepDataAfterExpired(true)
@@ -383,32 +388,34 @@ public class BasicCacheTest extends TestingBase {
       _exceptionCount++;
     }
     assertNull(
-        "caching is off, expiry calculator never asked",
-        _expiryCalc.key2count.get(_ETERNAL));
-    assertEquals(1, _exceptionCount);
+      "caching is off, expiry calculator never asked",
+      _expiryCalc.key2count.get(_ETERNAL));
+    assertThat(_exceptionCount).isEqualTo(1);
     try {
       Object o = c.peek(_ETERNAL);
-      assertNull(o);
+      assertThat(o).isNull();
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals("eternal, but cache is switched off, no mapping at all", 1, _exceptionCount);
+    assertThat(_exceptionCount)
+      .as("eternal, but cache is switched off, no mapping at all")
+      .isEqualTo(1);
     try {
       c.get(_ETERNAL);
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals(2, _exceptionCount);
+    assertThat(_exceptionCount).isEqualTo(2);
     assertNull(
-        "caching is off, expiry calculator never asked",
-        _expiryCalc.key2count.get(_ETERNAL));
+      "caching is off, expiry calculator never asked",
+      _expiryCalc.key2count.get(_ETERNAL));
   }
 
   @Test
   public void testResiliencePolicy8Min() {
     MyResiliencePolicy _expiryCalc = new MyResiliencePolicy();
     Cache<String, String> c = builder(String.class, String.class)
-      .expireAfterWrite(8, TimeUnit.MINUTES)
+      .expireAfterWrite(8, MINUTES)
       .loader(new AlwaysExceptionStringSource())
       .resiliencePolicy(_expiryCalc)
       .build();
@@ -419,22 +426,27 @@ public class BasicCacheTest extends TestingBase {
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals(1, _exceptionCount);
+    assertThat(_exceptionCount).isEqualTo(1);
     try {
       c.peek(_ETERNAL);
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals("expect exception is cached", 2, _exceptionCount);
+    assertThat(_exceptionCount)
+      .as("expect exception is cached")
+      .isEqualTo(2);
     try {
       c.get(_ETERNAL);
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals(3, _exceptionCount);
-    assertNotNull("calculator was called", _expiryCalc.key2count.get(_ETERNAL));
-    assertEquals("fetched once since cached",
-      1, _expiryCalc.key2count.get(_ETERNAL).get());
+    assertThat(_exceptionCount).isEqualTo(3);
+    assertThat(_expiryCalc.key2count.get(_ETERNAL))
+      .as("calculator was called")
+      .isNotNull();
+    assertThat(_expiryCalc.key2count.get(_ETERNAL).get())
+      .as("fetched once since cached")
+      .isEqualTo(1);
     final String _NO_CACHE = "nocache";
     _exceptionCount = 0;
     try {
@@ -442,13 +454,15 @@ public class BasicCacheTest extends TestingBase {
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals(1, _exceptionCount);
+    assertThat(_exceptionCount).isEqualTo(1);
     try {
       c.peek(_NO_CACHE);
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals("expect exception is not cached", 1, _exceptionCount);
+    assertThat(_exceptionCount)
+      .as("expect exception is not cached")
+      .isEqualTo(1);
   }
 
   @Test
@@ -456,7 +470,7 @@ public class BasicCacheTest extends TestingBase {
     OccasionalExceptionSource src = new OccasionalExceptionSource();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
-      .resiliencePolicy(Constants.resilienceCacheAndSuppressExceptions())
+      .resiliencePolicy(resilienceCacheAndSuppressExceptions())
       .recordModificationTime(true)
       .keepDataAfterExpired(true)
       .loader(src)
@@ -471,17 +485,22 @@ public class BasicCacheTest extends TestingBase {
     try {
       c.get(2);
       long refreshedBefore = ticks();
-      assertFalse("entry disappears since expiry=0", c.containsKey(2));
-      assertEquals("entry has no modification time since suppressed", 0,
-        getRefreshedTimeViaEntryProcessor(c, 2));
+      assertThat(c.containsKey(2))
+        .as("entry disappears since expiry=0")
+        .isFalse();
+      assertThat(getRefreshedTimeViaEntryProcessor(c, 2))
+        .as("entry has no modification time since suppressed")
+        .isEqualTo(0);
       sleep(3);
       c.get(2);
       c.invoke(2, (EntryProcessor<Integer, Integer, Long>) e -> {
         assertNull("exception suppressed", e.getException());
-        assertTrue("entry present", e.exists());
-        assertThat("modification time of entry, not when exception happened",
-          e.getModificationTime(),
-          lessThanOrEqualTo(refreshedBefore));
+        assertThat(e.exists())
+          .as("entry present")
+          .isTrue();
+        assertThat(e.getModificationTime())
+          .as("modification time of entry, not when exception happened")
+          .isLessThanOrEqualTo(refreshedBefore);
         return null;
       });
 
@@ -489,17 +508,19 @@ public class BasicCacheTest extends TestingBase {
       fail("no exception expected");
     }
     InternalCacheInfo inf = getInfo();
-    assertEquals(1, inf.getSuppressedExceptionCount());
-    assertEquals(2, inf.getLoadExceptionCount());
-    assertNotNull(src.key2count.get(2));
-    assertEquals(2, src.key2count.get(2).get());
+    assertThat(inf.getSuppressedExceptionCount()).isEqualTo(1);
+    assertThat(inf.getLoadExceptionCount()).isEqualTo(2);
+    assertThat(src.key2count.get(2)).isNotNull();
+    assertThat(src.key2count.get(2).get()).isEqualTo(2);
   }
 
   void checkExistingAndTimeStampGreaterOrEquals(Cache<Integer, Integer> c, int key, long t) {
-    assertTrue(c.containsKey(key));
+    assertThat(c.containsKey(key)).isTrue();
     c.invoke(key, (EntryProcessor<Integer, Integer, Long>) e -> {
-      assertTrue("entry present", e.exists());
-      assertThat(e.getModificationTime(), greaterThanOrEqualTo(t));
+      assertThat(e.exists())
+        .as("entry present")
+        .isTrue();
+      assertThat(e.getModificationTime()).isGreaterThanOrEqualTo(t);
       return null;
     });
   }
@@ -513,7 +534,7 @@ public class BasicCacheTest extends TestingBase {
     OccasionalExceptionSource src = new PatternExceptionSource(false, true, true);
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
-      .resiliencePolicy(Constants.resilienceCacheAndSuppressExceptions())
+      .resiliencePolicy(resilienceCacheAndSuppressExceptions())
       .keepDataAfterExpired(true)
       .loader(src)
       .build();
@@ -523,7 +544,9 @@ public class BasicCacheTest extends TestingBase {
     } catch (CacheLoaderException e) {
       _exceptionCount++;
     }
-    assertEquals("no exception", 0, _exceptionCount);
+    assertThat(_exceptionCount)
+      .as("no exception")
+      .isEqualTo(0);
     _exceptionCount = 0;
     try {
       c.get(2); // value is loaded
@@ -533,11 +556,13 @@ public class BasicCacheTest extends TestingBase {
       _exceptionCount++;
     }
     InternalCacheInfo inf = getInfo();
-    assertEquals("no exception expected", 0, _exceptionCount);
-    assertEquals(1, inf.getSuppressedExceptionCount());
-    assertEquals(1, inf.getLoadExceptionCount());
-    assertNotNull(src.key2count.get(2));
-    assertEquals(2, src.key2count.get(2).get());
+    assertThat(_exceptionCount)
+      .as("no exception expected")
+      .isEqualTo(0);
+    assertThat(inf.getSuppressedExceptionCount()).isEqualTo(1);
+    assertThat(inf.getLoadExceptionCount()).isEqualTo(1);
+    assertThat(src.key2count.get(2)).isNotNull();
+    assertThat(src.key2count.get(2).get()).isEqualTo(2);
   }
 
   public static class MyResiliencePolicy implements ResiliencePolicy<String, String> {
@@ -591,9 +616,9 @@ public class BasicCacheTest extends TestingBase {
   public void testInfoPropertyCleared() {
     Instant t0 = now();
     freshCacheForInfoTest();
-    assertNull(getInfo().getClearedTime());
+    assertThat(getInfo().getClearedTime()).isNull();
     cache.clear();
-    Assertions.assertThat(getInfo().getClearedTime()).isAfterOrEqualTo(t0);
+    assertThat(getInfo().getClearedTime()).isAfterOrEqualTo(t0);
   }
 
   @Test(expected = CacheException.class)

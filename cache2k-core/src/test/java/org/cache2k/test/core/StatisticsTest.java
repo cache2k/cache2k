@@ -20,6 +20,8 @@ package org.cache2k.test.core;
  * #L%
  */
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.cache2k.test.util.IntCountingCacheSource;
 import org.cache2k.test.util.TestingBase;
@@ -30,7 +32,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.cache2k.test.core.TestingParameters.MINIMAL_TICK_MILLIS;
 
 /**
  * Test corner cases for statistics. We do check statistics in
@@ -46,17 +48,17 @@ public class StatisticsTest extends TestingBase {
   public void testPutAndRemove() {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.put(1, 2);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(0, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
     c.put(1, 2);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(0, getInfo().getGetCount());
-    assertEquals(2, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(2);
     c.containsAndRemove(1);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(0, getInfo().getGetCount());
-    assertEquals(2, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(2);
   }
 
   @Test
@@ -64,8 +66,8 @@ public class StatisticsTest extends TestingBase {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.peek(123);
     c.peek(4985);
-    assertEquals(2, getInfo().getMissCount());
-    assertEquals(2, getInfo().getGetCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(2);
+    assertThat(getInfo().getGetCount()).isEqualTo(2);
   }
 
   @Test
@@ -74,31 +76,31 @@ public class StatisticsTest extends TestingBase {
     c.peek(123);
     c.put(123, 3);
     c.peek(123);
-    assertEquals(1, getInfo().getMissCount());
-    assertEquals(2, getInfo().getGetCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
+    assertThat(getInfo().getGetCount()).isEqualTo(2);
   }
 
   @Test
   public void testPut() {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.put(123, 32);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(0, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
   }
 
   @Test
   public void testContainsMissHit() {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.containsKey(123);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(0, getInfo().getGetCount());
-    assertEquals(0, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(0);
     c.put(123, 3);
     c.containsKey(123);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(0, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(0);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
   }
 
   @Test
@@ -106,35 +108,35 @@ public class StatisticsTest extends TestingBase {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.put(123, 3);
     c.putIfAbsent(123, 3);
-    assertEquals(0, getInfo().getMissCount());
-    assertEquals(1, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
+    assertThat(getInfo().getGetCount()).isEqualTo(1);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
   }
 
   @Test
   public void testPutIfAbsentMissHit() {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.putIfAbsent(123, 3);
-    assertEquals(1, getInfo().getMissCount());
-    assertEquals(1, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
+    assertThat(getInfo().getGetCount()).isEqualTo(1);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
     c.putIfAbsent(123, 3);
-    assertEquals(1, getInfo().getMissCount());
-    assertEquals(2, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
+    assertThat(getInfo().getGetCount()).isEqualTo(2);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
   }
 
   @Test
   public void testPeekAndPut() {
     Cache<Integer, Integer> c = freshCache(null, 100);
     c.peekAndPut(123, 3);
-    assertEquals(1, getInfo().getMissCount());
-    assertEquals(1, getInfo().getGetCount());
-    assertEquals(1, getInfo().getPutCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
+    assertThat(getInfo().getGetCount()).isEqualTo(1);
+    assertThat(getInfo().getPutCount()).isEqualTo(1);
     c.peekAndPut(123, 3);
-    assertEquals(2, getInfo().getPutCount());
-    assertEquals(1, getInfo().getMissCount());
-    assertEquals(2, getInfo().getGetCount());
+    assertThat(getInfo().getPutCount()).isEqualTo(2);
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
+    assertThat(getInfo().getGetCount()).isEqualTo(2);
   }
 
   @Test
@@ -142,7 +144,7 @@ public class StatisticsTest extends TestingBase {
     Cache<Integer, Integer> c =
         freshCache(new IdentIntSource(), 100);
     c.get(3);
-    assertEquals(1, getInfo().getMissCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
   }
 
   @Test
@@ -151,7 +153,7 @@ public class StatisticsTest extends TestingBase {
         freshCache(new IdentIntSource(), 100);
     c.get(3);
     c.get(3);
-    assertEquals(1, getInfo().getMissCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
   }
 
   @Test
@@ -160,62 +162,74 @@ public class StatisticsTest extends TestingBase {
         freshCache(new IdentIntSource(), 100);
     c.put(3, 3);
     c.get(3);
-    assertEquals(0, getInfo().getMissCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(0);
   }
 
   @Test
   public void testGetFetchAlwaysOneGet() {
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c =
-        builder(Integer.class, Integer.class)
-            .loader(g)
-            .expireAfterWrite(0, TimeUnit.SECONDS).build();
-    assertEquals("no miss yet", 0, g.getLoaderCalledCount());
+      builder(Integer.class, Integer.class)
+        .loader(g)
+        .expireAfterWrite(0, SECONDS).build();
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss yet")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss yet", 1, g.getLoaderCalledCount());
-    assertEquals(1, getInfo().getMissCount());
-    assertEquals(1, getInfo().getGetCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss yet")
+      .isEqualTo(1);
+    assertThat(getInfo().getMissCount()).isEqualTo(1);
+    assertThat(getInfo().getGetCount()).isEqualTo(1);
   }
 
   @Test
   public void testGetFetchAlwaysTwoGets() {
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c =
-        builder(Integer.class, Integer.class)
-            .loader(g)
-            .expireAfterWrite(0, TimeUnit.SECONDS).build();
-    assertEquals("no miss yet", 0, g.getLoaderCalledCount());
+      builder(Integer.class, Integer.class)
+        .loader(g)
+        .expireAfterWrite(0, SECONDS).build();
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss yet")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss yet", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss yet")
+      .isEqualTo(1);
     c.get(1802);
-    assertEquals(2, getInfo().getMissCount());
-    assertEquals(2, getInfo().getGetCount());
+    assertThat(getInfo().getMissCount()).isEqualTo(2);
+    assertThat(getInfo().getGetCount()).isEqualTo(2);
   }
 
   public void testGetFetchAndRefresh(boolean keepData) throws Exception {
-    long expiryMillis = TestingParameters.MINIMAL_TICK_MILLIS;
+    long expiryMillis = MINIMAL_TICK_MILLIS;
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c =
-        builder(Integer.class, Integer.class)
-            .keepDataAfterExpired(keepData)
-            .loader(g)
-            .refreshAhead(true)
-            .expireAfterWrite(expiryMillis, TimeUnit.MILLISECONDS).build();
-    assertEquals("no miss yet", 0, g.getLoaderCalledCount());
+      builder(Integer.class, Integer.class)
+        .keepDataAfterExpired(keepData)
+        .loader(g)
+        .refreshAhead(true)
+        .expireAfterWrite(expiryMillis, MILLISECONDS).build();
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss yet")
+      .isEqualTo(0);
     within(expiryMillis)
       .perform(() -> c.get(1802))
       .expectMaybe(() -> {
-        assertEquals(1, getInfo().getMissCount());
-        assertEquals(1, getInfo().getGetCount());
-        assertEquals(1, getInfo().getLoadCount());
-        assertEquals(1, g.getLoaderCalledCount());
+        assertThat(getInfo().getMissCount()).isEqualTo(1);
+        assertThat(getInfo().getGetCount()).isEqualTo(1);
+        assertThat(getInfo().getLoadCount()).isEqualTo(1);
+        assertThat(g.getLoaderCalledCount()).isEqualTo(1);
       });
     sleep(expiryMillis * 3);
     c.get(1802);
     if (g.getLoaderCalledCount() >= 3) {
-      assertEquals(2, getInfo().getMissCount());
+      assertThat(getInfo().getMissCount()).isEqualTo(2);
     }
-    assertEquals("two get() counted", 2, getInfo().getGetCount());
+    assertThat(getInfo().getGetCount())
+      .as("two get() counted")
+      .isEqualTo(2);
   }
 
   @Test
@@ -232,21 +246,31 @@ public class StatisticsTest extends TestingBase {
   public void testFetchAlways() {
     IntCountingCacheSource g = new IntCountingCacheSource();
     Cache<Integer, Integer> c =
-        builder(Integer.class, Integer.class)
-          .loader(g)
-          .expireAfterWrite(0, TimeUnit.SECONDS).build();
-    assertEquals("no miss yet", 0, g.getLoaderCalledCount());
+      builder(Integer.class, Integer.class)
+        .loader(g)
+        .expireAfterWrite(0, SECONDS).build();
+    assertThat(g.getLoaderCalledCount())
+      .as("no miss yet")
+      .isEqualTo(0);
     c.get(1802);
-    assertEquals("one miss yet", 1, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("one miss yet")
+      .isEqualTo(1);
     c.get(1802);
-    assertEquals("additional miss", 2, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("additional miss")
+      .isEqualTo(2);
     c.get(1802);
-    assertEquals("additional miss", 3, g.getLoaderCalledCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("additional miss")
+      .isEqualTo(3);
     c.get(1802);
-    assertEquals("additional miss", 4, g.getLoaderCalledCount());
-    assertEquals(4, getInfo().getGetCount());
-    assertEquals(4, getInfo().getLoadCount());
-    assertEquals(4, getInfo().getMissCount());
+    assertThat(g.getLoaderCalledCount())
+      .as("additional miss")
+      .isEqualTo(4);
+    assertThat(getInfo().getGetCount()).isEqualTo(4);
+    assertThat(getInfo().getLoadCount()).isEqualTo(4);
+    assertThat(getInfo().getMissCount()).isEqualTo(4);
   }
 
   @Test
@@ -279,9 +303,9 @@ public class StatisticsTest extends TestingBase {
       c.get(v);
 
     }
-    assertEquals(accessPattern.length, getInfo().getGetCount());
+    assertThat(getInfo().getGetCount()).isEqualTo(accessPattern.length);
     c.clear();
-    assertEquals(accessPattern.length, getInfo().getGetCount());
+    assertThat(getInfo().getGetCount()).isEqualTo(accessPattern.length);
   }
 
   int[] accessPattern1 = new int[]{
@@ -311,7 +335,7 @@ public class StatisticsTest extends TestingBase {
         .eternal(true)
         .entryCapacity(200)
         .build();
-    assertEquals(0, getInfo().getLoadCount());
+    assertThat(getInfo().getLoadCount()).isEqualTo(0);
     assertThat(c.toString())
       .contains("capacity=200")
       .contains("coldHits=0");
@@ -329,7 +353,7 @@ public class StatisticsTest extends TestingBase {
         .build();
     c.get(1);
     c.remove(1);
-    assertEquals(0, getInfo().getLoadCount());
+    assertThat(getInfo().getLoadCount()).isEqualTo(0);
     assertThat(c.toString())
       .contains("capacity=200")
       .contains("coldHits=0");

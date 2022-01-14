@@ -28,8 +28,8 @@ import org.junit.experimental.categories.Category;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.CacheManager.*;
 
 /**
  * Tests on the manager that need to run exclusively on the VM.
@@ -41,23 +41,23 @@ public class CacheManagerExclusiveTest {
 
   @Test
   public void setDefaultMangerName() {
-    CacheManager.getInstance().close();
-    CacheManager.setDefaultName("hello");
-    assertEquals("hello", CacheManager.getInstance().getName());
-    assertEquals("hello", CacheManager.getDefaultName());
+    getInstance().close();
+    setDefaultName("hello");
+    assertThat(getInstance().getName()).isEqualTo("hello");
+    assertThat(getDefaultName()).isEqualTo("hello");
   }
 
   @Test
   public void closeAll() {
-    CacheManager cm = CacheManager.getInstance();
+    CacheManager cm = getInstance();
     ClassLoader cl1 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
     ClassLoader cl2 = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
-    CacheManager cm1 = CacheManager.getInstance(cl1);
-    CacheManager cm2 = CacheManager.getInstance(cl2);
+    CacheManager cm1 = getInstance(cl1);
+    CacheManager cm2 = getInstance(cl2);
     CacheManager.closeAll();
-    assertTrue(cm1.isClosed());
-    assertTrue(cm2.isClosed());
-    assertTrue(cm.isClosed());
+    assertThat(cm1.isClosed()).isTrue();
+    assertThat(cm2.isClosed()).isTrue();
+    assertThat(cm.isClosed()).isTrue();
   }
 
 }

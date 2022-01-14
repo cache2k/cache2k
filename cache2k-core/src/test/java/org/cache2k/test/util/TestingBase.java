@@ -57,7 +57,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.CacheManager.getInstance;
 
 /**
  * Base class for most of the cache tests. Provides a separate cache for
@@ -277,9 +278,15 @@ public class TestingBase {
 
   public void verify() {
     InternalCacheInfo inf = getInfo();
-    assertEquals("fetchesInFlight == 0", 0, statLoadsInFlight(cache, inf));
-    assertEquals("exception count = 0", 0, inf.getInternalExceptionCount());
-    assertNotNull("cache was tested", cache);
+    assertThat(statLoadsInFlight(cache, inf))
+      .as("fetchesInFlight == 0")
+      .isEqualTo(0);
+    assertThat(inf.getInternalExceptionCount())
+      .as("exception count = 0")
+      .isEqualTo(0);
+    assertThat(cache)
+      .as("cache was tested")
+      .isNotNull();
     if (cache instanceof InternalCache) {
       ((InternalCache) cache).checkIntegrity();
     }
@@ -298,7 +305,9 @@ public class TestingBase {
         CacheManager cm = CacheManager.getInstance();
         cache = cm.getCache(cacheName);
       } else {
-        assertFalse("cache is not closed", cache.isClosed());
+        assertThat(cache.isClosed())
+          .as("cache is not closed")
+          .isFalse();
       }
     }
   }
@@ -316,11 +325,15 @@ public class TestingBase {
   protected void provideCache() {
     if (cacheName != null) {
       if (cache == null) {
-        CacheManager cm = CacheManager.getInstance();
+        CacheManager cm = getInstance();
         cache = cm.getCache(cacheName);
       }
-      assertNotNull("cache is available", cache);
-      assertFalse("cache is not closed", cache.isClosed());
+      assertThat(cache)
+        .as("cache is available")
+        .isNotNull();
+      assertThat(cache.isClosed())
+        .as("cache is not closed")
+        .isFalse();
     }
   }
 

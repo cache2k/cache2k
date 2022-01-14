@@ -24,7 +24,8 @@ import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.core.CacheBaseInfo.formatMillisPerLoad;
 
 /**
  * @author Jens Wilke
@@ -35,9 +36,9 @@ public class CacheBaseInfoTest {
   @Test
   public void testMSecsPerLoadFormatting() {
     double v = 2.3456789;
-    assertEquals("2.346", CacheBaseInfo.formatMillisPerLoad(v));
+    assertThat(formatMillisPerLoad(v)).isEqualTo("2.346");
     v = 0.04;
-    assertEquals("0.04", CacheBaseInfo.formatMillisPerLoad(v));
+    assertThat(formatMillisPerLoad(v)).isEqualTo("0.04");
   }
 
 }

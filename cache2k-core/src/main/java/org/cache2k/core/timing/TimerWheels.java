@@ -42,10 +42,6 @@ public class TimerWheels implements TimerStructure {
     return wheel.schedule(task);
   }
 
-  public void cancelAll(TimerTask t) {
-    t.cancel();
-  }
-
   public void cancelAll() {
     wheel.cancel();
   }

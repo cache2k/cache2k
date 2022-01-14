@@ -20,26 +20,26 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.Entry;
-import org.cache2k.core.HeapCache;
-import org.cache2k.core.api.InternalConfig;
-import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.ExpiryPolicy;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static java.lang.Long.MAX_VALUE;
+import static java.lang.Math.abs;
+import static java.util.concurrent.TimeUnit.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
+import static org.cache2k.core.timing.TimeAgnosticTiming.ETERNAL_IMMEDIATE;
+import static org.cache2k.expiry.ExpiryTimeValues.ETERNAL;
 
 /**
  * Test timing code directly without cache.
@@ -105,63 +105,63 @@ public class TimingUnitTest {
   public void eternalSpecified() {
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
+      forUnknownTypes()
         .eternal(true)
         .config()
     );
-    assertEquals(TimeAgnosticTiming.ETERNAL_IMMEDIATE.getClass(), h.getClass());
+    assertThat(h.getClass()).isEqualTo(ETERNAL_IMMEDIATE.getClass());
   }
 
   @Test
   public void eternalNotSpecified() {
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
+      forUnknownTypes()
         .config()
     );
-    assertEquals(StaticTiming.class, h.getClass());
+    assertThat(h.getClass()).isEqualTo(StaticTiming.class);
   }
 
   @Test
   public void expireAfterWrite_overflow() {
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
-        .expireAfterWrite(Long.MAX_VALUE - 47, TimeUnit.SECONDS)
+      forUnknownTypes()
+        .expireAfterWrite(MAX_VALUE - 47, SECONDS)
         .config()
     );
-    assertEquals(StaticTiming.class, h.getClass());
+    assertThat(h.getClass()).isEqualTo(StaticTiming.class);
   }
 
   @Test
   public void almostEternal_noOverflow() {
-    long bigValue = Long.MAX_VALUE - 47;
+    long bigValue = MAX_VALUE - 47;
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
-        .expireAfterWrite(bigValue, TimeUnit.MILLISECONDS)
+      forUnknownTypes()
+        .expireAfterWrite(bigValue, MILLISECONDS)
         .config()
     );
     long t = h.calculateNextRefreshTime(ENTRY, null, 0);
-    assertEquals(bigValue, t);
+    assertThat(t).isEqualTo(bigValue);
     t = h.calculateNextRefreshTime(ENTRY, null, 48);
-    assertEquals(Long.MAX_VALUE, t);
+    assertThat(t).isEqualTo(MAX_VALUE);
   }
 
   @Test
   public void almostEternal_expiryPolicy_noOverflow() {
-    long bigValue = Long.MAX_VALUE - 47;
+    long bigValue = MAX_VALUE - 47;
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> ExpiryTimeValues.ETERNAL)
-        .expireAfterWrite(bigValue, TimeUnit.MILLISECONDS)
+      forUnknownTypes()
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> ETERNAL)
+        .expireAfterWrite(bigValue, MILLISECONDS)
         .config()
     );
     long t = h.calculateNextRefreshTime(ENTRY, null, 0);
-    assertEquals(bigValue, t);
+    assertThat(t).isEqualTo(bigValue);
     t = h.calculateNextRefreshTime(ENTRY, null, 48);
-    assertEquals(Long.MAX_VALUE, t);
+    assertThat(t).isEqualTo(MAX_VALUE);
   }
 
   /**
@@ -171,14 +171,14 @@ public class TimingUnitTest {
   public void policy_sharp() {
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
+      forUnknownTypes()
         .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> startTime + 1)
         .sharpExpiry(true)
         .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
-    assertEquals(-NOW - 1, t);
+    assertThat(t).isEqualTo(-NOW - 1);
   }
 
   /**
@@ -188,17 +188,17 @@ public class TimingUnitTest {
   public void expireAfterWrite_policy_limit() {
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
-        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> ExpiryTimeValues.ETERNAL)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
+      forUnknownTypes()
+        .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> ETERNAL)
+        .expireAfterWrite(5, MINUTES)
         .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
-    assertNotEquals(Long.MAX_VALUE, t);
-    assertEquals(NOW + TimeUnit.MINUTES.toMillis(5), t);
+    assertThat(t).isNotEqualTo(MAX_VALUE);
+    assertThat(t).isEqualTo(NOW + MINUTES.toMillis(5));
     t = h.calculateNextRefreshTime(e, null, NOW);
-    assertEquals(NOW + TimeUnit.MINUTES.toMillis(5), t);
+    assertThat(t).isEqualTo(NOW + MINUTES.toMillis(5));
   }
 
   /**
@@ -210,26 +210,29 @@ public class TimingUnitTest {
     final long sharpPointInTime = NOW + 5000000;
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
+      forUnknownTypes()
         .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> -sharpPointInTime)
-        .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
+        .expireAfterWrite(duration, MILLISECONDS)
         .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
-    assertNotEquals(Long.MAX_VALUE, t);
-    assertEquals("max expiry, but not sharp",
-      NOW + duration, t);
+    assertThat(t).isNotEqualTo(MAX_VALUE);
+    assertThat(t)
+      .as("max expiry, but not sharp")
+      .isEqualTo(NOW + duration);
     long later = NOW + duration;
     t = h.calculateNextRefreshTime(e, null, later);
-    assertEquals(later + duration, t);
+    assertThat(t).isEqualTo(later + duration);
     later = sharpPointInTime - duration / 2;
     t = h.calculateNextRefreshTime(e, null, later);
-    assertEquals("requested expiry via duration too close", -sharpPointInTime, t);
+    assertThat(t)
+      .as("requested expiry via duration too close")
+      .isEqualTo(-sharpPointInTime);
     later = sharpPointInTime - duration - 1;
     t = h.calculateNextRefreshTime(e, null, later);
-    assertTrue(t <= later + duration);
-    assertEquals(later + 1, t);
+    assertThat(t <= later + duration).isTrue();
+    assertThat(t).isEqualTo(later + 1);
   }
 
   @Test
@@ -238,26 +241,29 @@ public class TimingUnitTest {
     final long pointInTime = NOW + 5000000;
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
+      forUnknownTypes()
         .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> pointInTime)
-        .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
+        .expireAfterWrite(duration, MILLISECONDS)
         .config()
     );
     Entry e = new Entry();
     long t = h.calculateNextRefreshTime(e, null, NOW);
-    assertNotEquals(Long.MAX_VALUE, t);
-    assertEquals("max expiry, but not sharp",
-      NOW + duration, t);
+    assertThat(t).isNotEqualTo(MAX_VALUE);
+    assertThat(t)
+      .as("max expiry, but not sharp")
+      .isEqualTo(NOW + duration);
     long later = NOW + duration;
     t = h.calculateNextRefreshTime(e, null, later);
-    assertEquals(later + duration, t);
+    assertThat(t).isEqualTo(later + duration);
     later = pointInTime - duration / 2;
     t = h.calculateNextRefreshTime(e, null, later);
-    assertEquals("requested expiry via duration too close", pointInTime, t);
+    assertThat(t)
+      .as("requested expiry via duration too close")
+      .isEqualTo(pointInTime);
     later = pointInTime - duration - 1;
     t = h.calculateNextRefreshTime(e, null, later);
-    assertTrue(t <= later + duration);
-    assertEquals(later + duration, t);
+    assertThat(t <= later + duration).isTrue();
+    assertThat(t).isEqualTo(later + duration);
   }
 
   /**
@@ -270,19 +276,20 @@ public class TimingUnitTest {
     final long sharpPointInTime = NOW + 5000;
     Timing h = create(
       CLOCK,
-      Cache2kBuilder.forUnknownTypes()
+      forUnknownTypes()
         .expiryPolicy((ExpiryPolicy) (key, value, startTime, currentEntry) -> -sharpPointInTime)
-        .expireAfterWrite(duration, TimeUnit.MILLISECONDS)
+        .expireAfterWrite(duration, MILLISECONDS)
         .config()
     );
     Entry e = new Entry();
-    long  later = sharpPointInTime - duration - 1;
+    long later = sharpPointInTime - duration - 1;
     long t = h.calculateNextRefreshTime(e, null, later);
-    assertTrue("expect gap bigger then duration",
-      SHARP_EXPIRY_GAP_MILLIS > duration);
-    assertNotEquals(sharpPointInTime - SHARP_EXPIRY_GAP_MILLIS, t);
-    assertTrue(Math.abs(t) > NOW);
-    assertTrue(Math.abs(t) < sharpPointInTime);
+    assertThat(SHARP_EXPIRY_GAP_MILLIS > duration)
+      .as("expect gap bigger then duration")
+      .isTrue();
+    assertThat(t).isNotEqualTo(sharpPointInTime - SHARP_EXPIRY_GAP_MILLIS);
+    assertThat(abs(t)).isGreaterThan(NOW);
+    assertThat(abs(t)).isLessThan(sharpPointInTime);
   }
 
 }

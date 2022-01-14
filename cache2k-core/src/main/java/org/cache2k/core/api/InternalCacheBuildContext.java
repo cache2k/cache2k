@@ -23,14 +23,11 @@ package org.cache2k.core.api;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
-import org.cache2k.config.ConfigSection;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 
 /**
  * Context information when a cache is build.

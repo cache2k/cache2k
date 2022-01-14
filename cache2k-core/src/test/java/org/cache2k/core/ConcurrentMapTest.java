@@ -24,8 +24,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.junit.Assert.*;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,7 +41,7 @@ public class ConcurrentMapTest {
   ConcurrentMap<Integer, String> map;
 
   Map<?, ?> untypedMap() {
-    return (Map<?, ?>) map;
+    return map;
   }
 
   @Before
@@ -56,40 +56,40 @@ public class ConcurrentMapTest {
 
   @Test
   public void testIsEmpty_Initial() {
-    assertTrue(map.isEmpty());
+    assertThat(map.isEmpty()).isTrue();
   }
 
   @Test
   public void testSize_Initial() {
-    assertEquals(0, map.size());
+    assertThat(map.size()).isEqualTo(0);
   }
 
   @Test
   public void testContainsKey_Initial() {
-    assertFalse(map.containsKey(123));
+    assertThat(map.containsKey(123)).isFalse();
   }
 
   @Test
   public void testContainsKey_Present() {
     map.put(123, "abc");
-    assertTrue(map.containsKey(123));
+    assertThat(map.containsKey(123)).isTrue();
   }
 
   @Test
   public void testContainsKey_incompatible() {
     map.put(123, "abc");
-    assertFalse(((Map<?, ?>) map).containsKey("123"));
+    assertThat(map.containsKey("123")).isFalse();
   }
 
   @Test
   public void testContainsValue_Initial() {
-    assertFalse(map.containsValue("abc"));
+    assertThat(map.containsValue("abc")).isFalse();
   }
 
   @Test
   public void testContainsValue_Present() {
     map.put(123, "abc");
-    assertTrue(map.containsValue("abc"));
+    assertThat(map.containsValue("abc")).isTrue();
   }
 
   @Test(expected = NullPointerException.class)
@@ -100,29 +100,29 @@ public class ConcurrentMapTest {
   @Test
   public void testPutIfAbsent_Initial() {
     String v = map.putIfAbsent(123, "abc");
-    assertTrue(map.containsKey(123));
-    assertNull(v);
+    assertThat(map.containsKey(123)).isTrue();
+    assertThat(v).isNull();
   }
 
   @Test
   public void testPutIfAbsent_Present() {
     map.put(123, "abc");
     String v = map.putIfAbsent(123, "xyz");
-    assertTrue(map.containsKey(123));
-    assertEquals("abc", v);
+    assertThat(map.containsKey(123)).isTrue();
+    assertThat(v).isEqualTo("abc");
   }
 
   @Test
   public void testRemove_Initial() {
     String v = map.remove(123);
-    assertNull(v);
+    assertThat(v).isNull();
   }
 
   @Test
   public void testRemove_Present() {
     map.put(123, "abc");
     String v = map.remove(123);
-    assertEquals("abc", v);
+    assertThat(v).isEqualTo("abc");
   }
 
   @Test
@@ -133,98 +133,98 @@ public class ConcurrentMapTest {
   @Test
   public void testRemove2Arg_Initial() {
     boolean v = map.remove(123, "abc");
-    assertFalse(v);
+    assertThat(v).isFalse();
   }
 
   @Test
   public void testRemove2Arg_Present_NotEqual() {
     map.put(123, "abc");
     boolean v = map.remove(123, "bla");
-    assertFalse(v);
+    assertThat(v).isFalse();
   }
 
   @Test
   public void testRemove2Arg_Present_Equal() {
     map.put(123, "abc");
     boolean v = map.remove(123, "abc");
-    assertTrue(v);
+    assertThat(v).isTrue();
   }
 
   @Test
   public void testRemove2Arg_incompatible_types() {
     map.put(123, "abc");
     boolean v = map.remove(123, 123);
-    assertFalse(v);
+    assertThat(v).isFalse();
   }
 
   @Test
   public void testClear() {
     map.put(123, "abc");
     map.clear();
-    assertEquals(0, map.size());
+    assertThat(map.size()).isEqualTo(0);
   }
 
   @Test
   public void testReplace3Arg_Initial() {
     boolean v = map.replace(123, "abc", "bla");
-    assertFalse(v);
+    assertThat(v).isFalse();
   }
 
   @Test
   public void testReplace3Arg_Present_NotEqual() {
     map.put(123, "abc");
     boolean v = map.replace(123, "bla", "bla2");
-    assertFalse(v);
-    assertEquals("abc", map.get(123));
+    assertThat(v).isFalse();
+    assertThat(map.get(123)).isEqualTo("abc");
   }
 
   @Test
   public void testReplace3Arg_Present_Equal() {
     map.put(123, "abc");
     boolean v = map.replace(123, "abc", "bla2");
-    assertTrue(v);
-    assertEquals("bla2", map.get(123));
+    assertThat(v).isTrue();
+    assertThat(map.get(123)).isEqualTo("bla2");
   }
 
   @Test
   public void testReplace2Arg_Initial() {
     String v = map.replace(123, "abc");
-    assertNull(v);
+    assertThat(v).isNull();
   }
 
   @Test
   public void testReplace2Arg_Present() {
     map.put(123, "abc");
     String v = map.replace(123, "bla");
-    assertEquals("abc", v);
-    assertEquals("bla", map.get(123));
+    assertThat(v).isEqualTo("abc");
+    assertThat(map.get(123)).isEqualTo("bla");
   }
 
   @Test
   public void testGet_Initial() {
-    assertNull(map.get(123));
+    assertThat(map.get(123)).isNull();
   }
 
   @Test
   public void testGet_Present() {
     map.put(123, "abc");
-    assertEquals("abc", map.get(123));
+    assertThat(map.get(123)).isEqualTo("abc");
   }
 
   @Test
   public void testGet_incompatible() {
     map.put(123, "abc");
-    assertNull(untypedMap().get("abc"));
+    assertThat(untypedMap().get("abc")).isNull();
   }
 
   @Test
   public void testPut_Initial() {
-    assertNull(map.put(123, "abc"));
+    assertThat(map.put(123, "abc")).isNull();
   }
 
   @Test
   public void testPut_Present() {
-    assertNull(map.put(123, "abc"));
+    assertThat(map.put(123, "abc")).isNull();
   }
 
   @Test
@@ -233,61 +233,61 @@ public class ConcurrentMapTest {
     m.put(123, "abc");
     m.put(4711, "cologne");
     map.putAll(m);
-    assertEquals(2, map.size());
+    assertThat(map.size()).isEqualTo(2);
   }
 
   @Test
   public void entrySet_size() {
-    assertEquals(0, map.entrySet().size());
+    assertThat(map.entrySet().size()).isEqualTo(0);
     map.put(123, "abc");
-    assertEquals(1, map.entrySet().size());
+    assertThat(map.entrySet().size()).isEqualTo(1);
   }
 
   @Test
   public void keySet_size() {
-    assertEquals(0, map.keySet().size());
+    assertThat(map.keySet().size()).isEqualTo(0);
     map.put(123, "abc");
-    assertEquals(1, map.keySet().size());
+    assertThat(map.keySet().size()).isEqualTo(1);
   }
 
   @Test
   public void keySet_contains() {
-    assertFalse(untypedMap().keySet().contains("abc"));
+    assertThat(untypedMap().containsKey("abc")).isFalse();
     map.put(123, "abc");
-    assertFalse(untypedMap().keySet().contains("abc"));
-    assertTrue(map.keySet().contains(123));
+    assertThat(untypedMap().containsKey("abc")).isFalse();
+    assertThat(map.containsKey(123)).isTrue();
   }
 
   @Test
   public void valueSet_size() {
-    assertEquals(0, map.values().size());
+    assertThat(map.values().size()).isEqualTo(0);
     map.put(123, "abc");
-    assertEquals(1, map.values().size());
+    assertThat(map.values().size()).isEqualTo(1);
   }
 
   @Test
   public void entrySet_read() {
-    assertFalse(map.entrySet().iterator().hasNext());
+    assertThat(map.entrySet().iterator().hasNext()).isFalse();
     map.put(123, "abc");
     Map.Entry<Integer, String> e = map.entrySet().iterator().next();
-    assertEquals((Integer) 123, e.getKey());
-    assertEquals("abc", e.getValue());
+    assertThat(e.getKey()).isEqualTo((Integer) 123);
+    assertThat(e.getValue()).isEqualTo("abc");
   }
 
   @Test
   public void valueSet_read() {
-    assertFalse(map.values().iterator().hasNext());
+    assertThat(map.values().iterator().hasNext()).isFalse();
     map.put(123, "abc");
     String s = map.values().iterator().next();
-    assertEquals("abc", s);
+    assertThat(s).isEqualTo("abc");
   }
 
   @Test
   public void keySet_read() {
-    assertFalse(map.keySet().iterator().hasNext());
+    assertThat(map.keySet().iterator().hasNext()).isFalse();
     map.put(123, "abc");
     int k = map.keySet().iterator().next();
-    assertEquals(123, k);
+    assertThat(k).isEqualTo(123);
   }
 
   @Test
@@ -296,37 +296,37 @@ public class ConcurrentMapTest {
     Iterator<?> it = map.entrySet().iterator();
     it.next();
     it.remove();
-    assertFalse(map.containsKey(123));
+    assertThat(map.containsKey(123)).isFalse();
   }
 
   @Test
   public void keySet_remove() {
     map.put(123, "abc");
     map.keySet().remove(123);
-    assertFalse(map.containsKey(123));
+    assertThat(map.containsKey(123)).isFalse();
   }
 
   @Test
   public void valueSet_remove() {
     map.put(123, "abc");
     map.values().remove("abc");
-    assertFalse(map.containsKey(123));
+    assertThat(map.containsKey(123)).isFalse();
   }
 
   @Test
   public void test_equals() {
-    assertTrue(map.equals(map));
-    assertFalse(map.equals("123"));
+    assertThat(map.equals(map)).isTrue();
+    assertThat(map.equals("123")).isFalse();
   }
 
   @Test
   public void computeIfAbsent() {
     String value = map.computeIfAbsent(123, integer -> "foo");
-    assertEquals("foo", value);
-    assertEquals("foo", map.get(123));
+    assertThat(value).isEqualTo("foo");
+    assertThat(map.get(123)).isEqualTo("foo");
     value = map.computeIfAbsent(123, integer -> "bar");
-    assertEquals("foo", value);
-    assertEquals("foo", map.get(123));
+    assertThat(value).isEqualTo("foo");
+    assertThat(map.get(123)).isEqualTo("foo");
     assertThatCode(() -> map.computeIfAbsent(4711, key -> key.toString().charAt(123) + "")).as("expect out of bounds")
       .isInstanceOf(StringIndexOutOfBoundsException.class);
   }
@@ -334,16 +334,16 @@ public class ConcurrentMapTest {
   @Test
   public void computeIfPresent() {
     String value = map.computeIfPresent(123, (integer, s) -> "foo");
-    assertNull(value);
-    assertNull(map.get(123));
+    assertThat(value).isNull();
+    assertThat(map.get(123)).isNull();
     map.put(123, "foo");
     value = map.computeIfPresent(123, (integer, s) -> "bar");
-    assertEquals("bar", value);
-    assertEquals("bar", map.get(123));
+    assertThat(value).isEqualTo("bar");
+    assertThat(map.get(123)).isEqualTo("bar");
     value = map.computeIfPresent(123, (integer, s) -> null);
-    assertNull(value);
-    assertNull(map.get(123));
-    assertFalse(untypedMap().containsValue(123));
+    assertThat(value).isNull();
+    assertThat(map.get(123)).isNull();
+    assertThat(untypedMap().containsValue(123)).isFalse();
     map.put(123, "xy");
     assertThatCode(() -> map.computeIfPresent(123, (key, s) -> s.charAt(123) + "")).as("expect out of bounds")
       .isInstanceOf(StringIndexOutOfBoundsException.class);
@@ -352,28 +352,28 @@ public class ConcurrentMapTest {
   @Test
   public void compute() {
     String value = map.compute(123, (integer, s) -> "" + s);
-    assertEquals("null", value);
+    assertThat(value).isEqualTo("null");
     map.put(123, "foo");
     value = map.compute(123, (integer, s) -> {
-      assertEquals("foo", s);
+      assertThat(s).isEqualTo("foo");
       return "bar";
     });
-    assertEquals("bar", value);
-    assertEquals("bar", map.get(123));
+    assertThat(value).isEqualTo("bar");
+    assertThat(map.get(123)).isEqualTo("bar");
     value = map.compute(123, (integer, s) -> {
-      assertEquals("bar", s);
+      assertThat(s).isEqualTo("bar");
       return null;
     });
-    assertNull(value);
-    assertNull(map.get(123));
-    assertFalse(untypedMap().containsValue(123));
+    assertThat(value).isNull();
+    assertThat(map.get(123)).isNull();
+    assertThat(untypedMap().containsValue(123)).isFalse();
     assertThatCode(() -> map.compute(123, (integer, s) -> s.hashCode() + "")).as("expect NPE")
       .isInstanceOf(NullPointerException.class);
   }
 
   @Test
   public void test_hashCode() {
-    assertTrue(map.hashCode() == map.hashCode());
+    assertThat(map.hashCode() == map.hashCode()).isTrue();
   }
 
 }
