@@ -1220,19 +1220,21 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     K key = keyObjFromEntry(e);
     if (toStoredHashCodeOrKey(key, spreadHash(key.hashCode())) != e.hashCode) {
       if (keyMutationCnt ==  0) {
-        getLog().warn("Key mismatch! Key hashcode changed! keyClass=" +
-          e.getKey().getClass().getName());
-        String s;
-        try {
-          s = e.getKey().toString();
-          if (s != null) {
-            getLog().warn("Key mismatch! key.toString(): " + s);
-          }
-        } catch (Throwable t) {
-          getLog().warn("Key mismatch! key.toString() threw exception", t);
-        }
+        logKeyMutation(getLog(), e.getKey());
       }
       keyMutationCnt++;
+    }
+  }
+
+  static void logKeyMutation(Log log, Object key) {
+    log.warn("Key mismatch! Key hashcode changed! keyClass=" + key.getClass().getName());
+    try {
+      String s = key.toString();
+      if (s != null) {
+        log.warn("Key mismatch! key.toString(): " + s);
+      }
+    } catch (Throwable t) {
+      log.warn("Key mismatch! key.toString() threw exception", t);
     }
   }
 
