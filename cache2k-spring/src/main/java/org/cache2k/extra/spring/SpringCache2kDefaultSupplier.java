@@ -36,6 +36,17 @@ import java.util.function.Supplier;
 public interface SpringCache2kDefaultSupplier extends Supplier<Cache2kBuilder<?, ?>> {
 
   /**
+   * Construct a supplier with defaults and applying the customizer.
+   */
+  static SpringCache2kDefaultSupplier of(SpringCache2kDefaultCustomizer customizer) {
+    return () -> {
+      Cache2kBuilder<?, ?> builder = supplyDefaultBuilder();
+      customizer.customize(builder);
+      return builder;
+    };
+  }
+
+  /**
    * Default name used for the cache2k cache manager controlled by the spring cache
    * manager.
    */

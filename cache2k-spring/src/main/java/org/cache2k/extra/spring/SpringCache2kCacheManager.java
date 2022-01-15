@@ -23,7 +23,7 @@ package org.cache2k.extra.spring;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.annotation.NonNull;
-import org.cache2k.config.Cache2kConfig;
+import org.cache2k.operation.CacheControl;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
@@ -136,34 +136,58 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   /**
    * Function providing default settings for caches added to the manager via {@link #addCaches}
    * and for dynamically created caches (not configured explicitly) that are retrieved
-   * via {@link #getCache(String)}.
+   * via {@link #getCache(String)}. The defaults must be set first, before caches are added
+   * or retrieved.
+   *
+   * @throws IllegalStateException if caches were already added
    */
   public SpringCache2kCacheManager defaultSetup(
     Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> f) {
+    if (!name2cache.isEmpty()) {
+      throw new IllegalStateException("Defaults may only be set before the first cache is added");
+    }
     defaultSetup = f;
     return this;
   }
 
   /**
-   * Adds a caches to this cache manager that maybe configured via the {@link Cache2kBuilder}.
-   * This method can be used in case a programmatic configuration of a cache manager is preferred.
-   *
-   * <p>Rationale: The method provides a builder that is already seeded with the effective cache2k
-   * cache manager and default configuration. This makes it possible to use the builder without
-   * code bloat.
-   *
-   * @throws IllegalArgumentException if cache is already created
+   * @see #addCache(Function) 
    */
   @SafeVarargs
   public final SpringCache2kCacheManager addCaches(
     Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>>... fs) {
     for (Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> f : fs) {
-      addCache(f.apply(defaultSetup.apply(getDefaultBuilder())));
+      addCache(f);
     }
     return this;
   }
 
-  private void addCache(Cache2kBuilder<?, ?> builder) {
+  /**
+   * Adds a cache to this cache manager that may be configured via the {@link Cache2kBuilder}.
+   * This method can be used in case a programmatic configuration of a cache manager is preferred.
+   *
+   * <p>The provided builder is already seeded with the effective cache2k cache manager and default configuration.
+   *
+   * @throws IllegalStateException if cache is already created
+   */
+  public SpringCache2kCacheManager addCache(Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> f) {
+    buildAndAddCache(f.apply(defaultSetup.apply(getDefaultBuilder())));
+    return this;
+  }
+
+  /**
+   * Adds a cache to this cache manager that may be configured via the {@link Cache2kBuilder}.
+   *
+   * @param name name of the cache to add
+   * @param f customizer function for the builder provided with the defaults
+   * @return the customized builder
+   */
+  public SpringCache2kCacheManager addCache(String name, Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> f) {
+    buildAndAddCache(f.apply(defaultSetup.apply(getDefaultBuilder()).name(name)));
+    return this;
+  }
+
+  private void buildAndAddCache(Cache2kBuilder<?, ?> builder) {
     String name = builder.config().getName();
     Assert.notNull(name, "Name must be set via Cache2kBuilder.name()");
     Assert.isTrue(builder.getManager() == manager,
@@ -178,24 +202,22 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   }
 
   /**
-   * @see #setCacheNames(Collection)
+   * @see #setDefaultCacheNames(Collection)
    */
-  public void setCacheNames(String... names) {
-    setCacheNames(Arrays.asList(names));
+  public SpringCache2kCacheManager setDefaultCacheNames(String... names) {
+    return setDefaultCacheNames(Arrays.asList(names));
   }
 
   /**
-   * Initialize the specified caches with defaults if not yet present and disable
+   * Initialize the specified caches with defaults and disable
    * dynamic creation of caches by setting {@link #setAllowUnknownCache(boolean)} to {@code false}
    */
-  public void setCacheNames(Collection<String> names) {
+  public SpringCache2kCacheManager setDefaultCacheNames(Collection<String> names) {
     for (String name : names) {
-      try {
-        addCaches(b -> b.name(name));
-      } catch (IllegalStateException ignore) {
-      }
+      addCache(b -> b.name(name));
     }
     allowUnknownCache = false;
+    return this;
   }
 
   /**
@@ -215,7 +237,7 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
 
   /**
    * List of configured cache names. These are caches configured in cache2k via XML and
-   * caches added to this cache manager with programmatic configuration {@link #addCache}.
+   * caches added to this cache manager with programmatic configuration {@link #buildAndAddCache}.
    * Used for testing purposes to determine whether a cache was added dynamically.
    */
   public Collection<String> getConfiguredCacheNames() {
@@ -242,7 +264,7 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
 
   /**
    * If {@code false}, the cache manager only manages a cache if added via {@link #addCaches},
-   * of {@link #setCacheNames(String...)} or enlisted in the cache2k XML configuration.
+   * of {@link #setDefaultCacheNames(String...)} or enlisted in the cache2k XML configuration.
    * Setting this to {@code true} will create a cache with a default configuration if the requested
    * cache name is not known. The default is {@code true}.
    *
@@ -264,9 +286,7 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   @SuppressWarnings("unchecked")
   SpringCache2kCache buildAndWrap(Cache2kBuilder<?, ?> builder) {
     org.cache2k.Cache<Object, Object> nativeCache = (Cache<Object, Object>)  builder.build();
-    Cache2kConfig<?, ?> cfg = builder.config();
-    boolean loaderPresent = cfg.getLoader() != null || cfg.getAdvancedLoader() != null;
-    return loaderPresent ?
+    return CacheControl.of(nativeCache).isLoaderPresent() ?
       new SpringLoadingCache2kCache(nativeCache) : new SpringCache2kCache(nativeCache);
   }
 
