@@ -20,11 +20,10 @@ package org.cache2k.pinpoint.stress.pairwise;
  * #L%
  */
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.pinpoint.stress.pairwise.ActorPair.SuccessTuple;
 
 /**
  * @author Jens Wilke
@@ -33,20 +32,20 @@ public class ActorPairTest {
 
   @Test
   public void successFalseFalse() {
-    ActorPair.SuccessTuple t = new ActorPair.SuccessTuple(false, false);
-    assertFalse(t.isBothSucceed());
-    assertFalse(t.isOneSucceeds());
-    assertFalse(t.isSuccess1());
-    assertFalse(t.isSuccess2());
+    SuccessTuple t = new SuccessTuple(false, false);
+    assertThat(t.isBothSucceed()).isFalse();
+    assertThat(t.isOneSucceeds()).isFalse();
+    assertThat(t.isSuccess1()).isFalse();
+    assertThat(t.isSuccess2()).isFalse();
     t.toString();
   }
 
   @Test
   public void successTrueFalse() {
-    ActorPair.SuccessTuple t = new ActorPair.SuccessTuple(true, false);
-    assertFalse(t.isBothSucceed());
-    assertTrue(t.isOneSucceeds());
-    assertTrue(t.isSuccess1());
-    assertFalse(t.isSuccess2());
+    SuccessTuple t = new SuccessTuple(true, false);
+    assertThat(t.isBothSucceed()).isFalse();
+    assertThat(t.isOneSucceeds()).isTrue();
+    assertThat(t.isSuccess1()).isTrue();
+    assertThat(t.isSuccess2()).isFalse();
   }
 }

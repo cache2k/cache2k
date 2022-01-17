@@ -20,14 +20,19 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
-import java.time.Duration;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Jens Wilke
  */
-public class PinpointParameters {
+public class VmThreadDumpTest {
 
-  public static final int TIMEOUT_SECONDS = 10;
-  public static final Duration TIMEOUT = Duration.ofSeconds(TIMEOUT_SECONDS);
+  @Test
+  public void test() {
+    String dump = VmThreadDump.generateThreadDump();
+    assertThat(dump).contains("Thread \"" + Thread.currentThread().getName() + "\"");
+  }
 
 }

@@ -20,14 +20,8 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
-import java.time.Duration;
-
 /**
  * @author Jens Wilke
  */
-public class PinpointParameters {
-
-  public static final int TIMEOUT_SECONDS = 10;
-  public static final Duration TIMEOUT = Duration.ofSeconds(TIMEOUT_SECONDS);
-
+public class NeverExecutedError extends AssertionError {
 }

@@ -20,14 +20,14 @@ package org.cache2k.pinpoint.stress.pairwise;
  * #L%
  */
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static java.util.concurrent.Executors.newCachedThreadPool;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Jens Wilke
@@ -44,32 +44,27 @@ public class ActorPairSuiteTest {
           throw new RuntimeException("setup test");
         }
       });
-    try {
-      s.run();
-      fail("exception expected");
-    } catch (AssertionError ex) {
-      assertTrue(ex.toString().contains("setup test"));
-    }
+    assertThatCode(s::run)
+      .isInstanceOf(AssertionError.class)
+      .hasMessageContaining("setup test");
   }
 
   @Test
   public void exceptionOnSecondRun() {
-    final AtomicInteger count = new AtomicInteger();
+    AtomicInteger count = new AtomicInteger();
     ActorPairSuite s = new ActorPairSuite()
       .runMillis(Long.MAX_VALUE)
       .stopAtFirstException(true)
       .addPair(new DefaultPair<Object>() {
         @Override
-        public void check(final Object r1, final Object r2) {
-          assertEquals(0, count.getAndIncrement());
+        public void check(Object r1, Object r2) {
+          assertThat(count.getAndIncrement()).isEqualTo(0);
         }
       });
-    try {
-      s.run();
-      fail("exception expected");
-    } catch (AssertionError ex) {
-      assertTrue(ex.toString().contains("java.lang.AssertionError: expected:<0> but was:<1>"));
-    }
+    assertThatCode(s::run)
+      .isInstanceOf(AssertionError.class)
+      .hasMessageContaining("expected: 0")
+      .hasMessageContaining("but was: 1");
   }
 
   @Test
@@ -82,12 +77,9 @@ public class ActorPairSuiteTest {
           throw new RuntimeException("actor1");
         }
       });
-    try {
-      s.run();
-      fail("exception expected");
-    } catch (AssertionError ex) {
-      assertTrue(ex.toString().contains("actor1"));
-    }
+    assertThatCode(s::run)
+      .isInstanceOf(AssertionError.class)
+      .hasMessageContaining("actor1");
   }
 
   @Test
@@ -100,12 +92,9 @@ public class ActorPairSuiteTest {
           throw new RuntimeException("actor2");
         }
       });
-    try {
-      s.run();
-      fail("exception expected");
-    } catch (AssertionError ex) {
-      assertTrue(ex.toString().contains("actor2"));
-    }
+    assertThatCode(s::run)
+      .isInstanceOf(AssertionError.class)
+      .hasMessageContaining("actor2");
   }
 
   @Test
@@ -114,21 +103,18 @@ public class ActorPairSuiteTest {
       .stopAtFirstException(true)
       .addPair(new DefaultPair<Object>() {
         @Override
-        public void check(final Object r1, final Object r2) {
+        public void check(Object r1, Object r2) {
           throw new RuntimeException("check");
         }
       });
-    try {
-      s.run();
-      fail("exception expected");
-    } catch (AssertionError ex) {
-      assertTrue(ex.toString().contains("check"));
-    }
+    assertThatCode(s::run)
+      .isInstanceOf(AssertionError.class)
+      .hasMessageContaining("check");
   }
 
   @Test
   public void noExceptionOneshot() {
-    final AtomicBoolean wasRun = new AtomicBoolean();
+    AtomicBoolean wasRun = new AtomicBoolean();
     ActorPairSuite s = new ActorPairSuite()
       .runMillis(0)
       .maxParallel(1234)
@@ -139,36 +125,37 @@ public class ActorPairSuiteTest {
         }
       });
     s.run();
-    assertTrue(wasRun.get());
+    assertThat(wasRun.get()).isTrue();
   }
 
   @Test
   public void alternativeExecutor() {
-    final Executor ex = Executors.newCachedThreadPool();
-    final AtomicBoolean used = new AtomicBoolean();
+    Executor ex = newCachedThreadPool();
+    AtomicBoolean used = new AtomicBoolean();
     ActorPairSuite s = new ActorPairSuite()
       .runMillis(0)
       .maxParallel(1234)
-      .executor(new Executor() {
-        @Override
-        public void execute(final Runnable command) {
-          used.set(true);
-          ex.execute(command);
-        }
+      .executor(command -> {
+        used.set(true);
+        ex.execute(command);
       })
-      .addPair(new DefaultPair<Object>());
+      .addPair(new DefaultPair<>());
     s.run();
-    assertTrue(used.get());
+    assertThat(used.get()).isTrue();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void initExceptionNoActorPairs() {
-    new ActorPairSuite().run();
+    assertThatCode(() ->
+      new ActorPairSuite().run()
+    ).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void initExceptionWrongMaxParallel() {
-    new ActorPairSuite().addPair(new DefaultPair<Object>()).maxParallel(0).run();
+    assertThatCode(() ->
+      new ActorPairSuite().addPair(new DefaultPair<>()).maxParallel(0).run()
+    ).isInstanceOf(IllegalArgumentException.class);
   }
 
   static class DefaultPair<R> implements ActorPair<R> {
@@ -186,7 +173,7 @@ public class ActorPairSuiteTest {
     }
 
     @Override
-    public void check(final R r1, final R r2) { }
+    public void check(R r1, R r2) { }
   }
 
 }

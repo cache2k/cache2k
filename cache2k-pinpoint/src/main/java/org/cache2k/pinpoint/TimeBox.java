@@ -57,6 +57,8 @@ public class TimeBox {
     AssertionError failedAssertion = null;
     try {
       r.run();
+    } catch (TimeoutError ex) {
+      throw ex;
     } catch (AssertionError ex) {
       failedAssertion = ex;
     }

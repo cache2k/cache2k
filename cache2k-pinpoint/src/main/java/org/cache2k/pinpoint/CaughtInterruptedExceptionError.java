@@ -20,14 +20,13 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
-import java.time.Duration;
-
 /**
+ * Test was aborted. Exception to rethrow an {@link InterruptedException}
+ *
  * @author Jens Wilke
  */
-public class PinpointParameters {
-
-  public static final int TIMEOUT_SECONDS = 10;
-  public static final Duration TIMEOUT = Duration.ofSeconds(TIMEOUT_SECONDS);
-
+public class CaughtInterruptedExceptionError extends AssertionError {
+  public CaughtInterruptedExceptionError(Throwable cause) {
+    super(cause);
+  }
 }

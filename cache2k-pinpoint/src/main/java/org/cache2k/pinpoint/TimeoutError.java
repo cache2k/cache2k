@@ -20,13 +20,25 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
+import java.time.Duration;
+
 /**
- * Exception to rethrow an {@link InterruptedException}
+ * Test aborted due to timeout
  *
  * @author Jens Wilke
  */
-public class CaughtInterruptedException extends RuntimeException {
-  public CaughtInterruptedException(Throwable cause) {
-    super(cause);
+public class TimeoutError extends AssertionError {
+
+  public TimeoutError(Duration timeout) {
+    super("Timeout after " + readableDuration(timeout));
   }
+
+  static String readableDuration(Duration timeout) {
+    long seconds = timeout.getSeconds();
+    if (seconds % 60 == 0 & seconds != 0) {
+      return (seconds / 60) + " minutes";
+    }
+    return seconds + " seconds";
+  }
+
 }

@@ -20,9 +20,8 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
+import java.time.Duration;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Collect exceptions or set final success for tasks running in concurrent threads.
@@ -33,35 +32,34 @@ public class TaskSuccessGuardian {
 
   private final Semaphore completed = new Semaphore(0);
   private final ExceptionCollector collector = new ExceptionCollector();
-  private final AtomicBoolean success = new AtomicBoolean(false);
+  private final Duration timeout;
 
-  public void exception(Throwable t) { collector.exception(t); completed.release(); }
-  public void success() { success.set(true); completed.release(); }
-  public void assertSuccess() {
-    boolean f = false;
-    try {
-      f = completed.tryAcquire(PinpointParameters.TIMEOUT_SECONDS, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new AssertionError("Interrupted before task completion");
-    }
-    if (!f) {
-      throw new AssertionError("Timeout waiting for task completion");
-    }
-    if (success.get()) {
-      if (collector.getExceptionCount() != 0) {
-        throw new AssertionError("Error: Exception and success reported");
-      }
-      return;
-    }
-    if (collector.getExceptionCount() == 0) {
-      throw new AssertionError("Error: No exception and no success reported");
-    }
-    collector.assertNoException();
+  public TaskSuccessGuardian() {
+    this(PinpointParameters.TIMEOUT);
   }
 
-  private void release() {
-    completed.release();
+  public TaskSuccessGuardian(Duration timeout) {
+    this.timeout = timeout;
+  }
+
+  public void completedWithException(Throwable t) { collector.exception(t); completed.release(); }
+  public void completedWithSuccess() { completed.release(); }
+  public void awaitCompletionAndAssertSuccess() {
+    SupervisedExecutor.acquireOrTimeout(completed, timeout);
+    collector.assertNoException();
+  }
+  public void executeGuarded(ExceptionalRunnable runnable) {
+    try {
+      runnable.run();
+      completedWithSuccess();
+    } catch (Throwable ex) {
+      completedWithException(ex);
+    }
+  }
+
+  @FunctionalInterface
+  public interface ExceptionalRunnable {
+    void run() throws Exception;
   }
 
 }

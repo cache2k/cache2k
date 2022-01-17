@@ -20,8 +20,11 @@ package org.cache2k.pinpoint;
  * #L%
  */
 
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -38,26 +41,26 @@ public class SupervisedExecutor implements Executor, AutoCloseable {
   private final ExceptionCollector exceptionCollector = new ExceptionCollector();
   private final AtomicInteger notYetFinished = new AtomicInteger();
   private final Semaphore allFinished = new Semaphore(1);
+  private final Duration timeout;
 
   public SupervisedExecutor(Executor executor) {
+    this(executor, PinpointParameters.TIMEOUT);
+  }
+
+  public SupervisedExecutor(Executor executor, Duration timeout) {
     this.executor = executor;
+    this.timeout = timeout;
   }
 
   @Override
   public void execute(Runnable command) {
     if (notYetFinished.incrementAndGet() == 1) {
-      try {
-        allFinished.acquire();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new CaughtInterruptedException(e);
-      }
+      acquire(allFinished);
     }
     executor.execute(() -> {
       try {
         command.run();
       } catch (Throwable t) {
-        t.printStackTrace();
         exceptionCollector.exception(t);
       } finally {
         if (notYetFinished.decrementAndGet() == 0) {
@@ -71,13 +74,24 @@ public class SupervisedExecutor implements Executor, AutoCloseable {
    * Wait for all executed tasks to finish and propagate exceptions.
    */
   public void join() {
-    try {
-      allFinished.acquire();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new CaughtInterruptedException(e);
-    }
+    acquire(allFinished);
+    allFinished.release();
     exceptionCollector.assertNoException();
+  }
+
+  void acquire(Semaphore semaphore) {
+    acquireOrTimeout(semaphore, timeout);
+  }
+
+  static void acquireOrTimeout(Semaphore semaphore, Duration timeout) {
+    try {
+      boolean gotPermit = semaphore.tryAcquire(timeout.toMillis(), TimeUnit.MILLISECONDS);
+      if (!gotPermit) {
+        throw new TimeoutError(timeout);
+      }
+    } catch (InterruptedException e) {
+      throw new CaughtInterruptedExceptionError(e);
+    }
   }
 
   /**

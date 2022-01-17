@@ -29,7 +29,7 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.CacheLoaderException;
-import org.cache2k.pinpoint.CaughtInterruptedException;
+import org.cache2k.pinpoint.CaughtInterruptedExceptionError;
 import org.cache2k.pinpoint.PinpointParameters;
 import org.cache2k.pinpoint.TaskSuccessGuardian;
 import org.cache2k.pinpoint.ExceptionCollector;
@@ -811,21 +811,22 @@ public class CacheLoaderTest extends TestingBase {
       .loader((key, ctx, callback) -> {
       ctx.getExecutor().execute(() -> {
         if (key == 1) {
-          try {
+          guardianOnSuccess.executeGuarded(() -> {
             waitForCloseLatch.await();
-            assertThatCode(() -> callback.onLoadSuccess(123)).as("onSuccess()").doesNotThrowAnyException();
-            guardianOnSuccess.success();
-          } catch (Throwable t) {
-            guardianOnSuccess.exception(t);
-          }
+            assertThatCode(() ->
+              callback.onLoadSuccess(123))
+              .as("onSuccess()")
+              .doesNotThrowAnyException();
+          });
         } else {
-          try {
+          guardianOnFailure.executeGuarded(() -> {
             waitForCloseLatch.await();
-            assertThatCode(() -> callback.onLoadFailure(new RuntimeException())).as("onLoadFailure()").doesNotThrowAnyException();
-            guardianOnFailure.success();
-          } catch (Throwable t) {
-            guardianOnFailure.exception(t);
-          }
+            assertThatCode(() ->
+              callback.onLoadFailure(new RuntimeException()))
+              .as("onLoadFailure()")
+              .doesNotThrowAnyException();
+            }
+          );
         }
       });
     }));
@@ -833,8 +834,8 @@ public class CacheLoaderTest extends TestingBase {
     c.loadAll(asList(2));
     c.close();
     waitForCloseLatch.countDown();
-    guardianOnSuccess.assertSuccess();
-    guardianOnFailure.assertSuccess();
+    guardianOnSuccess.awaitCompletionAndAssertSuccess();
+    guardianOnFailure.awaitCompletionAndAssertSuccess();
   }
 
   @Test
@@ -1069,7 +1070,7 @@ public class CacheLoaderTest extends TestingBase {
             wait(remainingTimeout);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new CaughtInterruptedException(e);
+            throw new CaughtInterruptedExceptionError(e);
           }
         }
       }
