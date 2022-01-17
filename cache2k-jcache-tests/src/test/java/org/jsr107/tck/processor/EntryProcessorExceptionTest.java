@@ -28,6 +28,7 @@ import javax.cache.processor.EntryProcessorException;
 public class EntryProcessorExceptionTest {
 
 
+
   @Test
   public void testEntryProcessorException() {
     try {

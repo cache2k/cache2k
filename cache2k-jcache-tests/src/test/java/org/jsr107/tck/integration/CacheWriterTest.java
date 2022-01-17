@@ -55,6 +55,7 @@ import static org.junit.Assert.fail;
  * Cache methods are tested in order listed in Write-Through Caching table in JCache specification.
  * </p>
  * @author Joe Fialli
+ * @author Jens Wilke
  */
 public class CacheWriterTest extends TestSupport {
 
@@ -568,6 +569,36 @@ public class CacheWriterTest extends TestSupport {
     assertFalse(cache.containsKey(1));
   }
 
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotPutViaGetAndPutWhenWriteThroughFails() {
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.getAndPut(1, "Gudday World");
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertFalse(cache.containsKey(1));
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotPutViaPutIfAbsentWhenWriteThroughFails() {
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.putIfAbsent(1, "Gudday World");
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertFalse(cache.containsKey(1));
+  }
+
   @Test
   public void shouldWriteThoughUsingPutSingleEntry() {
     assertEquals(0, cacheWriter.getWriteCount());
@@ -766,6 +797,91 @@ public class CacheWriterTest extends TestSupport {
 
     }
     assertTrue(cache.containsKey(1));
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotRemoveViaRemoveTwoArgWhenWriteThroughFails() {
+    cache.put(1, "Gudday World");
+    assertTrue(cache.containsKey(1));
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.remove(1, "Gudday World");
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertTrue(cache.containsKey(1));
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotRemoveViaGetAndRemoveWhenWriteThroughFails() {
+    cache.put(1, "Gudday World");
+    assertTrue(cache.containsKey(1));
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.getAndRemove(1);
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertTrue(cache.containsKey(1));
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotModifyViaReplaceWhenWriteThroughFails() {
+    cache.put(1, "Gudday World");
+    assertTrue(cache.containsKey(1));
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.replace(1, "New");
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertEquals("Gudday World", cache.get(1));
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotModifyViaReplaceTwoArgWhenWriteThroughFails() {
+    cache.put(1, "Gudday World");
+    assertTrue(cache.containsKey(1));
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.replace(1, "Gudday World", "New");
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertEquals("Gudday World", cache.get(1));
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void shouldNotModifyViaGetAndReplaceWhenWriteThroughFails() {
+    cache.put(1, "Gudday World");
+    assertTrue(cache.containsKey(1));
+    cacheWriterServer.setCacheWriter(new FailingCacheWriter<Integer, String>());
+    try {
+      cache.getAndReplace(1, "New");
+      assertTrue("expected exception on write-through", false);
+    } catch (CacheWriterException e) {
+      // ignore expected exception.
+    }
+    assertEquals("Gudday World", cache.get(1));
   }
 
   @Test

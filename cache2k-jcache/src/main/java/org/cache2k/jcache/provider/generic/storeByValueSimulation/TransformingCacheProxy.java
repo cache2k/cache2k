@@ -331,7 +331,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   private <T> EntryProcessor<K0, V0, T> wrapEntryProcessor(
     EntryProcessor<K, V, T> entryProcessor) {
     if (entryProcessor == null) {
-      throw new NullPointerException("null processor");
+      throw null;
     }
     return new EntryProcessor<K0, V0, T>() {
       @Override

@@ -413,7 +413,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     if (Cache.class.equals(clazz)) {
       return (T) cache;
     }
-    throw new IllegalArgumentException("requested class unknown");
+    throw new IllegalArgumentException("requested class not supported");
   }
 
   @Override
@@ -474,7 +474,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
             if (CacheEntry.class.equals(type)) {
               return (T) entry;
             }
-            return null;
+            throw new IllegalArgumentException("Requested class not supported");
           }
         };
       }
@@ -551,7 +551,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
     @Override
     public <T> T unwrap(Class<T> clazz) {
-      return null;
+      throw new IllegalArgumentException();
     }
   }
 

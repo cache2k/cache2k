@@ -32,6 +32,9 @@ import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.integration.CompletionListener;
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.MutableEntry;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
@@ -42,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -188,6 +192,27 @@ public class CacheTest extends CacheTestSupport<Long, String> {
     cache.loadAll(keys, true, NULL_COMPLETION_LISTENER);
   }
 
+  /**
+   * Nothing is loaded if no loader is present. Request must be completed instantly.
+   * Not present in original JCache test suite.
+   *
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void load_noLoaderCompletionListener() {
+    Set<Long> keys = new HashSet<Long>();
+    keys.add(1L);
+    AtomicInteger onCompletionCalled = new AtomicInteger();
+    CompletionListener listener = new CompletionListener() {
+      @Override
+      public void onCompletion() { onCompletionCalled.incrementAndGet(); }
+      @Override
+      public void onException(Exception e) { }
+    };
+    cache.loadAll(keys, true, listener);
+    assertEquals(1, onCompletionCalled.get());
+  }
+
   @Test
   public void iterator_Closed() {
     cache.close();
@@ -266,6 +291,19 @@ public class CacheTest extends CacheTestSupport<Long, String> {
     assertTrue(unwrapClass.isAssignableFrom(unwrappedCache.getClass()));
   }
 
+  final class UnknownDummy { }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void testCacheUnwrapUnsupported() {
+    try {
+      cache.unwrap(UnknownDummy.class);
+      fail("Exception expected");
+    } catch (IllegalArgumentException ex) { }
+  }
+
   /**
    * Will fail unless CacheEntryImpl specified in pom.xml
    */
@@ -278,6 +316,39 @@ public class CacheTest extends CacheTestSupport<Long, String> {
     assertTrue(unwrapClass.isAssignableFrom(unwrappedCacheEntry.getClass()));
   }
 
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void testCacheEntryUnwrapUnsupported() {
+    cache.put(1l, "Tonto");
+    Cache.Entry entry = cache.iterator().next();
+    try {
+      entry.unwrap(UnknownDummy.class);
+      fail("Exception expected");
+    } catch (IllegalArgumentException ex) { }
+  }
+
+  /**
+   * @since cache2k-jcache-tests
+   */
+  @Test
+  public void testMutableCacheEntryUnwrapUnsupported() {
+    cache.put(1l, "Tonto");
+    try {
+      cache.invoke(1L, new EntryProcessor<Long, String, String>() {
+        @Override
+        public String process(MutableEntry<Long, String> entry, Object... arguments) throws EntryProcessorException {
+          entry.unwrap(UnknownDummy.class);
+          return null;
+        }
+      });
+
+      fail("Exception expected");
+    } catch (EntryProcessorException ex) {
+      assertEquals(IllegalArgumentException.class, ex.getCause().getClass());
+    }
+  }
 
   @Test
   public void testGetCacheManager() throws Exception {
