@@ -204,7 +204,7 @@ public interface AsyncBulkCacheLoader<K, V> extends AsyncCacheLoader<K, V> {
      *
      * <p>Multiple calls with the same key have no effect.
      */
-    default void onLoadFailure(Set<? extends K> keys, Throwable exception) {
+    default void onLoadFailure(Iterable<? extends K> keys, Throwable exception) {
       for (K key : keys) { onLoadFailure(key, exception); }
     }
 

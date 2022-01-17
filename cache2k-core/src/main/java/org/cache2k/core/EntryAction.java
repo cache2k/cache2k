@@ -172,7 +172,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   private volatile boolean completed;
 
   /**
-   * Abort if the entry is currently processing and we cannot proceed with
+   * True: Abort if the entry is currently processing and we cannot proceed with
    * this operation. Used by the bulk action.
    */
   private boolean bulkMode;

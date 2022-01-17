@@ -1155,18 +1155,48 @@ public class CacheLoaderTest extends TestingBase {
   }
 
   @Test
-  public void asyncBulkLoader_immediateException_loadAll_get_getAll() throws Exception {
+  public void asyncBulkLoader_immediateException_loadAll_get_getAll() {
     Cache<Integer, Integer> cache = target.cache(b -> b.bulkLoader((keys, contextSet, callback) -> {
       throw new ExpectedException();
     }));
+    asayncBulkLoader_loadAll_get_getAll_epxectException(cache);
+  }
+
+  @Test
+  public void asyncBulkLoader_failAll1_loadAll_get_getAll() {
+    Cache<Integer, Integer> cache = target.cache(b -> b.bulkLoader((keys, contextSet, callback) -> {
+      callback.onLoadFailure(new ExpectedException());
+    }));
+    asayncBulkLoader_loadAll_get_getAll_epxectException(cache);
+  }
+
+  @Test
+  public void asyncBulkLoader_failAll2_loadAll_get_getAll() {
+    Cache<Integer, Integer> cache = target.cache(b -> b.bulkLoader((keys, contextSet, callback) -> {
+      callback.onLoadFailure(keys, new ExpectedException());
+    }));
+    asayncBulkLoader_loadAll_get_getAll_epxectException(cache);
+  }
+
+  @Test
+  public void asyncBulkLoader_failAll3_loadAll_get_getAll() {
+    Cache<Integer, Integer> cache = target.cache(b -> b.bulkLoader((keys, contextSet, callback) -> {
+      for (Integer key : keys) {
+        callback.onLoadFailure(key, new ExpectedException());
+      }
+    }));
+    asayncBulkLoader_loadAll_get_getAll_epxectException(cache);
+  }
+
+  private void asayncBulkLoader_loadAll_get_getAll_epxectException(Cache<Integer, Integer> cache) {
     CompletableFuture<Void> req1 = cache.loadAll(asList(1, 2, 3));
     assertThat(req1.isCompletedExceptionally())
-      .as("exception expected")
-      .isTrue();
+          .as("exception expected")
+          .isTrue();
     CompletableFuture<Void> req2 = cache.loadAll(asList(4));
     assertThat(req2.isCompletedExceptionally())
-      .as("exception expected")
-      .isTrue();
+          .as("exception expected")
+          .isTrue();
     for (int i = 1; i < 6; i++) {
       CacheEntry<Integer, Integer> entry = cache.getEntry(i);
       assertThat(entry.getException())
@@ -1365,6 +1395,7 @@ public class CacheLoaderTest extends TestingBase {
           assertThat(context.getContextMap()).isNotNull();
           assertThat(context.getCache()).isSameAs(cacheRef.get());
           assertThat(context.getCallback()).isSameAs(callback);
+          assertThat(context.isRefreshAhead()).isFalse();
           for (Integer key : keys) {
             callback.onLoadSuccess(key, key);
           }

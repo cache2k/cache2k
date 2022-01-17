@@ -131,6 +131,7 @@ public abstract class BulkAction<K, V, R> implements
    * @return true, if callback is expected and actions are running or if completed
    */
   private boolean tryStartAllAndProcessPendingIo() {
+    if (toStart.size() == 1) { return false; }
     boolean someStarted = false;
     Iterator<EntryAction<K, V, R>> it = toStart.iterator();
     List<EntryAction<K, V, R>> rejected = new ArrayList<>(toStart.size());
@@ -290,7 +291,7 @@ public abstract class BulkAction<K, V, R> implements
   }
 
   @Override
-  public void onLoadFailure(Set<? extends K> keys, Throwable exception) {
+  public void onLoadFailure(Iterable<? extends K> keys, Throwable exception) {
     Set<K> copy = new HashSet<>();
     synchronized (this) {
       for (K key : keys) {
