@@ -38,7 +38,6 @@ import org.cache2k.io.CacheWriter;
 import org.cache2k.io.CacheWriterException;
 import org.cache2k.CustomizationException;
 import org.cache2k.io.AsyncCacheLoader;
-import org.cache2k.core.experimentalApi.AsyncCacheWriter;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.operation.Progress;
 import org.cache2k.core.operation.Semantic;
@@ -56,7 +55,7 @@ import static org.cache2k.core.Entry.ProcessingState.*;
 public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   Runnable,
   AsyncCacheLoader.Context<K, V>,
-  AsyncCacheLoader.Callback<V>, AsyncCacheWriter.Callback, Progress<K, V, R> {
+  AsyncCacheLoader.Callback<V>, Progress<K, V, R> {
 
   @SuppressWarnings("rawtypes")
   public static final Entry NON_FRESH_DUMMY = new Entry();
@@ -1052,13 +1051,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     onWriteSuccess();
   }
 
-  @Override
   public void onWriteSuccess() {
     heapEntry.nextProcessingStep(WRITE_COMPLETE);
     checkKeepOrRemove();
   }
 
-  @Override
   public void onWriteFailure(Throwable t) {
     mutationAbort(new CacheWriterException(t));
   }
