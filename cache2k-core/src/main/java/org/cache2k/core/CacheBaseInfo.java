@@ -208,11 +208,12 @@ class CacheBaseInfo implements InternalCacheInfo {
     return cache.getClock().ticksToMillisCeiling(metrics.getLoadTicks());
   }
   @Override
-  public String getIntegrityDescriptor() {
-    if (integrityState == null) {
-      return "NO_LOCK";
-    }
-    return integrityState.getStateDescriptor();
+  public boolean isIntegrityFailure() {
+    return integrityState.isFailure();
+  }
+  @Override
+  public String getFailedIntegrityChecks() {
+    return integrityState.getFailingChecks();
   }
   @Override
   public Instant getStartedTime() { return instantOrNull(heapCache.startedTime); }
@@ -284,7 +285,6 @@ class CacheBaseInfo implements InternalCacheInfo {
       .append("keyMutation=").append(getKeyMutationCount()).append(", ")
       .append("evictionScanCount=").append(evictionMetrics.getScanCount()).append(", ")
       .append("internalException=").append(getInternalExceptionCount()).append(", ")
-      .append("integrityState=").append(getIntegrityDescriptor()).append(", ")
       .append("version=").append(cm.getProvider().getVersion());
     if (evictionToString != null && !evictionToString.isEmpty()) {
       sb.append(", ");

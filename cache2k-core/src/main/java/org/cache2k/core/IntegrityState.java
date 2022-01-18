@@ -20,28 +20,19 @@ package org.cache2k.core;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Used to record and check the integrity. We support to record 64 different
  * constraints to produce a single long state value.
  *
- * @author Jens Wilke; created: 2013-07-11
+ * @author Jens Wilke
  */
 @SuppressWarnings("unused")
 public class IntegrityState {
 
-  List<String> failingTests = new ArrayList<>();
-  long state = 0;
-  long bitNr = 0;
-  int stringsHashCode = 0;
-  String groupPrefix = "";
-
-  IntegrityState check(boolean f) {
-    check(null, f);
-    return this;
-  }
+  private final StringBuilder builder = new StringBuilder();
+  private boolean failure = false;
+  private String groupPrefix = "";
+  private int bitNr = 0;
 
   /**
    *
@@ -52,21 +43,26 @@ public class IntegrityState {
     if (check == null || check.length() == 0) {
       check = "test#" + bitNr;
     }
-    stringsHashCode = stringsHashCode * 31 + check.hashCode();
     if (!f) {
-      if (note != null) {
-        failingTests.add(groupPrefix + '"' + check + "\" => " + note);
-      } else {
-        failingTests.add(groupPrefix + '"' + check + '"');
+      if (builder.length() > 0) {
+        builder.append(", ");
       }
-      state |= 1 << bitNr;
+      builder.append(groupPrefix).append(check);
+      if (note != null) {
+          builder.append('(').append(note).append(')');
+      }
+      failure = true;
     }
     bitNr++;
     return this;
   }
 
   public IntegrityState group(String group) {
-    groupPrefix = group + ": ";
+    if (group == null || group.isEmpty()) {
+      groupPrefix = "";
+    } else {
+      groupPrefix = group + ":";
+    }
     return this;
   }
 
@@ -93,54 +89,12 @@ public class IntegrityState {
     return this;
   }
 
-  public IntegrityState checkLessOrEquals(String check, int v1, int v2) {
-    if (v1 <= v2) {
-      check(check, null, true);
-    } else {
-      check(check, v1 + "<=" + v2, false);
-    }
-    return this;
+  public boolean isFailure() {
+    return failure;
   }
 
-  public IntegrityState checkLess(String check, int v1, int v2) {
-    if (v1 < v2) {
-      check(check, null, true);
-    } else {
-      check(check, v1 + "<" + v2, false);
-    }
-    return this;
-  }
-
-  public IntegrityState checkGreaterOrEquals(String check, int v1, int v2) {
-    if (v1 >= v2) {
-      check(check, null, true);
-    } else {
-      check(check, v1 + ">=" + v2, false);
-    }
-    return this;
-  }
-
-  public IntegrityState checkGreater(String check, int v1, int v2) {
-    if (v1 > v2) {
-      check(check, null, true);
-    } else {
-      check(check, v1 + ">" + v2, false);
-    }
-    return this;
-  }
-
-  public String getStateDescriptor() {
-    return Long.toHexString(state) + '.' + bitNr + '.' + Integer.toHexString(stringsHashCode);
-  }
-
-  public long getStateFlags() { return state; }
-
-  public String getFailingChecks() { return failingTests.toString(); }
-
-  public void throwIfNeeded() {
-    if (state > 0) {
-      throw new IllegalStateException("Integrity test failed: " + failingTests.toString());
-    }
+  public String getFailingChecks() {
+    return builder.toString();
   }
 
 }

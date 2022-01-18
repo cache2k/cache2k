@@ -1682,21 +1682,27 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return is;
   }
 
+  public final void checkIntegrity() {
+    checkIntegrity(this);
+  }
+
   /**
    * Check internal data structures and throw and exception if something is wrong, used for unit
    * testing
    */
-  public final void checkIntegrity() {
+  final void checkIntegrity(InternalCache userCache) {
     executeWithGlobalLock((Supplier<Void>) () -> {
       IntegrityState is = getIntegrityState();
-      if (is.getStateFlags() > 0) {
-        throw new Error(
-          "cache2k integrity error: " +
-          is.getStateDescriptor() + ", " + is.getFailingChecks() + ", " +
-            generateInfoMaybeLocked(HeapCache.this, clock.ticks()));
-      }
+      throwErrorOnIntegrityFailure(is, this);
       return null;
     });
+  }
+
+  static void throwErrorOnIntegrityFailure(IntegrityState is, InternalCache userCache) {
+    if (is.isFailure()) {
+      throw new Error("cache2k integrity error: " +
+        is.getFailingChecks() + ", " + userCache.getInfo());
+    }
   }
 
   @Override
@@ -1710,24 +1716,19 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   public final InternalCacheInfo getInfo(InternalCache userCache) {
-    long t = clock.ticks();
-    return generateInfoMaybeLocked(userCache, t);
+    return generateInfoMaybeLocked(userCache);
   }
 
   public final InternalCacheInfo getConsistentInfo(InternalCache userCache) {
-    return generateInfoWithLock(userCache, clock.ticks());
-  }
-
-  private CacheBaseInfo generateInfoWithLock(InternalCache userCache, long t) {
-    return executeWithGlobalLock(() -> generateInfoMaybeLocked(userCache, t));
+    return executeWithGlobalLock(() -> generateInfoMaybeLocked(userCache));
   }
 
   /**
    * Generate info, optionally within the global lock. In cache the global
    * lock is held, an integrity check is performed as well.
    */
-  private CacheBaseInfo generateInfoMaybeLocked(InternalCache userCache, long t) {
-    CacheBaseInfo info = new CacheBaseInfo(HeapCache.this, userCache, t);
+  CacheBaseInfo generateInfoMaybeLocked(InternalCache userCache) {
+    CacheBaseInfo info = new CacheBaseInfo(HeapCache.this, userCache, clock.ticks());
     return info;
   }
 

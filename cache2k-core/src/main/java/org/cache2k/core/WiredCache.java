@@ -693,7 +693,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
   @Override
   public void checkIntegrity() {
-    heapCache.checkIntegrity();
+    heapCache.checkIntegrity(this);
   }
 
   @Override

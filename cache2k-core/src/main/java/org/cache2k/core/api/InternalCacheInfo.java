@@ -20,6 +20,7 @@ package org.cache2k.core.api;
  * #L%
  */
 
+import org.cache2k.core.IntegrityState;
 import org.cache2k.core.eviction.EvictionMetrics;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.Weigher;
@@ -237,7 +238,9 @@ public interface InternalCacheInfo {
    */
   long getLoadMillis();
 
-  String getIntegrityDescriptor();
+  boolean isIntegrityFailure();
+
+  String getFailedIntegrityChecks();
 
   /**
    * Entry was removed while waiting to get the mutation lock.
