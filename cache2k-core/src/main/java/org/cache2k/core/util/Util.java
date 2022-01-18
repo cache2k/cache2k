@@ -21,11 +21,15 @@ package org.cache2k.core.util;
  */
 
 import org.cache2k.CacheManager;
+import org.cache2k.core.spi.CacheConfigProvider;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
+import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 /**
  * A set of utility stuff we need often.
@@ -47,4 +51,13 @@ public class Util {
     LocalDateTime ldt = t.atZone(ZoneId.systemDefault()).toLocalDateTime();
     return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(ldt);
   }
+
+  public static <T> T resolveSingleProvider(Class<T> spiClass, Supplier<T> fallback) {
+    Iterator<T> it = ServiceLoader.load(spiClass).iterator();
+    if (it.hasNext()) {
+      return it.next();
+    }
+    return fallback.get();
+  }
+
 }

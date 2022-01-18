@@ -26,11 +26,14 @@ import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.spi.CacheConfigProvider;
 import org.cache2k.core.util.Cache2kVersion;
 import org.cache2k.core.log.Log;
+import org.cache2k.core.util.Util;
 import org.cache2k.spi.Cache2kCoreProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.WeakHashMap;
 
 /**
@@ -39,8 +42,7 @@ import java.util.WeakHashMap;
 public class Cache2kCoreProviderImpl implements Cache2kCoreProvider {
 
   public static final CacheConfigProvider CACHE_CONFIGURATION_PROVIDER =
-    SingleProviderResolver.resolve(
-      CacheConfigProvider.class, DummyConfigProvider.class);
+    Util.resolveSingleProvider(CacheConfigProvider.class, () -> new DummyConfigProvider());
 
   private final Object lock = new Object();
   private volatile Map<ClassLoader, String> loader2defaultName = Collections.emptyMap();
