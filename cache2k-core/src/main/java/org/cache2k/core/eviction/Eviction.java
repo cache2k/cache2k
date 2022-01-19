@@ -102,7 +102,7 @@ public interface Eviction extends NeedsClose {
 
   /**
    * Get metrics related to the eviction. No lock is needed before calling this method.
-   * Best efforts are mad to extract consistent statistics and interruption short.
+   * Best efforts are made to extract consistent statistics and keep interruption short.
    */
   EvictionMetrics getMetrics();
 

@@ -48,26 +48,16 @@ class CacheBaseInfo implements InternalCacheInfo {
   /** May stay null, if not retrieved under global lock. */
   private final IntegrityState integrityState;
   private final long totalLoadCnt;
-  private final long evictedWeight;
   private final EvictionMetrics evictionMetrics;
-
   /*
    * Consistent copies from heap cache. for 32 bit machines the access
    * is not atomic. We copy the values while under big lock.
    */
   private final long clearedTime;
-  private final long newEntryCnt;
   private final long keyMutationCnt;
-  private final long removedCnt;
   private final long clearRemovedCnt;
   private final long clearCnt;
-  private final long expiredRemoveCnt;
-  private final long evictedCnt;
-  private final long maxSize;
-  private final int evictionRunningCnt;
   private final long internalExceptionCnt;
-  private final long maxWeight;
-  private final long totalWeight;
   private final String evictionToString;
 
   CacheBaseInfo(HeapCache heapCache, InternalCache userCache, long now) {
@@ -76,20 +66,11 @@ class CacheBaseInfo implements InternalCacheInfo {
     this.heapCache = heapCache;
     metrics = heapCache.metrics;
     evictionMetrics = heapCache.eviction.getMetrics();
-    newEntryCnt = evictionMetrics.getNewEntryCount();
-    expiredRemoveCnt = evictionMetrics.getExpiredRemovedCount();
-    evictedCnt = evictionMetrics.getEvictedCount();
-    maxSize = evictionMetrics.getMaxSize();
-    maxWeight = evictionMetrics.getMaxWeight();
-    totalWeight = evictionMetrics.getTotalWeight();
-    evictedWeight = evictionMetrics.getEvictedWeight();
     clearedTime = heapCache.clearedTime;
     keyMutationCnt = heapCache.keyMutationCnt;
-    removedCnt = evictionMetrics.getRemovedCount();
     clearRemovedCnt = heapCache.clearRemovedCnt;
     clearCnt = heapCache.clearCnt;
     internalExceptionCnt = heapCache.internalExceptionCnt;
-    evictionRunningCnt = evictionMetrics.getEvictionRunningCount();
     if (Thread.holdsLock(heapCache.lock)) {
       evictionToString = heapCache.eviction.toString();
       integrityState = heapCache.getIntegrityState();
@@ -124,21 +105,21 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getSize() { return size; }
   @Override
-  public long getHeapCapacity() { return maxSize; }
+  public long getHeapCapacity() { return evictionMetrics.getMaxSize(); }
 
   @Override
   public long getMaximumWeight() {
-    return maxWeight;
+    return evictionMetrics.getMaxWeight();
   }
 
   @Override
   public long getTotalWeight() {
-    return totalWeight;
+    return evictionMetrics.getTotalWeight();
   }
 
   @Override
   public long getEvictedWeight() {
-    return evictedWeight;
+    return evictionMetrics.getEvictedWeight();
   }
 
   @Override
@@ -155,7 +136,7 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getMissCount() { return missCnt; }
   @Override
-  public long getNewEntryCount() { return newEntryCnt; }
+  public long getNewEntryCount() { return evictionMetrics.getNewEntryCount(); }
   @Override
   public long getHeapHitCount() { return heapHitCnt; }
   @Override
@@ -174,13 +155,13 @@ class CacheBaseInfo implements InternalCacheInfo {
   @Override
   public long getRefreshedHitCount() { return metrics.getRefreshedHitCount(); }
   @Override
-  public long getExpiredCount() { return expiredRemoveCnt + metrics.getExpiredKeptCount(); }
+  public long getExpiredCount() { return evictionMetrics.getExpiredRemovedCount() + metrics.getExpiredKeptCount(); }
   @Override
-  public long getEvictedCount() { return evictedCnt; }
+  public long getEvictedCount() { return evictionMetrics.getEvictedCount(); }
   @Override
-  public int getEvictionRunningCount() { return evictionRunningCnt; }
+  public int getEvictionRunningCount() { return evictionMetrics.getEvictionRunningCount(); }
   @Override
-  public long getRemoveCount() { return removedCnt; }
+  public long getRemoveCount() { return evictionMetrics.getRemovedCount(); }
   @Override
   public long getPutCount() { return correctedPutCnt; }
 
