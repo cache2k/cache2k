@@ -115,6 +115,14 @@ public class SpringCache2KCacheManagerTest {
   }
 
   @Test
+  public void testExisting() {
+    SpringCache2kCacheManager m = getUniqueManager("testExisting");
+    m.addCache("known", b -> b);
+    m.setAllowUnknownCache(false);
+    m.getCache("known");
+  }
+
+  @Test
   public void testAll() {
     SpringCache2kCacheManager m = getUniqueManager("testAll");
     assertThat(m.isAllowUnknownCache())
@@ -157,9 +165,12 @@ public class SpringCache2KCacheManagerTest {
   @Test
   public void testDynamicCache() {
     SpringCache2kCacheManager m = getUniqueManager("dynamicCache");
-    m.setAllowUnknownCache(true);
+    assertThat(m.isAllowUnknownCache()).isTrue();
     assertThat(m.getCache("cache1")).isNotNull();
     assertThat(m.getConfiguredCacheNames().isEmpty()).isTrue();
+    m.addCache("added", b -> b);
+    assertThat(m.getCache("added")).isNotNull();
+    assertThat(m.getConfiguredCacheNames().size()).isEqualTo(1);
   }
 
   @Test

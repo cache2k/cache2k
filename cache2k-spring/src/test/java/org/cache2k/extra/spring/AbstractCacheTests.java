@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * spring tests, so we only do minimal modifications here but don't add other stuff.
  *
  * @author Stephane Nicoll
- * @see <a href="https://github.com/spring-projects/spring-framework/blob/master/spring-context/src/test/java/org/springframework/cache/AbstractCacheTests.java">AbstractCacheTests.java</a>
+ * @author Jens Wilke
  */
 @SuppressWarnings("ConstantConditions")
 public abstract class AbstractCacheTests<T extends Cache> {
@@ -110,6 +110,19 @@ public abstract class AbstractCacheTests<T extends Cache> {
   }
 
   @Test
+  public void evictIfPresent() {
+    T cache = getCache();
+
+    String key = createRandomKey();
+    assertThat(cache.evictIfPresent(key)).isFalse();
+    Object value = "george";
+
+    assertThat(cache.get(key)).isNull();
+    cache.put(key, value);
+    assertThat(cache.evictIfPresent(key)).isTrue();
+  }
+
+  @Test
   public void testCacheClear() {
     T cache = getCache();
 
@@ -118,6 +131,19 @@ public abstract class AbstractCacheTests<T extends Cache> {
     assertThat(cache.get("vlaicu")).isNull();
     cache.put("vlaicu", "aurel");
     cache.clear();
+    assertThat(cache.get("vlaicu")).isNull();
+    assertThat(cache.get("enescu")).isNull();
+  }
+
+  @Test
+  public void invalidate() {
+    T cache = getCache();
+    assertThat(cache.invalidate()).isFalse();
+    assertThat(cache.get("enescu")).isNull();
+    cache.put("enescu", "george");
+    assertThat(cache.get("vlaicu")).isNull();
+    cache.put("vlaicu", "aurel");
+    assertThat(cache.invalidate()).isTrue();
     assertThat(cache.get("vlaicu")).isNull();
     assertThat(cache.get("enescu")).isNull();
   }
