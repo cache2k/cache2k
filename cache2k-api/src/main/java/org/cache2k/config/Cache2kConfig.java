@@ -87,6 +87,10 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   /**
    * Constant for unset parameter value.
    */
+  public static final int UNSET_INT = -1;
+  /**
+   * Constant for unset parameter value.
+   */
   public static final long UNSET_LONG = -1;
 
   private boolean storeByReference;

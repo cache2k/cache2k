@@ -59,7 +59,7 @@ public class EvictionFactory {
         throw new IllegalArgumentException("entryCapacity of 0 is not supported.");
       }
     }
-    int segmentCountOverride = ctx.internalConfig().getSegmentCount();
+    int segmentCountOverride = ctx.internalConfig().getEvictionSegmentCount();
     int segmentCount =
       EvictionFactory.determineSegmentCount(
         strictEviction, availableProcessors,

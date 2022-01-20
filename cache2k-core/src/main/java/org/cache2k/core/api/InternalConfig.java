@@ -20,6 +20,7 @@ package org.cache2k.core.api;
  * #L%
  */
 
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.ConfigSection;
 import org.cache2k.config.CustomizationReferenceSupplier;
 import org.cache2k.config.CustomizationSupplier;
@@ -34,7 +35,7 @@ public class InternalConfig implements ConfigSection<InternalConfig, InternalCon
 
   private static final CommonMetrics.Updater METRICS_BLACKHOLE = new CommonMetrics.BlackHole();
 
-  private int segmentCount = 0;
+  private int evictionSegmentCount = Cache2kConfig.UNSET_INT;
   private CustomizationSupplier<ThreadFactoryProvider> threadFactoryProvider =
     new CustomizationReferenceSupplier<>(ThreadFactoryProvider.DEFAULT);
   private CustomizationSupplier<CommonMetrics.Updater> commonMetrics = buildContext -> {
@@ -52,15 +53,15 @@ public class InternalConfig implements ConfigSection<InternalConfig, InternalCon
     this.threadFactoryProvider = v;
   }
 
-  public int getSegmentCount() {
-    return segmentCount;
+  public int getEvictionSegmentCount() {
+    return evictionSegmentCount;
   }
 
   /**
-   * @see Builder#segmentCount(int)
+   * @see Builder#evictionSegmentCount(int)
    */
-  public void setSegmentCount(int segmentCount) {
-    this.segmentCount = segmentCount;
+  public void setEvictionSegmentCount(int evictionSegmentCount) {
+    this.evictionSegmentCount = evictionSegmentCount;
   }
 
   public CustomizationSupplier<CommonMetrics.Updater> getCommonMetrics() {
@@ -85,12 +86,17 @@ public class InternalConfig implements ConfigSection<InternalConfig, InternalCon
     }
 
     /**
-     * Segmentation count to use instead of the automatic one.
-     * Has to be power of two, e.g. 2, 4, 8, etc. Invalid numbers will be replaced by the
-     * next higher power of two. Default is 0, no override.
+     * Segmentation count for eviction to use instead of the automatic one derived from
+     * the system CPU count. Has to be power of two, e.g. 2, 4, 8, etc.
+     * Invalid numbers will be replaced by the next higher power of two. Default is 0, no override.
      */
-    public Builder segmentCount(int v) {
-      cfg.setSegmentCount(v);
+    public Builder evictionSegmentCount(int v) {
+      cfg.setEvictionSegmentCount(v);
+      return this;
+    }
+
+    public Builder threadFactoryProvider(ThreadFactoryProvider v) {
+      cfg.setThreadFactoryProvider(new CustomizationReferenceSupplier<>(v));
       return this;
     }
 
