@@ -99,11 +99,10 @@ public class SlowExpiryTest extends TestingBase {
     within(timespan)
       .perform(() -> {
         for (int i = 1; i <= count; i++) {
-          try {
-            c.get(i);
-            fail("expect exception");
-          } catch (CacheLoaderException ignore) {
-          }
+          int key = i;
+          assertThatCode(() -> c.get(key))
+            .isInstanceOf(CacheLoaderException.class)
+            .getCause().isInstanceOf(RuntimeException.class);
         }
       })
       .expectMaybe(() -> {

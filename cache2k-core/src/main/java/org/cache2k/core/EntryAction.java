@@ -945,11 +945,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   private void setUntilInExceptionWrapper() {
     if (newValueOrException instanceof ExceptionWrapper) {
       ExceptionWrapper<K, V> ew = (ExceptionWrapper<K, V>) newValueOrException;
-      if (expiry < 0) {
-        newValueOrException = new ExceptionWrapper<>(ew, -expiry);
-      } else if (expiry >= Entry.EXPIRY_TIME_MIN) {
-        newValueOrException = new ExceptionWrapper<>(ew, expiry);
-      }
+      newValueOrException = new ExceptionWrapper<>(ew, Math.abs(expiry));
     }
   }
 
