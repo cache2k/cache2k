@@ -37,7 +37,9 @@ public interface CacheClosedListener extends CacheLifecycleListener {
    *
    * @param cache The cache that is closed. The cache object can be used
    *              to retrieve the name and the associated manager.
-   *              No operations are allowed.
+   *              No operations are allowed. The instance is always the
+   *              originally created cache and not the wrapped cache in
+   *              case {@link org.cache2k.config.CacheWrapper} is effective.
    * @return {@code null} or a CompletableFuture, if this method uses async
    *         processing
    */
