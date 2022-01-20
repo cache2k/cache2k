@@ -13,7 +13,7 @@
   <description>
     Defines different categories (SlowTests, FastTests, ...) we can specify for unit testing.
     Added as test dependency, otherwise we cannot specify the category in aggregator builds / on top level.
-    This serves also as a test scope BOM for transitive dependencies to JUnit and hamcrest.
+    This serves also as a test scope BOM for transitive dependencies to JUnit.
     Currently, for internal testing purposes only. Not deployed to central.
   </description>
 
