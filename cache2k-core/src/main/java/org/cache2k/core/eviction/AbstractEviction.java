@@ -120,6 +120,11 @@ public abstract class AbstractEviction implements Eviction {
     this.maxWeight = maxWeight;
   }
 
+   /**
+    * Start a new idle scan round. At the moment this resets the drain count and
+    * increments the scan round counter.
+    * <p>Future: init chunk size for more efficient eviction, update/adapt hot max
+    */
    @Override
    public long startNewIdleScanRound() {
     synchronized (lock) {

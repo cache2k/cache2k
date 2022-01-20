@@ -39,6 +39,7 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 
 import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
+import org.cache2k.core.util.Util;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
@@ -390,7 +391,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       hash.close();
       closeCustomization(loader, "loader");
       for (CacheClosedListener s : cacheClosedListeners) {
-        s.onCacheClosed(userCache);
+        Util.waitFor(s.onCacheClosed(userCache));
       }
       manager.sendClosedEvent(userCache, userCache);
       manager.cacheClosed(userCache);

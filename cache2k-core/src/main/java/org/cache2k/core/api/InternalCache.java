@@ -93,10 +93,10 @@ public interface InternalCache<K, V>
   Eviction getEviction();
 
   /**
-   * Cache used by user, eventually wrapped. We only need to know our "wrapped self"
-   * in case events are send, so only implemented by WiredCache.
+   * Cache used by user, eventually wrapped. Only available in WiredCache for
+   * event processing.
    */
-  default Cache<K, V> getUserCache() { return null; }
+  default Cache<K, V> getUserCache() { throw new UnsupportedOperationException(); }
 
   /**
    * Cache checks its internal integrity. This is a expansive operation because it

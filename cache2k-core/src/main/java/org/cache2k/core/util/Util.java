@@ -20,7 +20,9 @@ package org.cache2k.core.util;
  * #L%
  */
 
+import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
+import org.cache2k.core.CacheClosedException;
 import org.cache2k.core.spi.CacheConfigProvider;
 
 import java.time.Instant;
@@ -29,6 +31,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 /**
@@ -58,6 +62,21 @@ public class Util {
       return it.next();
     }
     return fallback.get();
+  }
+
+  /**
+   * Wait for an async task, making it synchronous again. Future version
+   * will do more asynchronously.
+   */
+  public static void waitFor(CompletableFuture<Void> future) {
+    if (future == null) { return; }
+    try {
+      future.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      throw new CacheException(e);
+    }
   }
 
 }
