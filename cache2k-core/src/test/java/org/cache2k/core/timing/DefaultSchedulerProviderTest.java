@@ -24,7 +24,7 @@ import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.testing.category.FastTests;
@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -72,7 +73,7 @@ public class DefaultSchedulerProviderTest {
     s2.schedule(() -> { }, 123);
     ((AutoCloseable) s2).close();
     assertThatCode(() -> s1.schedule(() -> { }, 123)
-    ).isInstanceOf(CacheClosedException.class);
+    ).isInstanceOf(RejectedExecutionException.class);
   }
 
   @Test

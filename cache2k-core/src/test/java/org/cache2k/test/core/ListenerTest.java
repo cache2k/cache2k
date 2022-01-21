@@ -22,7 +22,7 @@ package org.cache2k.test.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.event.CacheEntryEvictedListener;

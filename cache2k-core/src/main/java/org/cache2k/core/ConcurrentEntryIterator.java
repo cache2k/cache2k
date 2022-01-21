@@ -20,6 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
+import org.cache2k.CacheClosedException;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -104,7 +106,7 @@ public class ConcurrentEntryIterator<K, V> implements Iterator<Entry<K, V>> {
     if (needsAbort()) {
       if (hash != null && cache.isClosed()) {
         clearOutReferences();
-        throw new CacheClosedException(cache.getQualifiedName());
+        throw new CacheClosedException(cache);
       }
       clearOutReferences();
       return null;

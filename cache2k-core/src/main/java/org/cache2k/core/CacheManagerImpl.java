@@ -22,6 +22,7 @@ package org.cache2k.core;
 
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheClosedException;
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;

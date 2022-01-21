@@ -42,6 +42,8 @@ public interface Scheduler extends Executor {
   /**
    * Schedule the task to be run after a given delay. This uses always millisecond
    * resolution. A negative or zero duration means immediate execution is requested.
+   *
+   * @throws java.util.concurrent.RejectedExecutionException if scheduler was closed
    */
   void schedule(Runnable runnable, long delayMillis);
 

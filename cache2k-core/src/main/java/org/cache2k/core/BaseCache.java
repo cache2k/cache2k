@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheClosedException;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.api.InternalCache;

@@ -20,7 +20,7 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.core.Entry;
 
 /**

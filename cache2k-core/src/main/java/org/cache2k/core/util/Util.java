@@ -22,8 +22,6 @@ package org.cache2k.core.util;
 
 import org.cache2k.CacheException;
 import org.cache2k.CacheManager;
-import org.cache2k.core.CacheClosedException;
-import org.cache2k.core.spi.CacheConfigProvider;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

@@ -1,8 +1,8 @@
-package org.cache2k.core;
+package org.cache2k;
 
 /*-
  * #%L
- * cache2k core implementation
+ * cache2k API
  * %%
  * Copyright (C) 2000 - 2022 headissue GmbH, Munich
  * %%
@@ -20,18 +20,13 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.api.InternalCache;
-
 /**
  * Consistently this exception is thrown, when an operation detects that the
  * cache is closed.
  *
  * <p>Rationale: It is a subtype of {@link java.lang.IllegalStateException}
- * and not a {@link org.cache2k.CacheException} since the JSR107 defines
- * it. On the API level we specify {@link IllegalStateException} to not
- * introduce a new exception type. Moving this to the API level, makes it more
- * difficult to introduce improvements here, since we need to keep stuff for BC.
- * Better keep it internal.
+ * and not a {@link org.cache2k.CacheException} since the JSR107 uses it
+ * and it makes sense to logically a specialisation of it.
  *
  * @author Jens Wilke
  */
@@ -40,14 +35,18 @@ public class CacheClosedException extends IllegalStateException {
   public CacheClosedException() { }
 
   /**
-   * Included manager and cache name in the detail message, preferred.
+   * This is the preferred constructor. Extracts the cache name and the manager name
+   * to be more informative.
    */
-  public CacheClosedException(String qualifiedCacheName) {
-    super(qualifiedCacheName);
+  public CacheClosedException(Cache<?, ?> cache) {
+    super(qualifiedName(cache));
   }
 
-  public CacheClosedException(InternalCache<?, ?> cache) {
-    super(cache.getQualifiedName());
+  private static String qualifiedName(Cache cache) {
+    if (cache.getCacheManager().isDefaultManager()) {
+      return cache.getName();
+    }
+    return cache.getName() + ", manager=" + cache.getCacheManager().getName();
   }
 
 }

@@ -22,7 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.operation.Scheduler;
 
 import java.util.concurrent.Executor;
@@ -69,7 +69,7 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
   }
 
   /**
-   * Closing the last cache using the executor will shutdown the executor
+   * Closing the last cache using the executor will shut down the executor
    * and free all remaining resources held by it.
    */
   synchronized void cacheClientClosed() {
@@ -94,20 +94,13 @@ public class DefaultSchedulerProvider implements CustomizationSupplier<Scheduler
 
     /**
      * Wrap task to be executed in separate executor to not block the common
-     * scheduler. Scheduling may race with closing of the cache. When shut down
-     * the ScheduledExcecutorService is throwing a RejectedExecutionException.
-     * Rethrow as CacheClosedException. When this exception happens internally, it
-     * is masked, if its propagated to the client its the "correct" exception since
-     * the client was issuing a close in parallel.
+     * scheduler. Scheduling may race with closing of the cache in this
+     * case RejectedExecutionException is thrown
      */
     @Override
     public void schedule(Runnable task, long delayMillis) {
       Runnable wrap = () -> executor.execute(task);
-      try {
-        scheduledExecutor.schedule(wrap, delayMillis, TimeUnit.MILLISECONDS);
-      } catch (RejectedExecutionException ex) {
-        throw new CacheClosedException();
-      }
+      scheduledExecutor.schedule(wrap, delayMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override

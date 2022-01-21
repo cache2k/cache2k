@@ -20,11 +20,12 @@ package org.cache2k.core.timing;
  * #L%
  */
 
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.operation.Scheduler;
 
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -158,7 +159,6 @@ public class DefaultTimer implements Timer {
   @Override
   public void close(InternalCacheCloseContext closeContext) {
     cancelAll();
-    closeContext.closeCustomization(clock, "timeReference");
     closeContext.closeCustomization(scheduler, "scheduler");
   }
 
@@ -186,7 +186,6 @@ public class DefaultTimer implements Timer {
         try {
           nextTime = structure.nextRun();
           schedule(currentTime, nextTime);
-        } catch (CacheClosedException ex) {
         } finally {
           lock.unlock();
         }
@@ -201,6 +200,7 @@ public class DefaultTimer implements Timer {
    *
    * @param now the current time for calculations
    * @param time requested time for processing, or MAX_VALUE if nothing needs to be scheduled
+   * @throw CacheClosedException
    */
   private void schedule(long now, long time) {
     if (time != Long.MAX_VALUE) {
@@ -225,8 +225,12 @@ public class DefaultTimer implements Timer {
 
   private void scheduleNext(long nextWakeupTicks) {
     nextScheduled = nextWakeupTicks;
-    scheduler.schedule(timerAction,
-      clock.ticksToMillisCeiling(nextScheduled - clock.ticks()));
+    try {
+      scheduler.schedule(timerAction,
+        clock.ticksToMillisCeiling(nextScheduled - clock.ticks()));
+    } catch (RejectedExecutionException ex) {
+      throw new CacheClosedException();
+    }
   }
 
 }

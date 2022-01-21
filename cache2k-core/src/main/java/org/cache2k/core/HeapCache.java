@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
+import org.cache2k.CacheClosedException;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheManager;
 import org.cache2k.config.Cache2kConfig;
@@ -327,7 +328,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   public void checkClosed() {
     if (closing) {
-      throw new CacheClosedException(getQualifiedName());
+      throw new CacheClosedException(this);
     }
   }
 
@@ -390,6 +391,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       timing.close(HeapCache.this);
       hash.close();
       closeCustomization(loader, "loader");
+      closeCustomization(clock, "timeReference");
       for (CacheClosedListener s : cacheClosedListeners) {
         Util.waitFor(s.onCacheClosed(userCache));
       }

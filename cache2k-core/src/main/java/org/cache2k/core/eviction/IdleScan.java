@@ -25,6 +25,7 @@ import org.cache2k.core.api.NeedsClose;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -142,11 +143,23 @@ public class IdleScan implements NeedsClose {
     if (roundStartTicks != IDLE) { roundAbortCount++; }
     roundStartTicks = IDLE;
     lastScanCount = metrics.getScanCount();
-    scheduler.schedule(this::idleWakeup, clock.ticksToMillisCeiling(roundTicks));
+    scheduleIgnoreException(scheduler, this::idleWakeup, clock.ticksToMillisCeiling(roundTicks));
   }
 
   private void scheduleNextWakeup(long delayMillis) {
-    scheduler.schedule(this::scanWakeup, delayMillis);
+    scheduleIgnoreException(scheduler, this::scanWakeup, delayMillis);
+  }
+
+  /**
+   * Ignore when scheduler is closed. That happens when the cache is closed concurrently.
+   * No more wakeups are needed anyway.
+   */
+  private static void scheduleIgnoreException(Scheduler scheduler,
+                                              Runnable runnable,
+                                              long delayMillis) {
+    try {
+      scheduler.schedule(runnable, delayMillis);
+    } catch (RejectedExecutionException ignore) { }
   }
 
   @Override

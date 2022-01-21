@@ -21,7 +21,7 @@ package org.cache2k.test.core;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.Cache;

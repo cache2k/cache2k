@@ -22,7 +22,7 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.Cache;
 import org.cache2k.CacheEntry;
-import org.cache2k.core.CacheClosedException;
+import org.cache2k.CacheClosedException;
 import org.cache2k.jcache.provider.event.EventHandling;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.io.CacheWriterException;

@@ -20,7 +20,8 @@ package org.cache2k.core;
  * #L%
  */
 
-import org.cache2k.core.api.InternalCache;
+import org.cache2k.Cache;
+import org.cache2k.CacheClosedException;
 
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Supplier;
@@ -74,18 +75,14 @@ public class StampedHash<K, V> {
   private final StampedLock[] locks;
   private final long[] segmentSize;
 
-  /** Cache name, only used for CacheClosedException */
-  private final String qualifiedCacheName;
+  /** Cache reference, only used for CacheClosedException */
+  private final Cache<?, ?> maybeClosedCache;
 
   /**
    * @param cache Cache reference only needed for the cache name in case of an exception
    */
-  public StampedHash(InternalCache<?, ?> cache) {
-    qualifiedCacheName = cache.getQualifiedName();
-  }
-
-  public StampedHash(String qualifiedCacheName) {
-    this.qualifiedCacheName = qualifiedCacheName;
+  public StampedHash(Cache<?, ?> cache) {
+    maybeClosedCache = cache;
   }
 
   {
@@ -127,7 +124,7 @@ public class StampedHash<K, V> {
     long stamp = l.tryOptimisticRead();
     Entry<K, V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException(qualifiedCacheName);
+      throw new CacheClosedException(maybeClosedCache);
     }
     Entry<K, V> e;
     int n = tab.length;
@@ -148,7 +145,7 @@ public class StampedHash<K, V> {
     try {
       tab = entries;
       if (tab == null) {
-        throw new CacheClosedException(qualifiedCacheName);
+        throw new CacheClosedException(maybeClosedCache);
       }
       n = tab.length;
       mask = n - 1;
@@ -181,7 +178,7 @@ public class StampedHash<K, V> {
     int si = hash & LOCK_MASK;
     Entry<K, V> f; Object ek; Entry<K, V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException(qualifiedCacheName);
+      throw new CacheClosedException(maybeClosedCache);
     }
     int n = tab.length, mask = n - 1, idx = hash & (mask);
     f = tab[idx];
@@ -231,7 +228,7 @@ public class StampedHash<K, V> {
     try {
       Entry<K, V> f; Entry<K, V>[] tab = entries;
       if (tab == null) {
-        throw new CacheClosedException(qualifiedCacheName);
+        throw new CacheClosedException(maybeClosedCache);
       }
       int n = tab.length, mask = n - 1, idx = hash & (mask);
       f = tab[idx];
@@ -259,7 +256,7 @@ public class StampedHash<K, V> {
     int si = hash & LOCK_MASK;
     Entry<K, V> f; Entry<K, V>[] tab = entries;
     if (tab == null) {
-      throw new CacheClosedException(qualifiedCacheName);
+      throw new CacheClosedException(maybeClosedCache);
     }
     int n = tab.length, mask = n - 1, idx = hash & (mask);
     f = tab[idx];
@@ -340,7 +337,7 @@ public class StampedHash<K, V> {
   void rehash() {
     Entry<K, V>[] src = entries;
     if (src == null) {
-      throw new CacheClosedException(qualifiedCacheName);
+      throw new CacheClosedException(maybeClosedCache);
     }
     int i, sl = src.length, n = sl * 2, mask = n - 1, idx;
     Entry<K, V>[] tab = new Entry[n];
