@@ -23,6 +23,8 @@ package org.cache2k.testing;
 import org.cache2k.pinpoint.ExpectedException;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -84,9 +86,24 @@ public class SimulatedClockTest {
     clock.schedule(new Event(3), 9);
     clock.schedule(new Event(2), 7);
     clock.schedule(new Event(1), 1);
+    clock.schedule(new Event(4), Long.MAX_VALUE);
     assertThat(trigger.get()).isEqualTo(0);
     clock.sleep(ticksToMillis(10));
     assertThat(trigger.get()).isEqualTo(4);
+  }
+
+  /**
+   * Just make sure toString() works / test coverage
+   */
+  @Test
+  public void testToString()  {
+    assertThat(clock.ticks()).isEqualTo(100000);
+    clock.schedule(new Event(0), 0);
+    clock.schedule(new Event(3), 9);
+    clock.schedule(new Event(2), 7);
+    clock.schedule(new Event(1), 1);
+    clock.schedule(new Event(4), Long.MAX_VALUE);
+    assertThat(clock.toString()).isNotNull();
   }
 
   @Test
@@ -126,6 +143,35 @@ public class SimulatedClockTest {
     while (clock.ticks() == t0) {
     }
     assertThat(clock.ticks() > t0).isTrue();
+  }
+
+  /**
+   * Clock is never moving backwards, although when multiple threads are
+   * updating the wall clock value
+   */
+  @Test
+  public void moveForward() {
+    AtomicInteger countDown = new AtomicInteger(2);
+    SimulatedClock specialClock = new SimulatedClock(100000) {
+      @Override
+      protected void injectConcurrentAdvancing() {
+        now.addAndGet(countDown.getAndDecrement());
+      }
+    };
+    specialClock.moveForward(specialClock.now.get() + 1);
+    assertThat(specialClock.now.get()).isEqualTo(100003);
+  }
+
+  @Test
+  public void wrappedExecutorCornerCases() {
+    Executor executor = clock.wrapExecutor(command -> {
+      throw new RejectedExecutionException();
+    });
+    assertThat(executor.toString()).isNotNull();
+    assertThatCode(() ->
+      executor.execute(() -> {}))
+      .isInstanceOf(RejectedExecutionException.class);
+    assertThat(clock.getTasksWaitingForExecutionCount()).isEqualTo(0);
   }
 
 }

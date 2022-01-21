@@ -29,6 +29,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,12 +50,10 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
 
   static final ThreadLocal<Boolean> EXECUTOR_CONTEXT = ThreadLocal.withInitial(() -> false);
 
-  private static final Executor DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
-
   /**
    * Current time of the clock in ticks.
    */
-  private final AtomicLong now;
+  final AtomicLong now;
 
   /**
    * Use a fair lock implementation to ensure that there is no bias towards
@@ -101,7 +100,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
    * Otherwise, that can mean a deadlock since ticks() is called within
    * the cache when a lock is held.
    */
-  private final Executor advanceExecutor = wrapExecutor(DEFAULT_EXECUTOR);
+  private final Executor advanceExecutor = wrapExecutor(ForkJoinPool.commonPool());
 
   /**
    * Count timer events. Guarded by lock.
@@ -134,7 +133,11 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
   }
 
   public void schedule(Runnable runnable, long delayMillis) {
-    long ticks = now.get() + toTicks(Duration.ofMillis(delayMillis));
+    long ticks = rawTicks() + toTicks(Duration.ofMillis(delayMillis));
+    if (ticks < 0) {
+      schedule(runnable, Long.MAX_VALUE, Long.MAX_VALUE);
+      return;
+    }
     schedule(runnable, ticks, ticks + jobExecutionLagTicks);
   }
 
@@ -153,12 +156,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
     schedule(command, 0, 0);
   }
 
-  final Runnable advance = new Runnable() {
-    @Override
-    public void run() {
-      progressAndRunEvents(now.get() + 1);
-    }
-  };
+  final Runnable advance = () -> progressAndRunEvents(rawTicks() + 1);
 
   /**
    * Returns the current simulated time. Schedules a clock progress by one milli if
@@ -169,6 +167,10 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
     if (!deterministic && clockReadingCounter.incrementAndGet() % CLOCK_READING_PROGRESS == 0) {
       advanceExecutor.execute(advance);
     }
+    return rawTicks();
+  }
+
+  long rawTicks() {
     return now.get();
   }
 
@@ -198,7 +200,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
    */
   private void sleepInExecutor(long ticks) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
-    schedule(latch::countDown, ticksToMillisCeiling(ticks - now.get()));
+    schedule(latch::countDown, ticksToMillisCeiling(ticks - rawTicks()));
     latch.await(3, TimeUnit.MILLISECONDS);
   }
 
@@ -220,7 +222,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
       progressAndRunEvents(nextTime);
       return;
     }
-    tickEventually(now.get() + 1);
+    moveForward(rawTicks() + 1);
   }
 
   public Executor wrapExecutor(Executor ex) {
@@ -259,44 +261,45 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
           u = e.getKey();
           if (u.time > time) {
             tree.put(u, u);
-            tickEventually(time);
+            moveForward(time);
             return u.time;
           }
         } else {
           break;
         }
-        tickEventually(u.time);
+        moveForward(u.time);
       } finally {
         structureLock.unlock();
       }
       runEvent(e.getKey());
     }
-    tickEventually(time);
+    moveForward(time);
     return -1;
   }
 
   private void runEvent(Event e) {
-    try {
-      e.action.run();
-    } catch (RuntimeException ex) {
-      throw ex;
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
+    e.action.run();
   }
+
+  /**
+   * Test code can simulate concurrent clock movements
+   */
+  protected void injectConcurrentAdvancing() { }
 
   /**
    * Update clock to the given time. Make sure to move the clock only forward and
    * update only if not moved forward by somebody else. This is called
    * with a time in the future, if nothing will happen in between.
    */
-  private void tickEventually(long time) {
-    long currentTime = now.get();
+  void moveForward(long time) {
+    long currentTime = rawTicks();
+    injectConcurrentAdvancing();
     while (currentTime < time) {
       if (now.compareAndSet(currentTime, time)) {
         break;
       }
-      currentTime = now.get();
+      currentTime = rawTicks();
+      injectConcurrentAdvancing();
     }
   }
 
@@ -338,10 +341,13 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
 
     public String toString() {
       return "Event#" + number + "{" +
-        "requestedWakeupTime=" + (requestedWakeupTime == Long.MAX_VALUE ? "forever" : Long.toString(requestedWakeupTime)) +
-        ", time=" + (time == Long.MAX_VALUE ? "forever" : Long.toString(time))
-        + "}";
+        "requestedWakeupTime=" + timeToString(requestedWakeupTime) +
+        ", time=" + timeToString(time) + "}";
     }
+  }
+
+  static String timeToString(long time) {
+    return time == Long.MAX_VALUE ? "eternal" : Long.toString(time);
   }
 
   private void taskFinished() {
@@ -351,6 +357,10 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
         parallelExecutionsWaiter.notifyAll();
       }
     }
+  }
+
+  public int getTasksWaitingForExecutionCount() {
+    return tasksWaitingForExecution.get();
   }
 
   class WrappedExecutor implements Executor {
