@@ -22,8 +22,6 @@ package org.cache2k.jcache.provider.generic.storeByValueSimulation;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.Configuration;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -33,6 +31,7 @@ import java.util.AbstractSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -48,7 +47,7 @@ import java.util.Set;
  *
  * @author Jens Wilke
  */
-public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
+public abstract class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   protected ObjectTransformer<K, K0> keyTransformer;
   protected ObjectTransformer<V, V0> valueTransformer;
@@ -86,46 +85,12 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   @Override
   public Map<K, V> getAll(Set<? extends K> keys) {
-    Map<K0, V0> m = cache.getAll(compactBoundedKeys(keys));
+    Map<K0, V0> m = cache.getAll(compactKeySet(keys));
     return expandMap(m);
   }
 
-  static <E, I> Set<I> compactSet(Set<E> keys, ObjectTransformer<E, I> tr) {
-    if (keys == null) {
-      return null;
-    }
-    int size = keys.size();
-    return new AbstractSet<I>() {
-      @Override
-      public Iterator<I> iterator() {
-        Iterator<E> it = keys.iterator();
-        return new Iterator<I>() {
-          @Override
-          public boolean hasNext() {
-            return it.hasNext();
-          }
-
-          @Override
-          public I next() {
-            return tr.compact(it.next());
-          }
-
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-        };
-      }
-
-      @Override
-      public int size() {
-        return size;
-      }
-    };
-  }
-
-  static <E, I> Set<I> compactBoundedSet(Set<? extends E> keys,
-                                         ObjectTransformer<E, I> tr) {
+  static <E, I> Set<I> compactSet(Set<? extends E> keys,
+                                  ObjectTransformer<E, I> tr) {
     if (keys == null) {
       return null;
     }
@@ -159,62 +124,15 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     };
   }
 
-  static <E, I> Set<E> expandSet(Set<I> keys, ObjectTransformer<E, I> tr) {
-    int size = keys.size();
-    return new AbstractSet<E>() {
-      @Override
-      public Iterator<E> iterator() {
-        Iterator<I> it = keys.iterator();
-        return new Iterator<E>() {
-          @Override
-          public boolean hasNext() {
-            return it.hasNext();
-          }
-
-          @Override
-          public E next() {
-            return tr.expand(it.next());
-          }
-
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-        };
-      }
-
-      @Override
-      public int size() {
-        return size;
-      }
-    };
-  }
-
-  Set<K> expandKeys(Set<K0> keys) {
-    return expandSet(keys, keyTransformer);
-  }
-
-  Set<K0> compactKeys(Set<K> keys) {
+  Set<K0> compactKeySet(Set<? extends K> keys) {
     return compactSet(keys, keyTransformer);
-  }
-
-  Set<K0> compactBoundedKeys(Set<? extends K> keys) {
-    return compactBoundedSet(keys, keyTransformer);
-  }
-
-  Set<V> expandValues(Set<V0> values) {
-    return expandSet(values, valueTransformer);
-  }
-
-  Set<V0> compactValues(Set<V> values) {
-    return compactSet(values, valueTransformer);
   }
 
   Map<K0, V0> compactMap(Map<? extends K, ? extends V> map) {
     if (map == null) {
       return null;
     }
-    Map<K0, V0> m2 = new HashMap<K0, V0>();
+    Map<K0, V0> m2 = new HashMap<>();
     for (Map.Entry<? extends K, ? extends V> e : map.entrySet()) {
       m2.put(keyTransformer.compact(e.getKey()), valueTransformer.compact(e.getValue()));
     }
@@ -222,7 +140,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   }
 
   Map<K, V> expandMap(Map<K0, V0> map) {
-    Map<K, V> m2 = new HashMap<K, V>();
+    Map<K, V> m2 = new HashMap<>();
     for (Map.Entry<K0, V0> e : map.entrySet()) {
       m2.put(keyTransformer.expand(e.getKey()), valueTransformer.expand(e.getValue()));
     }
@@ -237,7 +155,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   @Override
   public void loadAll(Set<? extends K> keys, boolean replaceExistingValues,
                       CompletionListener completionListener) {
-    cache.loadAll(compactBoundedKeys(keys), replaceExistingValues, completionListener);
+    cache.loadAll(compactKeySet(keys), replaceExistingValues, completionListener);
   }
 
   @Override
@@ -297,7 +215,7 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   @Override
   public void removeAll(Set<? extends K> keys) {
-    cache.removeAll(compactBoundedKeys(keys));
+    cache.removeAll(compactKeySet(keys));
   }
 
   @Override
@@ -310,16 +228,6 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
     cache.clear();
   }
 
-  /**
-   * Not supported (yet?)
-   *
-   * @throws UnsupportedOperationException always throws exception
-   */
-  @Override
-  public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
-    throw new UnsupportedOperationException();
-  }
-
   @Override
   public <T> T invoke(
       K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
@@ -330,16 +238,10 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
 
   private <T> EntryProcessor<K0, V0, T> wrapEntryProcessor(
     EntryProcessor<K, V, T> entryProcessor) {
-    if (entryProcessor == null) {
-      throw null;
-    }
-    return new EntryProcessor<K0, V0, T>() {
-      @Override
-      public T process(MutableEntry<K0, V0> entry, Object... arguments)
-        throws EntryProcessorException {
-        MutableEntry<K, V>  e = wrapMutableEntry(entry);
-        return entryProcessor.process(e, arguments);
-      }
+    Objects.requireNonNull(entryProcessor);
+    return (entry, arguments) -> {
+      MutableEntry<K, V>  e = wrapMutableEntry(entry);
+      return entryProcessor.process(e, arguments);
     };
   }
 
@@ -382,8 +284,8 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
       Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
     EntryProcessor<K0, V0, T> processor = wrapEntryProcessor(entryProcessor);
     Map<K0, EntryProcessorResult<T>> map =
-      cache.invokeAll(compactBoundedKeys(keys), processor, arguments);
-    Map<K, EntryProcessorResult<T>> m2 = new HashMap<K, EntryProcessorResult<T>>();
+      cache.invokeAll(compactKeySet(keys), processor, arguments);
+    Map<K, EntryProcessorResult<T>> m2 = new HashMap<>();
     for (Map.Entry<K0, EntryProcessorResult<T>> e : map.entrySet()) {
       m2.put(keyTransformer.expand(e.getKey()), e.getValue());
     }
@@ -413,28 +315,6 @@ public class TransformingCacheProxy<K, V, K0, V0> implements Cache<K, V> {
   @Override
   public <T> T unwrap(Class<T> clazz) {
     return cache.unwrap(clazz);
-  }
-
-  /**
-   * Not supported (yet?)
-   *
-   * @throws UnsupportedOperationException always throws exception
-   */
-  @Override
-  public void registerCacheEntryListener(
-    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-    throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Not supported (yet?)
-   *
-   * @throws UnsupportedOperationException always throws exception
-   */
-  @Override
-  public void deregisterCacheEntryListener(
-    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-    throw new UnsupportedOperationException();
   }
 
   @Override
