@@ -26,6 +26,5 @@ module test.init.java11test {
   requires org.cache2k.core;
   requires org.assertj.core;
   requires org.junit.jupiter.api;
-  requires org.junit.platform.engine;
   exports test;
 }

@@ -28,16 +28,14 @@ import org.cache2k.config.CustomizationSupplierByClassName;
 import org.cache2k.core.spi.CacheConfigProvider;
 import org.cache2k.extra.config.provider.CacheConfigProviderImpl;
 import org.cache2k.extra.config.generic.ConfigurationException;
-import org.cache2k.testing.category.FastTests;
-import org.hamcrest.CoreMatchers;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
+import static org.cache2k.CacheManager.getInstance;
+import static org.cache2k.extra.config.test.InspectionFeature.wasEnabled;
 
 /**
  * Test that XML configuration elements get picked up when building cache2k
@@ -45,7 +43,6 @@ import static org.hamcrest.CoreMatchers.*;
  * @author Jens Wilke
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Category(FastTests.class)
 public class IntegrationTest {
 
   static final CacheConfigProvider PROVIDER = new CacheConfigProviderImpl();
@@ -53,46 +50,49 @@ public class IntegrationTest {
   @Test
   public void listNames() {
     CacheManager mgr = CacheManager.getInstance("customizationExample");
-    assertThat(mgr.getConfiguredCacheNames(), hasItems("flowers", "withLoader", "withLoaderShort"));
+    assertThat(mgr.getConfiguredCacheNames()).contains("flowers", "withLoader", "withLoaderShort");
   }
 
   @Test
   public void listNamesEmpty() {
-    CacheManager mgr = CacheManager.getInstance("unknown");
-    assertFalse("no names", mgr.getConfiguredCacheNames().iterator().hasNext());
+    CacheManager mgr = getInstance("unknown");
+    assertThat(mgr.getConfiguredCacheNames().iterator().hasNext())
+      .as("no names")
+      .isFalse();
   }
 
   @Test
   public void loaderByClassName() {
     Cache2kConfig cfg = cacheCfgWithLoader();
-    assertEquals("x.y.z",
-      ((CustomizationSupplierByClassName) cfg.getLoader()).getClassName());
+    assertThat(((CustomizationSupplierByClassName) cfg.getLoader()).getClassName()).isEqualTo("x.y.z");
   }
 
   @Test
   public void listenerByClassName() {
     Cache2kConfig cfg = cacheCfgWithLoader();
-    assertEquals(2, cfg.getListeners().size());
-    assertEquals("a.b.c",
-     ((CustomizationSupplierByClassName) cfg.getListeners().iterator().next()).getClassName());
+    assertThat(cfg.getListeners().size()).isEqualTo(2);
+    assertThat(((CustomizationSupplierByClassName) cfg.getListeners().iterator().next()).getClassName()).isEqualTo("a.b.c");
   }
 
   private Cache2kConfig cacheCfgWithLoader() {
-    CacheManager mgr = CacheManager.getInstance("customizationExample");
-    Cache2kConfig cfg = Cache2kBuilder.forUnknownTypes()
+    CacheManager mgr = getInstance("customizationExample");
+    Cache2kConfig cfg = forUnknownTypes()
       .manager(mgr)
       .name("withLoader").config();
-    assertNull("no loader yet, default configuration returned", cfg.getLoader());
+    assertThat(cfg.getLoader())
+      .as("no loader yet, default configuration returned")
+      .isNull();
     PROVIDER.augmentConfig(mgr, cfg);
-    assertNotNull("loader defined", cfg.getLoader());
+    assertThat(cfg.getLoader())
+      .as("loader defined")
+      .isNotNull();
     return cfg;
   }
 
 
   @Test
   public void defaultIsApplied() {
-    assertEquals(5,
-      new Cache2kBuilder<String, String>() { }.config().getLoaderThreadCount());
+    assertThat(new Cache2kBuilder<String, String>() { }.config().getLoaderThreadCount()).isEqualTo(5);
   }
 
   @Test
@@ -101,27 +101,33 @@ public class IntegrationTest {
       new Cache2kBuilder<String, String>() { }
       .name("IntegrationTest-defaultAndIndividualIsApplied");
     Cache2kConfig<String, String> cfg = b.config();
-    assertEquals(-1, cfg.getEntryCapacity());
-    assertEquals(5, cfg.getLoaderThreadCount());
-    assertNull(cfg.getExpireAfterWrite());
+    assertThat(cfg.getEntryCapacity()).isEqualTo(-1);
+    assertThat(cfg.getLoaderThreadCount()).isEqualTo(5);
+    assertThat(cfg.getExpireAfterWrite()).isNull();
     Cache<String, String> c = b.build();
-    assertEquals(-1, cfg.getEntryCapacity());
-    assertEquals(47000, cfg.getExpireAfterWrite().toMillis());
+    assertThat(cfg.getEntryCapacity()).isEqualTo(-1);
+    assertThat(cfg.getExpireAfterWrite().toMillis()).isEqualTo(47000);
     c.close();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void failIfConfigurationIsMissing() {
-    new Cache2kBuilder<String, String>() { }
-    .manager(CacheManager.getInstance("empty"))
-    .name("missingDummy").build();
+    assertThatCode(() -> {
+      new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("empty"))
+        .name("missingDummy").build();
+      }
+    ).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test
   public void failIfNameIsMissing() {
-    new Cache2kBuilder<String, String>() { }
-      .manager(CacheManager.getInstance("empty"))
-      .build();
+    assertThatCode(() -> {
+        new Cache2kBuilder<String, String>() {
+        }
+          .manager(CacheManager.getInstance("empty"))
+          .build();
+      }).isInstanceOf(ConfigurationException.class);
   }
 
   /**
@@ -133,11 +139,11 @@ public class IntegrationTest {
   public void unknownPropertyYieldsExceptionOnStartup() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("unknownProperty"))
+        .manager(getInstance("unknownProperty"))
         .entryCapacity(1234);
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertTrue(ex.toString().contains("Unknown property"));
+      assertThat(ex.toString().contains("Unknown property")).isTrue();
     }
   }
 
@@ -145,12 +151,12 @@ public class IntegrationTest {
   public void unknownPropertyYieldsExceptionOnBuild() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("unknownProperty")
         .build();
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("Unknown property"));
+      assertThat(ex.toString()).contains("Unknown property");
     }
   }
 
@@ -158,12 +164,12 @@ public class IntegrationTest {
   public void sectionTypeNotFound() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("sectionTypeNotFound")
         .build();
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("class not found 'tld.some.class'"));
+      assertThat(ex.toString()).contains("class not found 'tld.some.class'");
     }
   }
 
@@ -171,12 +177,12 @@ public class IntegrationTest {
   public void sectionTypeMissing() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("sectionTypeMissing")
         .build();
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("type missing"));
+      assertThat(ex.toString()).contains("type missing");
     }
   }
 
@@ -184,12 +190,12 @@ public class IntegrationTest {
   public void templateNotFound() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("templateNotFound")
         .build();
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("Template not found 'notThere'"));
+      assertThat(ex.toString()).contains("Template not found 'notThere'");
     }
   }
 
@@ -212,37 +218,40 @@ public class IntegrationTest {
     c.close();
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test
   public void illegalBoolean() {
-    Cache c =
-      new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
-        .name("illegalBoolean")
-        .build();
-    c.close();
+    assertThatCode(() -> {
+      Cache c =
+        new Cache2kBuilder<String, String>() { }
+          .manager(CacheManager.getInstance("specialCases"))
+          .name("illegalBoolean")
+          .build();
+      c.close();
+    }).isInstanceOf(ConfigurationException.class);
   }
 
   /**
    * As of version 2.0 we allow duplicate listeners to simplify the configuration
    */
-  @Test @Ignore
   public void duplicateListener() {
     Cache2kBuilder<String, String> builder =
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("duplicateListener");
     Cache<String, String> cache = builder.build();
-    assertEquals(2, builder.config().getListeners().size());
+    assertThat(builder.config().getListeners().size()).isEqualTo(2);
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test
   public void typeMismatch() {
-    Cache c =
-      new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
-        .name("typeMismatch")
-        .build();
-    c.close();
+    assertThatCode(() -> {
+      Cache c =
+        new Cache2kBuilder<String, String>() { }
+          .manager(CacheManager.getInstance("specialCases"))
+          .name("typeMismatch")
+          .build();
+      c.close();
+    }).isInstanceOf(ConfigurationException.class);
   }
 
 
@@ -250,33 +259,33 @@ public class IntegrationTest {
   public void featureEnabled() {
     Cache c =
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("withFeature")
         .build();
-    assertTrue(InspectionFeature.wasEnabled(c));
+    assertThat(wasEnabled(c)).isTrue();
   }
 
   @Test
   public void featureDisabled() {
     Cache c =
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("specialCases"))
+        .manager(getInstance("specialCases"))
         .name("withFeatureDisabled")
         .build();
-    assertFalse(InspectionFeature.wasEnabled(c));
+    assertThat(wasEnabled(c)).isFalse();
   }
 
   @Test
   public void notSerializableSection() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("notSerializable"))
+        .manager(getInstance("notSerializable"))
         .name("notSerializable")
         .build();
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("Copying default cache configuration"));
-      assertThat(ex.getCause(), CoreMatchers.<Throwable>instanceOf(Serializable.class));
+      assertThat(ex.toString()).contains("Copying default cache configuration");
+      assertThat(ex.getCause()).isInstanceOf(Serializable.class);
     }
   }
 
@@ -284,19 +293,21 @@ public class IntegrationTest {
   public void parseError() {
     try {
       new Cache2kBuilder<String, String>() { }
-        .manager(CacheManager.getInstance("parseError"))
+        .manager(getInstance("parseError"))
         .entryCapacity(1234);
-      fail("expect exception");
+      fail("exception expected");
     } catch (Exception ex) {
-      assertThat(ex.toString(), containsString("type missing or unknown"));
+      assertThat(ex.toString()).contains("type missing or unknown");
     }
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test
   public void parseErrorWrongXml() {
+    assertThatCode(() -> {
       new Cache2kBuilder<String, String>() { }
         .manager(CacheManager.getInstance("parseErrorWrongXml"))
         .entryCapacity(1234);
+    }).isInstanceOf(ConfigurationException.class);
   }
 
   @Test
@@ -319,21 +330,23 @@ public class IntegrationTest {
   public void onlyDefault() {
     Cache2kConfig<String, String> cfg =
       new Cache2kBuilder<String, String>() { }
-      .manager(CacheManager.getInstance("onlyDefault"))
+      .manager(getInstance("onlyDefault"))
       .name("anyCache")
       .config();
-    assertEquals(1234, cfg.getEntryCapacity());
-    assertEquals("PT12M", cfg.getExpireAfterWrite().toString());
-    assertTrue(cfg.isExternalConfigurationPresent());
+    assertThat(cfg.getEntryCapacity()).isEqualTo(1234);
+    assertThat(cfg.getExpireAfterWrite().toString()).isEqualTo("PT12M");
+    assertThat(cfg.isExternalConfigurationPresent()).isTrue();
   }
 
-  @Test (expected = IllegalArgumentException.class)
+  @Test
   public void empty() {
-    Cache c = new Cache2kBuilder<String, String>() { }
-      .manager(CacheManager.getInstance("empty"))
-      .name("anyCache")
-      .build();
-    c.close();
+    assertThatCode(() -> {
+      Cache c = new Cache2kBuilder<String, String>() { }
+        .manager(CacheManager.getInstance("empty"))
+        .name("anyCache")
+        .build();
+      c.close();
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

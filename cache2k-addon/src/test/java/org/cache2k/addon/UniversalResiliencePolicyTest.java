@@ -20,7 +20,6 @@ package org.cache2k.addon;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.annotation.Nullable;
@@ -28,20 +27,20 @@ import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
 import org.cache2k.config.Feature;
 import org.cache2k.io.ResiliencePolicy;
-import org.cache2k.testing.category.FastTests;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static java.lang.System.currentTimeMillis;
+import static java.time.Duration.ofMillis;
+import static java.util.concurrent.TimeUnit.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.addon.UniversalResiliencePolicy.supplier;
 
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class)
 public class UniversalResiliencePolicyTest {
 
   @Nullable Cache<Integer, Integer> cache;
@@ -55,7 +54,7 @@ public class UniversalResiliencePolicyTest {
     return k;
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (cache != null) {
       cache.close();
@@ -132,8 +131,8 @@ public class UniversalResiliencePolicyTest {
         )
         /* Results in combined section parameters */
         .with(UniversalResilienceConfig.class, b -> {
-          assertEquals(Duration.ofMillis(1234), b.config().getRetryInterval());
-          assertEquals(Duration.ofMillis(123), b.config().getResilienceDuration());
+          assertThat(b.config().getRetryInterval()).isEqualTo(ofMillis(1234));
+          assertThat(b.config().getResilienceDuration()).isEqualTo(ofMillis(123));
         })
         .build();
   }
@@ -146,13 +145,13 @@ public class UniversalResiliencePolicyTest {
   public void expiry0_any() {
     cache = new Cache2kBuilder<Integer, Integer>() { }
       .setup(UniversalResiliencePolicy::enable)
-      .expireAfterWrite(0, TimeUnit.MINUTES)
+      .expireAfterWrite(0, MINUTES)
       /* ... set loader ... */
       .build();
-    assertNull(policy);
+    assertThat(policy).isNull();
     cache.put(1, 123);
-    assertEquals(0, (long) cache.invoke(1, e -> e.getExpiryTime()));
-    assertFalse(cache.containsKey(1));
+    assertThat((long) cache.invoke(1, e -> e.getExpiryTime())).isEqualTo(0);
+    assertThat(cache.containsKey(1)).isFalse();
   }
 
   @Test
@@ -161,7 +160,7 @@ public class UniversalResiliencePolicyTest {
       .setup(UniversalResiliencePolicy::enable)
       .setup(ResiliencePolicy::disable)
       .build();
-    assertNull(policy);
+    assertThat(policy).isNull();
   }
 
   @Test
@@ -169,10 +168,10 @@ public class UniversalResiliencePolicyTest {
     cache = builder()
       .setup(UniversalResiliencePolicy::enable)
       .with(UniversalResilienceConfig.class, builder -> builder
-        .resilienceDuration(0, TimeUnit.MILLISECONDS)
+        .resilienceDuration(0, MILLISECONDS)
       )
       .build();
-    assertNull(policy);
+    assertThat(policy).isNull();
   }
 
   /**
@@ -182,10 +181,10 @@ public class UniversalResiliencePolicyTest {
   @Test
   public void noExpiry_noResilienceParameters() {
     cache = builder()
-      .set(cfg -> cfg.setResiliencePolicy(UniversalResiliencePolicy.supplier()))
+      .set(cfg -> cfg.setResiliencePolicy(supplier()))
       /* ... set loader ... */
       .build();
-    assertNull(policy);
+    assertThat(policy).isNull();
   }
 
   /**
@@ -198,14 +197,14 @@ public class UniversalResiliencePolicyTest {
       .setup(UniversalResiliencePolicy::enable)
       .expiryPolicy((key, value, loadTime, oldEntry) -> 0)
       .with(UniversalResilienceConfig.class, b -> b
-        .resilienceDuration(30, TimeUnit.SECONDS)
+        .resilienceDuration(30, SECONDS)
       )
       /* ... set loader ... */
       .build();
-    assertNotNull(policy);
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(3), policy.getRetryInterval());
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getRetryInterval()).isEqualTo(SECONDS.toMillis(3));
   }
 
   /**
@@ -218,69 +217,69 @@ public class UniversalResiliencePolicyTest {
   public void expiry10m() {
     cache = builder()
       .setup(UniversalResiliencePolicy::enable)
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .expireAfterWrite(10, MINUTES)
       /* ... set loader ... */
       .build();
-    assertNotNull(policy);
-    assertEquals(TimeUnit.MINUTES.toMillis(10), policy.getResilienceDuration());
-    assertEquals(TimeUnit.MINUTES.toMillis(10), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.MINUTES.toMillis(1), policy.getRetryInterval());
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(MINUTES.toMillis(10));
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(MINUTES.toMillis(10));
+    assertThat(policy.getRetryInterval()).isEqualTo(MINUTES.toMillis(1));
   }
 
   @Test
   public void expiry10m_duration30s() {
     cache = builder()
       .setupWith(UniversalResiliencePolicy::enable, b -> b
-        .resilienceDuration(30, TimeUnit.SECONDS)
+        .resilienceDuration(30, SECONDS)
       )
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .expireAfterWrite(10, MINUTES)
       .loader(this::load)
       .build();
-    assertNotNull(policy);
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(3), policy.getRetryInterval());
-    long t0 = System.currentTimeMillis();
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getRetryInterval()).isEqualTo(SECONDS.toMillis(3));
+    long t0 = currentTimeMillis();
     cache.get(1);
-    Assertions.assertThat((long) cache.invoke(1, e -> e.getExpiryTime()))
-      .isGreaterThanOrEqualTo(t0 + TimeUnit.MINUTES.toMillis(10));
-    Assertions.assertThat((long) cache.invoke(2, e ->
+    assertThat((long) cache.invoke(1, e -> e.getExpiryTime()))
+      .isGreaterThanOrEqualTo(t0 + MINUTES.toMillis(10));
+    assertThat((long) cache.invoke(2, e ->
       {
         e.getValue();
         return e.getExpiryTime();
       }))
-      .isGreaterThanOrEqualTo(t0 + TimeUnit.MINUTES.toMillis(10));
+      .isGreaterThanOrEqualTo(t0 + MINUTES.toMillis(10));
     nextLoadThrowsException = true;
-    Assertions.assertThat((long) cache.invoke(3, e ->
+    assertThat((long) cache.invoke(3, e ->
       {
         e.getException();
         return e.getExpiryTime();
       }))
       .as("Retry")
-      .isGreaterThanOrEqualTo(t0 + TimeUnit.SECONDS.toMillis(3));
-    Assertions.assertThat((long) cache.invoke(2, e ->
+      .isGreaterThanOrEqualTo(t0 + SECONDS.toMillis(3));
+    assertThat((long) cache.invoke(2, e ->
       {
         e.load();
-        assertEquals(2, (int) e.getValue());
+        assertThat((int) e.getValue()).isEqualTo(2);
         return e.getExpiryTime();
       }))
       .as("Suppress is doing retry as well")
-      .isGreaterThanOrEqualTo(t0 + TimeUnit.SECONDS.toMillis(3));
+      .isGreaterThanOrEqualTo(t0 + SECONDS.toMillis(3));
   }
 
   @Test
   public void expiry10m_retry10s() {
     cache = builder()
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .expireAfterWrite(10, MINUTES)
       .setupWith(UniversalResiliencePolicy::enable, b -> b
-        .retryInterval(10, TimeUnit.SECONDS)
+        .retryInterval(10, SECONDS)
       )
       /* ... set loader ... */
       .build();
-    assertNotNull(policy);
-    assertEquals(TimeUnit.MINUTES.toMillis(10), policy.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(MINUTES.toMillis(10));
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(SECONDS.toMillis(10));
+    assertThat(policy.getRetryInterval()).isEqualTo(SECONDS.toMillis(10));
   }
 
   /**
@@ -299,14 +298,14 @@ public class UniversalResiliencePolicyTest {
       .eternal(true)
       .setup(UniversalResiliencePolicy::enable)
       .with(UniversalResilienceConfig.class, b -> b
-        .resilienceDuration(30, TimeUnit.SECONDS)
+        .resilienceDuration(30, SECONDS)
       )
       /* ... set loader ... */
       .build();
-    assertNotNull(policy);
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(3), policy.getRetryInterval());
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getRetryInterval()).isEqualTo(SECONDS.toMillis(3));
   }
 
   /**
@@ -324,15 +323,15 @@ public class UniversalResiliencePolicyTest {
     cache = builder()
       .eternal(true)
       .setupWith(UniversalResiliencePolicy::enable, b -> b
-        .resilienceDuration(30, TimeUnit.SECONDS)
-        .retryInterval(10, TimeUnit.SECONDS)
+        .resilienceDuration(30, SECONDS)
+        .retryInterval(10, SECONDS)
       )
       .loader(this::load)
       .build();
-    assertNotNull(policy);
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(30), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(SECONDS.toMillis(30));
+    assertThat(policy.getRetryInterval()).isEqualTo(SECONDS.toMillis(10));
   }
 
   /**
@@ -345,14 +344,14 @@ public class UniversalResiliencePolicyTest {
     cache = builder()
       .eternal(true)
       .setupWith(UniversalResiliencePolicy::enable, b -> b
-        .retryInterval(10, TimeUnit.SECONDS)
+        .retryInterval(10, SECONDS)
       )
       /* ... set loader ... */
       .build();
-    assertNotNull(policy);
-    assertEquals(0, policy.getResilienceDuration());
-    assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getMaxRetryInterval());
-    assertEquals(TimeUnit.SECONDS.toMillis(10), policy.getRetryInterval());
+    assertThat(policy).isNotNull();
+    assertThat(policy.getResilienceDuration()).isEqualTo(0);
+    assertThat(policy.getMaxRetryInterval()).isEqualTo(SECONDS.toMillis(10));
+    assertThat(policy.getRetryInterval()).isEqualTo(SECONDS.toMillis(10));
   }
 
   public static class ProbingException extends RuntimeException { }

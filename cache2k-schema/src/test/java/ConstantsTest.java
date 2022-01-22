@@ -18,9 +18,9 @@
  * #L%
  */
 import org.cache2k.schema.Constants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test coverage
@@ -31,7 +31,7 @@ public class ConstantsTest {
 
   @Test
   public void test() {
-    assertNotNull(Constants.SCHEMA_LOCATION);
+    assertThat(Constants.SCHEMA_LOCATION).isNotNull();
   }
 
 }

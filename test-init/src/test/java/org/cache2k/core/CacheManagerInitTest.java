@@ -22,12 +22,15 @@ package org.cache2k.core;
 
 import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheManager;
-import static org.junit.Assert.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
+import static org.cache2k.CacheManager.STANDARD_DEFAULT_MANAGER_NAME;
+import static org.cache2k.CacheManager.getInstance;
 
 import org.cache2k.core.log.Log;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Jens Wilke
@@ -40,16 +43,12 @@ public class CacheManagerInitTest {
     CacheManager.setDefaultName(OTHER_DEFAULT_CACHE_MANAGER_NAME);
   }
 
-  public static CacheManager initCacheManager() {
-    CacheManager mgm = CacheManager.getInstance();
-    assertEquals(OTHER_DEFAULT_CACHE_MANAGER_NAME, mgm.getName());
-    return mgm;
-  }
+  public static void setupOtherDefaultManagerName() { }
 
   @Test
   public void differentCacheManagerName() {
-    assertEquals(CacheManager.getInstance().getName(), OTHER_DEFAULT_CACHE_MANAGER_NAME);
-    assertNotEquals(OTHER_DEFAULT_CACHE_MANAGER_NAME, CacheManager.STANDARD_DEFAULT_MANAGER_NAME);
+    assertThat(OTHER_DEFAULT_CACHE_MANAGER_NAME).isEqualTo(getInstance().getName());
+    assertThat(STANDARD_DEFAULT_MANAGER_NAME).isNotEqualTo(OTHER_DEFAULT_CACHE_MANAGER_NAME);
   }
 
   /**
@@ -57,11 +56,11 @@ public class CacheManagerInitTest {
    */
   @Test
   public void closeAll() {
-    CacheManager cm1 = CacheManager.getInstance();
+    CacheManager cm1 = getInstance();
     CacheManager.closeAll();
-    Cache c = Cache2kBuilder.forUnknownTypes().name("xy").build();
-    assertNotSame(cm1, c.getCacheManager());
-    assertEquals(OTHER_DEFAULT_CACHE_MANAGER_NAME, c.getCacheManager().getName());
+    Cache c = forUnknownTypes().name("xy").build();
+    assertThat(cm1).isNotSameAs(c.getCacheManager());
+    assertThat(c.getCacheManager().getName()).isEqualTo(OTHER_DEFAULT_CACHE_MANAGER_NAME);
     c.close();
   }
 

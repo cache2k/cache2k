@@ -20,13 +20,11 @@ package org.cache2k.extra.jmx;
  * #L%
  */
 
-import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 
 import java.lang.management.ManagementFactory;

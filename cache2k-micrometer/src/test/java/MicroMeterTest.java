@@ -19,16 +19,19 @@
  */
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.extra.micrometer.Cache2kCacheMetrics;
-import static org.junit.Assert.*;
+
+import static io.micrometer.core.instrument.Metrics.globalRegistry;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
+import static org.cache2k.extra.micrometer.Cache2kCacheMetrics.monitor;
 
 import org.cache2k.extra.micrometer.MicrometerSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Does test the various bind option.
@@ -40,9 +43,9 @@ public class MicroMeterTest {
   @Test
   public void programmaticBind() {
     MeterRegistry registry = new SimpleMeterRegistry();
-    Cache cache = Cache2kBuilder.forUnknownTypes().build();
-    Cache2kCacheMetrics.monitor(registry, cache);
-    assertTrue(registry.get("cache.puts").functionCounter().count() >= 0);
+    Cache cache = forUnknownTypes().build();
+    monitor(registry, cache);
+    assertThat(registry.get("cache.puts").functionCounter().count() >= 0).isTrue();
     cache.close();
   }
 
@@ -53,11 +56,11 @@ public class MicroMeterTest {
   @Test
   public void doubleBind() {
     MeterRegistry registry = new SimpleMeterRegistry();
-    Cache cache = Cache2kBuilder.forUnknownTypes().build();
-    Cache2kCacheMetrics.monitor(registry, cache);
+    Cache cache = forUnknownTypes().build();
+    monitor(registry, cache);
     Object counter = registry.get("cache.puts").functionCounter();
-    Cache2kCacheMetrics.monitor(registry, cache);
-    assertSame(counter, registry.get("cache.puts").functionCounter());
+    monitor(registry, cache);
+    assertThat(registry.get("cache.puts").functionCounter()).isSameAs(counter);
     cache.close();
   }
 
@@ -69,7 +72,7 @@ public class MicroMeterTest {
       .disableMonitoring(true)
       .build();
     try {
-      Metrics.globalRegistry.get("cache.puts")
+      globalRegistry.get("cache.puts")
         .tag("cache", cache.getName()).meters();
       fail("exception expected");
     } catch (MeterNotFoundException expected) { }
@@ -77,48 +80,48 @@ public class MicroMeterTest {
 
   @Test
   public void bindToGlobalRegistryWhenEnabled() {
-    Cache cache = Cache2kBuilder.forUnknownTypes()
+    Cache cache = forUnknownTypes()
       .name("bindToGlobalRegistryWhenEnabled")
       .enable(MicrometerSupport.class)
       .disableMonitoring(false)
       .build();
-    assertTrue(Metrics.globalRegistry.get("cache.puts")
+    assertThat(globalRegistry.get("cache.puts")
       .tag("cache", cache.getName())
-      .functionCounter().count() >= 0);
+      .functionCounter().count() >= 0).isTrue();
   }
 
   @Test
   public void bindWhenStatisticsEnabled() {
-    Cache cache = Cache2kBuilder.forUnknownTypes()
+    Cache cache = forUnknownTypes()
       .enable(MicrometerSupport.class)
       .disableStatistics(true)
       .name("bindWhenStatisticsDisabled")
       .build();
-    assertTrue(Metrics.globalRegistry.get("cache.puts")
+    assertThat(globalRegistry.get("cache.puts")
       .tag("cache", cache.getName())
-      .functionCounter().count() >= 0);
+      .functionCounter().count() >= 0).isTrue();
   }
 
   @Test
   public void bindToSpecificRegistry() {
     MeterRegistry registry = new SimpleMeterRegistry();
-    Cache cache = Cache2kBuilder.forUnknownTypes()
+    Cache cache = forUnknownTypes()
       .enableWith(MicrometerSupport.class,
         b -> b.registry(registry))
       .build();
     try {
-      Metrics.globalRegistry.get("cache.puts").tag("cache", cache.getName()).meters();
+      globalRegistry.get("cache.puts").tag("cache", cache.getName()).meters();
       fail("not in global registry");
     } catch (MeterNotFoundException expected) { }
-    assertTrue(registry.get("cache.puts").
-      tag("cache", cache.getName()).functionCounter().count() >= 0);
+    assertThat(registry.get("cache.puts").
+      tag("cache", cache.getName()).functionCounter().count() >= 0).isTrue();
   }
 
   @Test
-  public void checkBasicMetrics() throws InterruptedException {
+  public void checkBasicMetrics() {
     MeterRegistry registry = new SimpleMeterRegistry();
-    Cache cache = Cache2kBuilder.forUnknownTypes().build();
-    Cache2kCacheMetrics.monitor(registry, cache);
+    Cache cache = forUnknownTypes().build();
+    monitor(registry, cache);
     cache.put(1, 1);
     cache.put(2, 1);
     cache.put(3, 1);
@@ -127,52 +130,50 @@ public class MicroMeterTest {
     cache.get(2);
     cache.get(1234);
     cache.remove(3);
-    Thread.sleep(1000);
-    assertEquals(4, (int) registry.get("cache.puts").functionCounter().count());
-    assertEquals(2, (int) registry.get("cache.size").gauge().value());
-    assertEquals(1, (int) registry.get("cache.evictions").functionCounter().count());
-    assertEquals(2, (int) registry.get("cache.gets")
-      .tag("result", "hit").functionCounter().count());
-    assertEquals(1, (int) registry.get("cache.gets")
-      .tag("result", "miss").functionCounter().count());
+    assertThat((int) registry.get("cache.puts").functionCounter().count()).isEqualTo(4);
+    assertThat((int) registry.get("cache.size").gauge().value()).isEqualTo(2);
+    assertThat((int) registry.get("cache.evictions").functionCounter().count()).isEqualTo(1);
+    assertThat((int) registry.get("cache.gets")
+      .tag("result", "hit").functionCounter().count()).isEqualTo(2);
+    assertThat((int) registry.get("cache.gets")
+      .tag("result", "miss").functionCounter().count()).isEqualTo(1);
     cache.close();
   }
 
   @Test
   public void checkLoaderMetrics() throws InterruptedException {
     MeterRegistry registry = new SimpleMeterRegistry();
-    Cache cache = Cache2kBuilder.forUnknownTypes()
+    Cache cache = forUnknownTypes()
       .loader(key -> key)
       .build();
-    Cache2kCacheMetrics.monitor(registry, cache);
+    monitor(registry, cache);
     cache.get(1);
     cache.get(2);
     cache.get(3);
     cache.peek(4);
     cache.get(3);
-    Thread.sleep(1000);
-    assertEquals(0, (int) registry.get("cache.puts").functionCounter().count());
-    assertEquals(3, (int) registry.get("cache.size").gauge().value());
-    assertEquals(0, (int) registry.get("cache.evictions").functionCounter().count());
-    assertEquals(1, (int) registry.get("cache.gets")
-      .tag("result", "hit").functionCounter().count());
-    assertEquals(4, (int) registry.get("cache.gets")
-      .tag("result", "miss").functionCounter().count());
-    assertEquals(3, (int) registry.get("cache.load")
-      .tag("result", "success").functionCounter().count());
-    assertEquals(0, (int) registry.get("cache.load")
-      .tag("result", "failure").functionCounter().count());
-    assertEquals(0, registry.get("cache.load.duration").gauge().value(), 0.5);
+    assertThat((int) registry.get("cache.puts").functionCounter().count()).isEqualTo(0);
+    assertThat((int) registry.get("cache.size").gauge().value()).isEqualTo(3);
+    assertThat((int) registry.get("cache.evictions").functionCounter().count()).isEqualTo(0);
+    assertThat((int) registry.get("cache.gets")
+      .tag("result", "hit").functionCounter().count()).isEqualTo(1);
+    assertThat((int) registry.get("cache.gets")
+      .tag("result", "miss").functionCounter().count()).isEqualTo(4);
+    assertThat((int) registry.get("cache.load")
+      .tag("result", "success").functionCounter().count()).isEqualTo(3);
+    assertThat((int) registry.get("cache.load")
+      .tag("result", "failure").functionCounter().count()).isEqualTo(0);
+    assertThat(registry.get("cache.load.duration").gauge().value()).isEqualTo(0.0);
     cache.close();
   }
 
   @Test
-  public void checkBasicMetricsWithDisabledStatistics() throws InterruptedException {
+  public void checkBasicMetricsWithDisabledStatistics() {
     MeterRegistry registry = new SimpleMeterRegistry();
-    Cache cache = Cache2kBuilder.forUnknownTypes()
+    Cache cache = forUnknownTypes()
       .disableStatistics(true)
       .build();
-    Cache2kCacheMetrics.monitor(registry, cache);
+    monitor(registry, cache);
     cache.put(1, 1);
     cache.put(2, 1);
     cache.put(3, 1);
@@ -181,13 +182,14 @@ public class MicroMeterTest {
     cache.get(2);
     cache.get(1234);
     cache.remove(3);
-    assertEquals(0, (int) registry.get("cache.puts").functionCounter().count());
-    assertEquals(2, (int) registry.get("cache.size").gauge().value());
-    assertEquals(0, (int) registry.get("cache.gets")
-      .tag("result", "hit").functionCounter().count());
-    assertTrue("Meter cache.evictions not present",
-      registry.getMeters().stream()
-      .map(meter -> meter.getId().getName()).noneMatch(s -> s.equals("cache.evictions")));
+    assertThat((int) registry.get("cache.puts").functionCounter().count()).isEqualTo(0);
+    assertThat((int) registry.get("cache.size").gauge().value()).isEqualTo(2);
+    assertThat((int) registry.get("cache.gets")
+      .tag("result", "hit").functionCounter().count()).isEqualTo(0);
+    assertThat(registry.getMeters().stream()
+      .map(meter -> meter.getId().getName()).noneMatch(s -> s.equals("cache.evictions")))
+      .as("Meter cache.evictions not present")
+      .isTrue();
     cache.close();
   }
 

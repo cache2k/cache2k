@@ -21,41 +21,44 @@ package org.cache2k.extra.config.test;
  */
 
 import org.cache2k.extra.config.generic.StandardPropertyParser;
-import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.cache2k.extra.config.generic.StandardPropertyParser.parseLongWithUnitSuffix;
 
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class)
 public class StandardPropertyParserTest {
 
   @Test
   public void parseLong_123M() {
-    assertEquals(123 * 1000 * 1000, StandardPropertyParser.parseLongWithUnitSuffix("123M"));
+    assertThat(parseLongWithUnitSuffix("123M")).isEqualTo(123 * 1000 * 1000);
   }
 
   @Test
   public void parseLong_123() {
-    assertEquals(123, StandardPropertyParser.parseLongWithUnitSuffix("123"));
+    assertThat(parseLongWithUnitSuffix("123")).isEqualTo(123);
   }
 
   @Test
   public void parseLong_123_5678() {
-    assertEquals(1235678, StandardPropertyParser.parseLongWithUnitSuffix("123_5678"));
+    assertThat(parseLongWithUnitSuffix("123_5678")).isEqualTo(1235678);
   }
 
-  @Test(expected = NumberFormatException.class)
+  @Test
   public void parseLong_123xy() {
-    StandardPropertyParser.parseLongWithUnitSuffix("123xy");
+    assertThatCode(() -> {
+      StandardPropertyParser.parseLongWithUnitSuffix("123xy");
+    }).isInstanceOf(NumberFormatException.class);
   }
 
-  @Test(expected = NumberFormatException.class)
+  @Test
   public void parseLong_xy() {
-    StandardPropertyParser.parseLongWithUnitSuffix("xy");
+    assertThatCode(() -> {
+      StandardPropertyParser.parseLongWithUnitSuffix("xy");
+    }).isInstanceOf(NumberFormatException.class);
   }
 
 }

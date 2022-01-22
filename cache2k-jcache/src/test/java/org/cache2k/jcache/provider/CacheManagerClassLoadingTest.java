@@ -20,12 +20,12 @@ package org.cache2k.jcache.provider;
  * #L%
  */
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.Assertions;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.Caching;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.io.ByteArrayOutputStream;
@@ -33,8 +33,9 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static javax.cache.Cache.Entry;
+import static javax.cache.Caching.getCachingProvider;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test cache manager with different class loader.
@@ -54,20 +55,19 @@ public class CacheManagerClassLoadingTest {
   @Test
   public void testCorrectClassLoaderForKey() throws Exception {
     SpecialClassLoader loader = new SpecialClassLoader();
-    CachingProvider provider = Caching.getCachingProvider();
+    CachingProvider provider = getCachingProvider();
     CacheManager mgr =
-      Caching.getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
+      getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
     Cache<Object, Object> cache = mgr.createCache(CACHE_NAME, new MutableConfiguration());
     Class keyClass = loader.loadSpecial(DomainKey.class);
-    assertEquals(keyClass.getClassLoader(), loader);
+    assertThat(loader).isEqualTo(keyClass.getClassLoader());
     Object key = keyClass.newInstance();
     setValue(key, "someKey");
     String someValue = "Value";
     cache.put(key, someValue);
-    Cache.Entry e = cache.iterator().next();
-    assertSame("class loaders identical",
-      key.getClass().getClassLoader(), e.getKey().getClass().getClassLoader());
-    assertEquals(key, e.getKey());
+    Entry e = cache.iterator().next();
+    Assertions.assertSame(key.getClass().getClassLoader(), e.getKey().getClass().getClassLoader(), "class loaders identical");
+    assertThat(e.getKey()).isEqualTo(key);
     mgr.close();
   }
 
@@ -79,20 +79,19 @@ public class CacheManagerClassLoadingTest {
   @Test
   public void testCorrectClassLoaderForValue() throws Exception {
     SpecialClassLoader loader = new SpecialClassLoader();
-    CachingProvider provider = Caching.getCachingProvider();
+    CachingProvider provider = getCachingProvider();
     CacheManager mgr =
-      Caching.getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
+      getCachingProvider().getCacheManager(provider.getDefaultURI(), loader);
     Cache<Object, Object> cache = mgr.createCache(CACHE_NAME, new MutableConfiguration());
     Class valueClass = loader.loadSpecial(DomainValue.class);
-    assertEquals(valueClass.getClassLoader(), loader);
+    assertThat(loader).isEqualTo(valueClass.getClassLoader());
     Object value = valueClass.newInstance();
     setValue(value, "someValue");
     String someKey = "Key";
     cache.put(someKey, value);
-    Cache.Entry e = cache.iterator().next();
-    assertSame("class loaders identical",
-      value.getClass().getClassLoader(), e.getValue().getClass().getClassLoader());
-    assertEquals(value, e.getValue());
+    Entry e = cache.iterator().next();
+    Assertions.assertSame(value.getClass().getClassLoader(), e.getValue().getClass().getClassLoader(), "class loaders identical");
+    assertThat(e.getValue()).isEqualTo(value);
     mgr.close();
   }
 

@@ -20,6 +20,7 @@ package org.cache2k.addon;
  * #L%
  */
 
+import org.assertj.core.data.Offset;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
@@ -27,24 +28,21 @@ import org.cache2k.io.ExceptionPropagator;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 import org.cache2k.operation.TimeReference;
-import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static java.util.concurrent.TimeUnit.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Unit test with out cache for default resilience policy.
+ * Unit test without cache for default resilience policy.
  *
  * @author Jens Wilke
  * @see UniversalResiliencePolicy
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Category(FastTests.class)
 public class UniversalResiliencePolicyUnitTest {
 
   static final CacheEntry DUMMY_ENTRY = new CacheEntry() {
@@ -64,19 +62,13 @@ public class UniversalResiliencePolicyUnitTest {
     }
   };
 
-  static final ExceptionPropagator DUMMY_PROPAGATOR = new ExceptionPropagator() {
-    @Override
-    public RuntimeException propagateException(LoadExceptionInfo loadExceptionInfo) {
-      return new RuntimeException();
-    }
-  };
+  static final ExceptionPropagator DUMMY_PROPAGATOR = loadExceptionInfo -> new RuntimeException();
 
   @Test
   public void testBackoffPower() {
-    assertEquals(10, 10 * Math.pow(1.5, 0), 0.1);
-    assertEquals(15, 10 * Math.pow(1.5, 1), 0.1);
-    assertEquals(22.5, 10 * Math.pow(1.5, 2), 0.1);
-    assertEquals(33.75, 10 * Math.pow(1.5, 3), 0.1);
+    assertThat(10 * Math.pow(1.5, 0)).isCloseTo(10, Offset.offset(0.1));
+    assertThat(10 * Math.pow(1.5, 1)).isCloseTo(15, Offset.offset(0.1));
+    assertThat(10 * Math.pow(1.5, 2)).isCloseTo(22.5, Offset.offset(0.1));
   }
 
   /**
@@ -85,7 +77,7 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testDefaultSuppressDuration() {
     UniversalResiliencePolicy p = getDefaultResiliencePolicy10000();
-    assertEquals(100000, p.getResilienceDuration());
+    assertThat(p.getResilienceDuration()).isEqualTo(100000);
   }
 
   private UniversalResiliencePolicy getDefaultResiliencePolicy10000() {
@@ -100,7 +92,7 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testDefaultMaxRetryInterval() {
     UniversalResiliencePolicy p = getDefaultResiliencePolicy10000();
-    assertEquals(100000, p.getMaxRetryInterval());
+    assertThat(p.getMaxRetryInterval()).isEqualTo(100000);
   }
 
   /**
@@ -109,7 +101,7 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testDefaultRetryInterval() {
     UniversalResiliencePolicy p = getDefaultResiliencePolicy10000();
-    assertEquals(10000, p.getRetryInterval());
+    assertThat(p.getRetryInterval()).isEqualTo(10000);
   }
 
   /**
@@ -118,15 +110,15 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testWithExpiryAndResilienceDuration() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(240000, MILLISECONDS)
       .with(UniversalResilienceConfig.class, b -> b
-        .resilienceDuration(30000, TimeUnit.MILLISECONDS)
+        .resilienceDuration(30000, MILLISECONDS)
       )
     );
-    assertNotNull(p);
-    assertEquals(30000, p.getResilienceDuration());
-    assertEquals(3000, p.getRetryInterval());
-    assertEquals(30000, p.getMaxRetryInterval());
+    assertThat(p).isNotNull();
+    assertThat(p.getResilienceDuration()).isEqualTo(30000);
+    assertThat(p.getRetryInterval()).isEqualTo(3000);
+    assertThat(p.getMaxRetryInterval()).isEqualTo(30000);
   }
 
   private static Cache2kBuilder<?, ?> builder() {
@@ -148,16 +140,16 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testWithExpiryAndResilienceDuration10Min30Sec() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .expireAfterWrite(10, MINUTES)
       .with(
         UniversalResilienceConfig.class, b -> b
-          .resilienceDuration(30, TimeUnit.SECONDS)
+          .resilienceDuration(30, SECONDS)
       )
     );
-    assertNotNull(p);
-    assertEquals(30000, p.getResilienceDuration());
-    assertEquals(3000, p.getRetryInterval());
-    assertEquals(30000, p.getMaxRetryInterval());
+    assertThat(p).isNotNull();
+    assertThat(p.getResilienceDuration()).isEqualTo(30000);
+    assertThat(p.getRetryInterval()).isEqualTo(3000);
+    assertThat(p.getMaxRetryInterval()).isEqualTo(30000);
   }
 
   /**
@@ -166,15 +158,15 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testWithExpiryAndRetryInterval() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(240000, MILLISECONDS)
       .with(UniversalResilienceConfig.class, b -> b
-        .retryInterval(10000, TimeUnit.MILLISECONDS)
+        .retryInterval(10000, MILLISECONDS)
       )
     );
-    assertNotNull(p);
-    assertEquals(240000, p.getResilienceDuration());
-    assertEquals(10000, p.getRetryInterval());
-    assertEquals(10000, p.getMaxRetryInterval());
+    assertThat(p).isNotNull();
+    assertThat(p.getResilienceDuration()).isEqualTo(240000);
+    assertThat(p.getRetryInterval()).isEqualTo(10000);
+    assertThat(p.getMaxRetryInterval()).isEqualTo(10000);
   }
 
   /**
@@ -183,99 +175,99 @@ public class UniversalResiliencePolicyUnitTest {
   @Test
   public void testWithExpiryAndMaxRetryInterval() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(240000, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(240000, MILLISECONDS)
       .with(UniversalResilienceConfig.class, b -> b
-        .maxRetryInterval(10000, TimeUnit.MILLISECONDS)
+        .maxRetryInterval(10000, MILLISECONDS)
       )
     );
-    assertNotNull(p);
-    assertEquals(240000, p.getResilienceDuration());
-    assertEquals(10000, p.getRetryInterval());
-    assertEquals(10000, p.getMaxRetryInterval());
+    assertThat(p).isNotNull();
+    assertThat(p.getResilienceDuration()).isEqualTo(240000);
+    assertThat(p.getRetryInterval()).isEqualTo(10000);
+    assertThat(p.getMaxRetryInterval()).isEqualTo(10000);
   }
 
   @Test
   public void testCustomMultiplier() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(10000, MILLISECONDS)
       .with(UniversalResilienceConfig.class, b -> b
-        .retryInterval(100, TimeUnit.MILLISECONDS)
-        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+        .retryInterval(100, MILLISECONDS)
+        .maxRetryInterval(500, MILLISECONDS)
+        .resilienceDuration(5000, MILLISECONDS)
         .backoffMultiplier(2)
       )
     );
-    assertNotNull(p);
+    assertThat(p).isNotNull();
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
     long t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(100, t);
+    assertThat(t).isEqualTo(100);
     b.incrementRetryCount();
     t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(200, t);
+    assertThat(t).isEqualTo(200);
   }
 
   @Test
   public void testSuppress() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(10000, MILLISECONDS)
       .with(UniversalResilienceConfig.class, b -> b
-        .retryInterval(100, TimeUnit.MILLISECONDS)
-        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+        .retryInterval(100, MILLISECONDS)
+        .maxRetryInterval(500, MILLISECONDS)
+        .resilienceDuration(5000, MILLISECONDS)
       )
     );
-    assertNotNull(p);
-    assertEquals(1.5, p.getMultiplier(), 0.1);
+    assertThat(p).isNotNull();
+    assertThat(p.getMultiplier()).isCloseTo(1.5, Offset.offset(0.1));
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
     long t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(100, t);
+    assertThat(t).isEqualTo(100);
     b.incrementRetryCount();
     b.setLoadTime(107);
     t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(150, t - b.getLoadTime());
+    assertThat(t - b.getLoadTime()).isEqualTo(150);
     b.incrementRetryCount();
     b.setLoadTime(300);
     t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(225, t - b.getLoadTime());
+    assertThat(t - b.getLoadTime()).isEqualTo(225);
     b.incrementRetryCount();
     b.setLoadTime(582);
     t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(337, t - b.getLoadTime());
+    assertThat(t - b.getLoadTime()).isEqualTo(337);
     b.incrementRetryCount();
     b.setLoadTime(934);
     t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(500, t - b.getLoadTime());
+    assertThat(t - b.getLoadTime()).isEqualTo(500);
     b.incrementRetryCount();
     b.setLoadTime(1534);
     t = p.suppressExceptionUntil("key", b, DUMMY_ENTRY);
-    assertEquals(500, t - b.getLoadTime());
+    assertThat(t - b.getLoadTime()).isEqualTo(500);
   }
 
   @Test
   public void testCache() {
     UniversalResiliencePolicy p = policy(builder()
-      .expireAfterWrite(10000, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(10000, MILLISECONDS)
       .with(UniversalResilienceConfig.class, b -> b
-        .retryInterval(100, TimeUnit.MILLISECONDS)
-        .maxRetryInterval(500, TimeUnit.MILLISECONDS)
-        .resilienceDuration(5000, TimeUnit.MILLISECONDS)
+        .retryInterval(100, MILLISECONDS)
+        .maxRetryInterval(500, MILLISECONDS)
+        .resilienceDuration(5000, MILLISECONDS)
       )
     );
-    assertNotNull(p);
-    assertEquals(1.5, p.getMultiplier(), 0.1);
+    assertThat(p).isNotNull();
+    assertThat(p.getMultiplier()).isCloseTo(1.5, Offset.offset(0.1));
     InfoBean b = new InfoBean();
     b.setLoadTime(0);
     b.setSinceTime(0);
     long t = p.retryLoadAfter("key", b);
-    assertEquals(100, t);
+    assertThat(t).isEqualTo(100);
     b.incrementRetryCount();
     b.setLoadTime(107);
     t = p.retryLoadAfter("key", b);
-    assertEquals(150, t - b.getLoadTime());
+    assertThat(t - b.getLoadTime()).isEqualTo(150);
     b.incrementRetryCount();
     b.incrementRetryCount();
     b.incrementRetryCount();
@@ -283,9 +275,10 @@ public class UniversalResiliencePolicyUnitTest {
     b.incrementRetryCount();
     b.setLoadTime(0);
     t = p.retryLoadAfter("key", b);
-    assertEquals(500, t);
+    assertThat(t).isEqualTo(500);
   }
 
+  @SuppressWarnings("unused")
   static class InfoBean implements LoadExceptionInfo {
 
     private int retryCount;

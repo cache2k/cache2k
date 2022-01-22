@@ -21,60 +21,39 @@ package org.cache2k.extra.jmx;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
-import org.cache2k.CacheManager;
-import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
 
 import javax.management.MBeanInfo;
-import java.util.ArrayList;
-import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
+import static org.cache2k.extra.jmx.JmxSupportTest.getCacheInfo;
 
 /**
  * Test legal characters in names.
  *
  * @author Jens Wilke
  */
-@Category(FastTests.class) @RunWith(Parameterized.class)
 public class LegalNamesTest {
 
   private static final String LEGAL_CHARACTERS =
     ",-()~_.+!'%#";
 
-  @Parameters
-  public static Collection<Object[]> data() {
-    ArrayList<Object[]> l = new ArrayList<Object[]>();
-    for (char c : LEGAL_CHARACTERS.toCharArray()) {
-      l.add(new Object[]{c});
-    }
-    return l;
-  }
-
-  private char aChar;
-
-  public LegalNamesTest(final char aChar) {
-    this.aChar = aChar;
-  }
-
   @Test
   public void testCache() throws Exception {
-    String name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
-    Cache c = Cache2kBuilder.forUnknownTypes()
-      .name(name)
-      .enable(JmxSupport.class)
-      .build();
-    assertEquals("default", c.getCacheManager().getName());
-    assertTrue(c.getCacheManager().isDefaultManager());
-    assertEquals(name, c.getName());
-    MBeanInfo inf = JmxSupportTest.getCacheInfo(c.getName());
-    assertNotNull(inf);
-    c.close();
+    for (char aChar : LEGAL_CHARACTERS.toCharArray()) {
+      String name = LegalNamesTest.class.getName() + "-test-with-char-" + aChar;
+      Cache c = forUnknownTypes()
+        .name(name)
+        .enable(JmxSupport.class)
+        .build();
+      assertThat(c.getCacheManager().getName()).isEqualTo("default");
+      assertThat(c.getCacheManager().isDefaultManager()).isTrue();
+      assertThat(c.getName()).isEqualTo(name);
+      MBeanInfo inf = getCacheInfo(c.getName());
+      assertThat(inf).isNotNull();
+      c.close();
+    }
   }
 
 }

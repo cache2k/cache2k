@@ -34,18 +34,6 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- FIXME: remove -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit4.version}</version>
-    </dependency>
-    <!-- FIXME: remove -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit5.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
@@ -56,7 +44,11 @@
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit5.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>${junit5.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

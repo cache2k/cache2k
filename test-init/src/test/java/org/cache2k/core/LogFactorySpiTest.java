@@ -21,7 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.core.log.Log;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

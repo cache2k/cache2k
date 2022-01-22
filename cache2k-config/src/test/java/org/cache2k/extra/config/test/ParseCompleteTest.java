@@ -27,9 +27,7 @@ import org.cache2k.extra.config.generic.ParsedConfiguration;
 import org.cache2k.extra.config.generic.StandardVariableExpander;
 import org.cache2k.extra.config.generic.StaxConfigTokenizer;
 import org.cache2k.extra.config.generic.VariableExpander;
-import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -38,12 +36,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static java.lang.System.getenv;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.cache2k.extra.config.generic.ConfigurationTokenizer.Property;
 
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class)
 public class ParseCompleteTest {
 
   ParsedConfiguration parse() throws Exception {
@@ -55,23 +55,20 @@ public class ParseCompleteTest {
   @Test
   public void parseIt() throws Exception {
     ParsedConfiguration topLevel = parse();
-    assertEquals("1.0", topLevel.getPropertyMap().get("version").getValue());
+    assertThat(topLevel.getPropertyMap().get("version").getValue()).isEqualTo("1.0");
     ParsedConfiguration defaults = topLevel.getSection("defaults");
-    assertNotNull(defaults);
-    assertEquals("true",
-      defaults.getSection("cache").getPropertyMap().get("suppressExceptions").getValue());
+    assertThat(defaults).isNotNull();
+    assertThat(defaults.getSection("cache").getPropertyMap().get("suppressExceptions").getValue()).isEqualTo("true");
     ParsedConfiguration caches = topLevel.getSection("caches");
-    assertNotNull(caches);
-    assertEquals("5",
-      caches.getSection("products").getPropertyMap().get("entryCapacity").getValue());
-    assertNotNull("cache has eviction section",
-      caches.getSection("products").getSection("eviction"));
-    assertEquals("123",
-      caches.getSection("products").getSection("eviction")
-        .getPropertyMap().get("aValue").getValue());
-    assertEquals("123",
-      topLevel.getStringPropertyByPath("caches.products.eviction.aValue"));
-    assertNull(topLevel.getStringPropertyByPath("NOEXISTENT.PROPERTY"));
+    assertThat(caches).isNotNull();
+    assertThat(caches.getSection("products").getPropertyMap().get("entryCapacity").getValue()).isEqualTo("5");
+    assertThat(caches.getSection("products").getSection("eviction"))
+      .as("cache has eviction section")
+      .isNotNull();
+    assertThat(caches.getSection("products").getSection("eviction")
+      .getPropertyMap().get("aValue").getValue()).isEqualTo("123");
+    assertThat(topLevel.getStringPropertyByPath("caches.products.eviction.aValue")).isEqualTo("123");
+    assertThat(topLevel.getStringPropertyByPath("NOEXISTENT.PROPERTY")).isNull();
   }
 
   @Test
@@ -81,33 +78,30 @@ public class ParseCompleteTest {
     ParsedConfiguration cfg = ConfigurationParser.parse(pp);
     VariableExpander expander = new StandardVariableExpander();
     expander.expand(cfg);
-    String homeDirectory = System.getenv("HOME");
-    assertEquals(homeDirectory, cfg.getStringPropertyByPath("properties.homeDirectory"));
-    assertEquals("123", cfg.getStringPropertyByPath("properties.forward"));
-    assertEquals("5", cfg.getStringPropertyByPath("caches.hallo.entryCapacity"));
-    assertEquals("products",
-      cfg.getStringPropertyByPath("caches.products.eviction.duplicateName"));
-    assertEquals("123", cfg.getStringPropertyByPath("caches.products.eviction.bValue"));
-    assertEquals("123", cfg.getStringPropertyByPath("caches.products.eviction.cValue"));
-    assertEquals("[123]",
-      cfg.getStringPropertyByPath("caches.products.eviction.dValue"));
-    assertEquals("123-products",
-      cfg.getStringPropertyByPath("caches.products.eviction.eValue"));
-    assertEquals(homeDirectory,
-      cfg.getStringPropertyByPath("caches.products.eviction.directory"));
-    assertEquals("${CHACKA.farusimatasa}",
-      cfg.getStringPropertyByPath("properties.illegalScope"));
-    assertEquals("${ENV.HOME", cfg.getStringPropertyByPath("properties.noClose"));
+    String homeDirectory = getenv("HOME");
+    assertThat(cfg.getStringPropertyByPath("properties.homeDirectory")).isEqualTo(homeDirectory);
+    assertThat(cfg.getStringPropertyByPath("properties.forward")).isEqualTo("123");
+    assertThat(cfg.getStringPropertyByPath("caches.hallo.entryCapacity")).isEqualTo("5");
+    assertThat(cfg.getStringPropertyByPath("caches.products.eviction.duplicateName")).isEqualTo("products");
+    assertThat(cfg.getStringPropertyByPath("caches.products.eviction.bValue")).isEqualTo("123");
+    assertThat(cfg.getStringPropertyByPath("caches.products.eviction.cValue")).isEqualTo("123");
+    assertThat(cfg.getStringPropertyByPath("caches.products.eviction.dValue")).isEqualTo("[123]");
+    assertThat(cfg.getStringPropertyByPath("caches.products.eviction.eValue")).isEqualTo("123-products");
+    assertThat(cfg.getStringPropertyByPath("caches.products.eviction.directory")).isEqualTo(homeDirectory);
+    assertThat(cfg.getStringPropertyByPath("properties.illegalScope")).isEqualTo("${CHACKA.farusimatasa}");
+    assertThat(cfg.getStringPropertyByPath("properties.noClose")).isEqualTo("${ENV.HOME");
   }
 
-  @Test(expected = ConfigurationException.class)
+  @Test
   public void cyclicReferenceProtection() throws Exception {
-    String fileName = "/cyclic-variable.xml";
-    InputStream is = this.getClass().getResourceAsStream(fileName);
-    ConfigurationTokenizer pp = new StaxConfigTokenizer(fileName, is, null);
-    ParsedConfiguration cfg = ConfigurationParser.parse(pp);
-    VariableExpander expander = new StandardVariableExpander();
-    expander.expand(cfg);
+    assertThatCode(() -> {
+      String fileName = "/cyclic-variable.xml";
+      InputStream is = this.getClass().getResourceAsStream(fileName);
+      ConfigurationTokenizer pp = new StaxConfigTokenizer(fileName, is, null);
+      ParsedConfiguration cfg = ConfigurationParser.parse(pp);
+      VariableExpander expander = new StandardVariableExpander();
+      expander.expand(cfg);
+    }).isInstanceOf(ConfigurationException.class);
   }
 
   @Test
@@ -123,20 +117,28 @@ public class ParseCompleteTest {
 
   /** Recursively compare the parsed configuration objects */
   void compare(ParsedConfiguration c1, ParsedConfiguration c2) {
-    assertEquals("name", c1.getName(), c2.getName());
-    assertEquals("context", c1.getPropertyContext(), c2.getPropertyContext());
-    assertEquals("property keys",
-      extractSortedKeys(c1.getPropertyMap()), extractSortedKeys(c2.getPropertyMap()));
-    for (ConfigurationTokenizer.Property p : c1.getPropertyMap().values()) {
-      ConfigurationTokenizer.Property p2 = c2.getPropertyMap().get(p.getName());
-      assertEquals(p.getSource(), p2.getSource());
-      assertEquals(p.getLineNumber(), p2.getLineNumber());
-      assertEquals(p.getName(), p2.getName());
-      assertEquals(p.getValue(), p2.getValue());
+    assertThat(c2.getName())
+      .as("name")
+      .isEqualTo(c1.getName());
+    assertThat(c2.getPropertyContext())
+      .as("context")
+      .isEqualTo(c1.getPropertyContext());
+    assertThat(extractSortedKeys(c2.getPropertyMap()))
+      .as("property keys")
+      .isEqualTo(extractSortedKeys(c1.getPropertyMap()));
+    for (Property p : c1.getPropertyMap().values()) {
+      Property p2 = c2.getPropertyMap().get(p.getName());
+      assertThat(p2.getSource()).isEqualTo(p.getSource());
+      assertThat(p2.getLineNumber()).isEqualTo(p.getLineNumber());
+      assertThat(p2.getName()).isEqualTo(p.getName());
+      assertThat(p2.getValue()).isEqualTo(p.getValue());
     }
-    assertEquals("section names",
-      extractNames(c1.getSections()), extractNames(c2.getSections()));
-    assertEquals("section count", c1.getSections().size(), c2.getSections().size());
+    assertThat(extractNames(c2.getSections()))
+      .as("section names")
+      .isEqualTo(extractNames(c1.getSections()));
+    assertThat(c2.getSections().size())
+      .as("section count")
+      .isEqualTo(c1.getSections().size());
     for (int i = 0; i < c1.getSections().size(); i++) {
       compare(c1.getSections().get(i), c2.getSections().get(i));
     }

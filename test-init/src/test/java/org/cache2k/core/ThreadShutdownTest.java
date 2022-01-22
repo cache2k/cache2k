@@ -21,13 +21,12 @@ package org.cache2k.core;
  */
 
 import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static java.lang.Thread.sleep;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.forUnknownTypes;
 
 /**
  * @author Jens Wilke
@@ -38,7 +37,7 @@ public class ThreadShutdownTest {
    * This needs to be first for the other test
    */
   static {
-    CacheManagerInitTest.initCacheManager();
+    CacheManagerInitTest.setupOtherDefaultManagerName();
   }
 
   int countThreads() {
@@ -55,13 +54,15 @@ public class ThreadShutdownTest {
 
   @Test
   public void testWithExpiry() throws InterruptedException {
-    Cache cache = Cache2kBuilder.forUnknownTypes().expireAfterWrite(5, TimeUnit.MINUTES).build();
+    Cache cache = forUnknownTypes().expireAfterWrite(5, MINUTES).build();
     cache.put(1, 3);
-    assertTrue(countThreads() > 0);
+    assertThat(countThreads() > 0).isTrue();
     cache.close();
     if (countThreads() > 0) {
-      Thread.sleep(5000);
-      assertEquals("all threads terminate", 0, countThreads());
+      sleep(5000);
+      assertThat(countThreads())
+        .as("all threads terminate")
+        .isEqualTo(0);
     }
   }
 

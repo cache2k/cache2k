@@ -100,7 +100,7 @@ public class CoalescingBulkLoaderConfig
     }
 
     /**
-     * Only do coalescing for refresh ahead requests, user requests will be executed
+     * Only do coalesce for refresh ahead requests, user requests will be executed
      * immediately. Default is {@code true}.
      */
     public Builder refreshOnly(boolean v) {

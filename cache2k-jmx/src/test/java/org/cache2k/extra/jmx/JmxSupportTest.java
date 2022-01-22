@@ -26,8 +26,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.operation.Weigher;
 import org.cache2k.annotation.Nullable;
 import org.cache2k.testing.category.FastTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
@@ -44,8 +43,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.cache2k.Cache2kBuilder.of;
 
 /**
  * Simple test to check that the support and the management object appear
@@ -53,7 +53,6 @@ import static org.junit.Assert.*;
  *
  * @author Jens Wilke
  */
-@Category(FastTests.class)
 public class JmxSupportTest {
 
   private static final MBeanServerConnection SERVER =  ManagementFactory.getPlatformMBeanServer();
@@ -75,13 +74,13 @@ public class JmxSupportTest {
   @Test
   public void testCacheCreated() throws Exception {
     String name = getClass().getName() + ".testCacheCreated";
-    Cache c = Cache2kBuilder.of(Object.class, Object.class)
+    Cache c = of(Object.class, Object.class)
       .name(name)
       .setup(JmxSupport::enable)
       .eternal(true)
       .build();
     MBeanInfo i = getCacheInfo(name);
-    assertNotNull(i);
+    assertThat(i).isNotNull();
     c.close();
     try {
       i = getCacheInfo(name);
@@ -89,22 +88,24 @@ public class JmxSupportTest {
     } catch (InstanceNotFoundException expected) { }
   }
 
-  @Test(expected = InstanceNotFoundException.class)
+  @Test
   public void testCacheCreated_notFound() throws Exception {
-    String name = getClass().getName() + ".testCacheCreated";
-    Cache c = Cache2kBuilder.of(Object.class, Object.class)
-      .name(name)
-      .eternal(true)
-      .build();
-    MBeanInfo i = getCacheInfo(name);
-    c.close();
+    assertThatCode(() -> {
+      String name = getClass().getName() + ".testCacheCreated";
+      Cache c = Cache2kBuilder.of(Object.class, Object.class)
+        .name(name)
+        .eternal(true)
+        .build();
+      MBeanInfo i = getCacheInfo(name);
+    }).isInstanceOf(InstanceNotFoundException.class);
   }
 
   @Test
   public void testInitialProperties() throws Exception {
     Date beforeCreation = new Date();
     String name = getClass().getName() + ".testInitialProperties";
-    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() { }
+    Cache c = new Cache2kBuilder<Long, List<Collection<Long>>>() {
+    }
       .name(name)
       .eternal(true)
       .setup(JmxSupport::enable)
@@ -124,8 +125,9 @@ public class JmxSupportTest {
     checkAttribute("ClearedTime", null);
     checkAttribute("LoaderPresent", false);
     checkAttribute("WeigherPresent", false);
-    assertTrue("reasonable CreatedTime",
-      ((Date) retrieve("CreatedTime")).compareTo(beforeCreation) >= 0);
+    assertThat(((Date) retrieve("CreatedTime")).compareTo(beforeCreation) >= 0)
+      .as("reasonable CreatedTime")
+      .isTrue();
     objectName = constructCacheStatisticsObjectName(name);
     checkAttribute("InsertCount", 0L);
     checkAttribute("MissCount", 0L);
@@ -146,8 +148,9 @@ public class JmxSupportTest {
     checkAttribute("TotalLoadMillis", 0L);
     objectName = constructCacheObjectName(name);
     invoke("clear");
-    assertTrue("reasonable ClearedTime",
-      ((Date) retrieve("ClearedTime")).compareTo(beforeCreation) >= 0);
+    assertThat(((Date) retrieve("ClearedTime")).compareTo(beforeCreation) >= 0)
+      .as("reasonable ClearedTime")
+      .isTrue();
     invoke("changeCapacity", 4711, "long");
     checkAttribute("EntryCapacity", 4711L);
     checkAttribute("CapacityLimit", 4711L);
@@ -210,7 +213,7 @@ public class JmxSupportTest {
     checkAttribute("EntryCapacity", -1L);
     checkAttribute("WeigherPresent", true);
     long v = (Long) retrieve("MaximumWeight");
-    assertTrue(v >= 123456789L);
+    assertThat(v >= 123456789L).isTrue();
     checkAttribute("TotalWeight", 0L);
     objectName = constructCacheStatisticsObjectName(name);
     checkAttribute("EvictedOrRemovedWeight", 0L);
@@ -236,7 +239,9 @@ public class JmxSupportTest {
 
   private void checkAttribute(String name, @Nullable Object expected) throws Exception {
     Object v = retrieve(name);
-    assertEquals("Value of attribute '" + name + "'", expected, v);
+    assertThat(v)
+      .as("Value of attribute '" + name + "'")
+      .isEqualTo(expected);
   }
 
   private Object retrieve(String name)
@@ -271,31 +276,35 @@ public class JmxSupportTest {
       "name=" + maybeQuote(name));
   }
 
-  @Test(expected = InstanceNotFoundException.class)
-  public void testCacheDestroyed() throws Exception {
-    String name = getClass().getName() + ".testCacheDestroyed";
-    Cache c = Cache2kBuilder.of(Object.class, Object.class)
-      .name(name)
-      .eternal(true)
-      .setup(JmxSupport::enable)
-      .build();
-    MBeanInfo i = getCacheInfo(name);
-    c.close();
-    getCacheInfo(name);
+  @Test
+  public void testCacheDestroyed() {
+    assertThatCode(() -> {
+      String name = getClass().getName() + ".testCacheDestroyed";
+      Cache c = Cache2kBuilder.of(Object.class, Object.class)
+        .name(name)
+        .eternal(true)
+        .setup(JmxSupport::enable)
+        .build();
+      MBeanInfo i = getCacheInfo(name);
+      c.close();
+      getCacheInfo(name);
+    }).isInstanceOf(InstanceNotFoundException.class);
   }
 
-  @Test(expected = InstanceNotFoundException.class)
-  public void testEnableDisableJmxSupport() throws Exception {
-    String name = getClass().getName() + ".testEnableDisable";
-    Cache c = Cache2kBuilder.of(Object.class, Object.class)
-      .name(name)
-      .eternal(true)
-      .setup(JmxSupport::enable)
-      .setup(JmxSupport::disable)
-      .build();
-    MBeanInfo i = getCacheInfo(name);
-    c.close();
-    getCacheInfo(name);
+  @Test
+  public void testEnableDisableJmxSupport() {
+    assertThatCode(() -> {
+      String name = getClass().getName() + ".testEnableDisable";
+      Cache c = Cache2kBuilder.of(Object.class, Object.class)
+        .name(name)
+        .eternal(true)
+        .setup(JmxSupport::enable)
+        .setup(JmxSupport::disable)
+        .build();
+      MBeanInfo i = getCacheInfo(name);
+      c.close();
+      getCacheInfo(name);
+    }).isInstanceOf(InstanceNotFoundException.class);
   }
 
 }

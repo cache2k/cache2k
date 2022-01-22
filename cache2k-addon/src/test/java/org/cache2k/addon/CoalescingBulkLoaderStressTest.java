@@ -23,20 +23,17 @@ package org.cache2k.addon;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.pinpoint.stress.ThreadingStressTester;
-import org.cache2k.testing.category.SlowTests;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Jens Wilke
  */
-@Category(SlowTests.class)
 public class CoalescingBulkLoaderStressTest {
 
   @Test
@@ -65,8 +62,7 @@ public class CoalescingBulkLoaderStressTest {
       Random r = new Random();
       for (int i = 0; i < 10; i++) {
         int k = r.nextInt(20);
-        int v = c.get(k);
-        assertEquals(k, v);
+        assertThat(c.get(k)).isEqualTo(k);
       }
     });
     tst.addTask(() -> {

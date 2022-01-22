@@ -17,9 +17,10 @@
  * limitations under the License.
  * #L%
  */
+import org.assertj.core.api.Assertions.assertThatCode
 import org.cache2k.Cache
 import org.cache2k.Cache2kBuilder
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import java.lang.NullPointerException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
@@ -32,35 +33,41 @@ class CompileAndRunTest {
     /**
      * Kotlin bug https://youtrack.jetbrains.com/issue/KT-43262
      */
-    @Test(expected = Throwable::class)
+    @Test
     fun test() {
-        val cache = object : Cache2kBuilder<Int, Int>() { }.build()
-        val map: MutableMap<Int, Int> = cache.asMap()
-        map.entries.forEach(Consumer { t -> t.setValue(123) })
-        // compile error:
-        //- map.entries.forEach(Consumer { t -> t.setValue(null) })
-        // compiles, expected: compile error
-        cache.asMap().entries.forEach(Consumer { t -> t.setValue(null) })
-        // compiles, expected: compile error
-        cache.putAll(mapOf(Pair(null, 123)))
+        assertThatCode {
+            val cache = object : Cache2kBuilder<Int, Int>() { }.build()
+            val map: MutableMap<Int, Int> = cache.asMap()
+            map.entries.forEach(Consumer { t -> t.setValue(123) })
+            // compile error:
+            //- map.entries.forEach(Consumer { t -> t.setValue(null) })
+            // compiles, expected: compile error
+            cache.asMap().entries.forEach(Consumer { t -> t.setValue(null) })
+            // compiles, expected: compile error
+            cache.putAll(mapOf(Pair(null, 123)))
+        }.isInstanceOf(NullPointerException::class.java)
     }
 
     /**
      * CHM does not support null keys, but we can declare it
      */
-    @Test(expected = NullPointerException::class)
+    @Test
     fun concurrentHashMap() {
-        val map = ConcurrentHashMap<Int?, Int>()
-        map.putAll(mapOf(Pair(null, 123)))
+        assertThatCode {
+            val map = ConcurrentHashMap<Int?, Int>()
+            map.putAll(mapOf(Pair(null, 123)))
+        }.isInstanceOf(NullPointerException::class.java)
     }
 
     /**
      * https://youtrack.jetbrains.com/issue/KT-43262
      */
-    @Test(expected = NullPointerException::class)
+    @Test
     fun cacheWithNullKey() {
-        val cache = object : Cache2kBuilder<Int?, Int>() { }.build()
-        cache.putAll(mapOf(Pair(null, 123)))
+        assertThatCode {
+            val cache = object : Cache2kBuilder<Int?, Int>() { }.build()
+            cache.putAll(mapOf(Pair(null, 123)))
+        }.isInstanceOf(NullPointerException::class.java)
     }
 
     @Test

@@ -21,7 +21,7 @@ package org.cache2k.jcache.provider.generic.storeByValueSimulation;
  */
 
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Set;

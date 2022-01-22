@@ -36,6 +36,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   @SuppressWarnings("rawtypes")
   public static final UniversalResilienceSupplier SUPPLIER = new UniversalResilienceSupplier();
+  @SuppressWarnings("unchecked")
   public static <K, V> UniversalResilienceSupplier<K, V> supplier() { return SUPPLIER; }
   public static <K, V> UniversalResilienceSupplier<K, V> enable(Cache2kBuilder<K, V> builder) {
     builder.config().setResiliencePolicy(supplier());
@@ -80,7 +81,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
 
   /**
    * Allows exceptions to be suppressed for a maximum of resilienceDuration starting from
-   * last successful load. Returns a shorter time based on the the retry configuration
+   * last successful load. Returns a shorter time based on the retry configuration
    * with exponential backoff.
    */
   @Override
@@ -106,7 +107,7 @@ public class UniversalResiliencePolicy<K, V> implements ResiliencePolicy<K, V> {
     return loadExceptionInfo.getLoadTime() + calculateRetryDelta(loadExceptionInfo);
   }
 
-  private long calculateRetryDelta(LoadExceptionInfo loadExceptionInfo) {
+  private long calculateRetryDelta(LoadExceptionInfo<K, V> loadExceptionInfo) {
     long delta = (long)
       (retryInterval * Math.pow(multiplier, loadExceptionInfo.getRetryCount()));
     return Math.min(delta, maxRetryInterval);

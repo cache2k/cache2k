@@ -25,8 +25,12 @@ import org.cache2k.core.WiredCache;
 import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.cache2k.jcache.JCacheConfig;
 import org.cache2k.jcache.provider.generic.storeByValueSimulation.CopyCacheProxy;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static javax.cache.Caching.getCachingProvider;
+import static org.assertj.core.api.Assertions.*;
+import static org.cache2k.jcache.ExtendedMutableConfiguration.of;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -40,7 +44,6 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.spi.CachingProvider;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jens Wilke; created: 2015-03-29
@@ -49,9 +52,9 @@ public class CacheManagerTest {
 
   @Test
   public void testSameProvider() {
-    CachingProvider p1 = Caching.getCachingProvider();
-    CachingProvider p2 = Caching.getCachingProvider();
-    assertTrue(p1 == p2);
+    CachingProvider p1 = getCachingProvider();
+    CachingProvider p2 = getCachingProvider();
+    assertThat(p1 == p2).isTrue();
   }
 
   /**
@@ -60,35 +63,35 @@ public class CacheManagerTest {
   @Test
   public void testGetExplicitProvider() {
     CachingProvider cachingProvider =
-      Caching.getCachingProvider(
+      getCachingProvider(
         "org.cache2k.jcache.provider.JCacheProvider");
-    assertTrue(cachingProvider == Caching.getCachingProvider());
+    assertThat(cachingProvider == getCachingProvider()).isTrue();
   }
 
   @Test
   public void testSameCacheManager() {
-    CachingProvider p = Caching.getCachingProvider();
+    CachingProvider p = getCachingProvider();
     CacheManager cm1 = p.getCacheManager();
     CacheManager cm2 = p.getCacheManager();
-    assertTrue(cm1 == cm2);
+    assertThat(cm1 == cm2).isTrue();
   }
 
   @Test
   public void create_empty_config() {
-    CachingProvider p = Caching.getCachingProvider();
+    CachingProvider p = getCachingProvider();
     CacheManager cm = p.getCacheManager();
     MutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setTypes(String.class, BigDecimal.class);
     Cache<String, BigDecimal> c = cm.createCache("aCache", mc);
-    assertEquals("aCache", c.getName());
-    assertEquals(String.class, c.getConfiguration(Configuration.class).getKeyType());
-    assertEquals(BigDecimal.class, c.getConfiguration(Configuration.class).getValueType());
+    assertThat(c.getName()).isEqualTo("aCache");
+    assertThat(c.getConfiguration(Configuration.class).getKeyType()).isEqualTo(String.class);
+    assertThat(c.getConfiguration(Configuration.class).getValueType()).isEqualTo(BigDecimal.class);
     c.close();
   }
 
   @Test
   public void create_config_cache2k_types() {
-    CachingProvider p = Caching.getCachingProvider();
+    CachingProvider p = getCachingProvider();
     CacheManager cm = p.getCacheManager();
     ExtendedMutableConfiguration<String, BigDecimal> mc = new ExtendedMutableConfiguration<String, BigDecimal>();
     mc.setCache2kConfiguration(
@@ -96,22 +99,22 @@ public class CacheManagerTest {
         .config()
     );
     Cache<String, BigDecimal> c = cm.createCache("aCache", mc);
-    assertEquals("aCache", c.getName());
-    assertEquals(String.class, c.getConfiguration(Configuration.class).getKeyType());
-    assertEquals(BigDecimal.class, c.getConfiguration(Configuration.class).getValueType());
+    assertThat(c.getName()).isEqualTo("aCache");
+    assertThat(c.getConfiguration(Configuration.class).getKeyType()).isEqualTo(String.class);
+    assertThat(c.getConfiguration(Configuration.class).getValueType()).isEqualTo(BigDecimal.class);
     c.close();
   }
 
   @Test
   public void create_cache2k_config_nowrap() {
-    CachingProvider p = Caching.getCachingProvider();
+    CachingProvider p = getCachingProvider();
     CacheManager cm = p.getCacheManager();
-    Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
+    Cache<Long, Double> cache = cm.createCache("aCache", of(
       new Cache2kBuilder<Long, Double>(){}
         .entryCapacity(10000)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .expireAfterWrite(5, MINUTES)
     ));
-    assertFalse(cache instanceof CopyCacheProxy);
+    assertThat(cache instanceof CopyCacheProxy).isFalse();
     org.cache2k.Cache c2kcache = cache.unwrap(org.cache2k.Cache.class);
     try {
       c2kcache.requestInterface(WiredCache.class);
@@ -122,85 +125,97 @@ public class CacheManagerTest {
 
   @Test
   public void create_cache2k_config_wrap() {
-    CachingProvider p = Caching.getCachingProvider();
+    CachingProvider p = getCachingProvider();
     CacheManager cm = p.getCacheManager();
-    Cache<Long, Double> cache = cm.createCache("aCache", ExtendedMutableConfiguration.of(
+    Cache<Long, Double> cache = cm.createCache("aCache", of(
       new Cache2kBuilder<Long, Double>() { }
         .entryCapacity(10000)
-        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .expireAfterWrite(5, MINUTES)
         .with(JCacheConfig.class, b -> b
           .copyAlwaysIfRequested(true)
         )
     ));
-    assertTrue(cache instanceof CopyCacheProxy);
+    assertThat(cache instanceof CopyCacheProxy).isTrue();
     cache.close();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void create_cache2k_config_key_type_mismatch() {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager();
-    MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
-    Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Integer.class, Double.class));
-    cache.close();
+    assertThatCode(() -> {
+      CachingProvider p = Caching.getCachingProvider();
+      CacheManager cm = p.getCacheManager();
+      MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
+      Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Integer.class, Double.class));
+      cache.close();
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void create_cache2k_config_value_type_mismatch() {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager();
-    MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
-    Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Long.class, Float.class));
-    cache.close();
+    assertThatCode(() -> {
+      CachingProvider p = Caching.getCachingProvider();
+      CacheManager cm = p.getCacheManager();
+      MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
+      Cache<Integer, Double> cache = cm.createCache("aCache",  cfg.setTypes(Long.class, Float.class));
+      cache.close();
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected=UnsupportedOperationException.class)
+  @Test
   public void no_online_listener_attachment_with_cache2k_defaults() {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager();
-    MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
-    Cache cache = cm.createCache("mute",  cfg);
-    cache.registerCacheEntryListener(new CacheEntryListenerConfiguration() {
-      @Override
-      public Factory<CacheEntryListener> getCacheEntryListenerFactory() {
-        fail("not expected to be called");
-        return null;
-      }
+    assertThatCode(() -> {
+      CachingProvider p = Caching.getCachingProvider();
+      CacheManager cm = p.getCacheManager();
+      MutableConfiguration cfg = ExtendedMutableConfiguration.of(new Cache2kBuilder<Long, Double>(){});
+      Cache cache = cm.createCache("mute",  cfg);
+      cache.registerCacheEntryListener(new CacheEntryListenerConfiguration() {
+        @Override
+        public Factory<CacheEntryListener> getCacheEntryListenerFactory() {
+          fail("not expected to be called");
+          return null;
+        }
 
-      @Override
-      public boolean isOldValueRequired() {
-        return false;
-      }
+        @Override
+        public boolean isOldValueRequired() {
+          return false;
+        }
 
-      @Override
-      public Factory<CacheEntryEventFilter> getCacheEntryEventFilterFactory() {
-        return null;
-      }
+        @Override
+        public Factory<CacheEntryEventFilter> getCacheEntryEventFilterFactory() {
+          return null;
+        }
 
-      @Override
-      public boolean isSynchronous() {
-        return false;
-      }
-    });
-    cache.close();
+        @Override
+        public boolean isSynchronous() {
+          return false;
+        }
+      });
+      cache.close();
+    }).isInstanceOf(UnsupportedOperationException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testIllegalURI1() throws Exception {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager(new URI("file://hello.xml"), null);
+  @Test
+  public void testIllegalURI1() {
+    assertThatCode(() -> {
+      CachingProvider p = Caching.getCachingProvider();
+      CacheManager cm = p.getCacheManager(new URI("file://hello.xml"), null);
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testIllegalURI2() throws Exception {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager(new URI("/hello.xml"), null);
+  @Test
+  public void testIllegalURI2() {
+    assertThatCode(() -> {
+      CachingProvider p = Caching.getCachingProvider();
+      CacheManager cm = p.getCacheManager(new URI("/hello.xml"), null);
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testIllegalURI3() throws Exception {
-    CachingProvider p = Caching.getCachingProvider();
-    CacheManager cm = p.getCacheManager(new URI("hello.xml"), null);
+  @Test
+  public void testIllegalURI3() {
+    assertThatCode(() -> {
+      CachingProvider p = Caching.getCachingProvider();
+      CacheManager cm = p.getCacheManager(new URI("hello.xml"), null);
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
 }
