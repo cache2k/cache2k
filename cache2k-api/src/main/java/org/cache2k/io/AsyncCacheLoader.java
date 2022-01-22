@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.DataAware;
 import org.cache2k.DataAwareCustomization;
+import org.cache2k.annotation.Nullable;
 
 import java.util.EventListener;
 import java.util.concurrent.Executor;
@@ -106,8 +107,10 @@ public interface AsyncCacheLoader<K, V> extends DataAwareCustomization<K, V> {
      * See also the description of
      * {@link Cache2kBuilder#keepDataAfterExpired(boolean)} and
      * {@link Cache2kBuilder#refreshAhead(boolean)}.
+     *
+     * @return the current entry if a mapping is present in the cache, or {@code null}
      */
-    CacheEntry<K, V> getCurrentEntry();
+    @Nullable CacheEntry<K, V> getCurrentEntry();
 
     /**
      * Operation is refresh and not an immediate client request. This can be used

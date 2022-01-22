@@ -108,6 +108,6 @@ public interface ExpiryPolicy<K, V> extends ExpiryTimeValues, DataAware<K, V> {
    *
    * @see ValueWithExpiryTime#getCacheExpiryTime()
    */
-  long calculateExpiryTime(K key, V value, long startTime, @Nullable CacheEntry<K, V> currentEntry);
+  long calculateExpiryTime(K key, @Nullable V value, long startTime, @Nullable CacheEntry<K, V> currentEntry);
 
 }
