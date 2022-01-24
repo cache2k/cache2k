@@ -83,7 +83,7 @@ public class BaseCacheControl implements CacheControl {
 
   @Override
   public long getCapacityLimit() {
-    return isWeigherPresent() ? getTotalWeight() : getEntryCapacity();
+    return isWeigherPresent() ? getMaximumWeight() : getEntryCapacity();
   }
 
   @Override

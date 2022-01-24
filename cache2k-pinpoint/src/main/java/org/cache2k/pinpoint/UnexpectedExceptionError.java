@@ -1,8 +1,8 @@
-package org.cache2k.testsuite.support;
+package org.cache2k.pinpoint;
 
 /*-
  * #%L
- * cache2k testsuite on public API
+ * cache2k pinpoint
  * %%
  * Copyright (C) 2000 - 2022 headissue GmbH, Munich
  * %%
@@ -23,22 +23,14 @@ package org.cache2k.testsuite.support;
 /**
  * @author Jens Wilke
  */
-public interface CommonValues {
+public class UnexpectedExceptionError extends AssertionError {
 
-  /**
-   * Arbitrary large time duration that we expect never to pass during a test run
-   */
-  long BIG_DURATION_TICKS = 60 * 1000 * 1000;
+  public UnexpectedExceptionError(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  /**
-   * Global timeout used everywhere whe we wait for an operation that is expected
-   * to complete.
-   */
-  long TIMEOUT_MILLIS = 68 * 1000;
-
-  /**
-   * Highest time in the future we expect to work.
-   */
-  long TIME_MAX_MILLIS = Long.MAX_VALUE - 1;
+  public UnexpectedExceptionError(Throwable cause) {
+    super(null, cause);
+  }
 
 }

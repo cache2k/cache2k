@@ -29,6 +29,10 @@ import java.time.Duration;
  */
 public class TimeoutError extends AssertionError {
 
+  public TimeoutError(long millis) {
+    this(Duration.ofMillis(millis));
+  }
+
   public TimeoutError(Duration timeout) {
     super("Timeout after " + readableDuration(timeout));
   }

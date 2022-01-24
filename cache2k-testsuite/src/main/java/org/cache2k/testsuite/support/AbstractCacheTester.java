@@ -25,9 +25,16 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.ForwardingCache;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.TimeReference;
+import org.cache2k.pinpoint.CaughtInterruptedExceptionError;
 import org.cache2k.pinpoint.TimeBox;
+import org.cache2k.pinpoint.TimeoutError;
+import org.cache2k.pinpoint.UnexpectedExceptionError;
 import org.junit.jupiter.api.AfterEach;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -114,4 +121,17 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   public CacheControl control() {
     return CacheControl.of(this);
   }
+
+  public void waitFor(CompletableFuture<?> future) {
+    try {
+      future.get(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException ex) {
+      throw new TimeoutError(TIMEOUT_MILLIS);
+    } catch (InterruptedException e) {
+      throw new CaughtInterruptedExceptionError();
+    } catch (ExecutionException e) {
+      throw new UnexpectedExceptionError(e);
+    }
+  }
+
 }

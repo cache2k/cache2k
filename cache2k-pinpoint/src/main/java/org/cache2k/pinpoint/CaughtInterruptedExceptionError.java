@@ -26,7 +26,11 @@ package org.cache2k.pinpoint;
  * @author Jens Wilke
  */
 public class CaughtInterruptedExceptionError extends AssertionError {
+
+  public CaughtInterruptedExceptionError() { }
+
   public CaughtInterruptedExceptionError(Throwable cause) {
     super(cause);
   }
+
 }
