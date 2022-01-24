@@ -147,6 +147,7 @@ public class MicroMeterTest {
       .loader(key -> key)
       .build();
     monitor(registry, cache);
+    assertThat(registry.get("cache.load.duration").gauge().value()).isEqualTo(0.0);
     cache.get(1);
     cache.get(2);
     cache.get(3);
@@ -163,7 +164,6 @@ public class MicroMeterTest {
       .tag("result", "success").functionCounter().count()).isEqualTo(3);
     assertThat((int) registry.get("cache.load")
       .tag("result", "failure").functionCounter().count()).isEqualTo(0);
-    assertThat(registry.get("cache.load.duration").gauge().value()).isEqualTo(0.0);
     cache.close();
   }
 
