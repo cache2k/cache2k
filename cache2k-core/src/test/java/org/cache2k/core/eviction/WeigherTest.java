@@ -22,6 +22,8 @@ package org.cache2k.core.eviction;
 
 import org.cache2k.Cache;
 import org.cache2k.expiry.Expiry;
+import org.cache2k.test.core.Constants;
+import org.cache2k.test.util.ExpectedException;
 import org.cache2k.test.util.TestingBase;
 import org.cache2k.testing.category.FastTests;
 import org.junit.Test;
@@ -32,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import static java.lang.Long.MAX_VALUE;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Run simple access patterns that provide test coverage on the clock pro
@@ -72,7 +75,7 @@ public class WeigherTest extends TestingBase {
   }
 
   @Test
-  public void weightAccountedFor() {
+  public void evictedWhenOverWeight() {
     long size = 1;
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .eternal(true)
@@ -282,6 +285,22 @@ public class WeigherTest extends TestingBase {
     c.put(1, 20);
     c.clear();
     c.put(2, 10);
+  }
+
+  @Test
+  public void exception() {
+    Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
+      .eternal(true)
+      .weigher((key, value) -> value)
+      .maximumWeight(20)
+      .resiliencePolicy(Constants.resilienceCacheExceptions())
+      .build();
+    c.invoke(1, entry -> entry.setException(new ExpectedException()));
+    c.put(2, 10);
+    assertThat(getInfo().getTotalWeight()).isEqualTo(11);
+    assertThatCode(() -> {
+      c.put(3, -1);
+    }).isInstanceOf(IllegalArgumentException.class);
   }
 
 }

@@ -148,10 +148,7 @@ public abstract class AbstractEviction implements Eviction {
   }
 
   private static int calculateChunkSize(boolean noChunking, long maxSize) {
-    if (noChunking) { return 1; }
-    if (maxSize < MINIMUM_CAPACITY_FOR_CHUNKING && maxSize >= 0) {
-      return 1;
-    }
+    if (noChunking || maxSize < MINIMUM_CAPACITY_FOR_CHUNKING) { return 1; }
     return Math.min(
       MAXIMAL_CHUNK_SIZE,
       MINIMAL_CHUNK_SIZE + Runtime.getRuntime().availableProcessors() - 1);
@@ -252,7 +249,7 @@ public abstract class AbstractEviction implements Eviction {
 
   private boolean isEvictionNeeded(int spaceNeeded) {
     if (isWeigherPresent()) {
-      return totalWeight + spaceNeeded > maxWeight && getSize() > 0;
+      return totalWeight + spaceNeeded > maxWeight;
     } else {
       return getSize() + spaceNeeded - evictionRunningCount > maxSize;
     }
@@ -593,7 +590,7 @@ public abstract class AbstractEviction implements Eviction {
    * Identical to {@link #removeFromReplacementList(Entry)} by default but
    * allows the eviction algorithm to do additional bookkeeping of eviction history.
    */
-  protected void removeFromReplacementListOnEvict(Entry e) { removeFromReplacementList(e); }
+  protected abstract void removeFromReplacementListOnEvict(Entry e);
 
   /**
    * Remove entry from the eviction data structures, because it was evicted or deleted.
@@ -604,7 +601,7 @@ public abstract class AbstractEviction implements Eviction {
    * Gets called when eviction is needed. Used by the eviction algorithm to update
    * the clock sizes.
    */
-  protected void updateHotMax() { }
+  protected abstract void updateHotMax();
 
   protected abstract long getScanCount();
 
