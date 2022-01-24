@@ -69,6 +69,12 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
     public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
       return 0;
     }
+
+    @Override
+    public long getExpiryAfterWriteTicks() {
+      return 0;
+    }
+
   }
 
   static class EternalTiming<K, V> extends TimeAgnosticTiming<K, V> {

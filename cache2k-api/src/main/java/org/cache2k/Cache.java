@@ -34,6 +34,7 @@ import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -594,6 +595,9 @@ public interface Cache<K, V> extends DataAware<K, V>, KeyValueSource<K, V>, Auto
    * <p>It is possible to insert a value and set a custom expiry time atomically
    * via {@link Cache#invoke(Object, EntryProcessor)} and
    * {@link MutableCacheEntry#setExpiryTime(long)}.
+   *
+   * <p>The effective time will be capped based on the setting of
+   * {@link Cache2kBuilder#expireAfterWrite(Duration)}
    *
    * @param key key with which the specified value is associated
    * @param time millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}.

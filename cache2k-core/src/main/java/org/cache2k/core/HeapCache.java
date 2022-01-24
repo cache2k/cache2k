@@ -98,6 +98,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return timing;
   }
 
+  public TimeReference getTimeReference() {
+    return clock;
+  }
+
   /**
    * Structure lock of the cache. Every operation that needs a consistent structure
    * of the cache or modifies it needs to synchronize on this. Since this is a global

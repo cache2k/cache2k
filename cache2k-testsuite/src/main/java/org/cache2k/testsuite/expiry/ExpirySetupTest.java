@@ -20,17 +20,21 @@ package org.cache2k.testsuite.expiry;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.Cache2kConfig;
+import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
+import org.cache2k.pinpoint.ExpectedException;
 import org.cache2k.testsuite.support.DataType;
 import org.cache2k.testsuite.support.AbstractCacheTester;
 import org.cache2k.testsuite.support.TestContext;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -51,9 +55,7 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
 
   @Test
   public void maxExpireAfterWrite() {
-    init(b -> {
-      b.expireAfterWrite(TIME_MAX_MILLIS, TimeUnit.MILLISECONDS);
-    });
+    init(b -> b.expireAfterWrite(TIME_MAX_MILLIS, TimeUnit.MILLISECONDS));
     put(k0, v0);
   }
 
@@ -100,22 +102,6 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
   @Test
   public void eternal_false_setExpiryTime() {
     init(b -> b.eternal(false));
-    setExpiryComplete(Long.MAX_VALUE);
-  }
-
-  @Test
-  public void expiryAfterWrite_setExpiryTime() {
-    long durationCapMillis = 1234 * 1000;
-    init(b -> b.expireAfterWrite(durationCapMillis, TimeUnit.MILLISECONDS));
-    setExpiryComplete(durationCapMillis);
-  }
-
-  private void setExpiryComplete(long durationCapMillis) {
-    invoke(k0, entry -> entry.setExpiryTime(123));
-    put(k0, v0);
-    invoke(k0, entry -> entry.setExpiryTime(ExpiryTimeValues.ETERNAL));
-    invoke(k0, entry -> entry.setExpiryTime(ExpiryTimeValues.NOW));
-    assertThat(containsKey(k0)).isFalse();
     put(k0, v0);
     invoke(k0, entry -> entry.setExpiryTime(123));
     assertFalse(containsKey(k0));
@@ -130,16 +116,95 @@ public class ExpirySetupTest<K, V> extends AbstractCacheTester<K, V> {
         invoke(k0, entry -> entry.setValue(v0).setExpiryTime(t1));
         assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(t1);
       });
+    invoke(k0, entry -> entry.setValue(v0).setExpiryTime(TIME_MAX_MILLIS));
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(TIME_MAX_MILLIS);
     invoke(k0, entry -> entry.setValue(v0).setExpiryTime(-TIME_MAX_MILLIS));
     assertThat((long) invoke(k0, entry -> entry.getExpiryTime())).isEqualTo(TIME_MAX_MILLIS);
   }
 
-  public static class ExpirySetupTestWithObjects extends ExpirySetupTest<Object, Object> {
+  @Test
+  public void expiryAfterWrite_setExpiryTime() {
+    Duration expireAfterWrite = Duration.ofDays(12);
+    init(b -> b.expireAfterWrite(expireAfterWrite));
+    long capTicks = clock().toTicks(expireAfterWrite);
+    long t0 = now();
+    invoke(k0, entry -> entry.setValue(v0).setExpiryTime(TIME_MAX_MILLIS));
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime()))
+      .isLessThanOrEqualTo(now() + capTicks)
+      .isGreaterThanOrEqualTo(t0 + capTicks);
+    t0 = now();
+    invoke(k0, entry -> entry.setValue(v0).setExpiryTime(-TIME_MAX_MILLIS));
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime()))
+      .isLessThanOrEqualTo(now() + capTicks)
+      .isGreaterThanOrEqualTo(t0 + capTicks);
+  }
+
+  @Test
+  public void expiryAfterWrite_expireAt() {
+    Duration expireAfterWrite = Duration.ofDays(12);
+    init(b -> b.expireAfterWrite(expireAfterWrite));
+    long capTicks = clock().toTicks(expireAfterWrite);
+    long t0 = now();
+    put(k0, v0);
+    expireAt(k0, TIME_MAX_MILLIS);
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime()))
+      .isLessThanOrEqualTo(now() + capTicks)
+      .isGreaterThanOrEqualTo(t0 + capTicks);
+    t0 = now();
+    expireAt(k0, -TIME_MAX_MILLIS);
+    assertThat((long) invoke(k0, entry -> entry.getExpiryTime()))
+      .isLessThanOrEqualTo(now() + capTicks)
+      .isGreaterThanOrEqualTo(t0 + capTicks);
+  }
+
+  @Test
+  public void setExpiry_setException() {
+    init(b -> b.setup(this::resilienceCacheExceptions));
+    invoke(k0, entry -> entry.setException(new ExpectedException()));
+    invoke(k0, entry -> entry.setExpiryTime(now() + BIG_DURATION_TICKS));
+    assertThatCode(() -> {
+      get(k0);
+    }).hasMessageContaining("expiry=");
+    invoke(k0, entry -> entry.setException(new ExpectedException()).setExpiryTime(now() + BIG_DURATION_TICKS));
+    assertThatCode(() -> {
+      get(k0);
+    }).hasMessageContaining("expiry=");
+  }
+
+  @Test
+  public void zeroExpiry() {
+    init(b -> b.expireAfterWrite(Duration.ZERO));
+    assertThat(control().getExpiryAfterWriteTicks()).isEqualTo(0);
+  }
+
+  @Test
+  public void eternalExpiry() {
+    init();
+    assertThat(control().getExpiryAfterWriteTicks()).isEqualTo(Long.MAX_VALUE);
+  }
+
+  @Test
+  public void expiry42sec() {
+    init(b -> b.expireAfterWrite(Duration.ofSeconds(42)));
+    assertThat(control().getExpiryAfterWriteTicks()).isEqualTo(TimeUnit.SECONDS.toMillis(42));
+  }
+
+  public static class ExpirySetupTestWithObjectsTest extends ExpirySetupTest<Object, Object> {
 
     @Override
     protected TestContext<Object, Object> provideTestContext() {
       return new TestContext<>(DataType.OBJ_KEYS, DataType.OBJ_VALUES);
     }
+  }
+
+  public static class ExpirySetupTestWithWiredCacheTest extends ExpirySetupTest<Object, Object> {
+
+    @Override
+    protected Cache2kBuilder<Object, Object> provideBuilder() {
+      return super.provideBuilder().addListener(
+        (CacheEntryExpiredListener<Object, Object>) (cache, entry) -> { });
+    }
+
   }
 
 }

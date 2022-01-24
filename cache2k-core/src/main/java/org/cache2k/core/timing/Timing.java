@@ -145,4 +145,8 @@ public abstract class Timing<K, V> implements NeedsClose {
    */
   public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) { }
 
+  public long getExpiryAfterWriteTicks() { return ExpiryPolicy.ETERNAL; }
+
+  public long limitExpiryTime(long now, long expiryTime) { return expiryTime; }
+
 }

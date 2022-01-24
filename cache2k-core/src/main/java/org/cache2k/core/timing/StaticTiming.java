@@ -124,6 +124,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
+  public long limitExpiryTime(long now, long expiryTime) {
+    return limitExpiryToMaxLinger(now, expiryTicks, expiryTime, sharpExpiry);
+  }
+
+  @Override
   public long suppressExceptionUntil(Entry<K, V> e, LoadExceptionInfo inf) {
     long pointInTime =
       resiliencePolicy.suppressExceptionUntil(e.getKey(), inf, e.getInspectionEntry());
@@ -245,6 +250,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       timer.cancel(tsk);
     }
     e.setTask(null);
+  }
+
+  @Override
+  public long getExpiryAfterWriteTicks() {
+    return expiryTicks;
   }
 
   static <K, V> long calcNextRefreshTime(

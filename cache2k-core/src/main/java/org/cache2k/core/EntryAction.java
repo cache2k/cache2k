@@ -825,7 +825,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (heapCache.isUpdateTimeNeeded()) {
       lastRefreshTime = heapEntry.getModificationTime();
     }
-    expiry = expiryTime;
+    expiry = timing().limitExpiryTime(getStartTime(), expiryTime);
     setUntilInExceptionWrapper();
     checkKeepOrRemove();
   }
@@ -842,9 +842,9 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         lastRefreshTime = getMutationStartTime();
       }
     }
-    setUntilInExceptionWrapper();
     if (expiryTime != ExpiryTimeValues.NEUTRAL) {
-      expiry = expiryTime;
+      expiry = timing().limitExpiryTime(getStartTime(), expiryTime);
+      setUntilInExceptionWrapper();
       expiryCalculated();
     } else {
       mutationCalculateExpiry();

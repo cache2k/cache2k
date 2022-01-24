@@ -28,6 +28,7 @@ import org.cache2k.core.eviction.Eviction;
 import org.cache2k.core.operation.ExaminationEntry;
 import org.cache2k.core.timing.TimerEventListener;
 import org.cache2k.core.log.Log;
+import org.cache2k.core.timing.Timing;
 import org.cache2k.operation.TimeReference;
 
 /**
@@ -91,6 +92,10 @@ public interface InternalCache<K, V>
   void setDisabled(boolean f);
 
   Eviction getEviction();
+
+  Timing getTiming();
+
+  TimeReference getTimeReference();
 
   /**
    * Cache used by user, eventually wrapped. Only available in WiredCache for

@@ -858,6 +858,16 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     return userCache;
   }
 
+  @Override
+  public Timing getTiming() {
+    return heapCache.getTiming();
+  }
+
+  @Override
+  public TimeReference getTimeReference() {
+    return heapCache.getTimeReference();
+  }
+
   /**
    * Wire the entry action to the resources of this cache.
    */

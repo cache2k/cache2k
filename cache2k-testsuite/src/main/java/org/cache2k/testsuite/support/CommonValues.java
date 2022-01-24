@@ -26,6 +26,11 @@ package org.cache2k.testsuite.support;
 public interface CommonValues {
 
   /**
+   * Arbitrary large time duration that we expect never to pass during a test run
+   */
+  long BIG_DURATION_TICKS = 60 * 1000 * 1000;
+
+  /**
    * Highest time in the future we expect to work.
    */
   long TIME_MAX_MILLIS = Long.MAX_VALUE - 1;

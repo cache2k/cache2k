@@ -26,6 +26,7 @@ import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.CacheStatistics;
+import org.cache2k.operation.TimeReference;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -176,6 +177,16 @@ public class BaseCacheControl implements CacheControl {
   public CompletableFuture<Void> destroy() {
     getCache().close();
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public long getExpiryAfterWriteTicks() {
+    return getCache().getTiming().getExpiryAfterWriteTicks();
+  }
+
+  @Override
+  public TimeReference getTimeReference() {
+    return getCache().getTimeReference();
   }
 
 }

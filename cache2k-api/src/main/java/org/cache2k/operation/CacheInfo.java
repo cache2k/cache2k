@@ -25,6 +25,7 @@ import org.cache2k.Cache2kBuilder;
 import org.cache2k.config.CacheType;
 import org.cache2k.annotation.Nullable;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -132,5 +133,20 @@ public interface CacheInfo {
    * Time of the most recent {@link org.cache2k.Cache#clear} operation.
    */
   @Nullable Instant getClearedTime();
+
+  /**
+   * Configured {@link Cache2kBuilder#expireAfterWrite(Duration)} or {@link Long#MAX_VALUE} if
+   * no expiry.
+   *
+   * @since 2.6
+   */
+  long getExpiryAfterWriteTicks();
+
+  /**
+   * Effective time reference
+   *
+   * @since 2.6
+   */
+  TimeReference getTimeReference();
 
 }

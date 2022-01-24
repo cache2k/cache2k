@@ -20,6 +20,7 @@ package org.cache2k.processor;
  * #L%
  */
 
+import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
 import org.cache2k.expiry.ExpiryTimeValues;
@@ -29,6 +30,8 @@ import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.AdvancedCacheLoader;
 import org.cache2k.io.CacheWriter;
 import org.cache2k.io.ResiliencePolicy;
+
+import java.time.Duration;
 
 /**
  * A mutable entry is used inside the {@link EntryProcessor} to perform
@@ -197,6 +200,9 @@ public interface MutableCacheEntry<K, V> extends CacheEntry<K, V> {
    * will be updated. Using this method on a not existent entry, will not have any effect.
    *
    * <p>Special time values are defined and described at {@link org.cache2k.expiry.ExpiryTimeValues}
+   *
+   * <p>The effective time will be capped based on the setting of
+   * {@link Cache2kBuilder#expireAfterWrite(Duration)}
    *
    * @param t millis since epoch or as defined by {@link org.cache2k.operation.TimeReference}.
    *          Some values have special meanings, see {@link ExpiryTimeValues}

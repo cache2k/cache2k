@@ -23,6 +23,7 @@ package org.cache2k.testsuite.support;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.ForwardingCache;
+import org.cache2k.operation.CacheControl;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.pinpoint.TimeBox;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +34,7 @@ import java.util.function.Consumer;
  * @author Jens Wilke
  */
 public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
-  implements ExtendedCache<K, V>, CommonValues {
+  implements ExtendedCache<K, V>, CommonValues, SetupFragments {
 
   private final boolean realTime = false;
   private TimeReference clock;
@@ -95,6 +96,8 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     createdCache = builder.build();
   }
 
+  public TimeReference clock() { return clock; }
+
   public long now() {
     return clock.ticks();
   }
@@ -108,4 +111,7 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     createdCache.close();
   }
 
+  public CacheControl control() {
+    return CacheControl.of(this);
+  }
 }
