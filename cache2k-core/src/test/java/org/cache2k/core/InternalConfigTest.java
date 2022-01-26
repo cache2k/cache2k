@@ -23,8 +23,10 @@ package org.cache2k.core;
 import org.assertj.core.api.Assertions;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalConfig;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
+import org.cache2k.operation.CacheControl;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -39,6 +41,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Jens Wilke
  */
 public class InternalConfigTest {
+
+  @Test
+  public void config() {
+    assertThat(new InternalConfig().builder()
+      .evictionSegmentCount(123)
+      .config().getEvictionSegmentCount()).isEqualTo(123);
+  }
 
   @Test
   public void evictionSegmentCount() {
@@ -64,7 +73,22 @@ public class InternalConfigTest {
           }))
         .build();
     cache.loadAll(Arrays.asList(1, 2, 3));
+    cache.put(10, 1);
     assertThat(executed.get()).isTrue();
+    assertThat(CacheControl.of(cache).sampleStatistics().getPutCount()).isEqualTo(1);
+    cache.close();
+  }
+
+  @Test
+  public void commonMetrics() {
+    Cache<Object, Object> cache =
+      Cache2kBuilder.forUnknownTypes()
+        .with(InternalConfig.class, b -> b
+          .commonMetrics(new CommonMetrics.BlackHole())
+        )
+        .build();
+    cache.put(1, 1);
+    assertThat(CacheControl.of(cache).sampleStatistics()).isNull();
     cache.close();
   }
 

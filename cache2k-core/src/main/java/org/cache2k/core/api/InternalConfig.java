@@ -100,6 +100,11 @@ public class InternalConfig implements ConfigSection<InternalConfig, InternalCon
       return this;
     }
 
+    public Builder commonMetrics(CommonMetrics.Updater v) {
+      cfg.setCommonMetrics(new CustomizationReferenceSupplier<CommonMetrics.Updater>(v));
+      return this;
+    }
+
     @Override
     public InternalConfig config() {
       return cfg;
