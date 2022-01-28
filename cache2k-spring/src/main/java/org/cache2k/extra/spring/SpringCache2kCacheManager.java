@@ -127,7 +127,7 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   public @NonNull SpringCache2kCache getCache(String name) {
     return name2cache.computeIfAbsent(name, n -> {
         if (!allowUnknownCache && !configuredCacheNames.contains(n)) {
-          throw new IllegalArgumentException("Unknown cache requested: " + n);
+          return null;
         }
         return buildAndWrap(defaultSetup.apply(getDefaultBuilder()).name(n));
       });

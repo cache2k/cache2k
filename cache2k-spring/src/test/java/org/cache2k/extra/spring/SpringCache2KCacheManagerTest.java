@@ -110,8 +110,7 @@ public class SpringCache2KCacheManagerTest {
   public void testMissing() {
     SpringCache2kCacheManager m = getUniqueManager("testMissing");
     m.setAllowUnknownCache(false);
-    assertThatCode(() -> m.getCache("testUnknown"))
-      .isInstanceOf(IllegalArgumentException.class);
+    assertThat(m.getCache("testUnknown")).isNull();
   }
 
   @Test
