@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 /**
  * @author Jens Wilke
  */
+@SuppressWarnings("unchecked")
 public class ListenerTest {
 
   static final MutableCacheEntryListenerConfiguration<Object, Object> SYNC_LISTENER =
@@ -84,18 +85,10 @@ public class ListenerTest {
         })
     ));
     ListenerCalls calls = Mockito.mock(ListenerCalls.class);
-    registerSyncListener((CacheEntryCreatedListener<Object, Object>) cacheEntryEvents -> {
-      calls.created();
-    });
-    registerSyncListener((CacheEntryUpdatedListener<Object, Object>) cacheEntryEvents -> {
-      calls.updated();
-    });
-    registerSyncListener((CacheEntryRemovedListener<Object, Object>) cacheEntryEvents -> {
-      calls.removed();
-    });
-    registerSyncListener((CacheEntryExpiredListener<Object, Object>) cacheEntryEvents -> {
-      calls.expired();
-    });
+    register((CacheEntryCreatedListener<Object, Object>) cacheEntryEvents -> calls.created());
+    register((CacheEntryUpdatedListener<Object, Object>) cacheEntryEvents -> calls.updated());
+    register((CacheEntryRemovedListener<Object, Object>) cacheEntryEvents -> calls.removed());
+    register((CacheEntryExpiredListener<Object, Object>) cacheEntryEvents -> calls.expired());
     cache.put(1, 1); Mockito.verify(calls).created();
     cache.put(1, 1); Mockito.verify(calls).updated();
     cache.remove(1); Mockito.verify(calls).removed();
@@ -122,7 +115,10 @@ public class ListenerTest {
     cache.close();
   }
 
-  private void registerSyncListener(CacheEntryListener<Object, Object> listener) {
+  /**
+   * Register synchronous listener
+   */
+  private void register(CacheEntryListener<Object, Object> listener) {
     cache.registerCacheEntryListener(
       new MutableCacheEntryListenerConfiguration<>(SYNC_LISTENER)
         .setCacheEntryListenerFactory(new FactoryBuilder.SingletonFactory<>(listener)));
