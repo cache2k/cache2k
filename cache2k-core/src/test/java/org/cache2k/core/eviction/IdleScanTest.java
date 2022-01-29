@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.cache2k.Cache2kBuilder.of;
-import static org.cache2k.core.eviction.IdleScan.calculateWakeupTicks;
+import static org.cache2k.core.eviction.IdleScan.calculateWakeupIntervalTicks;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -46,9 +46,40 @@ public class IdleScanTest {
   static final long START_OFFSET_MILLIS = 1000;
 
   @Test
+  public void zeroScanTime() {
+    assertThatCode(() ->
+      Cache2kBuilder.forUnknownTypes().idleScanTime(0, MILLISECONDS)
+      ).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void scanningTooSlow() throws InterruptedException {
+    SimulatedClock clock = new SimulatedClock(true, START_OFFSET_MILLIS);
+    Cache<Integer, Integer> cache =
+      Cache2kBuilder.of(Integer.class, Integer.class)
+        .timeReference(clock)
+        .executor(clock.wrapExecutor(Runnable::run))
+        .idleScanTime(1, TimeUnit.MILLISECONDS)
+        .strictEviction(true)
+        .loader(k -> k)
+        .build();
+    assertThat(cache.toString()).contains("IDLE");
+    cache.put(1, 1);
+    cache.put(2, 1);
+    cache.put(3, 1);
+    cache.put(4, 1);
+    clock.sleep(1);
+    assertThat(cache.toString()).contains("idleScanPercent=0");
+    clock.sleep(1);
+    clock.sleep(1);
+    assertThat(cache.toString()).contains("IDLE");
+  }
+
+  @Test
   public void testIntervalCalculation() {
-    assertThat(calculateWakeupTicks(1000, 10)).isEqualTo(100);
-    assertThat(calculateWakeupTicks(1000, 1111)).isEqualTo(10);
+    assertThat(calculateWakeupIntervalTicks(1000, 10)).isEqualTo(100);
+    assertThat(calculateWakeupIntervalTicks(1000, 1111)).isEqualTo(10);
+    assertThat(calculateWakeupIntervalTicks(1000, 10_000)).isEqualTo(5);
   }
 
   @Test

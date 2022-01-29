@@ -20,6 +20,7 @@ package org.cache2k.core.eviction;
  * #L%
  */
 
+import org.cache2k.CacheClosedException;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.api.NeedsClose;
 import org.cache2k.operation.Scheduler;
@@ -74,43 +75,9 @@ public class IdleScan implements NeedsClose {
     }
   }
 
-  public void scanWakeup() {
-    int extraScan;
-    synchronized (this) {
-      long now = clock.ticks();
-      lastWakeupTicks = now;
-      EvictionMetrics metrics = eviction.getMetrics();
-      long expectedScans =
-        scansPerRound * (now - roundStartTicks) / roundTicks +
-          roundStartScans - metrics.getIdleNonEvictDrainCount();
-      long remainingScans = roundStartScans + scansPerRound - expectedScans;
-      extraScan = (int) (expectedScans - metrics.getScanCount());
-      if (extraScan < -remainingScans) { scheduleIdleWakeup(metrics); return; }
-      if (extraScan <= 0) { scheduleNextWakeup(wakeupIntervalMillis); return; }
-      if (now >= roundStartTicks + roundTicks) {
-        startNewScanRound(now, metrics);
-      } else {
-        scheduleNextWakeup(wakeupIntervalMillis);
-      }
-    }
-    long count = eviction.evictIdleEntries(extraScan);
-    synchronized (this) { evictedCount += count; }
-  }
-
-  static final int MAX_SCAN_PER_WAKEUP = 50;
-  static final int PRECISION_SIZE_THRESHOLD = 100;
-
-  static long calculateWakeupTicks(long roundTicks, long scansPerRound) {
-    if (scansPerRound <= PRECISION_SIZE_THRESHOLD) {
-      return roundTicks / scansPerRound;
-    }
-    long ticksThroughput = roundTicks / PRECISION_SIZE_THRESHOLD;
-    long ticksLimited = roundTicks / (scansPerRound / MAX_SCAN_PER_WAKEUP);
-    return Math.min(ticksThroughput, ticksLimited);
-  }
-
   /**
-   *
+   * Wakeup every specified scan time. If there is enough eviction activity or
+   * the cache is empty, we need to do nothing.
    */
   private void idleWakeup() {
     synchronized (this) {
@@ -128,14 +95,67 @@ public class IdleScan implements NeedsClose {
     }
   }
 
+  private void scanWakeup() {
+    int extraScan;
+    synchronized (this) {
+      long now = clock.ticks();
+      lastWakeupTicks = now;
+      EvictionMetrics metrics = eviction.getMetrics();
+      long expectedScans =
+        scansPerRound * (now - roundStartTicks) / roundTicks +
+          roundStartScans - metrics.getIdleNonEvictDrainCount();
+      long remainingScans = roundStartScans + scansPerRound - expectedScans;
+      extraScan = (int) (expectedScans - metrics.getScanCount());
+      if (extraScan < -remainingScans || metrics.getSize() == 0) {
+        scheduleIdleWakeup(metrics); return;
+      }
+      if (extraScan <= 0) { scheduleNextWakeup(wakeupIntervalMillis); return; }
+      if (now >= roundStartTicks + roundTicks) {
+        startNewScanRound(now, metrics);
+      } else {
+        scheduleNextWakeup(wakeupIntervalMillis);
+      }
+    }
+    try {
+      long count = eviction.evictIdleEntries(extraScan);
+      synchronized (this) {
+        evictedCount += count;
+      }
+    } catch (CacheClosedException ignore) { }
+  }
+
+  /** With smaller or equal size do one wakeup per cache entry */
+  static final int PRECISION_SIZE_THRESHOLD = 100;
+  /** Usually do 100 wakeups per scan cycle */
+  static final int REGULAR_WAKEUPS_PER_ROUND = 100;
+  /** If caches are bigger, limit the amount of work in each wakeup and wakup more often */
+  static final int MAX_SCAN_PER_WAKEUP = 50;
+
+  /**
+   * Interval depending on size and configuration. We wakeup 100 times per
+   * scan round or more often either if size is small or very big.
+   *
+   * @return may return 0
+   */
+  static long calculateWakeupIntervalTicks(long roundTicks, long scansPerRound) {
+    if (scansPerRound <= PRECISION_SIZE_THRESHOLD) {
+      return roundTicks / scansPerRound;
+    }
+    long ticksThroughput = roundTicks / REGULAR_WAKEUPS_PER_ROUND;
+    long ticksLimited = roundTicks / (scansPerRound / MAX_SCAN_PER_WAKEUP);
+    return Math.min(ticksThroughput, ticksLimited);
+  }
+
   private void startNewScanRound(long now, EvictionMetrics metrics) {
     if (roundStartTicks != IDLE) { roundCompleteCount++; }
     long size = metrics.getSize();
     scansPerRound = size;
     roundStartCount++;
-    roundStartTicks = now;
+    lastWakeupTicks = roundStartTicks = now;
     roundStartScans = eviction.startNewIdleScanRound();
-    wakeupIntervalMillis = clock.ticksToMillisCeiling(calculateWakeupTicks(roundTicks, scansPerRound));
+    long rawWakeupIntervalMillis =
+      clock.ticksToMillisCeiling(calculateWakeupIntervalTicks(roundTicks, scansPerRound));
+    wakeupIntervalMillis = Math.max(1, rawWakeupIntervalMillis);
     scheduleNextWakeup(wakeupIntervalMillis);
   }
 

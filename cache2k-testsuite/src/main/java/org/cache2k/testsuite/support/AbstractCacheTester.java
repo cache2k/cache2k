@@ -43,7 +43,6 @@ import java.util.function.Consumer;
 public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   implements ExtendedCache<K, V>, CommonValues, SetupFragments {
 
-  private final boolean realTime = false;
   private TimeReference clock;
   private Cache<K, V> createdCache;
   /** Provides alternative cache interface, with out any decorations */
@@ -77,6 +76,7 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     v2 = values.getValue2();
   }
 
+  @SuppressWarnings("unchecked")
   protected TestContext<K, V> provideTestContext() {
     return (TestContext<K, V>) TestContext.DEFAULT;
   }
@@ -109,8 +109,17 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     return clock.ticks();
   }
 
-  public TimeBox within(long millis) {
-    return new TimeBox(() -> clock.ticks(), millis);
+  public void sleep(long ticks) {
+    try {
+      clock.sleep(ticks);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new CaughtInterruptedExceptionError();
+    }
+  }
+
+  public TimeBox within(long ticks) {
+    return new TimeBox(() -> clock.ticks(), ticks);
   }
 
   @AfterEach

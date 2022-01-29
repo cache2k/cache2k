@@ -68,7 +68,7 @@ public class DataType<T> {
       }
     }, new CacheTypeCapture.OfClass<>(Object.class));
 
-  private final List<T> generatedValues = new ArrayList<>();
+  private volatile T[] generatedValues = (T[]) new Object[0];
   private final Supplier<T> anotherValue;
   private final CacheType<T> cacheType;
   private final T value0;
@@ -78,18 +78,29 @@ public class DataType<T> {
   public DataType(Supplier<T> anotherValue, CacheType<T> cacheType) {
     this.anotherValue = anotherValue;
     this.cacheType = cacheType;
+    value2 = get(2);
     value0 = get(0);
     value1 = get(1);
-    value2 = get(2);
   }
 
   public T get(int index) {
-    if (generatedValues.size() <= index) {
-      for (int i = generatedValues.size(); i <= index; i++) {
-        generatedValues.add(anotherValue.get());
-      }
+    T[] vals = generatedValues;
+    if (vals.length > index) {
+      return vals[index];
     }
-    return generatedValues.get(index);
+    synchronized (this) {
+      vals = generatedValues;
+      if (vals.length > index) {
+        return vals[index];
+      }
+      T[] moreVals = (T[]) new Object[index + 1];
+      System.arraycopy(vals, 0, moreVals, 0, vals.length);
+      for (int i = vals.length; i <= index; i++) {
+        moreVals[i] = anotherValue.get();
+      }
+      vals = moreVals;
+      return vals[index];
+    }
   }
 
   public T getValue0() {
