@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Configuration for a cache2k cache.
@@ -283,7 +282,7 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
    * @see Cache2kBuilder#idleScanTime(Duration) 
    */
   public void setIdleScanTime(@Nullable Duration v) {
-    if (Duration.ZERO.compareTo(v) >= 0) {
+    if (v != null && Duration.ZERO.compareTo(v) >= 0) {
       throw new IllegalArgumentException("idleScanTime must be greater than 0");
     }
     this.idleScanTime = durationCheckAndSanitize(v);
