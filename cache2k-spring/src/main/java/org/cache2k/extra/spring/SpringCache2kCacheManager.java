@@ -51,12 +51,10 @@ import java.util.function.Function;
 public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
 
   /**
-   * @deprecated use {@link SpringCache2kDefaultSupplier#DEFAULT_SPRING_CACHE_MANAGER_NAME}
+   * Default name used for the cache2k cache manager controlled by the spring cache
+   * manager.
    */
-  public static final String DEFAULT_SPRING_CACHE_MANAGER_NAME =
-    SpringCache2kDefaultSupplier.DEFAULT_SPRING_CACHE_MANAGER_NAME;
-
-  private final SpringCache2kDefaultSupplier defaultBuilderSupplier;
+  public static final String DEFAULT_SPRING_CACHE_MANAGER_NAME = "springDefault";
 
   private final org.cache2k.CacheManager manager;
 
@@ -78,7 +76,7 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
    * @see org.cache2k.CacheManager
    */
   public SpringCache2kCacheManager() {
-    this(SpringCache2kDefaultSupplier.DEFAULT_SPRING_CACHE_MANAGER_NAME);
+    this(DEFAULT_SPRING_CACHE_MANAGER_NAME);
   }
 
   /**
@@ -104,24 +102,13 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
    */
   public SpringCache2kCacheManager(org.cache2k.CacheManager manager) {
     this.manager = manager;
-    defaultBuilderSupplier = () ->
-      Cache2kBuilder.forUnknownTypes()
-        .manager(manager)
-        .setup(SpringCache2kDefaultSupplier::applySpringDefaults);
-    manager.getConfiguredCacheNames().forEach(configuredCacheNames::add);
-  }
-
-  public SpringCache2kCacheManager(SpringCache2kDefaultSupplier defaultSupplier) {
-    this.manager = defaultSupplier.get().getManager();
-    defaultBuilderSupplier = defaultSupplier;
     manager.getConfiguredCacheNames().forEach(configuredCacheNames::add);
   }
 
   /**
    * Returns an existing cache or creates and wraps a new cache if the creation
    * of unknown caches is enabled. When a new cache is created which was not added by
-   * {@link #addCaches} the default setup from {@link #defaultSetup} or
-   * {@link SpringCache2kDefaultSupplier} is applied.
+   * {@link #addCaches} the default setup from {@link #defaultSetup} is applied.
    */
   @Override
   public @NonNull SpringCache2kCache getCache(String name) {
@@ -279,12 +266,15 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
    * Cache2k builder with reasonable default for Spring. Permit nulls because, "Spring caches"
    * allow storage of null values.
    */
-  Cache2kBuilder<?, ?> getDefaultBuilder() {
-    return defaultBuilderSupplier.get();
+  private Cache2kBuilder<?, ?> getDefaultBuilder() {
+    Cache2kBuilder<?, ?> b = Cache2kBuilder.forUnknownTypes();
+    b.manager(manager);
+    springDefaults(b);
+    return b;
   }
 
   @SuppressWarnings("unchecked")
-  SpringCache2kCache buildAndWrap(Cache2kBuilder<?, ?> builder) {
+  private SpringCache2kCache buildAndWrap(Cache2kBuilder<?, ?> builder) {
     org.cache2k.Cache<Object, Object> nativeCache = (Cache<Object, Object>)  builder.build();
     return CacheControl.of(nativeCache).isLoaderPresent() ?
       new SpringLoadingCache2kCache(nativeCache) : new SpringCache2kCache(nativeCache);
@@ -294,6 +284,14 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
   public void destroy() {
     manager.close();
     name2cache.clear();
+  }
+
+  /**
+   * Defaults for cache2k caches within Spring context.
+   * Spring caches allow the storage of null values by default.
+   */
+  public static void springDefaults(Cache2kBuilder<?, ?> builder) {
+    builder.permitNullValues(true);
   }
 
 }

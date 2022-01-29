@@ -61,12 +61,9 @@ public class SpringCache2KCacheManagerTest {
   }
 
   @Test
-  public void defaultSetupSupplier() {
-    SpringCache2kCacheManager m = new SpringCache2kCacheManager(() ->
-      forUnknownTypes()
-        .manager(getInstance("defaultSetupSupplier")));
-    assertThat(m.getCache("abc")).isNotNull();
-    assertThat(m.getNativeCacheManager().getName()).isEqualTo("defaultSetupSupplier");
+  public void getNativeManager() {
+    SpringCache2kCacheManager m = new SpringCache2kCacheManager();
+    assertThat(m.getNativeCacheManager().getName()).isEqualTo("springDefault");
   }
 
   @Test
@@ -214,21 +211,6 @@ public class SpringCache2KCacheManagerTest {
   }
 
   @Test
-  public void testExample1() {
-    SpringCache2kCacheManager m =
-      new SpringCache2kCacheManager(springCache2kDefaultSupplier1());
-    assertThat(m.getNativeCacheManager().getName()).isEqualTo("springDefault");
-  }
-
-  @Test
-  public void testExample2() {
-    SpringCache2kCacheManager m =
-      new SpringCache2kCacheManager(springCache2kDefaultSupplier2());
-    assertThat(of(m.getCache("unknown").getNativeCache())
-        .getEntryCapacity()).isEqualTo(6666);
-  }
-
-  @Test
   public void destroy() {
     SpringCache2kCacheManager m =
       new SpringCache2kCacheManager(
@@ -239,39 +221,6 @@ public class SpringCache2KCacheManagerTest {
     m.destroy();
     assertThat(cache.getNativeCache().isClosed()).isTrue();
     assertThatCode(() -> m.getCache("hello")).isInstanceOf(IllegalStateException.class);
-  }
-
-  @Test
-  public void testCustomizer() {
-    SpringCache2kCacheManager m =
-      new SpringCache2kCacheManager(SpringCache2kDefaultSupplier.of(b -> b
-        .strictEviction(true)
-        .entryCapacity(6666)));
-    assertThat(of(m.getCache("unknown").getNativeCache())
-      .getEntryCapacity()).isEqualTo(6666);
-  }
-
-  /**
-   * Example default supplier, topProvide defaults for all cache2k caches when used
-   * with Spring Boot.
-   */
-  public SpringCache2kDefaultSupplier springCache2kDefaultSupplier1() {
-    return () -> SpringCache2kDefaultSupplier.supplyDefaultBuilder()
-      .expireAfterWrite(6, TimeUnit.MINUTES)
-      .entryCapacity(5555)
-      .strictEviction(true);
-  }
-
-  /**
-   * Example default supplier with different manager
-   */
-  public SpringCache2kDefaultSupplier springCache2kDefaultSupplier2() {
-    return () -> Cache2kBuilder.forUnknownTypes()
-      .manager(org.cache2k.CacheManager.getInstance("specialManager"))
-      .setup(SpringCache2kDefaultSupplier::applySpringDefaults)
-      .expireAfterWrite(6, TimeUnit.MINUTES)
-      .entryCapacity(6666)
-      .strictEviction(true);
   }
 
 }
