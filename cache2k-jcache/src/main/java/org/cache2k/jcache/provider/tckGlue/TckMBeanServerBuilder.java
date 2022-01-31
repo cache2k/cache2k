@@ -47,7 +47,7 @@ public class TckMBeanServerBuilder extends MBeanServerBuilder {
     return super.newMBeanServer(defaultDomain, outer, delegate);
   }
 
-  public class WrapperMBeanServerDelegate extends MBeanServerDelegate {
+  public static class WrapperMBeanServerDelegate extends MBeanServerDelegate {
 
     public WrapperMBeanServerDelegate() {
     }
