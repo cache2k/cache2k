@@ -31,7 +31,6 @@ import org.cache2k.core.operation.Operations;
 import org.cache2k.operation.CacheOperation;
 import org.cache2k.operation.CacheInfo;
 import org.cache2k.operation.CacheControl;
-import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.core.operation.Semantic;
