@@ -1651,19 +1651,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
 
   }
 
-  /**
-   * Simply the {@link EntryAction} based code to provide the entry processor. If we code it
-   * directly this might be a little bit more efficient, but it gives quite a code bloat which has
-   * lots of corner cases for loader and exception handling.
-   */
-  @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> processor) {
-    if (key == null) {
-      throw new NullPointerException();
-    }
-    return execute(key, spec().invoke(processor));
-  }
-
   public final long getTotalEntryCount() {
     return hash.getSize();
   }

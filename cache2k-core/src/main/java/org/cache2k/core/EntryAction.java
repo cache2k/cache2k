@@ -26,6 +26,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
+import org.cache2k.event.CacheEventListenerException;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -1126,7 +1127,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
               try {
                 l.onEntryRemoved(userCache, entryCopy);
               } catch (Throwable t) {
-                exceptionToPropagate = new ListenerException(t);
+                exceptionToPropagate = new CacheEventListenerException(t);
               }
             }
           }
@@ -1142,7 +1143,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
             try {
               l.onEntryUpdated(userCache, previousEntry, entryCopy);
             } catch (Throwable t) {
-              exceptionToPropagate = new ListenerException(t);
+              exceptionToPropagate = new CacheEventListenerException(t);
             }
           }
         }
@@ -1152,7 +1153,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
             try {
               l.onEntryCreated(userCache, entryCopy);
             } catch (Throwable t) {
-              exceptionToPropagate = new ListenerException(t);
+              exceptionToPropagate = new CacheEventListenerException(t);
             }
           }
         }
@@ -1195,7 +1196,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       try {
         l.onEntryExpired(userCache, entryCopy);
       } catch (Throwable t) {
-        exceptionToPropagate = new ListenerException(t);
+        exceptionToPropagate = new CacheEventListenerException(t);
       }
     }
   }
@@ -1443,12 +1444,6 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public boolean isResultAvailable() {
     return resultAvailable;
-  }
-
-  public static class ListenerException extends CustomizationException {
-    public ListenerException(Throwable cause) {
-      super(cause);
-    }
   }
 
   public static class AbortWhenProcessingException extends CacheException { }

@@ -138,6 +138,19 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
     return new ConcurrentMapWrapper<>(this);
   }
 
+  /**
+   * Simply the {@link EntryAction} based code to provide the entry processor. If we code it
+   * directly this might be a little bit more efficient, but it gives quite a code bloat which has
+   * lots of corner cases for loader and exception handling.
+   */
+  @Override
+  public <R> R invoke(K key, EntryProcessor<K, V, R> processor) {
+    if (key == null || processor == null) {
+      throw new NullPointerException();
+    }
+    return (R) execute(key, Operations.SINGLETON.invoke(processor));
+  }
+
   @Override
   public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
                                                         EntryProcessor<K, V, R> entryProcessor) {
@@ -149,7 +162,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
           continue;
         }
         m.put(k, EntryProcessingResultFactory.result(result));
-      } catch (EntryProcessingException t) {
+      } catch (Throwable t) {
         m.put(k, EntryProcessingResultFactory.exception(t));
       }
     }

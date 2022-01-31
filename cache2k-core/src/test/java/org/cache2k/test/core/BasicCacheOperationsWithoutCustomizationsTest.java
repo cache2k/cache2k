@@ -32,6 +32,7 @@ import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.ExpectedException;
+import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.testing.category.FastTests;
@@ -1393,6 +1394,23 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(res.size()).isEqualTo(1);
     assertThat(res.get(KEY).getException()).isNull();
     assertThat(res.get(KEY).getResult()).isTrue();
+  }
+
+  @Test
+  public void invoke_NullKey() {
+    assertThatCode(() -> cache.invoke(null, entry -> null))
+      .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  public void invoke_NullProcessor() {
+    assertThatCode(() -> cache.invoke(KEY, null))
+      .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  public void invoke_NullValue() {
+    cache.invoke(KEY, entry -> entry.setValue(null));
   }
 
   /*

@@ -1,4 +1,4 @@
-package org.cache2k;
+package org.cache2k.event;
 
 /*-
  * #%L
@@ -20,28 +20,15 @@ package org.cache2k;
  * #L%
  */
 
-import org.cache2k.expiry.ExpiryPolicy;
-import org.cache2k.io.CacheLoader;
+import org.cache2k.CustomizationException;
 
 /**
- * Wraps an exception thrown from a cache customization such as the
- * {@link ExpiryPolicy}, {@link CacheLoader} or
- * {@link org.cache2k.event.CacheEntryOperationListener}
+ * Wrapped exception if a listener throws an exception.
  *
  * @author Jens Wilke
  */
-public class CustomizationException extends CacheException {
-
-  public CustomizationException(String message) {
-    super(message);
-  }
-
-  public CustomizationException(Throwable cause) {
+public class CacheEventListenerException extends CustomizationException {
+  public CacheEventListenerException(Throwable cause) {
     super(cause);
   }
-
-  public CustomizationException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
 }

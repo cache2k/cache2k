@@ -63,13 +63,14 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
    */
   @Override
   public V putIfAbsent(K key, V value) {
-    return cache.invoke(key, e -> {
+    EntryProcessor<K, V, V> p = e -> {
       if (!e.exists()) {
         e.setValue(value);
         return null;
       }
       return e.getValue();
-    });
+    };
+    return invokeDirect(key, p);
   }
 
   @Override
@@ -95,7 +96,7 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
       }
       return null;
     };
-    return cache.invoke(key, p);
+    return invokeDirect(key, p);
   }
 
   @Override
@@ -152,7 +153,7 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
       e.setValue(value);
       return result;
     };
-    return cache.invoke(key, p);
+    return invokeDirect(key, p);
   }
 
   @Override
@@ -394,6 +395,13 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
   }
 
   /**
+   * Expect no exception that needs to be unwrapped.
+   */
+  private <R> R invokeDirect(K key, EntryProcessor<K, V, R> p) {
+    return cache.invoke(key, p);
+  }
+
+  /**
    * Used for compute methods which use the entry processor.
    * Unwrap the exception to comply with ConcurrentMap contract.
    */
@@ -408,7 +416,7 @@ public class ConcurrentMapWrapper<K, V> extends AbstractMap<K, V> implements Con
       if (cause instanceof RuntimeException) {
         throw (RuntimeException) cause;
       }
-      throw new RuntimeException(cause);
+      throw ex;
     }
   }
 

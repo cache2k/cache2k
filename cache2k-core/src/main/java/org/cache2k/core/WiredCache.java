@@ -41,6 +41,7 @@ import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.ExceptionPropagator;
+import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
@@ -549,14 +550,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   @Override
   public long getTotalEntryCount() {
     return heapCache.getTotalEntryCount();
-  }
-
-  @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> processor) {
-    if (key == null) {
-      throw new NullPointerException();
-    }
-    return execute(key, ops.invoke(processor));
   }
 
   @Override
