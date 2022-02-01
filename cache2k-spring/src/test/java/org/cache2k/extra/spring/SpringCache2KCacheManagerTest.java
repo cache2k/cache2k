@@ -149,6 +149,15 @@ public class SpringCache2KCacheManagerTest {
   }
 
   @Test
+  public void testDefaultSetupTwice() {
+    SpringCache2kCacheManager m = getUniqueManager("defaultSetup");
+    m.defaultSetup(b -> b.entryCapacity(1234));
+    assertThatCode(() -> {
+      m.defaultSetup(b -> b.entryCapacity(4321));
+    }).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
   public void testDefaultSetup2() {
     SpringCache2kCacheManager m = getUniqueManager("defaultSetup2");
     m.defaultSetup(b -> b.entryCapacity(1234).valueType(String.class).loader(key -> "default"));

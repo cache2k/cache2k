@@ -64,7 +64,9 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
 
   private boolean allowUnknownCache = true;
 
-  private Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> defaultSetup = b -> b;
+  private static final Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> DUMMY_DEFAULT = b -> b;
+
+  private Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> defaultSetup = DUMMY_DEFAULT;
 
   /**
    * Construct a spring cache manager, using the cache2k cache manager with
@@ -130,6 +132,9 @@ public class SpringCache2kCacheManager implements CacheManager, DisposableBean {
    */
   public SpringCache2kCacheManager defaultSetup(
     Function<Cache2kBuilder<?, ?>, Cache2kBuilder<?, ?>> f) {
+    if (defaultSetup != DUMMY_DEFAULT) {
+      throw new IllegalStateException("Defaults already set");
+    }
     if (!name2cache.isEmpty()) {
       throw new IllegalStateException("Defaults may only be set before the first cache is added");
     }
