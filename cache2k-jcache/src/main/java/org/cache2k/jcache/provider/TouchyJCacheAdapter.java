@@ -22,7 +22,8 @@ package org.cache2k.jcache.provider;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.expiry.ExpiryTimeValues;
-import org.cache2k.io.LoadExceptionInfo;
+import org.cache2k.operation.CacheControl;
+import org.cache2k.operation.TimeReference;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.processor.MutableCacheEntry;
 
@@ -70,11 +71,13 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   org.cache2k.Cache<K, V> c2kCache;
   JCacheAdapter<K, V> cache;
   ExpiryPolicy expiryPolicy;
+  TimeReference clock;
 
   public TouchyJCacheAdapter(JCacheAdapter<K, V> cache, ExpiryPolicy expiryPolicy) {
     this.expiryPolicy = expiryPolicy;
     this.cache = cache;
     c2kCache = cache.cache;
+    clock = CacheControl.of(c2kCache).getTimeReference();
   }
 
   @Override
@@ -85,143 +88,15 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   @Override
   public Map<K, V> getAll(Set<? extends K> keys) {
     Map<K, V> map = cache.getAll(keys);
-    return new Map<K, V>() {
-      @Override
-      public int size() {
-        return map.size();
-      }
-
-      @Override
-      public boolean isEmpty() {
-        return map.isEmpty();
-      }
-
-      @Override
-      public boolean containsKey(Object key) {
-        return map.containsKey(key);
-      }
-
-      @Override
-      public boolean containsValue(Object value) {
-        return map.containsValue(value);
-      }
-
-      @SuppressWarnings("unchecked")
-      @Override
-      public V get(Object key) {
-        return returnValue((K) key, map.get(key));
-      }
-
-      @Override
-      public V put(K key, V value) {
-        throw new UnsupportedOperationException("read only");
-      }
-
-      @Override
-      public V remove(Object key) {
-        return map.remove(key);
-      }
-
-      @Override
-      public void putAll(Map<? extends K, ? extends V> m) {
-        throw new UnsupportedOperationException("read only");
-      }
-
-      @Override
-      public void clear() {
-        throw new UnsupportedOperationException("read only");
-      }
-
-      @Override
-      public Set<K> keySet() {
-        return map.keySet();
-      }
-
-      @Override
-      public Collection<V> values() {
-        return new AbstractCollection<V>() {
-          @Override
-          public int size() {
-            return map.size();
-          }
-
-          @Override
-          public boolean isEmpty() {
-            return map.isEmpty();
-          }
-
-          @Override
-          public Iterator<V> iterator() {
-            Iterator<Entry<K, V>> it = map.entrySet().iterator();
-            return new Iterator<V>() {
-              @Override
-              public boolean hasNext() {
-                return it.hasNext();
-              }
-
-              @Override
-              public V next() {
-                Entry<K, V> e = it.next();
-                return returnValue(e.getKey(), e.getValue());
-              }
-
-              @Override
-              public void remove() {
-                throw new UnsupportedOperationException();
-              }
-            };
-          }
-
-        };
-      }
-
-      @Override
-      public Set<Entry<K, V>> entrySet() {
-        Iterator<Entry<K, V>> it = map.entrySet().iterator();
-        return new AbstractSet<Entry<K, V>>() {
-          @Override
-          public Iterator<Entry<K, V>> iterator() {
-            return new Iterator<Entry<K, V>>() {
-              @Override
-              public boolean hasNext() {
-                return it.hasNext();
-              }
-
-              @Override
-              public Entry<K, V> next() {
-                Entry<K, V> e = it.next();
-                return new Entry<K, V>() {
-                  @Override
-                  public K getKey() {
-                    return e.getKey();
-                  }
-
-                  @Override
-                  public V getValue() {
-                    return returnValue(e.getKey(), e.getValue());
-                  }
-
-                  @Override
-                  public V setValue(V value) {
-                    throw new UnsupportedOperationException();
-                  }
-                };
-              }
-
-              @Override
-              public void remove() {
-
-              }
-            };
-          }
-
-          @Override
-          public int size() {
-            return map.size();
-          }
-        };
-      }
-    };
+    if (map.isEmpty()) {
+      return map;
+    }
+    Duration d = expiryPolicy.getExpiryForAccess();
+    if (d != null) {
+      long ticks = calculateExpiry(d);
+      c2kCache.invokeAll(map.keySet(), entry -> entry.setExpiryTime(ticks));
+    }
+    return map;
   }
 
   @Override
@@ -293,28 +168,6 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
   public V getAndRemove(K key) {
     return cache.getAndRemove(key);
   }
-
-  private static final CacheEntry DUMMY_ENTRY = new CacheEntry() {
-    @Override
-    public Object getKey() {
-      return null;
-    }
-
-    @Override
-    public Object getValue() {
-      return null;
-    }
-
-    @Override
-    public Throwable getException() {
-      return null;
-    }
-
-    @Override
-    public LoadExceptionInfo getExceptionInfo() {
-      return null;
-    }
-  };
 
   @SuppressWarnings("unchecked")
   @Override
@@ -524,13 +377,14 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     return null;
   }
 
-  private static long calculateExpiry(Duration d) {
+  private long calculateExpiry(Duration d) {
     if (Duration.ZERO.equals(d)) {
       return ExpiryTimeValues.NOW;
     } else if (Duration.ETERNAL.equals(d)) {
       return ExpiryTimeValues.ETERNAL;
     }
-    return System.currentTimeMillis() + d.getTimeUnit().toMillis(d.getDurationAmount());
+    return clock.ticks() + clock.toTicks(
+      java.time.Duration.ofMillis(d.getTimeUnit().toMillis(d.getDurationAmount())));
   }
 
   private void touchEntry(K key) {

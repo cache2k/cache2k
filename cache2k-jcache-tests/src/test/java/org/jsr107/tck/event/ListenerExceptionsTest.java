@@ -53,6 +53,8 @@ public class ListenerExceptionsTest {
     expectException(() -> cache.remove(1));
     assertFalse(cache.containsKey(1));
     cache.put(1, 1);
+    expectException(() -> cache.getAndRemove(1));
+    cache.put(1, 1);
     cache.remove(1, 2);
     expectException(() -> cache.remove(1, 1));
     cache.put(1, 1);
@@ -84,6 +86,7 @@ public class ListenerExceptionsTest {
     cache.put(1, 1);
     expectException(() -> cache.put(1, 1));
     expectException(() -> cache.replace(1, 1));
+    expectException(() -> cache.getAndReplace(1, 1));
     cache.replace(1, 2, 2);
     expectException(() -> cache.replace(1, 1, 2));
     cache.close();

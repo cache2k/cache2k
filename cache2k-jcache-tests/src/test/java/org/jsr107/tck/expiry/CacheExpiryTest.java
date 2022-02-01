@@ -47,6 +47,8 @@ import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.integration.CompletionListenerFuture;
 import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.MutableEntry;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -407,6 +409,86 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
   }
 
   /**
+   * Original version {@link #expire_whenAccessed()} does only call {@code get}
+   * which would cause the expiry. Also add {@ code getAll} coverage.
+   *
+   * @since cache2k
+   */
+  @Test
+  public void expire_whenAccessed_take2() {
+    MutableConfiguration<Integer, Integer> config = new MutableConfiguration<Integer, Integer>();
+    config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(new ParameterizedExpiryPolicy(Duration.ETERNAL, Duration.ZERO, null)));
+
+    Cache<Integer, Integer> cache = getCacheManager().createCache(getTestCacheName(), config);
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    assertNotNull(cache.get(1));
+    assertFalse(cache.containsKey(1));
+
+    cache.put(1, 1);
+    Set<Integer> keys = new HashSet<Integer>(){ { add(1); } };
+
+    assertTrue(cache.containsKey(1));
+    assertEquals(1, cache.getAll(keys).size());
+    assertFalse(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    assertNotNull(cache.getAndReplace(1, 2));
+    // access and update at the same time
+    assertTrue(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    assertNotNull(cache.getAndRemove(1));
+    assertFalse(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    assertNotNull(cache.replace(1, 2, 4711));
+    assertFalse(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    assertNotNull(cache.remove(1, 4711));
+    assertFalse(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    assertNotNull(cache.invoke(1, (EntryProcessor<Integer, Integer, Object>)
+      (entry, arguments) -> entry.getValue()));
+    assertFalse(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    assertTrue(cache.containsKey(1));
+    // FIXME, wrong result
+    assertNull(cache.invoke(1, (EntryProcessor<Integer, Integer, Object>)
+      (entry, arguments) -> {
+        Object v = entry.getValue();
+        entry.setValue(2);
+        return v;
+      }));
+    // update at the same time
+    assertTrue(cache.containsKey(1));
+
+    cache.put(1, 1);
+
+    Iterator<Entry<Integer, Integer>> iterator = cache.iterator();
+    assertTrue(iterator.hasNext());
+    assertEquals((Integer) 1, iterator.next().getValue());
+    assertFalse(cache.iterator().hasNext());
+    assertFalse(cache.containsKey(1));
+  }
+
+  /**
    * Ensure that a cache using a {@link javax.cache.expiry.ExpiryPolicy} configured to
    * return a {@link Duration#ZERO} after modifying entries will immediately
    * expire the entries.
@@ -617,6 +699,43 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
     assertThat(expiryPolicy.getAccessCount(), greaterThanOrEqualTo(2));
     assertThat(expiryPolicy.getUpdatedCount(), is(0));
     expiryPolicy.resetCount();
+  }
+
+  /**
+   * Test above actually does not test {@code getAll}.
+   *
+   * @since cache2k
+   */
+  @Test
+  public void getAllShouldCallGetExpiryForAccessedEntryForReal() {
+    CountingExpiryPolicy expiryPolicy = new CountingExpiryPolicy();
+    setupExpiryPolicyClientServer(expiryPolicy);
+
+    MutableConfiguration<Integer, Integer> config = new MutableConfiguration<>();
+    config.setExpiryPolicyFactory(FactoryBuilder.factoryOf(expiryPolicyClient));
+    Cache<Integer, Integer> cache = getCacheManager().createCache(getTestCacheName(), config);
+    Set<Integer> keys = new HashSet<>();
+    keys.add(1);
+    keys.add(2);
+
+    // when getting a non-existent entry, getExpiryForAccessedEntry is not called.
+    cache.getAll(keys);
+
+    assertThat(expiryPolicy.getCreationCount(), is(0));
+    assertThat(expiryPolicy.getAccessCount(), is(0));
+    assertThat(expiryPolicy.getUpdatedCount(), is(0));
+
+    cache.put(1, 1);
+    cache.put(2, 2);
+
+    assertThat(expiryPolicy.getCreationCount(), greaterThanOrEqualTo(2));
+    assertThat(expiryPolicy.getAccessCount(), is(0));
+    assertThat(expiryPolicy.getUpdatedCount(), is(0));
+    expiryPolicy.resetCount();
+
+    cache.getAll(keys);
+    // expect at least one call
+    assertThat(expiryPolicy.getAccessCount(), greaterThanOrEqualTo(1));
   }
 
   @Test
