@@ -500,7 +500,7 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
     }
   }
 
-  private class MutableEntryAdapter implements MutableEntry<K, V> {
+  class MutableEntryAdapter implements MutableEntry<K, V> {
 
     private final MutableCacheEntry<K, V> entry;
     private boolean removed;
@@ -508,6 +508,11 @@ public class JCacheAdapter<K, V> implements javax.cache.Cache<K, V> {
 
     MutableEntryAdapter(MutableCacheEntry<K, V> e) {
       entry = e;
+    }
+
+    /** used by touchy adapter */
+    public void setExpiryTime(long t) {
+      entry.setExpiryTime(t);
     }
 
     @Override

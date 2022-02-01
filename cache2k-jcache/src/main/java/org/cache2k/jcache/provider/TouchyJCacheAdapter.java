@@ -39,9 +39,6 @@ import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.AbstractCollection;
-import java.util.AbstractSet;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -93,7 +90,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
     }
     Duration d = expiryPolicy.getExpiryForAccess();
     if (d != null) {
-      long ticks = calculateExpiry(d);
+      long ticks = durationToTicks(clock, 0, d);
       c2kCache.invokeAll(map.keySet(), entry -> entry.setExpiryTime(ticks));
     }
     return map;
@@ -156,7 +153,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
         }
         Duration d = expiryPolicy.getExpiryForAccess();
         if (d != null) {
-          e.setExpiryTime(calculateExpiry(d));
+          e.setExpiryTime(durationToTicks(clock, 0, d));
         }
         return false;
       }
@@ -186,7 +183,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
           } else {
             Duration d = expiryPolicy.getExpiryForAccess();
             if (d != null) {
-              e.setExpiryTime(calculateExpiry(d));
+              e.setExpiryTime(durationToTicks(clock, 0, d));
             }
           }
         }
@@ -303,56 +300,77 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       throw new NullPointerException("processor is null");
     }
     return new javax.cache.processor.EntryProcessor<K, V, T>() {
-      boolean freshOrJustLoaded = false;
       @Override
       public T process(MutableEntry<K, V> e0, Object... args)
         throws EntryProcessorException {
-        MutableEntry<K, V> me = new MutableEntry<K, V>() {
-
-          @Override
-          public boolean exists() {
-            return e0.exists();
+        WrappedMutableEntry<K, V> wrappedEntry = new WrappedMutableEntry<K, V>(e0);
+        T result = ep.process(wrappedEntry, args);
+        if (wrappedEntry.isAccessed()) {
+          Duration d = expiryPolicy.getExpiryForAccess();
+          if (d != null) {
+            long ticks = durationToTicks(clock, 0, d);
+            ((JCacheAdapter.MutableEntryAdapter) e0).setExpiryTime(ticks);
           }
-
-          @Override
-          public void remove() {
-            e0.remove();
-          }
-
-          @Override
-          public void setValue(V value) {
-            checkNullValue(value);
-            freshOrJustLoaded = true;
-            e0.setValue(value);
-          }
-
-          @Override
-          public K getKey() {
-            return e0.getKey();
-          }
-
-          @Override
-          public V getValue() {
-            boolean doNotCountCacheAccessIfEntryGetsLoaded = !exists();
-            boolean doNotCountCacheAccessIfEntryIsFresh = freshOrJustLoaded;
-            if (doNotCountCacheAccessIfEntryIsFresh || doNotCountCacheAccessIfEntryGetsLoaded) {
-              if (!cache.readThrough && !exists()) {
-                return null;
-              }
-              freshOrJustLoaded = true;
-              return e0.getValue();
-            }
-            return returnValue(e0.getKey(), e0.getValue());
-          }
-
-          @Override
-          public <X> X unwrap(Class<X> clazz) {
-            return null;
-          }
-        };
-        return ep.process(me, args);
+        }
+        return result;
       }
     };
+  }
+
+  /**
+   * Determine whether existing cache entry was accessed
+   */
+  static class WrappedMutableEntry<K, V> implements MutableEntry<K, V> {
+    private MutableEntry<K, V> entry;
+
+    private boolean accessed = false;
+    private boolean written = false;
+
+    public WrappedMutableEntry(MutableEntry<K, V> entry) {
+      this.entry = entry;
+    }
+
+    /**
+     * Only true if no write before or after the access of an existing entry
+     */
+    public boolean isAccessed() {
+      return accessed & !written;
+    }
+
+    @Override
+    public boolean exists() {
+      return entry.exists();
+    }
+
+    @Override
+    public void remove() {
+      written = true;
+      entry.remove();
+    }
+
+    @Override
+    public V getValue() {
+      if (exists()) {
+        accessed = !written;
+      }
+      return entry.getValue();
+    }
+
+    @Override
+    public void setValue(V value) {
+      written = true;
+      entry.setValue(value);
+    }
+
+    @Override
+    public K getKey() {
+      return entry.getKey();
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+      return entry.unwrap(clazz);
+    }
   }
 
   /**
@@ -367,30 +385,17 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
    * Entry was accessed update expiry if value is non null.
    */
   private V returnValue(K key, V value) {
-    if (value != null) {
-      Duration d = expiryPolicy.getExpiryForAccess();
-      if (d != null) {
-        c2kCache.expireAt(key, calculateExpiry(d));
-      }
-      return value;
+    if (value == null) {
+      return null;
     }
-    return null;
-  }
-
-  private long calculateExpiry(Duration d) {
-    if (Duration.ZERO.equals(d)) {
-      return ExpiryTimeValues.NOW;
-    } else if (Duration.ETERNAL.equals(d)) {
-      return ExpiryTimeValues.ETERNAL;
-    }
-    return clock.ticks() + clock.toTicks(
-      java.time.Duration.ofMillis(d.getTimeUnit().toMillis(d.getDurationAmount())));
+    touchEntry(key);
+    return value;
   }
 
   private void touchEntry(K key) {
     Duration d = expiryPolicy.getExpiryForAccess();
     if (d != null) {
-      c2kCache.expireAt(key, calculateExpiry(d));
+      c2kCache.expireAt(key, durationToTicks(clock, 0, d));
     }
   }
 
@@ -432,13 +437,7 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       if (d == null) {
         return ExpiryTimeValues.NEUTRAL;
       }
-      if (d.equals(Duration.ETERNAL)) {
-        return ExpiryTimeValues.ETERNAL;
-      }
-      if (d.equals(Duration.ZERO)) {
-        return ExpiryTimeValues.NOW;
-      }
-      return startTime + d.getTimeUnit().toMillis(d.getDurationAmount());
+      return durationToTicks(TimeReference.DEFAULT, startTime, d);
     }
 
     @Override
@@ -448,6 +447,20 @@ public class TouchyJCacheAdapter<K, V> implements Cache<K, V> {
       }
     }
 
+  }
+
+  private static long durationToTicks(TimeReference clock, long nowTicks, Duration d) {
+    if (d.equals(Duration.ETERNAL)) {
+      return ExpiryTimeValues.ETERNAL;
+    }
+    if (d.equals(Duration.ZERO)) {
+      return ExpiryTimeValues.NOW;
+    }
+    if (nowTicks == 0) {
+      nowTicks = clock.ticks();
+    }
+    return nowTicks + clock.toTicks(
+      java.time.Duration.ofMillis(d.getTimeUnit().toMillis(d.getDurationAmount())));
   }
 
 }

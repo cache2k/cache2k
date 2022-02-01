@@ -469,8 +469,7 @@ public class CacheExpiryTest extends CacheTestSupport<Integer, Integer> {
     cache.put(1, 1);
 
     assertTrue(cache.containsKey(1));
-    // FIXME, wrong result
-    assertNull(cache.invoke(1, (EntryProcessor<Integer, Integer, Object>)
+    assertNotNull(cache.invoke(1, (EntryProcessor<Integer, Integer, Object>)
       (entry, arguments) -> {
         Object v = entry.getValue();
         entry.setValue(2);
