@@ -20,6 +20,7 @@ package org.cache2k.pinpoint.stress.pairwise;
  * #L%
  */
 
+import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,16 +32,17 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author Jens Wilke
  */
-class OneShotPairRunner<R> {
+class OneShotPairRunner<R1, R2> {
 
-  private final ActorPair<R> actorPair;
-  private final AtomicReference<R> result1 = new AtomicReference<R>();
-  private final AtomicReference<R> result2 = new AtomicReference<R>();
-  private final AtomicReference<Throwable> exception1 = new AtomicReference<Throwable>();
-  private final AtomicReference<Throwable> exception2 = new AtomicReference<Throwable>();
+  private final ActorPair<R1, R2> actorPair;
+  private final AtomicReference<R1> result1 = new AtomicReference<>();
+  private final AtomicReference<R2> result2 = new AtomicReference<>();
+  private final AtomicReference<Throwable> exception1 = new AtomicReference<>();
+  private final AtomicReference<Throwable> exception2 = new AtomicReference<>();
+  private final AtomicReference<Throwable> observerException = new AtomicReference<>();
   private final AtomicInteger finishLatch = new AtomicInteger();
 
-  OneShotPairRunner(ActorPair<R> actorPair) {
+  OneShotPairRunner(ActorPair<R1, R2> actorPair) {
     this.actorPair = actorPair;
   }
 
@@ -48,54 +50,86 @@ class OneShotPairRunner<R> {
     actorPair.setup();
     exception1.set(null);
     exception2.set(null);
-    finishLatch.set(2);
-    CountDownLatch startLatch = new CountDownLatch(2);
-    Runnable r1 = new Runnable() {
-      @Override
-      public void run() {
+    boolean observerPresent = observerPresent(actorPair.getClass());
+    finishLatch.set(observerPresent ? 3 : 2);
+    CountDownLatch startLatch = new CountDownLatch(finishLatch.get());
+    Runnable r1 = () -> {
+      try {
+        startLatch.countDown();
+        startLatch.await();
+        result1.set(actorPair.actor1());
+      } catch (Throwable t) {
+        exception1.set(t);
+      } finally {
+        finishLatch.decrementAndGet();
+      }
+    };
+    Runnable r2 = () -> {
+      try {
+        startLatch.countDown();
+        startLatch.await();
+        result2.set(actorPair.actor2());
+      } catch (Throwable t) {
+        exception2.set(t);
+      } finally {
+        finishLatch.decrementAndGet();
+      }
+    };
+    if (observerPresent) {
+      Runnable r3 = () -> {
         try {
           startLatch.countDown();
           startLatch.await();
-          result1.set(actorPair.actor1());
+          actorPair.observe();
         } catch (Throwable t) {
-          exception1.set(t);
+          observerException.set(t);
         } finally {
           finishLatch.decrementAndGet();
         }
-      }
-    };
-    Runnable r2 = new Runnable() {
-      @Override
-      public void run() {
-        try {
-          startLatch.countDown();
-          startLatch.await();
-          result2.set(actorPair.actor2());
-        } catch (Throwable t) {
-          exception2.set(t);
-        } finally {
-          finishLatch.decrementAndGet();
-        }
-      }
-    };
+      };
+      executor.execute(r3);
+    }
+    if ((this.hashCode() & 1) == 0) {
+      Runnable tmp = r1; r1 = r2; r2 = tmp;
+    }
     executor.execute(r1);
     executor.execute(r2);
     while(finishLatch.get() > 0) { }
     if (exception1.get() != null) {
-      throw new ExceptionInActorThread(exception1.get());
+      throw new ActorException(exception1.get());
     }
     if (exception2.get() != null) {
-      throw new ExceptionInActorThread(exception2.get());
+      throw new ActorException(exception2.get());
+    }
+    if (observerException.get() != null) {
+      throw new ObserverException(observerException.get());
     }
     actorPair.check(result1.get(), result2.get());
   }
 
-  static class ExceptionInActorThread extends AssertionError {
-
-    ExceptionInActorThread(Throwable cause) {
-      super(cause.toString());
-      initCause(cause);
+  static boolean observerPresent(Class<?> clazz) {
+    try {
+      Method m = clazz.getMethod("observe");
+      return ! m.getDeclaringClass().equals(ActorPair.class);
+    } catch (NoSuchMethodException e) {
+      return false;
     }
+  }
+
+  static class ActorException extends AssertionError {
+
+    ActorException(Throwable cause) {
+      super(cause);
+    }
+
+  }
+
+  static class ObserverException extends AssertionError {
+
+    ObserverException(Throwable cause) {
+      super(cause);
+    }
+
   }
 
 }

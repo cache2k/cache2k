@@ -20,12 +20,14 @@ package org.cache2k.pinpoint.stress.pairwise;
  * #L%
  */
 
-import org.cache2k.pinpoint.NeverExecutedError;
-
 /**
+ * The two actors will be executed concurrently in tests.
+ *
  * @author Jens Wilke
+ * @param <R> the result of the actor
+ * @see ActorPairSuite
  */
-public interface ActorPair<R1, R2> {
+public interface ActorPairSingleType<R> extends ActorPair<R, R> {
 
   /**
    * Setup or reset action executed before the actors.
@@ -34,25 +36,17 @@ public interface ActorPair<R1, R2> {
 
   /**
    * First actor executed concurrently with actor2.
-   * Any exceptions are propagated.
    *
    * @return outcome of the actor
    */
-  R1 actor1();
+  R actor1();
 
   /**
    * Second actor executed concurrently with actor1.
-   * Any exceptions are propagated.
    *
    * @return outcome of the actor
    */
-  R2 actor2();
-
-  /**
-   * The observer can check integrity or invariants of a data structure. It
-   * is executed concurrently to the actors. Any exceptions are propagated.
-   */
-  default void observe() { throw new NeverExecutedError(); }
+  R actor2();
 
   /**
    * Checks the outcome after both actors have finished. The method is expected
@@ -61,6 +55,6 @@ public interface ActorPair<R1, R2> {
    * @param r1 outcome of {@link #actor1()}
    * @param r2 outcome of {@link #actor2()}
    */
-  void check(R1 r1, R2 r2);
+  void check(R r1, R r2);
 
 }

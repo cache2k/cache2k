@@ -22,6 +22,7 @@ package org.cache2k.testsuite.stress;
 
 import org.cache2k.Cache;
 import org.cache2k.pinpoint.stress.pairwise.ActorPair;
+import org.cache2k.pinpoint.stress.pairwise.ActorPairSingleType;
 
 /**
  * For actors on a cache key
@@ -29,7 +30,7 @@ import org.cache2k.pinpoint.stress.pairwise.ActorPair;
  * @author Jens Wilke
  */
 @SuppressWarnings({"NullAway", "nullness"})
-public abstract class CacheKeyActorPair<R, K, V> implements ActorPair<R>, Cloneable {
+public abstract class CacheKeyActorPair<R, K, V> implements ActorPair<R, R>, Cloneable {
 
   protected Cache<K, V> cache;
   protected K key;

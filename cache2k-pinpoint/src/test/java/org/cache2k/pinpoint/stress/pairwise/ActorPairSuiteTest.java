@@ -20,6 +20,7 @@ package org.cache2k.pinpoint.stress.pairwise;
  * #L%
  */
 
+import org.cache2k.pinpoint.NeverExecutedError;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executor;
@@ -113,6 +114,21 @@ public class ActorPairSuiteTest {
   }
 
   @Test
+  public void exceptionPropagationFromObserver() {
+    ActorPairSuite s = new ActorPairSuite()
+      .stopAtFirstException(true)
+      .addPair(new DefaultPair<Object>() {
+        @Override
+        public void observe() {
+          throw new RuntimeException("observer");
+        }
+      });
+    assertThatCode(s::run)
+      .isInstanceOf(AssertionError.class)
+      .hasMessageContaining("observer");
+  }
+
+  @Test
   public void noExceptionOneshot() {
     AtomicBoolean wasRun = new AtomicBoolean();
     ActorPairSuite s = new ActorPairSuite()
@@ -158,7 +174,24 @@ public class ActorPairSuiteTest {
     ).isInstanceOf(IllegalArgumentException.class);
   }
 
-  static class DefaultPair<R> implements ActorPair<R> {
+  @Test
+  public void observerDetection() {
+    assertThat(OneShotPairRunner.observerPresent(this.getClass())).isFalse();
+    assertThat(OneShotPairRunner.observerPresent(DefaultPair.class)).isFalse();
+    ActorPair withObserver = new DefaultPair() {
+      @Override
+      public void observe() { }
+    };
+    assertThat(OneShotPairRunner.observerPresent(withObserver.getClass())).isTrue();
+  }
+
+  @Test
+  public void observerThrowsException() {
+    assertThatCode(() -> new DefaultPair().observe())
+      .isInstanceOf(NeverExecutedError.class);
+  }
+
+  static class DefaultPair<R> implements ActorPairSingleType<R> {
     @Override
     public void setup() { }
 

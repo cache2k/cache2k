@@ -21,7 +21,7 @@ package org.cache2k.testsuite.stress;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.pinpoint.stress.pairwise.AbstractActorPair;
+import org.cache2k.pinpoint.stress.pairwise.ActorPairSingleType;
 import org.cache2k.pinpoint.stress.pairwise.ActorPairSuite;
 import org.junit.Test;
 
@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
@@ -44,6 +45,7 @@ import static org.junit.Assert.*;
 public class ConcurrentMapStressTest {
 
   public static final Set<Class<? extends MyActorPair>> ACTOR_PAIRS = new HashSet<>();
+  public static final Set<Function<? extends Target, ? extends MyActorPair>> PAIRS = new HashSet<>();
 
   @SuppressWarnings("unchecked")
   @Test
@@ -144,11 +146,10 @@ public class ConcurrentMapStressTest {
   }
   static { ACTOR_PAIRS.add(ComputeIfAbsent1.class); }
 
-  public abstract static class MyActorPair extends AbstractActorPair<Integer, Target> {
+  public abstract static class MyActorPair implements ActorPairSingleType<Integer> {
     public final ConcurrentMap<Integer, Integer> map;
     public final Integer key;
     public MyActorPair(Target target) {
-      super(target);
       this.key = target.key;
       this.map = target.map;
     }

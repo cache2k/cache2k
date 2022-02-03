@@ -39,17 +39,16 @@ import java.util.concurrent.atomic.LongAdder;
  * Any exception within the actor methods will be propagated.
  *
  * @author Jens Wilke
- * @see ActorPair
+ * @see ActorPairSingleType
  */
 public class ActorPairSuite {
 
-  private final Set<ActorPair<?>> pairs = new HashSet<ActorPair<?>>();
-  private final List<OneShotPairRunner> pairRunners = new ArrayList<OneShotPairRunner>();
-  private final Map<OneShotPairRunner<?>, OneShotPairRunner<?>> running =
-    new ConcurrentHashMap<OneShotPairRunner<?>, OneShotPairRunner<?>>();
+  private final Set<ActorPair<?, ?>> pairs = new HashSet<>();
+  private final List<OneShotPairRunner> pairRunners = new ArrayList<>();
+  private final Map<OneShotPairRunner, OneShotPairRunner> running = new ConcurrentHashMap<>();
   private final CountDownLatch finishLatch = new CountDownLatch(1);
   private final Random random = new Random(1802);
-  private final List<Throwable> exceptions = new CopyOnWriteArrayList<Throwable>();
+  private final List<Throwable> exceptions = new CopyOnWriteArrayList<>();
   private final LongAdder runCount = new LongAdder();
   private long finishTime;
 
@@ -89,7 +88,7 @@ public class ActorPairSuite {
   /**
    * Add an actor pair
    */
-  public ActorPairSuite addPair(ActorPair<?>... ps) {
+  public ActorPairSuite addPair(ActorPair<?, ?>... ps) {
     pairs.addAll(Arrays.asList(ps));
     return this;
   }
@@ -115,7 +114,7 @@ public class ActorPairSuite {
     finishTime = runMillis == Long.MAX_VALUE ?
       Long.MAX_VALUE : System.currentTimeMillis() + runMillis;
     for (ActorPair p : pairs) {
-      pairRunners.add(new OneShotPairRunner<Object>(p));
+      pairRunners.add(new OneShotPairRunner(p));
     }
     for (int i = 0; i < maxParallel; i++) {
       executor.execute(() -> runLoop());
@@ -133,8 +132,8 @@ public class ActorPairSuite {
     }
   }
 
-  private OneShotPairRunner<?> nextRunner() {
-    OneShotPairRunner<?> r;
+  private OneShotPairRunner nextRunner() {
+    OneShotPairRunner r;
     do {
       r = pairRunners.get(random.nextInt(pairRunners.size()));
     } while (running.putIfAbsent(r, r) != null);
@@ -143,7 +142,7 @@ public class ActorPairSuite {
 
   private void runLoop() {
     do {
-      OneShotPairRunner<?> runner = nextRunner();
+      OneShotPairRunner runner = nextRunner();
       try {
         runner.run(executor);
       } catch (Throwable t) {

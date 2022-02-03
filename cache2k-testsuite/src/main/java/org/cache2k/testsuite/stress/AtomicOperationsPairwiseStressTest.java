@@ -25,6 +25,7 @@ import static org.junit.Assert.*;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.annotation.Nullable;
+import org.cache2k.pinpoint.stress.pairwise.ActorPair;
 import org.cache2k.testing.category.SlowTests;
 import org.cache2k.testsuite.support.StaticUtil;
 import org.junit.experimental.categories.Category;
@@ -78,9 +79,8 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
       return cache.replaceIfEquals(key, 10, 30);
     }
     public void check(Boolean r1, Boolean r2) {
-      SuccessTuple r = new SuccessTuple(r1, r2);
-      assertTrue("one actor wins", r.isOneSucceeds());
-      assertEquals("cached value", r.isSuccess1() ? 20 : 30, (int) value());
+      assertTrue("one actor wins", r1 != r2);
+      assertEquals("cached value", r1 ? 20 : 30, (int) value());
     }
   }
 
@@ -95,9 +95,8 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
       return cache.replaceIfEquals(key, 20, 30);
     }
     public void check(Boolean r1, Boolean r2) {
-      SuccessTuple r = new SuccessTuple(r1, r2);
-      assertTrue(!r.isBothSucceed() || value() == 30);
-      assertTrue(!r.isOneSucceeds() || (value() == 20 && r1));
+      assertTrue(!(r1 && r2) || value() == 30);
+      assertTrue(!(r1 != r2) || (value() == 20 && r1));
     }
   }
 
@@ -112,7 +111,7 @@ public class AtomicOperationsPairwiseStressTest extends PairwiseTestingBase {
       return cache.putIfAbsent(key, 20);
     }
     public void check(Boolean r1, Boolean r2) {
-      assertTrue(new SuccessTuple(r1, r2).isOneSucceeds());
+      assertTrue(r1 != r2);
       assertTrue(!r1 || value() == 10);
       assertTrue(!r2 || value() == 20);
     }
