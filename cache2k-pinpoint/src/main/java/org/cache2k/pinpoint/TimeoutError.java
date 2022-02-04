@@ -34,7 +34,18 @@ public class TimeoutError extends AssertionError {
   }
 
   public TimeoutError(Duration timeout) {
-    super("Timeout after " + readableDuration(timeout));
+    this(null, timeout);
+  }
+
+  public TimeoutError(String description, Duration timeout) {
+    super(message(description, timeout));
+  }
+
+  static String message(String description, Duration timeout) {
+    if (description != null) {
+      return description + ". Timeout after " + readableDuration(timeout);
+    }
+    return "Timeout after " + readableDuration(timeout);
   }
 
   static String readableDuration(Duration timeout) {

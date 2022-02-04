@@ -28,6 +28,9 @@ package org.cache2k.pinpoint;
  */
 public interface PinpointClock {
 
+  /**
+   * Returns the current time
+   */
   long ticks();
 
 }
