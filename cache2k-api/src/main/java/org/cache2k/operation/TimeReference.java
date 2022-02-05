@@ -71,8 +71,7 @@ public interface TimeReference {
    * millisecond.
    *
    * <p>This can be overridden in case another timescale is used.
-   * Conversion is needed for correctly scheduling a timer task that regularly process
-   * the expiry tasks.
+   * Conversion is needed for correctly scheduling a timer tasks.
    */
   long ticksToMillisCeiling(long ticks);
 
