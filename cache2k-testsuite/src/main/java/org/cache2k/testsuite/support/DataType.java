@@ -24,7 +24,10 @@ import org.cache2k.config.CacheType;
 import org.cache2k.config.CacheTypeCapture;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -68,6 +71,7 @@ public class DataType<T> {
       }
     }, new CacheTypeCapture.OfClass<>(Object.class));
 
+  private volatile Map<T, Integer> valueToIndex = Collections.emptyMap();
   private volatile T[] generatedValues = (T[]) new Object[0];
   private final Supplier<T> anotherValue;
   private final CacheType<T> cacheType;
@@ -98,9 +102,27 @@ public class DataType<T> {
       for (int i = vals.length; i <= index; i++) {
         moreVals[i] = anotherValue.get();
       }
-      vals = moreVals;
-      return vals[index];
+      generatedValues = moreVals;
+      return moreVals[index];
     }
+  }
+
+  public int toIndex(T value) {
+    Integer index = valueToIndex.get(value);
+    if (index == null) {
+      synchronized (this) {
+        Map<T, Integer> newMap = new HashMap<>();
+        for (int i = 0; i < generatedValues.length; i++) {
+          newMap.put(generatedValues[i], i);
+        }
+        valueToIndex = newMap;
+        index = newMap.get(value);
+        if (index == null) {
+          throw new AssertionError("unknown value: " + value);
+        }
+      }
+    }
+    return index;
   }
 
   public T getValue0() {
