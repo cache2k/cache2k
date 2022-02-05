@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.ForwardingCache;
 import org.cache2k.operation.CacheControl;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.pinpoint.CaughtInterruptedExceptionError;
 import org.cache2k.pinpoint.TimeBox;
@@ -31,6 +32,7 @@ import org.cache2k.pinpoint.TimeoutError;
 import org.cache2k.pinpoint.UnexpectedExceptionError;
 import org.junit.jupiter.api.AfterEach;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -82,9 +84,16 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   }
 
   protected Cache2kBuilder<K, V> provideBuilder() {
-    return Cache2kBuilder.forUnknownTypes()
+    final Cache2kBuilder<K, V> b = Cache2kBuilder.forUnknownTypes()
       .keyType(keys.getCacheType())
       .valueType(values.getCacheType());
+    if (clock != TimeReference.DEFAULT) {
+      b.timeReference(clock);
+      if (clock instanceof Scheduler) {
+        b.scheduler((Scheduler) clock);
+      }
+    }
+    return b;
   }
 
   @Override
@@ -103,10 +112,18 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     createdCache = builder.build();
   }
 
+  protected void setClock(TimeReference clock) {
+    this.clock = clock;
+  }
+
   public TimeReference clock() { return clock; }
 
   public long now() {
     return clock.ticks();
+  }
+
+  public void sleep(Duration duration) {
+    sleep(clock().toTicks(duration));
   }
 
   public void sleep(long ticks) {

@@ -184,6 +184,10 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
       sleepInExecutor(ticks);
       return;
     }
+    if (ticks < 0) {
+      waitForTaskExecution();
+      return;
+    }
     if (ticks == 0) {
       sleep0();
       return;
@@ -210,11 +214,7 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
    */
   private void sleep0() throws InterruptedException {
     if (tasksWaitingForExecution.get() > 0) {
-      while (tasksWaitingForExecution.get() > 0) {
-        synchronized (parallelExecutionsWaiter) {
-          parallelExecutionsWaiter.wait(5);
-        }
-      }
+      waitForTaskExecution();
       return;
     }
     long nextTime = progressAndRunEvents(-1);
@@ -223,6 +223,14 @@ public class SimulatedClock extends TimeReference.Milliseconds implements Schedu
       return;
     }
     moveForward(rawTicks() + 1);
+  }
+
+  private void waitForTaskExecution() throws InterruptedException {
+    while (tasksWaitingForExecution.get() > 0) {
+      synchronized (parallelExecutionsWaiter) {
+        parallelExecutionsWaiter.wait(5);
+      }
+    }
   }
 
   public Executor wrapExecutor(Executor ex) {

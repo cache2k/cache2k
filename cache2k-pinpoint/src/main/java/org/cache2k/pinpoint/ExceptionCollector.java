@@ -45,6 +45,17 @@ public class ExceptionCollector {
     }
   }
 
+  /**
+   * Execute the runnable and collect exception if thrown
+   */
+  public void runAndCatch(Runnable r) {
+    try {
+      r.run();
+    } catch (Throwable t) {
+      exception(t);
+    }
+  }
+
   public void assertNoException() {
     if (firstException.get() != null) {
       throw new AssertionError(

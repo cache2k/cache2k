@@ -31,9 +31,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Standard timer implementation. Due timer tasks are executed via a scheduler
- * that runs at most every second (lag time, configurable). There is always only
- * one pending scheduler job per timer.
+ * Standard timer implementation. Timer tasks are executed via a scheduler
+ * that fires at more approximately at second intervals (lag time, configurable).
+ * Typically, there is only one scheduler task per timer. In the case that a timer
+ * task is scheduled more than one second before the last an earlier scheduler
+ * event is inserted. The later scheduler event is not needed any more, but we
+ * do not delete scheduler events in this case.
  *
  * @author Jens Wilke
  */
@@ -54,11 +57,11 @@ public class DefaultTimer implements Timer {
   private final TimeReference clock;
   private final Scheduler scheduler;
   private final TimerStructure structure;
-  private long nextScheduled = Long.MAX_VALUE;
   /**
    * Lag time to gather timer tasks for more efficient execution.
    */
   private final long lagTicks;
+  private long nextScheduled = Long.MAX_VALUE;
 
   private final Runnable timerAction = new Runnable() {
     @Override
@@ -100,8 +103,9 @@ public class DefaultTimer implements Timer {
     }
     lock.lock();
     try {
-      if (structure.schedule(task, time)) {
-        rescheduleEventually(time + lagTicks);
+      long slotTime = structure.schedule(task, time);
+      if (slotTime != 0) {
+        rescheduleEventually(slotTime);
         return;
       }
       executeImmediately(task);
@@ -200,12 +204,11 @@ public class DefaultTimer implements Timer {
    *
    * @param now the current time for calculations
    * @param time requested time for processing, or MAX_VALUE if nothing needs to be scheduled
-   * @throw CacheClosedException
+   * @throws CacheClosedException if cache was closed concurrently
    */
   private void schedule(long now, long time) {
     if (time != Long.MAX_VALUE) {
-      long earliestTime = now + lagTicks;
-      scheduleNext(Math.max(earliestTime, time));
+      scheduleNext(time);
     } else {
       nextScheduled = Long.MAX_VALUE;
     }
@@ -217,7 +220,7 @@ public class DefaultTimer implements Timer {
    * We don't cancel a scheduled task. The additional event does not hurt.
    */
   void rescheduleEventually(long time) {
-    if (time >= nextScheduled - lagTicks) {
+    if (time >= nextScheduled) {
       return;
     }
     scheduleNext(time);

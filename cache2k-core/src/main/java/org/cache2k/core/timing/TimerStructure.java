@@ -38,10 +38,10 @@ public interface TimerStructure {
    * Insert task. Scheduling might be not possible if tasks for the requested
    * time have already be run.
    *
-   * @return true if scheduled successfully, false if scheduling was not possible
-   *              because the target time slot would be in the past
+   * @return 0, if time is already in the past. Or a positive value
+   *         indicating the execution time of the timer slot
    */
-  boolean schedule(TimerTask task, long time);
+  long schedule(TimerTask task, long time);
 
   /**
    * Cancel all tasks

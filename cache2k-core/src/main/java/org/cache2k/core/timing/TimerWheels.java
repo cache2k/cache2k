@@ -32,14 +32,21 @@ package org.cache2k.core.timing;
 public class TimerWheels implements TimerStructure {
 
   private final Wheel wheel;
+  private final long delta;
 
   public TimerWheels(long startTime, long delta, int slots) {
+    this.delta = delta;
     wheel = new Wheel(startTime, delta, slots);
   }
 
-  public boolean schedule(TimerTask task, long time) {
+  public long schedule(TimerTask task, long time) {
     task.time = time;
-    return wheel.schedule(task);
+    if (wheel.schedule(task)) {
+      long slotTime = time + (delta - ((time - wheel.noon) % delta)) - 1;
+      if (slotTime < 0) { return Long.MAX_VALUE - 1; }
+      return slotTime;
+    }
+    return 0;
   }
 
   public void cancelAll() {
@@ -55,17 +62,17 @@ public class TimerWheels implements TimerStructure {
     return wheel.nextToRun();
   }
 
-  static class Wheel {
+  class Wheel {
 
     private Wheel up;
     private long noon;
     private long nextNoon;
-    private final long delta;
+    private final long slotDelta;
     private final TimerTask[] slots;
     private int index;
 
-    Wheel(long time, long delta, int slotCount) {
-      this.delta = delta;
+    Wheel(long time, long slotDelta, int slotCount) {
+      this.slotDelta = slotDelta;
       slots = new TimerTask[slotCount];
       initArray();
       atNoon(time);
@@ -85,7 +92,7 @@ public class TimerWheels implements TimerStructure {
     private void atNoon(long time) {
       index = 0;
       noon = time;
-      nextNoon = time + delta * slots.length;
+      nextNoon = time + slotDelta * slots.length;
       if (nextNoon < 0) {
         nextNoon = Long.MAX_VALUE;
       }
@@ -101,16 +108,19 @@ public class TimerWheels implements TimerStructure {
 
     /**
      * Time, when all tasks for the given slot index can be executed.
+     * Or, if this is not the lowest level wheel, the time when potentially
+     * this slot might have tasks to execute. We add the global delta, so
+     * this works for all clock levels.
      */
     long executionTime(int i) {
-      return noon + delta * i + delta - 1;
+      return noon + slotDelta * i + delta - 1;
     }
 
     /**
-     * Search for non empty time slot and return the time, when
-     * the slot can be executed. For simplicity we don't recurse
-     * into higher hierarchies, so this method is only called
-     * at the lowest hierarchy.
+     * Search for occupied time slot and return the time, when
+     * the slot can be executed. If the lowest level does not have
+     * tasks to execute, recurse up and return the time when the slot
+     * at an upper level needs to split up.
      */
     long nextToRun() {
       for (int i = index; i < slots.length; i++) {
@@ -121,7 +131,8 @@ public class TimerWheels implements TimerStructure {
       if (up == null) {
         return Long.MAX_VALUE;
       }
-      return executionTime(slots.length);
+      long time = up.nextToRun();
+      return time;
     }
 
     /**
@@ -140,7 +151,7 @@ public class TimerWheels implements TimerStructure {
             t.remove();
             return t;
           }
-          hand = hand + delta;
+          hand = hand + slotDelta;
           if (time >= hand) {
             moveHand();
             continue;
@@ -191,7 +202,7 @@ public class TimerWheels implements TimerStructure {
         return true;
       } else {
         if (up == null) {
-          up = new Wheel(nextNoon, delta * slots.length, slots.length);
+          up = new Wheel(nextNoon, slotDelta * slots.length, slots.length);
         }
         return up.schedule(t);
       }
@@ -201,7 +212,7 @@ public class TimerWheels implements TimerStructure {
      * Insert into the proper time slot.
      */
     private void insert(TimerTask t) {
-      int idx = (int) ((t.time - noon) / delta);
+      int idx = (int) ((t.time - noon) / slotDelta);
       slots[idx].insert(t);
     }
 
