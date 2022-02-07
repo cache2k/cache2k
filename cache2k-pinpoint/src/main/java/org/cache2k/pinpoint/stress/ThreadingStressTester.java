@@ -20,15 +20,18 @@ package org.cache2k.pinpoint.stress;
  * #L%
  */
 
+import org.cache2k.pinpoint.CaughtInterruptedExceptionError;
+import org.cache2k.pinpoint.PinpointParameters;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -44,43 +47,38 @@ public class ThreadingStressTester {
    * testing.
    */
   private static final ExecutorService pool =
-    Executors.newCachedThreadPool(new ThreadFactory() {
-      @Override
-      public Thread newThread(Runnable r) {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        t.setName("stress-tester-" + threadCounter.incrementAndGet());
-        return t;
-      }
+    Executors.newCachedThreadPool(r -> {
+      Thread t = new Thread(r);
+      t.setDaemon(true);
+      t.setName("stress-tester-" + threadCounter.incrementAndGet());
+      return t;
     });
 
-  private final List<Runnable> tasks = new ArrayList<Runnable>();
+  private final List<Runnable> tasks = new ArrayList<>();
 
   /** Thread array we will use for interruption if time boundary is set */
-  private Thread[] threads;
+  private final List<Thread> threads = new CopyOnWriteArrayList<>();
 
   /** Possible exceptions in the threads */
-  private Throwable[] threadException;
+  private final Map<Thread, Throwable> threadException = new ConcurrentHashMap<>();
 
-  private List<Throwable> exceptions;
+  private CountDownLatch startSyncLatch;
 
-  private CyclicBarrier barrier;
+  private CountDownLatch allRunningLatch;
 
   private long startTime;
 
   private long stopTime;
 
-  private long oneShotTimeoutMillis = 30 * 1000;
+  private long oneShotTimeoutMillis = PinpointParameters.TIMEOUT.toMillis();
 
-  private long testTimeMillis = 1000 * 1;
+  private long testTimeMillis = 1000;
 
-  private long timeoutAfterInterruptMillis = 30 * 1000;
+  private long timeoutAfterInterruptMillis = PinpointParameters.TIMEOUT.toMillis();
 
   private boolean doNotInterrupt = false;
 
   private volatile boolean shouldStop = false;
-
-  private Class[] ignoredExceptions = new Class[]{};
 
   private boolean disablePrintThreadExceptions = false;
 
@@ -88,22 +86,9 @@ public class ThreadingStressTester {
 
   private CountDownLatch allStoppedLatch;
 
-  private Runnable finalCheck = new Runnable() {
-    @Override
-    public void run() {
-
-    }
-  };
+  private Runnable finalCheck = () -> { };
 
   private Runnable onError = () -> { };
-
-  public Class[] getIgnoredExceptions() {
-    return ignoredExceptions;
-  }
-
-  public Runnable getFinalCheck() {
-    return finalCheck;
-  }
 
   /**
    * Executed after test is run to assert end conditions. Only runs if threads
@@ -111,10 +96,6 @@ public class ThreadingStressTester {
    */
   public void setFinalCheck(Runnable finalCheck) {
     this.finalCheck = finalCheck;
-  }
-
-  public Runnable getOnError() {
-    return onError;
   }
 
   /**
@@ -143,13 +124,6 @@ public class ThreadingStressTester {
   }
 
   /**
-   * Set of exceptions that can be ignored.
-   */
-  public void setIgnoredExceptions(Class[] v) {
-    this.ignoredExceptions = v;
-  }
-
-  /**
    *
    * @see #setDisablePrintThreadExceptions(boolean)
    */
@@ -158,7 +132,7 @@ public class ThreadingStressTester {
   }
 
   /**
-   * By default all thread exceptions are printed to standard error. This is
+   * By default, all thread exceptions are printed to standard error. This is
    * useful because all exceptions are needed to analyze the problem cause.
    * This can be optionally disabled. If disabled only an exceptions is
    * throws by the run method.
@@ -209,8 +183,7 @@ public class ThreadingStressTester {
 
   /**
    * Time span the test tasks are run. After the time span the thread task will get an interrupt signal.
-   * By default the task execution is looped endless, until time is passed.
-   * Setting this to 0, means one shot mode, every task is executed only once.
+   * By default, the task execution is looped endless, until time is passed.
    * The default is 1000 milliseconds.
    */
   public final void setTestTimeMillis(long testTimeMillis) {
@@ -239,7 +212,7 @@ public class ThreadingStressTester {
   }
 
   /**
-   * Enables one shot mode. Tasks will be only executed once. This sets test time to -1.
+   * Enables one shot mode. Tasks will be only executed once.
    * In one shot mode the runner waits until all threads have finished. The maximum
    * time is controlled via {@link #setOneShotTimeoutMillis(long)}.
    */
@@ -257,28 +230,19 @@ public class ThreadingStressTester {
   }
 
   public final void addExceptionalTask(ExceptionalRunnable r) {
-    addTask(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          r.run();
-        } catch (InterruptedException ex) {
-          if (isDoNotInterrupt()) {
-            throw new RuntimeException(ex);
-          } else {
-            Thread.currentThread().interrupt();
-          }
-        } catch (Exception ex) {
-          throw new RuntimeException(ex);
+    addTask(() -> {
+      try {
+        r.run();
+      } catch (InterruptedException ex) {
+        if (isDoNotInterrupt()) {
+          throw new CaughtInterruptedExceptionError(ex);
+        } else {
+          Thread.currentThread().interrupt();
         }
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
       }
     });
-  }
-
-  public final void addExceptionalTask(int multipleCount, ExceptionalRunnable r) {
-    for (int i = 0; i < multipleCount; i++) {
-      addExceptionalTask(r);
-    }
   }
 
   /**
@@ -309,37 +273,10 @@ public class ThreadingStressTester {
     return stopTime;
   }
 
-  private boolean ignoreException(Throwable exception) {
-    Throwable rootCause = exception;
-    while (rootCause.getCause() != null) {
-      rootCause = rootCause.getCause();
-    }
-    return ignoreException(exception, rootCause);
-  }
-  protected boolean ignoreException(Throwable exception, Throwable rootCause) {
-    for (Class c : ignoredExceptions) {
-      if (exception.getClass().equals(c)) {
-        return true;
-      }
-      if (rootCause.getClass().equals(c)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * List of thread exceptions. This can be used to customize the error output.
-   */
-  public final List<Throwable> getThreadExceptions() {
-    return exceptions;
-  }
-
   public final void run() {
     int taskCount = tasks.size();
-    threads = new Thread[taskCount];
-    threadException = new Throwable[taskCount];
-    barrier =  new CyclicBarrier(taskCount + 1);
+    startSyncLatch = new CountDownLatch(taskCount);
+    allRunningLatch = new CountDownLatch(taskCount);
     allStoppedLatch = new CountDownLatch(taskCount);
     for (int i = 0; i < taskCount; i++) {
       Runnable r;
@@ -355,23 +292,23 @@ public class ThreadingStressTester {
       pool.execute(r);
     }
     try {
-      barrier.await();
+      allRunningLatch.await();
       startTime = System.currentTimeMillis();
       boolean allStopped;
       boolean timeout = false;
-      if (testTimeMillis > 0) {
+      if (testTimeMillis >= 0) {
         allStopped = allStoppedLatch.await(testTimeMillis, TimeUnit.MILLISECONDS);
       } else {
         allStopped = allStoppedLatch.await(oneShotTimeoutMillis, TimeUnit.MILLISECONDS);
         timeout = !allStopped;
       }
+      stopTime = System.currentTimeMillis();
       if (!allStopped) {
         shouldStop = true;
         if (!doNotInterrupt) {
           sendInterrupt();
         }
         boolean timeoutAfterInterrupt = !allStoppedLatch.await(timeoutAfterInterruptMillis, TimeUnit.MILLISECONDS);
-        stopTime = System.currentTimeMillis();
         if (timeoutAfterInterrupt) {
           String timeoutReason = "Threads ignoring interrupt signal. " +
             "Timeout after " + (stopTime - startTime ) + " milliseconds.";
@@ -384,22 +321,17 @@ public class ThreadingStressTester {
         printTimeoutInfo(timeoutReason);
         throw new TimeoutThreadingStressTestException(timeoutReason);
       }
-    } catch (BrokenBarrierException e) {
-      throw new UnexpectedThreadingStressTestException(e);
     } catch (InterruptedException e) {
-      throw new UnexpectedThreadingStressTestException(e);
+      throw new CaughtInterruptedExceptionError(e);
     }
-    fillExceptionList();
-
-    if (exceptions.isEmpty()) {
+    if (threadException.isEmpty()) {
       try {
         finalCheck.run();
       } catch (Throwable t) {
         onError.run();
         throw new ThreadingStressTestException(t);
       }
-    }
-    if (!exceptions.isEmpty() && !ignoreAllExceptions()) {
+    } else {
       onError.run();
       propagateException();
     }
@@ -412,23 +344,12 @@ public class ThreadingStressTester {
       "testTimeMillis=" + testTimeMillis + ", timeoutMillis=" + oneShotTimeoutMillis +
       ", timeoutAfterInterruptMillis=" + timeoutAfterInterruptMillis);
     printTimeoutInfoOnce();
-    try {
-      Thread.sleep(234);
-    } catch (InterruptedException ignore) {
-      Thread.currentThread().interrupt();
-    }
-    errorOutput.println("\nAfter 234 milliseconds pause: ");
-    printTimeoutInfoOnce();
   }
 
   private void printTimeoutInfoOnce() {
-    errorOutput.println(allStoppedLatch.getCount() + " of " + threads.length + " threads not stopped after receiving the interrupt signal.");
-    fillExceptionList();
+    errorOutput.println(allStoppedLatch.getCount() + " of " + threads.size() + " threads not stopped after receiving the interrupt signal.");
     printThreadExceptions();
     for (Thread t : threads) {
-      if (t == null) {
-        continue;
-      }
       errorOutput.println("\nThread: " + t + ", id=" + t.getId() + ", state=" + t.getState());
       StackTraceElement[] stackTraceElements = t.getStackTrace();
       for (StackTraceElement el : stackTraceElements) {
@@ -439,45 +360,9 @@ public class ThreadingStressTester {
 
   private void propagateException() {
     printThreadExceptions();
-    if (gotAllAssertionErrors()) {
-      throw new AssertionError(
-        "Got " + exceptions.size() + " thread assertion error(s). First one propagated.",
-        exceptions.get(0));
-    } else {
-      throw new ThreadingStressTestException(
-        "Got " + exceptions.size() + " thread exceptions(s). First one propagated.",
-        exceptions.get(0));
-    }
-  }
-
-  private void fillExceptionList() {
-    exceptions = new ArrayList<Throwable>();
-    for (Throwable t : threadException) {
-      if (t instanceof InterruptedException) {
-        continue;
-      }
-      if (t != null) {
-        exceptions.add(t);
-      }
-    }
-  }
-
-  private boolean gotAllAssertionErrors() {
-    for (Throwable t : exceptions) {
-      if (!(t instanceof AssertionError)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private boolean ignoreAllExceptions() {
-    for (Throwable t : exceptions) {
-      if (!ignoreException(t)) {
-        return false;
-      }
-    }
-    return true;
+    throw new AssertionError(
+      "Got " + threadException.size() + " thread assertion error(s). First one propagated.",
+      threadException.values().iterator().next());
   }
 
   private void sendInterrupt() {
@@ -490,9 +375,8 @@ public class ThreadingStressTester {
     if (disablePrintThreadExceptions) {
       return;
     }
-    errorOutput.println(
-      exceptions.size() + " " + "exceptions detected during test run.");
-    for (Throwable t : exceptions) {
+    errorOutput.println(threadException.size() + " " + "exceptions detected during test run.");
+    for (Throwable t : threadException.values()) {
       errorOutput.println("Thread task exception:");
       t.printStackTrace(errorOutput);
       errorOutput.flush();
@@ -521,11 +405,13 @@ public class ThreadingStressTester {
     @Override
     public void run() {
       try {
-        threads[threadIndex] = Thread.currentThread();
-        barrier.await();
+        threads.add(Thread.currentThread());
+        startSyncLatch.countDown();
+        startSyncLatch.await();
+        allRunningLatch.countDown();
         runWrapped();
       } catch (Throwable t) {
-        threadException[threadIndex] = t;
+        threadException.put(Thread.currentThread(), t);
       }
       allStoppedLatch.countDown();
     }
@@ -566,10 +452,6 @@ public class ThreadingStressTester {
       super(cause);
     }
 
-    public ThreadingStressTestException(String message, Throwable cause) {
-      super(message, cause);
-    }
-
     public ThreadingStressTestException(String message) {
       super(message);
     }
@@ -579,14 +461,6 @@ public class ThreadingStressTester {
 
     public TimeoutThreadingStressTestException(String message) {
       super(message);
-    }
-
-  }
-
-  static class UnexpectedThreadingStressTestException extends ThreadingStressTestException {
-
-    public UnexpectedThreadingStressTestException(Throwable cause) {
-      super(cause);
     }
 
   }
