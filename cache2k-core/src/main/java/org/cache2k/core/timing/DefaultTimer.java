@@ -189,7 +189,7 @@ public class DefaultTimer implements Timer {
         lock.lock();
         try {
           nextTime = structure.nextRun();
-          schedule(currentTime, nextTime);
+          scheduleNextWakeup(nextTime);
         } finally {
           lock.unlock();
         }
@@ -199,19 +199,20 @@ public class DefaultTimer implements Timer {
   }
 
   /**
-   * Schedule the next time we process expired times. At least wait {@link #lagTicks}.
+   * Schedule the next time we process expired times.
    * Also marks that no timer job is scheduled if run with Long.MAX_VALUE as time parameter.
    *
-   * @param now the current time for calculations
    * @param time requested time for processing, or MAX_VALUE if nothing needs to be scheduled
    * @throws CacheClosedException if cache was closed concurrently
    */
-  private void schedule(long now, long time) {
-    if (time != Long.MAX_VALUE) {
-      scheduleNext(time);
-    } else {
+  private void scheduleNextWakeup(long time) {
+    boolean noMoreEvents = time == Long.MAX_VALUE;
+    boolean alreadyScheduled = nextScheduled == time;
+    if (noMoreEvents || alreadyScheduled) {
       nextScheduled = Long.MAX_VALUE;
+      return;
     }
+    scheduleNext(time);
   }
 
   /**
@@ -226,8 +227,8 @@ public class DefaultTimer implements Timer {
     scheduleNext(time);
   }
 
-  private void scheduleNext(long nextWakeupTicks) {
-    nextScheduled = nextWakeupTicks;
+  private void scheduleNext(long time) {
+    nextScheduled = time;
     try {
       scheduler.schedule(timerAction,
         clock.ticksToMillisCeiling(nextScheduled - clock.ticks()));

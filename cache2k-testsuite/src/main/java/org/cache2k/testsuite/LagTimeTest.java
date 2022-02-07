@@ -20,7 +20,9 @@ package org.cache2k.testsuite;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.pinpoint.ExceptionCollector;
@@ -160,10 +162,8 @@ public class LagTimeTest<K, V> extends AbstractCacheTester<K, V> {
     long lagTimeTicks = 100;
     init(b -> b
       .timerLag(clock().ticksToMillisCeiling(lagTimeTicks), TimeUnit.MILLISECONDS));
-    invoke(k0, entry ->
-      entry.setValue(v0).setExpiryTime(now() + 500));
-    invoke(k1, entry ->
-      entry.setValue(v1).setExpiryTime(now() + 401));
+    invoke(k0, entry -> entry.setValue(v0).setExpiryTime(now() + 500));
+    invoke(k1, entry -> entry.setValue(v1).setExpiryTime(now() + 401));
     assertThat(containsKey(k1)).isTrue();
     sleep(401 + lagTimeTicks);
     sleep(-1);
@@ -171,6 +171,31 @@ public class LagTimeTest<K, V> extends AbstractCacheTester<K, V> {
     sleep(lagTimeTicks);
     sleep(0);
     assertThat(containsKey(k0)).isFalse();
+  }
+
+  @Test
+  public void reschedule2() {
+    long lagTimeTicks = 100;
+    init(b -> b
+      .timerLag(clock().ticksToMillisCeiling(lagTimeTicks), TimeUnit.MILLISECONDS));
+    invoke(k0, entry -> entry.setValue(v0).setExpiryTime(now() + 10 * 60 * 60 * 1000));
+    invoke(k2, entry -> entry.setValue(v2).setExpiryTime(now() + 20 * 60 * 60 * 1000));
+    invoke(k1, entry -> entry.setValue(v1).setExpiryTime(now() + 2 * 1000));
+    invoke(k1, entry -> entry.setValue(v1).setExpiryTime(now() + 5 * 1000));
+    assertThat(scheduler.getScheduleCount())
+      .as("no schedule if lower time already scheduled")
+      .isEqualTo(2);
+    sleep(lagTimeTicks);
+    sleep(5 * 1000);
+    sleep(-1);
+    assertThat(scheduler.getScheduleCount())
+      .as("schedule again 5s event, schedule for 10h event")
+      .isEqualTo(4);
+    sleep( 10 * 60 * 60 * 1000);
+    sleep(-1);
+    assertThat(scheduler.getScheduleCount())
+      .as("one extra schedule to split upper time slot, identical reschedule suppressed")
+      .isEqualTo(6);
   }
 
   static class CountingScheduler implements Scheduler {

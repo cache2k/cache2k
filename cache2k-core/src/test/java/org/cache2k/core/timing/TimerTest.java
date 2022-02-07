@@ -152,8 +152,6 @@ public class TimerTest {
     clock.scheduled.run();
     assertThat(tt2.executed).isTrue();
     assertThat(tt1.executed).isFalse();
-    clock.scheduled.run(); // stray
-    assertThat(tt1.executed).isFalse();
     clock.moveTo(t1 - 1);
     clock.scheduled.run(); // stray
     assertThat(tt1.executed).isFalse();
