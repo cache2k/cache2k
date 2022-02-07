@@ -49,6 +49,7 @@ For a detailed introduction continue with [Getting Started](docs/latest/user-gui
 
 ## News
 
+  * **Version 2.6.1.Final, 2022-02-07**: Minor fixes, see [Version 2.6.1.Final release notes](2/6.1.Final.html)
   * **Version 2.6.0.Final, 2022-02-01**: Cache disabling, idle scan (time to idle expiry alternative), Android CI tests, see [Version 2.6.0.Final release notes](2/6.0.Final.html)
   * **Version 2.4.1.Final, 2021-10-28**: Minor fixes, see [Version 2.4.1.Final release notes](2/4.1.Final.html)
   * **Version 2.4.0.Final, 2021-10-25**: Performance improvements for big caches, see [Version 2.4.0.Final release notes](2/4.0.Final.html)
