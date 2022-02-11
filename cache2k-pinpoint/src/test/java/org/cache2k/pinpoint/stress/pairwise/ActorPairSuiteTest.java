@@ -36,6 +36,50 @@ import static org.assertj.core.api.Assertions.*;
 public class ActorPairSuiteTest {
 
   @Test
+  public void cleanRun() {
+    AtomicInteger count = new AtomicInteger(47);
+    ActorPairSuite s = new ActorPairSuite()
+      .runMillis(0)
+      .addPair(new ActorPair<Object, Object>() {
+        @Override
+        public void setup() {
+          count.set(10);
+        }
+
+        @Override
+        public Object actor1() {
+          count.decrementAndGet();
+          return null;
+        }
+
+        @Override
+        public Object actor2() {
+          count.decrementAndGet();
+          return null;
+        }
+
+        @Override
+        public void observe() {
+          count.decrementAndGet();
+        }
+
+        @Override
+        public void check(Object o, Object o2) {
+          assertThat(count.get()).isEqualTo(7);
+        }
+      });
+    s.run();
+  }
+
+  @Test
+  public void interrupted() {
+    ActorPairSuite s = new ActorPairSuite()
+      .addPair(new DefaultPair<>());
+    Thread.currentThread().interrupt();
+    s.run();
+  }
+
+  @Test
   public void exceptionPropagationFromSetup() {
     ActorPairSuite s = new ActorPairSuite()
       .stopAtFirstException(true)
