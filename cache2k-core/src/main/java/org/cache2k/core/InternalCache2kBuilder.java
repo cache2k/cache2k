@@ -25,7 +25,6 @@ import org.cache2k.CacheEntry;
 import org.cache2k.CustomizationException;
 import org.cache2k.config.CacheType;
 import org.cache2k.config.CustomizationSupplier;
-import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.eviction.EvictionFactory;
 import org.cache2k.core.eviction.InternalEvictionListener;

@@ -33,12 +33,26 @@ import java.util.concurrent.TimeUnit;
 public class IdleScanStressTest<K, V> extends AbstractCacheTester<K, V> {
 
   @Test
-  public void test() {
+  public void putEvictScan() {
     init(b -> b.idleScanTime(1, TimeUnit.MILLISECONDS));
     ThreadingStressTester tst = new ThreadingStressTester();
     Random random = new Random();
     tst.addTask(2, () -> {
       put(keys.get(random.nextInt(100_000)), v0);
+    });
+    tst.run();
+  }
+
+  @Test
+  public void initClose() {
+    ThreadingStressTester tst = new ThreadingStressTester();
+    Random random = new Random();
+    tst.addTask(1, () -> {
+      init(b -> b.idleScanTime(1, TimeUnit.MILLISECONDS));
+      for (int i = 0; i < 11; i++) {
+        put(keys.get(random.nextInt(100_000)), v0);
+      }
+      autoCleanUp();
     });
     tst.run();
   }

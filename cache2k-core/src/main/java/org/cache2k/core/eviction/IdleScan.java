@@ -70,8 +70,9 @@ public class IdleScan implements NeedsClose {
     this.clock = clock;
     this.eviction = eviction;
     this.roundTicks = roundTicks;
+    EvictionMetrics metrics = eviction.getMetrics();
     synchronized (this) {
-      scheduleIdleWakeup(eviction.getMetrics());
+      scheduleIdleWakeup(metrics);
     }
   }
 
@@ -80,9 +81,9 @@ public class IdleScan implements NeedsClose {
    * the cache is empty, we need to do nothing.
    */
   private void idleWakeup() {
+    EvictionMetrics metrics = eviction.getMetrics();
     synchronized (this) {
       long now = clock.ticks();
-      EvictionMetrics metrics = eviction.getMetrics();
       long size = metrics.getSize();
       long scansSinceLastWakeup = metrics.getScanCount() - lastScanCount;
       boolean enoughScanActivity = scansSinceLastWakeup >= size;
@@ -97,10 +98,10 @@ public class IdleScan implements NeedsClose {
 
   private void scanWakeup() {
     int extraScan;
+    EvictionMetrics metrics = eviction.getMetrics();
     synchronized (this) {
       long now = clock.ticks();
       lastWakeupTicks = now;
-      EvictionMetrics metrics = eviction.getMetrics();
       long expectedScans =
         scansPerRound * (now - roundStartTicks) / roundTicks +
           roundStartScans - metrics.getIdleNonEvictDrainCount();
@@ -171,8 +172,8 @@ public class IdleScan implements NeedsClose {
   }
 
   /**
-   * Ignore when scheduler is closed. That happens when the cache is closed concurrently.
-   * No more wakeups are needed anyway.
+   * Schdule, but ignore when scheduler is closed. That happens when the cache is closed
+   * concurrently. No more wakeups are needed anyway.
    */
   private static void scheduleIgnoreException(Scheduler scheduler,
                                               Runnable runnable,
@@ -183,7 +184,7 @@ public class IdleScan implements NeedsClose {
   }
 
   @Override
-  public synchronized void close(InternalCacheCloseContext closeContext) {
+  public void close(InternalCacheCloseContext closeContext) {
     closeContext.closeCustomization(scheduler, "scheduler for idle processing");
   }
 
