@@ -30,6 +30,7 @@ import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.WiredCache;
 import org.cache2k.core.concurrency.ThreadFactoryProvider;
 import org.cache2k.core.timing.TimingUnitTest;
+import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.pinpoint.TimeBox;
 import org.cache2k.testing.SimulatedClock;
@@ -202,12 +203,17 @@ public class TestingBase {
     }
     this.cacheName = cacheName;
     Cache2kBuilder<K, T> b = Cache2kBuilder.of(k, t)
-      .timeReference(getClock())
       .name(cacheName)
       .entryCapacity(DEFAULT_MAX_SIZE)
       .timerLag(TestingParameters.MINIMAL_TICK_MILLIS / 2, TimeUnit.MILLISECONDS)
       .loaderExecutor(loaderExecutor)
       .executor(asyncExecutor);
+    if (clock != TimeReference.DEFAULT) {
+      b.timeReference(clock);
+      if (clock instanceof Scheduler) {
+        b.scheduler((Scheduler) clock);
+      }
+    }
     applyAdditionalOptions(b);
     return b;
   }

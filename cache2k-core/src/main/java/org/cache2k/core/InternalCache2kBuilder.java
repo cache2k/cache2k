@@ -149,9 +149,6 @@ public class InternalCache2kBuilder<K, V> implements InternalCacheBuildContext<K
      if (getConfig().getScheduler() != null) {
       return createCustomization(getConfig().getScheduler());
     }
-    if (clock instanceof Scheduler) {
-      return (Scheduler) clock;
-    }
     return createCustomization(DefaultSchedulerProvider.INSTANCE);
   }
 

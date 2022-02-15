@@ -160,6 +160,7 @@ public class TimeTracePlaybackTest {
     DurationHistogram histo = histogram ? new DurationHistogram(clock) : null;
     Cache2kBuilder<Integer, Data> builder = Cache2kBuilder.of(Integer.class, Data.class)
       .timeReference(clock)
+      .scheduler(clock)
       .executor(clock.wrapExecutor(Runnable::run))
       .idleScanTime(scanTimeSeconds, TimeUnit.SECONDS)
       .entryCapacity(entryCapacity)

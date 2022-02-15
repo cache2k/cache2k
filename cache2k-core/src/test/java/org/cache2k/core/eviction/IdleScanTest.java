@@ -58,6 +58,7 @@ public class IdleScanTest {
     Cache<Integer, Integer> cache =
       Cache2kBuilder.of(Integer.class, Integer.class)
         .timeReference(clock)
+        .scheduler(clock)
         .executor(clock.wrapExecutor(Runnable::run))
         .idleScanTime(1, TimeUnit.MILLISECONDS)
         .strictEviction(true)
@@ -106,6 +107,7 @@ public class IdleScanTest {
     Cache<Integer, Integer> cache =
       of(Integer.class, Integer.class)
         .timeReference(clock)
+        .scheduler(clock)
         .executor(clock.wrapExecutor(Runnable::run))
         .idleScanTime(1_000, MILLISECONDS)
         .strictEviction(true)
@@ -134,6 +136,7 @@ public class IdleScanTest {
     Cache<Integer, Integer> cache =
       of(Integer.class, Integer.class)
         .timeReference(clock)
+        .scheduler(clock)
         .executor(clock.wrapExecutor(Runnable::run))
         .idleScanTime(1_000, MILLISECONDS)
         .strictEviction(true)
