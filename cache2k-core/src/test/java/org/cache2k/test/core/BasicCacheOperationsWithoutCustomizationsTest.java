@@ -512,6 +512,20 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .expectAllZero();
   }
 
+  @Test
+  public void peek_Exception() {
+    assignException(KEY);
+    if (pars.keepExceptions) {
+      try {
+        cache.peek(KEY);
+        fail("exception expected");
+      } catch (CacheLoaderException ex) {
+      }
+    } else {
+      cache.peek(KEY);
+    }
+  }
+
   /*
    * get
    */
