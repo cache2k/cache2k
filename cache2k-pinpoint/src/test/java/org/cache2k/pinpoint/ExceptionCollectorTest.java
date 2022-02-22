@@ -44,7 +44,7 @@ public class ExceptionCollectorTest {
   public void oneException() {
     ExceptionCollector collector = new ExceptionCollector();
     ExpectedException exception = new ExpectedException();
-    collector.exception(exception);
+    collector.runAndCatch(() -> { throw exception; } );
     assertThat(collector.getFirstException()).isSameAs(exception);
     assertThat(collector.getExceptionCount()).isEqualTo(1);
     assertThatCode(() -> collector.assertNoException())

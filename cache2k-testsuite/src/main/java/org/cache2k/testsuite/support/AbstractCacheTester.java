@@ -24,8 +24,10 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.ForwardingCache;
 import org.cache2k.operation.CacheControl;
+import org.cache2k.operation.CacheStatistics;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
+import org.cache2k.pinpoint.Await;
 import org.cache2k.pinpoint.CaughtInterruptedExceptionError;
 import org.cache2k.pinpoint.TimeBox;
 import org.cache2k.pinpoint.TimeoutError;
@@ -38,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author Jens Wilke
@@ -130,13 +133,20 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     try {
       clock.sleep(ticks);
     } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new CaughtInterruptedExceptionError();
+      throw new CaughtInterruptedExceptionError(e);
     }
   }
 
   public TimeBox within(long ticks) {
     return new TimeBox(() -> clock.ticks(), ticks);
+  }
+
+  public void await(String description, Supplier<Boolean> condition) {
+    new Await(() -> clock.sleep(0)).await(description, condition);
+  }
+
+  public void await(Supplier<Boolean> condition) {
+    await(null, condition);
   }
 
   @AfterEach
@@ -151,13 +161,15 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
     return CacheControl.of(this);
   }
 
+  public CacheStatistics stats() { return control().sampleStatistics(); }
+
   public void waitFor(CompletableFuture<?> future) {
     try {
       future.get(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } catch (TimeoutException ex) {
-      throw new TimeoutError(TIMEOUT_MILLIS);
+      throw new TimeoutError(Duration.ofMillis(TIMEOUT_MILLIS));
     } catch (InterruptedException e) {
-      throw new CaughtInterruptedExceptionError();
+      throw new CaughtInterruptedExceptionError(e);
     } catch (ExecutionException e) {
       throw new UnexpectedExceptionError(e);
     }
