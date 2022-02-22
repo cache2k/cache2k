@@ -222,10 +222,11 @@ public class TimeTracePlaybackTest {
     return bar.substring(0, size * (bar.length()) / max);
   }
 
-  static class PlaybackResult {
+  public static class PlaybackResult {
     long hitCount;
     long accumulatedSize;
     long requestCount;
+    long refreshCount;
     int maxSize = 0;
     DurationHistogram histogram;
 
@@ -244,6 +245,14 @@ public class TimeTracePlaybackTest {
       return accumulatedSize / requestCount;
     }
 
+    public long getRefreshCount() {
+      return refreshCount;
+    }
+
+    public void setRefreshCount(long refreshCount) {
+      this.refreshCount = refreshCount;
+    }
+
     @Override
     public String toString() {
       return "PlaybackResult{" +
@@ -252,13 +261,19 @@ public class TimeTracePlaybackTest {
         ", maxSize=" + maxSize +
         ", requestCount=" + requestCount +
         ", hitrate=" + getHitrate() +
+        ", refreshCount=" + refreshCount +
+        ", loadCount=" + (refreshCount + requestCount - hitCount) +
         '}';
     }
   }
 
-  interface CacheSimulation {
+  public interface CacheSimulation {
+    /**
+     * @param now time in seconds
+     */
     boolean access(int now, int key);
     int getSize();
+    default long getRefreshCount() { return 0; }
   }
 
   static class Data {
