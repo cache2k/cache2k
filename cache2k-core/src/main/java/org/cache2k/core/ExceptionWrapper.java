@@ -35,7 +35,7 @@ package org.cache2k.core;
  * @author Jens Wilke
  */
 @SuppressWarnings("rawtypes")
-public class ExceptionWrapper<K, V> implements LoadExceptionInfo<K, V> {
+public class ExceptionWrapper<K, V> extends ValueWrapper<V> implements LoadExceptionInfo<K, V> {
 
   private final Throwable exception;
   private final long loadTime;
@@ -100,6 +100,11 @@ public class ExceptionWrapper<K, V> implements LoadExceptionInfo<K, V> {
 
   public K getKey() {
     return key;
+  }
+
+  @Override
+  public V getValue() {
+    throw generateExceptionToPropagate();
   }
 
   @Override

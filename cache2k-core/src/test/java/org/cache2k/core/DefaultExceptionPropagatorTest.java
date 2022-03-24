@@ -69,7 +69,11 @@ public class DefaultExceptionPropagatorTest {
   private LoadExceptionInfo toInfo(Throwable ex, long t) {
     return new LoadExceptionInfo() {
       @Override
+      public Object getValue() {return null; }
+
+      @Override
       public Object getKey() { return null; }
+
       @Override
       public ExceptionPropagator getExceptionPropagator() { return null; }
 

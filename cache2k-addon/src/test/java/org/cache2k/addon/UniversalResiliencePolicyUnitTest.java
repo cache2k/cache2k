@@ -291,6 +291,11 @@ public class UniversalResiliencePolicyUnitTest {
     public Object getKey() { return this; }
 
     @Override
+    public Object getValue() {
+      return null;
+    }
+
+    @Override
     public ExceptionPropagator getExceptionPropagator() { return DUMMY_PROPAGATOR; }
 
     public void incrementRetryCount() {
