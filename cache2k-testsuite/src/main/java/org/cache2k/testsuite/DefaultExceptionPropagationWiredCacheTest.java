@@ -1,8 +1,8 @@
-package org.cache2k.test.core;
+package org.cache2k.testsuite;
 
 /*-
  * #%L
- * cache2k core implementation
+ * cache2k testsuite on public API
  * %%
  * Copyright (C) 2000 - 2022 headissue GmbH, Munich
  * %%
@@ -20,21 +20,17 @@ package org.cache2k.test.core;
  * #L%
  */
 
-import org.cache2k.test.core.expiry.ExpiryTest;
-import org.cache2k.testing.category.FastTests;
-import org.junit.experimental.categories.Category;
+import org.cache2k.Cache2kBuilder;
 
 /**
  * @author Jens Wilke
  */
-@Category(FastTests.class)
-public class ExceptionPropagatorWiredCacheTest extends ExceptionPropagatorTest {
+public class DefaultExceptionPropagationWiredCacheTest<K, V>
+  extends DefaultExceptionPropagationTest<K, V> {
 
-  {
-    target.config(b -> {
-      StaticUtil.enforceWiredCache(b);
-      b.resiliencePolicy(new ExpiryTest.EnableExceptionCaching());
-    });
+  @Override
+  protected Cache2kBuilder<K, V> provideBuilder() {
+    return super.provideBuilder().setup(this::enableWiredCache);
+
   }
-
 }

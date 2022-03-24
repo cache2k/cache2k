@@ -20,8 +20,10 @@ package org.cache2k.testsuite.support;
  * #L%
  */
 
+import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.CacheEntry;
+import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
@@ -46,6 +48,10 @@ public interface SetupFragments {
 
   default void resilienceCacheExceptions(Cache2kBuilder<?, ?> b) {
     b.resiliencePolicy(RESILIENCE_CACHE_EXCEPTIONS);
+  }
+
+  default void enableWiredCache(Cache2kBuilder<?, ?> b) {
+    b.addListener((CacheEntryCreatedListener) (cache, entry) -> { });
   }
 
 }
