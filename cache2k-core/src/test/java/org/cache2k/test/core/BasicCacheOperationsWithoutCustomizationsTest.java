@@ -32,7 +32,6 @@ import org.cache2k.event.CacheEntryExpiredListener;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.CacheLoaderException;
 import org.cache2k.pinpoint.ExpectedException;
-import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.MutableCacheEntry;
 import org.cache2k.testing.category.FastTests;
@@ -71,7 +70,7 @@ import static org.cache2k.operation.CacheControl.of;
  * Test basic cache operations on a shared cache in a simple configuration.
  * The cache may hold 1000 entries and has no expiry.
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"rawtypes", "unchecked", "ConstantConditions"})
 @Category(FastTests.class) @RunWith(Parameterized.class)
 public class BasicCacheOperationsWithoutCustomizationsTest {
 
@@ -97,10 +96,6 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     return l;
   }
 
-  /**
-   * Used cache is a class field. We may subclass this class and run the tests with a different
-   * configuration.
-   */
   Cache<Integer, Integer> cache;
 
   Statistics statistics;
@@ -316,10 +311,10 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(cache.containsKey(KEY)).isTrue();
     assertThat(cache.get(KEY)).isEqualTo(VALUE);
     assertThat(cache.peek(KEY)).isEqualTo(VALUE);
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
   }
 
-  void checkRefreshTime(CacheEntry<Integer, Integer> e) {
+  void checkModificationTime(CacheEntry<Integer, Integer> e) {
     long t = cache.invoke(e.getKey(), MutableCacheEntry::getModificationTime);
     if (refreshTimeAvailable) {
       assertThat(t)
@@ -373,7 +368,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(cache.containsKey(OTHER_KEY)).isTrue();
     assertThat(cache.peek(OTHER_KEY)).isNull();
     assertThat(cache.peek(KEY)).isEqualTo(VALUE);
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
   }
 
   @Test
@@ -386,7 +381,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(cache.containsKey(OTHER_KEY)).isTrue();
     assertThat(cache.peek(OTHER_KEY)).isEqualTo(OTHER_VALUE);
     assertThat(cache.peek(KEY)).isEqualTo(VALUE);
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -423,7 +418,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(v).isEqualTo(VALUE);
     assertThat(cache.containsKey(KEY)).isTrue();
     assertThat(cache.peek(KEY)).isEqualTo(VALUE);
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
     cache.put(KEY, VALUE);
   }
 
@@ -610,7 +605,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .expectAllZero();
     assertThat(cache.containsKey(KEY)).isTrue();
     assertThat(cache.peek(KEY)).isEqualTo(VALUE);
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
   }
 
   @Test
@@ -641,7 +636,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(1)
       .expectAllZero();
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
   }
 
   @Test(expected = NullPointerException.class)
@@ -842,7 +837,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(e.getKey()).isEqualTo(KEY);
     assertThat(e.getValue()).isEqualTo(VALUE);
     assertThat(e.getException()).isNull();
-    checkRefreshTime(e);
+    checkModificationTime(e);
   }
 
   @Test
@@ -853,7 +848,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     e = cache.peekEntry(KEY);
     assertThat(e.getKey()).isEqualTo(KEY);
     assertThat(e.getValue()).isNull();
-    checkRefreshTime(e);
+    checkModificationTime(e);
   }
 
   @Test(expected = NullPointerException.class)
@@ -879,7 +874,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     assertThat(e.getKey()).isEqualTo(KEY);
     assertThat(e.getValue()).isEqualTo(VALUE);
     assertThat(e.getException()).isNull();
-    checkRefreshTime(e);
+    checkModificationTime(e);
   }
 
   @Test
@@ -888,7 +883,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     CacheEntry<Integer, Integer> e = cache.getEntry(KEY);
     assertThat(e.getKey()).isEqualTo(KEY);
     assertThat(e.getValue()).isNull();
-    checkRefreshTime(e);
+    checkModificationTime(e);
   }
 
   @Test(expected = NullPointerException.class)
@@ -903,18 +898,16 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
     maybeEntryHasException(e, OUCH);
   }
 
-  private void maybeEntryHasException(CacheEntry<Integer, Integer> e, Throwable exception) {
+  @SuppressWarnings("SameParameterValue")
+  private void maybeEntryHasException(CacheEntry<Integer, Integer> e, Throwable expectedException) {
     if (!pars.keepExceptions) {
       return;
     }
-    try {
-      e.getValue();
-      fail("exception expected");
-    } catch (CacheLoaderException ex) {
-    }
+    assertThatCode(e::getValue)
+      .isInstanceOf(CacheLoaderException.class);
     assertThat(e.getException()).isNotNull();
-    assertThat(e.getException()).isEqualTo(exception);
-    assertThat(exception).isEqualTo(e.getExceptionInfo().getException());
+    assertThat(e.getException()).isEqualTo(expectedException);
+    assertThat(expectedException).isEqualTo(e.getExceptionInfo().getException());
     assertThat(e.getExceptionInfo().getKey()).isNotNull();
     assertThat(e.getExceptionInfo().toString()).isNotNull();
   }
@@ -1263,7 +1256,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       .missCount.expect(0)
       .putCount.expect(0)
       .expectAllZero();
-    checkRefreshTime(cache.peekEntry(KEY));
+    checkModificationTime(cache.peekEntry(KEY));
   }
 
   @Test
@@ -1348,7 +1341,7 @@ public class BasicCacheOperationsWithoutCustomizationsTest {
       e.setExpiryTime(ExpiryTimeValues.ETERNAL);
       return null;
     });
-    checkRefreshTime(cache.getEntry(KEY));
+    checkModificationTime(cache.getEntry(KEY));
   }
 
   @Test
