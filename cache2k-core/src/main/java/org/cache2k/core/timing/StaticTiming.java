@@ -22,10 +22,12 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.config.Cache2kConfig;
+import org.cache2k.core.AccessWrapper;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
+import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.expiry.Expiry;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -66,7 +68,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final ResiliencePolicy<K, V> resiliencePolicy;
   protected final TimeReference clock;
   protected final boolean sharpExpiry;
-  protected final boolean refreshAhead;
+  protected final RefreshAheadPolicy<K, V, Object> refreshAheadPolicy;
   protected final long expiryTicks;
   private final Timer timer;
   private TimerEventListener<K, V> target;
@@ -82,7 +84,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     } else {
       this.expiryTicks = clock.toTicks(cfg.getExpireAfterWrite());
     }
-    refreshAhead = cfg.isRefreshAhead();
+    if (cfg.isRefreshAhead()) {
+      refreshAheadPolicy = (RefreshAheadPolicy<K, V, Object>) RefreshAheadPolicy.LEGACY_DEFAULT;
+    } else {
+      refreshAheadPolicy = null;
+    }
     sharpExpiry = cfg.isSharpExpiry();
     if (cfg.getTimerLag() == null) {
       timer = new DefaultTimer(clock, buildContext.createScheduler());
@@ -119,7 +125,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
-  public long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime) {
+  public long calculateExpiry(Entry<K, V> e, V value, long loadTime) {
     return calcNextRefreshTime(e.getKey(), value, loadTime, e, null, expiryTicks, sharpExpiry);
   }
 
@@ -148,7 +154,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    * expired immediately. The refresh task will handle this and expire the entry.
    */
   long expiredEventuallyStartBackgroundRefresh(Entry<K, V> e, boolean sharpExpiry) {
-    if (refreshAhead) {
+    if (refreshAheadPolicy != null) {
       e.setTask(new Tasks.RefreshTimerTask<K, V>().to(target, e));
       scheduleTask(0, e);
       return sharpExpiry ? Entry.EXPIRED_REFRESH_PENDING : Entry.DATA_VALID;
@@ -165,7 +171,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    *
    * @param expiryTime expiry time with special values as defined in {@link ExpiryTimeValues}
    * @param e          the entry
-   * @return adjusted value for nextRefreshTime.
+   * @return adjusted value for {@link Entry#setRawExpiry(long)}
    */
   @Override
   public long stopStartTimer(long expiryTime, Entry<K, V> e) {
@@ -174,11 +180,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       return Entry.EXPIRED;
     }
     if (expiryTime == ExpiryTimeValues.NEUTRAL) {
-      long nrt = e.getNextRefreshTime();
+      long nrt = e.getRawExpiry();
       if (nrt == 0) {
         throw new IllegalArgumentException("neutral expiry not allowed for creation");
       }
-      return e.getNextRefreshTime();
+      return e.getRawExpiry();
     }
     if (expiryTime == ExpiryTimeValues.ETERNAL) {
       return expiryTime;
@@ -206,14 +212,12 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    * @return true, if entry is finally expired.
    */
   @Override
-  public boolean startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
+  public boolean startRefreshProbationTimer(Entry<K, V> e, long expiry) {
     cancelExpiryTimer(e);
-    long absTime = Math.abs(nextRefreshTime);
-    e.setRefreshProbationNextRefreshTime(absTime);
-    e.setNextRefreshTime(Entry.EXPIRED_REFRESHED);
-    if (nextRefreshTime != ExpiryTimeValues.ETERNAL) {
+    e.setRawExpiry(expiry);
+    if (expiry != ExpiryTimeValues.ETERNAL) {
       e.setTask(new Tasks.RefreshExpireTimerTask<K, V>().to(target, e));
-      scheduleTask(absTime, e);
+      scheduleTask(Math.abs(expiry), e);
     }
     return false;
   }
@@ -221,14 +225,14 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   @Override
   public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) {
     cancelExpiryTimer(e);
-    scheduleFinalExpireWithOptionalRefresh(e, e.getNextRefreshTime());
+    scheduleFinalExpireWithOptionalRefresh(e, e.getRawExpiry());
   }
 
   /**
    * Sharp expiry is requested: Either schedule refresh or expiry.
    */
   void scheduleFinalExpireWithOptionalRefresh(Entry<K, V> e, long t) {
-    if (refreshAhead) {
+    if (refreshAheadPolicy != null) {
       e.setTask(new Tasks.RefreshTimerTask<K, V>().to(target, e));
     } else {
       e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
@@ -236,9 +240,9 @@ public class StaticTiming<K, V> extends Timing<K, V> {
     scheduleTask(t, e);
   }
 
-  void scheduleTask(long nextRefreshTime, Entry<K, V> e) {
+  void scheduleTask(long t, Entry<K, V> e) {
     try {
-      timer.schedule(e.getTask(), nextRefreshTime);
+      timer.schedule(e.getTask(), t);
     } catch (IllegalStateException ignore) {
     }
   }
@@ -295,6 +299,64 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       requestedExpiryTime = -requestedExpiryTime;
     }
     return Expiry.mixTimeSpanAndPointInTime(now, maxLinger, requestedExpiryTime);
+  }
+
+  @Override
+  public Object wrapLoadValueForRefresh(Entry<K, V> e, Object valueOrException, long t0, long t, boolean load, long expiry) {
+    if (refreshAheadPolicy != null) {
+      RefreshAheadPolicy.Context<Object> ctx = new RefreshAheadPolicy.Context<Object>() {
+        @Override
+        public boolean isLoadException() {
+          return false;
+        }
+
+        @Override
+        public boolean isExceptionSuppressed() {
+          return false;
+        }
+
+        @Override
+        public long getStartTime() {
+          return t0;
+        }
+
+        @Override
+        public long getStopTime() {
+          return t;
+        }
+
+        @Override
+        public long getCurrentTime() { return t; }
+
+        @Override
+        public long getExpiryTime() {
+          return Math.abs(expiry);
+        }
+
+        @Override
+        public boolean isAccessed() {
+          return false;
+        }
+
+        @Override
+        public boolean isRefreshAhead() {
+          return false;
+        }
+
+        @Override
+        public Object getUserData() {
+          return null;
+        }
+
+        @Override
+        public void setUserData(Object data) {
+          e.setRefreshPolicyData(data);
+        }
+      };
+      int requiredAccessCount = refreshAheadPolicy.requiredHits(ctx);
+      return AccessWrapper.of(e, (V) valueOrException, requiredAccessCount);
+    }
+    return valueOrException;
   }
 
 }

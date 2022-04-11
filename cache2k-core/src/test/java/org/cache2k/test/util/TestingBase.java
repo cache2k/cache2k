@@ -49,6 +49,7 @@ import org.junit.runners.model.Statement;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
@@ -481,6 +482,36 @@ public class TestingBase {
     public Integer load(Integer key) throws Exception {
       return counter.getAndIncrement();
     }
+
+  }
+
+  /**
+   * Blocks on second load request
+   */
+  public static class BlockCountingLoader implements CacheLoader<Integer, Integer> {
+    AtomicInteger counter = new AtomicInteger();
+    volatile CountDownLatch latch = null;
+
+    public long getCount() {
+      return counter.get();
+    }
+
+    @Override
+    public Integer load(Integer key) throws Exception {
+      CountDownLatch latch = this.latch;
+      if (latch != null) {
+        latch.await();
+      }  else {
+        this.latch = new CountDownLatch(1);
+      }
+      return counter.getAndIncrement();
+    }
+
+    public void release() {
+      latch.countDown();
+      latch = null;
+    }
+
   }
 
   public static class PatternLoader implements CacheLoader<Integer, Integer> {

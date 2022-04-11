@@ -82,7 +82,7 @@ public class SlowExpiryTest extends TestingBase {
 
   public void testExceptionWithRefreshAndLoader(boolean asyncLoader) {
     String cacheName = generateUniqueCacheName(this);
-    final int count = 4;
+    final int count = 1;
     final long timespan = MINIMAL_TICK_MILLIS;
     Cache2kBuilder<Integer, Integer> cb = builder(cacheName, Integer.class, Integer.class)
       .refreshAhead(true)
@@ -591,6 +591,7 @@ public class SlowExpiryTest extends TestingBase {
         return v1 > 0;
       });
     } else {
+      fail("2.8");
       long t1 = ticks();
       assertThat(t1 >= expiryTime.get())
         .as("Only see 1 after expiry time")
@@ -675,7 +676,6 @@ public class SlowExpiryTest extends TestingBase {
             assertThat(c.containsKey(key)).isTrue();
           });
         await("Refresh is done", () -> getInfo().getRefreshCount() > 0);
-        await("Entry disappears", () -> !c.containsKey(key));
         value = c.get(key);
       }).expectMaybe(() -> {
         assertThat(value).isEqualTo(1);
@@ -693,15 +693,16 @@ public class SlowExpiryTest extends TestingBase {
     refresh_sharp_noKeep(3);
   }
 
+  /** Entry disappears because of sharp */
   @Test
   public void refresh_sharp_keep() {
     final int key = 1;
-    CountingLoader loader = new CountingLoader();
+    BlockCountingLoader loader = new BlockCountingLoader();
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .refreshAhead(true)
       .sharpExpiry(true)
       .eternal(true)
-      .keepDataAfterExpired(true)
+      .keepDataAfterExpired(false)
       .expiryPolicy((key1, value, startTime, currentEntry) -> {
         if (currentEntry != null) {
           return startTime + TestingParameters.MAX_FINISH_WAIT_MILLIS;
@@ -721,10 +722,12 @@ public class SlowExpiryTest extends TestingBase {
             assertThat(v.get()).isEqualTo(0);
             assertThat(c.containsKey(key)).isTrue();
           });
-        await("Refresh is done", () -> getInfo().getRefreshCount() > 0);
         await("Entry disappears", () -> !c.containsKey(key));
+        loader.release();
       })
       .expectMaybe(() -> {
+        await("Entry appears", () -> c.containsKey(key));
+        assertThat(getInfo().getRefreshCount()).isEqualTo(1);
         int v = c.get(key);
         assertThat(v)
           .as("long expiry after refresh")
@@ -791,9 +794,7 @@ public class SlowExpiryTest extends TestingBase {
         .isEqualTo(0);
     }
     await("Refresh is done", () -> loader.getCount() == 2);
-    assertThat(c.containsKey(key))
-      .as("Entry disappears")
-      .isFalse();
+    await(() -> c.containsKey(key));
     assertThat((int) c.get(key)).isEqualTo(1);
     assertThat(loader.getCount()).isEqualTo(2);
     assertThat(c.containsKey(key))
@@ -892,7 +893,7 @@ public class SlowExpiryTest extends TestingBase {
       .build();
     c.put(1, 2);
     c.expireAt(1, x);
-    await(() -> (!c.containsKey(1) && c.get(1) == 4711));
+    await(() -> (c.peek(1) == 4711));
     await(() -> getInfo().getRefreshCount() == 1);
   }
 

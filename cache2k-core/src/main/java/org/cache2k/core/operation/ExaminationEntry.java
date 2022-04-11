@@ -20,6 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
+import org.cache2k.core.AccessWrapper;
 import org.cache2k.processor.MutableCacheEntry;
 
 /**
@@ -40,6 +41,17 @@ public interface ExaminationEntry<K, V> {
 
   /** Associated value or the {@link org.cache2k.core.ExceptionWrapper} */
   Object getValueOrException();
+
+  /** Get raw stored value in the entry */
+  Object getValueOrWrapper();
+
+  default Object getValueOrExceptionNoTouch() {
+    Object v = getValueOrWrapper();
+    if (v instanceof AccessWrapper) {
+      return ((AccessWrapper<?>) v).getValueNoTouch();
+    }
+    return v;
+  }
 
   long getModificationTime();
 

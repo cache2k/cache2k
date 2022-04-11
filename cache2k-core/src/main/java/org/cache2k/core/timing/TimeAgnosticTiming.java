@@ -37,7 +37,7 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
   static class EternalImmediate<K, V> extends TimeAgnosticTiming<K, V> {
 
     @Override
-    public long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime) {
+    public long calculateExpiry(Entry<K, V> e, V value, long loadTime) {
       return ExpiryPolicy.ETERNAL;
     }
 
@@ -56,7 +56,7 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
   static class Immediate<K, V> extends TimeAgnosticTiming<K, V> {
 
     @Override
-    public long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime) {
+    public long calculateExpiry(Entry<K, V> e, V value, long loadTime) {
       return 0;
     }
 
@@ -80,7 +80,7 @@ public abstract class TimeAgnosticTiming<K, V> extends Timing<K, V> {
   static class EternalTiming<K, V> extends TimeAgnosticTiming<K, V> {
 
     @Override
-    public long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime) {
+    public long calculateExpiry(Entry<K, V> e, V value, long loadTime) {
       return ExpiryPolicy.ETERNAL;
     }
 

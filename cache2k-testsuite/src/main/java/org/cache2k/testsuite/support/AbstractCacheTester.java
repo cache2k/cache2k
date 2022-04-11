@@ -48,7 +48,7 @@ import java.util.function.Supplier;
 public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   implements ExtendedCache<K, V>, CommonValues, SetupFragments {
 
-  private TimeReference clock;
+  private TimeReference clock = TimeReference.DEFAULT;
   private Cache<K, V> createdCache;
   /** Provides alternative cache interface, with out any decorations */
   public final Cache<K, V> cache = new ForwardingCache<K, V>() {
@@ -87,7 +87,7 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   }
 
   protected Cache2kBuilder<K, V> provideBuilder() {
-    final Cache2kBuilder<K, V> b = Cache2kBuilder.forUnknownTypes()
+    Cache2kBuilder<K, V> b = Cache2kBuilder.forUnknownTypes()
       .keyType(keys.getCacheType())
       .valueType(values.getCacheType());
     if (clock != TimeReference.DEFAULT) {
@@ -109,7 +109,6 @@ public class AbstractCacheTester<K, V> extends ForwardingCache<K, V>
   }
 
   protected void init(Consumer<Cache2kBuilder<K, V>> consumer) {
-    clock = TimeReference.DEFAULT;
     Cache2kBuilder<K, V> builder = provideBuilder();
     consumer.accept(builder);
     createdCache = builder.build();

@@ -41,7 +41,6 @@ import org.cache2k.CacheEntry;
 import org.cache2k.event.CacheEntryCreatedListener;
 import org.cache2k.io.AsyncCacheLoader;
 import org.cache2k.io.ExceptionPropagator;
-import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessingResult;
 import org.cache2k.processor.EntryProcessor;
 import org.cache2k.event.CacheEntryRemovedListener;
@@ -796,12 +795,12 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      long nrt = e.getNextRefreshTime();
+      long nrt = e.getRawExpiry();
       long now = heapCache.clock.ticks();
       if (now < Math.abs(nrt)) {
         if (nrt > 0) {
           heapCache.timing.scheduleFinalTimerForSharpExpiry(e);
-          e.setNextRefreshTime(-nrt);
+          e.setRawExpiry(-nrt);
         }
         return;
       }

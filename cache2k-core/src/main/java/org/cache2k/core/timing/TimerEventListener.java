@@ -40,7 +40,7 @@ public interface TimerEventListener<K, V> {
   /**
    * Called by the timer when an entry is expired or before actual expiry
    * when the entry needs to switch into sharp expiry mode. The actual action
-   * to be performed is detected by checking the {@link Entry#getNextRefreshTime()}
+   * to be performed is detected by checking the {@link Entry#getRawExpiry()}
    *
    * @param task timer task as returned by {@link Entry#getTask} to check whether
    *             the timer task is still valid after we obtained the entry lock
@@ -49,7 +49,6 @@ public interface TimerEventListener<K, V> {
 
   /**
    * The entry should be refreshed.
-   *
    *
    * @param e see {@link #timerEventExpireEntry(Entry, Object)}
    * @param task see {@link #timerEventExpireEntry(Entry, Object)}

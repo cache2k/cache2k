@@ -233,7 +233,7 @@ public abstract class AbstractEviction implements Eviction {
     if (!e.isRemovedFromReplacementList()) {
       removeFromReplacementList(e);
       updateTotalWeightForRemove(e);
-      long nrt = e.getNextRefreshTime();
+      long nrt = e.getRawExpiry();
       if (nrt == (Entry.GONE + Entry.EXPIRED)) {
         expiredRemovedCnt++;
       } else if (nrt == (Entry.GONE + Entry.VIRGIN)) {

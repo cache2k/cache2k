@@ -47,14 +47,14 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
    * when the entry will expire. Low values have a special meaning, see defined constants.
    * Negative values means that we need to check against the wall clock.
    */
-  protected volatile long nextRefreshTime;
+  protected volatile long rawExpiry;
 
   private final K key;
 
   /**
    * Holds the associated entry value or an exception via the {@link ExceptionWrapper}
    */
-  private volatile Object valueOrException = INITIAL_VALUE;
+  private volatile Object valueOrWrapper = INITIAL_VALUE;
 
   /**
    * Either the spreaded hash code or the integer key in case keys are integers.
@@ -81,44 +81,50 @@ class CompactEntry<K, V> implements CacheEntry<K, V> {
     this.hashCode = hashCode;
   }
 
-  public void setValueOrException(Object valueOrException) {
-    this.valueOrException = valueOrException;
+  public void setValueOrWrapper(Object valueOrWrapper) {
+    this.valueOrWrapper = valueOrWrapper;
   }
 
   @Override
   public LoadExceptionInfo<K, V> getExceptionInfo() {
-    if (valueOrException instanceof ExceptionWrapper) {
-      return ((ExceptionWrapper<K, V>) valueOrException);
+    Object v = getValueOrException();
+    if (v instanceof ExceptionWrapper) {
+      return ((ExceptionWrapper<K, V>) v);
     }
     return null;
   }
 
   public boolean hasException() {
-    return valueOrException instanceof ExceptionWrapper;
+    return getValueOrException() instanceof ExceptionWrapper;
   }
 
   public boolean equalsValue(V v) {
-    Object ve = valueOrException;
+    Object ve = getValueOrException();
     if (ve == null) { return v == ve; }
     return ve.equals(v);
   }
 
   /**
    * Should never be called under normal circumstances. For efficiency reasons the entry is
-   * handed to the expiry policy directly, only in case its not an exception wrapper.
-   *
-   * @Deprecated May only be called as CacheEntry before screening for exceptions.
+   * handed to the expiry policy directly, only in case it is not an exception wrapper.
    */
-  @Deprecated
   public V getValue() {
-    return (V) valueOrException;
+    return HeapCache.returnValue(valueOrWrapper);
   }
 
   /**
    * The value of the entry or an {@link ExceptionWrapper}.
    */
   public Object getValueOrException() {
-    return valueOrException;
+    Object v = valueOrWrapper;
+    if (v instanceof AccessWrapper) {
+      return ((AccessWrapper<?>) v).getValueOrException();
+    }
+    return v;
+  }
+
+  public Object getValueOrWrapper() {
+    return valueOrWrapper;
   }
 
   @SuppressWarnings("unchecked")
@@ -188,9 +194,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
   /** Expired, but protect entry from removal, since refresh is started. */
   public static final int EXPIRED_REFRESH_PENDING = 5;
 
-  /** Entry is in refresh probation phase */
-  public static final int EXPIRED_REFRESHED = 6;
-
   /** @see #isGone() */
   public static final int GONE = 8;
   public static final int GONE_OTHER = 15;
@@ -206,9 +209,9 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * The time is the time in millis times 2. A set bit 1 means the entry is fetched from
    * the storage and not modified since then.
    */
-  private volatile long refreshTimeAndState;
+  private volatile long modificationTimeAndState;
   private static final AtomicLongFieldUpdater<Entry> STATE_UPDATER =
-    AtomicLongFieldUpdater.newUpdater(Entry.class, "refreshTimeAndState");
+    AtomicLongFieldUpdater.newUpdater(Entry.class, "modificationTimeAndState");
 
   /** Lru list: pointer to next element or list head */
   public Entry next;
@@ -244,15 +247,15 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * Set modification time and marks entry as dirty. Bit 0 was used as dirty bit for the
    * storage attachment. Not used at the moment.
    */
-  public void setRefreshTime(long t) {
-    refreshTimeAndState =
-      refreshTimeAndState & ~MODIFICATION_TIME_MASK |
+  public void setModificationTime(long t) {
+    modificationTimeAndState =
+      modificationTimeAndState & ~MODIFICATION_TIME_MASK |
         ((((t - MODIFICATION_TIME_BASE) << MODIFICATION_TIME_SHIFT)) & MODIFICATION_TIME_MASK);
   }
 
   @Override
   public long getModificationTime() {
-    return (refreshTimeAndState & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
+    return (modificationTimeAndState & MODIFICATION_TIME_MASK) >> MODIFICATION_TIME_SHIFT;
   }
 
   /**
@@ -314,11 +317,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
   private static final int PS_POS = MODIFICATION_TIME_BITS;
 
   public int getProcessingState() {
-    return (int) ((refreshTimeAndState >> PS_POS) & PS_MASK);
+    return (int) ((modificationTimeAndState >> PS_POS) & PS_MASK);
   }
 
   private void setProcessingState(int v) {
-    refreshTimeAndState = withState(refreshTimeAndState, v);
+    modificationTimeAndState = withState(modificationTimeAndState, v);
   }
 
   private long withState(long refreshTimeAndState, long state) {
@@ -329,7 +332,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * Check and switch the processing state atomically.
    */
   public boolean checkAndSwitchProcessingState(int ps0, int ps) {
-    long rt = refreshTimeAndState;
+    long rt = modificationTimeAndState;
     long expect = withState(rt, ps0);
     long update = withState(rt, ps);
     return STATE_UPDATER.compareAndSet(this, expect, update);
@@ -366,8 +369,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
     resetEntryAction();
   }
 
-  public long getNextRefreshTime() {
-    return nextRefreshTime;
+  /**
+   * Raw expiry value, might be negative
+   */
+  public long getRawExpiry() {
+    return rawExpiry;
   }
 
   /**
@@ -375,11 +381,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
    */
   @Override
   public long getExpiryTime() {
-    return isDataAvailable() ? Math.abs(nextRefreshTime) : ExpiryTimeValues.NEUTRAL;
+    return isDataAvailable() ? Math.abs(rawExpiry) : ExpiryTimeValues.NEUTRAL;
   }
 
-  public void setNextRefreshTime(long nextRefreshTime) {
-    this.nextRefreshTime = nextRefreshTime;
+  public void setRawExpiry(long v) {
+    this.rawExpiry = v;
   }
 
   /**
@@ -395,7 +401,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     }
     synchronized (this) {
       if (isVirgin()) {
-        nextRefreshTime = ABORTED;
+        rawExpiry = ABORTED;
       }
       if (isProcessing()) {
         processingDone();
@@ -458,7 +464,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * Initial state of an entry.
    */
   public final boolean isVirgin() {
-    return nextRefreshTime == VIRGIN;
+    return rawExpiry == VIRGIN;
   }
 
   /**
@@ -472,11 +478,11 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * make sure to get not expired data.
    */
   public final boolean isDataAvailable() {
-    return nextRefreshTime >= DATA_VALID || nextRefreshTime < 0;
+    return rawExpiry >= DATA_VALID || rawExpiry < 0;
   }
 
   public final boolean isDataAvailableOrProbation() {
-    return isDataAvailable() || nextRefreshTime == Entry.EXPIRED_REFRESHED;
+    return isDataAvailable();
   }
 
   /**
@@ -496,7 +502,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * @see EntryAction#hasFreshData()
    */
   public final boolean hasFreshData(TimeReference t) {
-    long nrt = nextRefreshTime;
+    long nrt = rawExpiry;
     if (nrt >= DATA_VALID) {
       return true;
     }
@@ -513,32 +519,28 @@ public class Entry<K, V> extends CompactEntry<K, V>
    * and not expired {@link #hasFreshData(TimeReference)} needs to be used.
    */
   public boolean isExpiredState() {
-    return nextRefreshTime == EXPIRED;
+    return rawExpiry == EXPIRED;
   }
 
   public void setGone() {
-    long nrt = nextRefreshTime;
+    long nrt = rawExpiry;
     if (nrt >= 0 && nrt < GONE) {
-      nextRefreshTime = GONE + nrt;
+      rawExpiry = GONE + nrt;
       return;
     }
-    nextRefreshTime = GONE_OTHER;
+    rawExpiry = GONE_OTHER;
   }
 
   /**
    * The entry is not present in the heap any more and was evicted, expired or removed.
    */
   public final boolean isGone() {
-    long nrt = nextRefreshTime;
+    long nrt = rawExpiry;
     return nrt >= GONE && nrt <= GONE_OTHER;
   }
 
-  public final boolean needsTimeCheck() {
-    return needsTimeCheck(nextRefreshTime);
-  }
-
-  public static boolean needsTimeCheck(long nextRefreshTime) {
-    return nextRefreshTime < 0;
+  public static boolean needsTimeCheck(long rawExpiry) {
+    return rawExpiry < 0;
   }
 
 
@@ -574,19 +576,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return hotAndWeight >> SCAN_ROUND_POS & SCAN_ROUND_MASK;
   }
 
-
-  /**
-   * Expiry time or 0.
-   */
-  public long getValueExpiryTime() {
-    if (nextRefreshTime < 0) {
-      return -nextRefreshTime;
-    } else if (nextRefreshTime > EXPIRY_TIME_MIN) {
-      return nextRefreshTime;
-    }
-    return 0;
-  }
-
   public String toString(HeapCache c) {
     StringBuilder sb = new StringBuilder();
     sb.append("Entry{");
@@ -615,7 +604,7 @@ public class Entry<K, V> extends CompactEntry<K, V>
     if (t > 0) {
       sb.append(", refresh=").append(formatTicks(t));
     }
-    long nrt = nextRefreshTime;
+    long nrt = rawExpiry;
     if (nrt < 0) {
       sb.append(", nextRefreshTime(sharp)=").append(formatTicks(-nrt));
     } else if (nrt == ExpiryPolicy.ETERNAL) {
@@ -764,18 +753,18 @@ public class Entry<K, V> extends CompactEntry<K, V>
     return inf != null ? inf.info : null;
   }
 
-  public void setRefreshProbationNextRefreshTime(long nrt) {
+  public void setRefreshPolicyData(Object v) {
     RefreshProbationPiggyBack inf = getPiggyBack(RefreshProbationPiggyBack.class);
     if (inf != null) {
-      inf.nextRefreshTime = nrt;
+      inf.policyData = v;
       return;
     }
-    misc = new RefreshProbationPiggyBack(nrt, existingPiggyBackForInserting());
+    misc = new RefreshProbationPiggyBack(v, existingPiggyBackForInserting());
   }
 
-  public long getRefreshProbationNextRefreshTime() {
+  public Object getRefreshPolicyData() {
     RefreshProbationPiggyBack inf = getPiggyBack(RefreshProbationPiggyBack.class);
-    return inf != null ? inf.nextRefreshTime : 0;
+    return inf != null ? inf.policyData : null;
   }
 
   static class PiggyBack {
@@ -805,30 +794,17 @@ public class Entry<K, V> extends CompactEntry<K, V>
   }
 
   static class RefreshProbationPiggyBack extends PiggyBack {
-    long nextRefreshTime;
+    Object policyData;
 
-    RefreshProbationPiggyBack(long nextRefreshTime, PiggyBack next) {
+    RefreshProbationPiggyBack(Object policyData, PiggyBack next) {
       super(next);
-      this.nextRefreshTime = nextRefreshTime;
+      this.policyData = policyData;
     }
   }
 
   /*
    * **************************************** LRU list operation ********************************
    */
-
-  public static void removeFromList(Entry e) {
-    e.prev.next = e.next;
-    e.next.prev = e.prev;
-    e.removedFromList();
-  }
-
-  public static void insertInList(Entry head, Entry e) {
-    e.prev = head;
-    e.next = head.next;
-    e.next.prev = e;
-    head.next = e;
-  }
 
 
   public static <E extends Entry> E insertIntoTailCyclicList(E head, E e) {

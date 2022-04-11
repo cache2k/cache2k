@@ -44,9 +44,9 @@ public class EntryTest {
   public void testLastModifiedStoresValue() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setRefreshTime(4711);
+      e.setModificationTime(4711);
       assertThat(e.getModificationTime()).isEqualTo(4711);
-      e.setRefreshTime(123456);
+      e.setModificationTime(123456);
       assertThat(e.getModificationTime()).isEqualTo(123456);
     }
   }
@@ -57,7 +57,7 @@ public class EntryTest {
     long t = System.currentTimeMillis() + millis50years;
     Entry e = new Entry();
     synchronized (e) {
-      e.setRefreshTime(t);
+      e.setModificationTime(t);
       assertThat(e.getModificationTime()).isEqualTo(t);
     }
   }
@@ -66,7 +66,7 @@ public class EntryTest {
   public void testLastModifiedMaxRange() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setRefreshTime(Long.MAX_VALUE);
+      e.setModificationTime(Long.MAX_VALUE);
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       df.setTimeZone(getTimeZone("GMT"));
       assertThat(df.format(new Date(e.getModificationTime()))).isEqualTo("2248-09-26 15:10:22");
@@ -83,7 +83,7 @@ public class EntryTest {
   public void testProcessingFetch() {
     Entry e = new Entry();
     synchronized (e) {
-      e.setNextRefreshTime(4711);
+      e.setRawExpiry(4711);
       e.startProcessing(REFRESH, null);
       assertThat(e.isGettingRefresh()).isTrue();
       e.processingDone();

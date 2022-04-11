@@ -22,6 +22,7 @@ package org.cache2k.core.timing;
 
 import org.cache2k.CacheEntry;
 import org.cache2k.config.Cache2kConfig;
+import org.cache2k.config.CacheType;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
@@ -44,12 +45,13 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
     expiryPolicy = constructPolicy(buildContext);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "ConstantConditions"})
   private static <K, V> ExpiryPolicy<K, V> constructPolicy(
     InternalCacheBuildContext<K, V> buildContext) {
     Cache2kConfig<K, V> cfg = buildContext.getConfig();
-    if (cfg.getValueType() != null &&
-      ValueWithExpiryTime.class.isAssignableFrom(cfg.getValueType().getType()) &&
+    CacheType<V> valueType = cfg.getValueType();
+    if (valueType != null &&
+      ValueWithExpiryTime.class.isAssignableFrom(valueType.getType()) &&
       cfg.getExpiryPolicy() == null) {
       return (ExpiryPolicy<K, V>) ENTRY_EXPIRY_CALCULATOR_FROM_VALUE;
     }
@@ -62,9 +64,9 @@ class DynamicTiming<K, V> extends StaticTiming<K, V> {
       expiryPolicy, expiryTicks, sharpExpiry);
   }
 
-  public long calculateNextRefreshTime(Entry<K, V> entry, V value, long loadTime) {
+  public long calculateExpiry(Entry<K, V> entry, V value, long loadTime) {
     if (entry.isDataAvailable() || entry.isExpiredState()
-      || entry.getNextRefreshTime() == Entry.EXPIRED_REFRESH_PENDING) {
+      || entry.getRawExpiry() == Entry.EXPIRED_REFRESH_PENDING) {
       return calcNextRefreshTime(entry.getKey(), value, loadTime,
         entry.getInspectionEntry());
     } else {

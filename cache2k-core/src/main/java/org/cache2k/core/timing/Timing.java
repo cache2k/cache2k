@@ -97,7 +97,7 @@ public abstract class Timing<K, V> implements NeedsClose {
    * @return Point in time when the entry should expire. Meaning identical to
    *         {@link ExpiryPolicy#calculateExpiryTime(Object, Object, long, CacheEntry)}
    */
-  public abstract long calculateNextRefreshTime(Entry<K, V> e, V value, long loadTime);
+  public abstract long calculateExpiry(Entry<K, V> e, V value, long loadTime);
 
   /**
    * Delegated to the resilience policy
@@ -148,5 +148,15 @@ public abstract class Timing<K, V> implements NeedsClose {
   public long getExpiryAfterWriteTicks() { return ExpiryPolicy.ETERNAL; }
 
   public long limitExpiryTime(long now, long expiryTime) { return expiryTime; }
+
+  /**
+   * Called after value was loaded, triggered by the user. Wraps the value if
+   * necessary into {@link org.cache2k.core.AccessWrapper} if refresh
+   * is enabled.
+   */
+  public Object wrapLoadValueForRefresh(Entry<K, V> e, Object valueOrException, long t0, long t,
+                                        boolean load, long expiry) {
+    return valueOrException;
+  }
 
 }

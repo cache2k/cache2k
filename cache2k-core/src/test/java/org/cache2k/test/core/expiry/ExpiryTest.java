@@ -1163,7 +1163,7 @@ public class ExpiryTest extends TestingBase {
       assertThat(count.get()).isEqualTo(0);
       sem.release();
       await("loader called", () -> count.get() == 1);
-      await("load complete", () -> !cache.containsKey(1));
+      await("load complete, since 2.8", () -> cache.peek(1) == 4711);
       try {
         assertThat(getInfo().getSize()).isEqualTo(1);
       } catch (AssertionError e) {
@@ -1342,8 +1342,8 @@ public class ExpiryTest extends TestingBase {
       }).expectMaybe(() -> {
         assertThat(getInfo().getSize()).isEqualTo(1);
         assertThat(c.containsKey(1))
-          .as("Still invisible")
-          .isFalse();
+          .as("visible, since 2.8")
+          .isTrue();
         c.expireAt(1, ETERNAL);
         assertThat(c.containsKey(1))
           .as("Visible, when expiry extended")
@@ -1355,8 +1355,8 @@ public class ExpiryTest extends TestingBase {
         assertThat(getInfo().getSize()).isEqualTo(1);
         await(() -> getInfo().getRefreshCount() == 2);
         assertThat(c.containsKey(1))
-          .as("Invisible")
-          .isFalse();
+          .as("visible, since 2.8")
+          .isTrue();
         assertThat((int) c.get(1)).isEqualTo(4712);
       });
   }

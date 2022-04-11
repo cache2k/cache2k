@@ -20,6 +20,7 @@ package org.cache2k.core.operation;
  * #L%
  */
 
+import org.cache2k.core.AccessWrapper;
 import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.processor.EntryProcessingException;
 import org.cache2k.processor.EntryProcessor;
@@ -92,7 +93,7 @@ public class Operations<K, V> {
      */
     @Override
     public void examine(K key, Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-      if (c.isDataRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation()) {
+      if ((c.isDataRefreshing() || c.isExpiryTimeReachedOrInRefreshProbation())) {
         c.wantMutation();
       } else {
         c.noMutation();
@@ -101,7 +102,12 @@ public class Operations<K, V> {
 
     @Override
     public void mutate(K key, Progress<K, V, Void> c, ExaminationEntry<K, V> e) {
-      c.refresh();
+      boolean shouldRefresh = AccessWrapper.shouldRefresh(e.getValueOrWrapper());
+      if (shouldRefresh) {
+        c.refresh();
+      } else {
+        c.expire(0);
+      }
     }
   };
 

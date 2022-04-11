@@ -142,9 +142,9 @@ public class TimingUnitTest {
         .expireAfterWrite(bigValue, MILLISECONDS)
         .config()
     );
-    long t = h.calculateNextRefreshTime(ENTRY, null, 0);
+    long t = h.calculateExpiry(ENTRY, null, 0);
     assertThat(t).isEqualTo(bigValue);
-    t = h.calculateNextRefreshTime(ENTRY, null, 48);
+    t = h.calculateExpiry(ENTRY, null, 48);
     assertThat(t).isEqualTo(MAX_VALUE);
   }
 
@@ -158,9 +158,9 @@ public class TimingUnitTest {
         .expireAfterWrite(bigValue, MILLISECONDS)
         .config()
     );
-    long t = h.calculateNextRefreshTime(ENTRY, null, 0);
+    long t = h.calculateExpiry(ENTRY, null, 0);
     assertThat(t).isEqualTo(bigValue);
-    t = h.calculateNextRefreshTime(ENTRY, null, 48);
+    t = h.calculateExpiry(ENTRY, null, 48);
     assertThat(t).isEqualTo(MAX_VALUE);
   }
 
@@ -177,7 +177,7 @@ public class TimingUnitTest {
         .config()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, NOW);
+    long t = h.calculateExpiry(e, null, NOW);
     assertThat(t).isEqualTo(-NOW - 1);
   }
 
@@ -194,10 +194,10 @@ public class TimingUnitTest {
         .config()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, NOW);
+    long t = h.calculateExpiry(e, null, NOW);
     assertThat(t).isNotEqualTo(MAX_VALUE);
     assertThat(t).isEqualTo(NOW + MINUTES.toMillis(5));
-    t = h.calculateNextRefreshTime(e, null, NOW);
+    t = h.calculateExpiry(e, null, NOW);
     assertThat(t).isEqualTo(NOW + MINUTES.toMillis(5));
   }
 
@@ -216,21 +216,21 @@ public class TimingUnitTest {
         .config()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, NOW);
+    long t = h.calculateExpiry(e, null, NOW);
     assertThat(t).isNotEqualTo(MAX_VALUE);
     assertThat(t)
       .as("max expiry, but not sharp")
       .isEqualTo(NOW + duration);
     long later = NOW + duration;
-    t = h.calculateNextRefreshTime(e, null, later);
+    t = h.calculateExpiry(e, null, later);
     assertThat(t).isEqualTo(later + duration);
     later = sharpPointInTime - duration / 2;
-    t = h.calculateNextRefreshTime(e, null, later);
+    t = h.calculateExpiry(e, null, later);
     assertThat(t)
       .as("requested expiry via duration too close")
       .isEqualTo(-sharpPointInTime);
     later = sharpPointInTime - duration - 1;
-    t = h.calculateNextRefreshTime(e, null, later);
+    t = h.calculateExpiry(e, null, later);
     assertThat(t <= later + duration).isTrue();
     assertThat(t).isEqualTo(later + 1);
   }
@@ -247,21 +247,21 @@ public class TimingUnitTest {
         .config()
     );
     Entry e = new Entry();
-    long t = h.calculateNextRefreshTime(e, null, NOW);
+    long t = h.calculateExpiry(e, null, NOW);
     assertThat(t).isNotEqualTo(MAX_VALUE);
     assertThat(t)
       .as("max expiry, but not sharp")
       .isEqualTo(NOW + duration);
     long later = NOW + duration;
-    t = h.calculateNextRefreshTime(e, null, later);
+    t = h.calculateExpiry(e, null, later);
     assertThat(t).isEqualTo(later + duration);
     later = pointInTime - duration / 2;
-    t = h.calculateNextRefreshTime(e, null, later);
+    t = h.calculateExpiry(e, null, later);
     assertThat(t)
       .as("requested expiry via duration too close")
       .isEqualTo(pointInTime);
     later = pointInTime - duration - 1;
-    t = h.calculateNextRefreshTime(e, null, later);
+    t = h.calculateExpiry(e, null, later);
     assertThat(t <= later + duration).isTrue();
     assertThat(t).isEqualTo(later + duration);
   }
@@ -283,7 +283,7 @@ public class TimingUnitTest {
     );
     Entry e = new Entry();
     long later = sharpPointInTime - duration - 1;
-    long t = h.calculateNextRefreshTime(e, null, later);
+    long t = h.calculateExpiry(e, null, later);
     assertThat(SHARP_EXPIRY_GAP_MILLIS > duration)
       .as("expect gap bigger then duration")
       .isTrue();

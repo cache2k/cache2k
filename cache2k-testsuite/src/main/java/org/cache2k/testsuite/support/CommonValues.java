@@ -31,7 +31,7 @@ public interface CommonValues {
   long BIG_DURATION_TICKS = 60 * 1000 * 1000;
 
   /**
-   * Global timeout used everywhere whe we wait for an operation that is expected
+   * Global timeout used everywhere when we wait for an operation that is expected
    * to complete.
    */
   long TIMEOUT_MILLIS = 68 * 1000;
