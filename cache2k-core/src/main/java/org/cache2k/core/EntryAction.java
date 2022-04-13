@@ -27,6 +27,7 @@ import org.cache2k.CacheException;
 import org.cache2k.core.api.CommonMetrics;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.event.CacheEventListenerException;
+import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.event.CacheEntryExpiredListener;
@@ -57,7 +58,8 @@ import static org.cache2k.core.Entry.ProcessingState.*;
 public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   Runnable,
   AsyncCacheLoader.Context<K, V>,
-  AsyncCacheLoader.Callback<V>, Progress<K, V, R> {
+  AsyncCacheLoader.Callback<V>, Progress<K, V, R>,
+  RefreshAheadPolicy.Context {
 
   @SuppressWarnings("rawtypes")
   public static final Entry NON_FRESH_DUMMY = new Entry();
@@ -97,6 +99,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   /** Special case of remove, expiry is in the past */
   boolean expiredImmediately;
   long expiry = 0;
+  long refreshTime = 0;
   /**
    * We locked the entry, don't lock it again.
    */
@@ -508,23 +511,27 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    * a mutation happens, which was eventually triggered by the fact that the
    * entry expired. For example, a get() will trigger a load if the entry
    * expired.
+   *
+   * <p>In case the expiry time is positive, no time checks are carried out when accessing the
+   * entry and the expiry would only happen on the expiry event. In this case, we can continue
+   * without action, since no expiry happened before.
    */
   public void checkExpiryBeforeMutation() {
     if (entryExpiredListeners() == null) {
       noExpiryListenersPresent();
       return;
     }
-    long nrt = heapEntry.getRawExpiry();
-    if (nrt >= 0) {
+    long currentExpiry = heapEntry.getRawExpiry();
+    if (currentExpiry >= 0) {
       continueWithMutation();
       return;
     }
     long millis = getMutationStartTime();
-    if (millis >= -nrt) {
+    if (millis >= -currentExpiry) {
       boolean justExpired = false;
       synchronized (heapEntry) {
         justExpired = true;
-        heapEntry.setRawExpiry(timing().stopStartTimer(ExpiryTimeValues.NOW, heapEntry));
+        heapEntry.setRawExpiry(timing().stopStartTimer(heapEntry, ExpiryTimeValues.NOW, 0));
         heapDataValid = false;
       }
       if (justExpired) {
@@ -808,7 +815,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     if (heapCache.isModificationTimeNeeded()) {
       modificationTime = heapEntry.getModificationTime();
     }
-    expiry = timing().limitExpiryTime(getStartTime(), expiryTime);
+    this.expiry = timing().limitExpiryTime(getStartTime(), expiryTime);
+    this.refreshTime = timing().calculateRefreshTime(this);
     setUntilInExceptionWrapper();
     checkKeepOrRemove();
   }
@@ -826,7 +834,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       }
     }
     if (expiryTime != ExpiryTimeValues.NEUTRAL) {
-      expiry = timing().limitExpiryTime(getStartTime(), expiryTime);
+      this.expiry = timing().limitExpiryTime(getStartTime(), expiryTime);
+      this.refreshTime = timing().calculateRefreshTime(this);
       setUntilInExceptionWrapper();
       expiryCalculated();
     } else {
@@ -859,6 +868,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           }
           expiry = timing().cacheExceptionUntil(heapEntry, ew);
         }
+        refreshTime = timing().calculateRefreshTime(this);
         setUntilInExceptionWrapper();
       } catch (Throwable ex) {
         if (valueDefinitelyLoaded) {
@@ -882,6 +892,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           }
           return;
         }
+        refreshTime = timing().calculateRefreshTime(this);
         heapEntry.resetSuppressedLoadExceptionInformation();
       } catch (Throwable ex) {
         if (valueDefinitelyLoaded) {
@@ -1231,7 +1242,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
         heapCache.removeEntry(heapEntry);
       } else {
         try {
-          heapEntry.setRawExpiry(timing().stopStartTimer(expiry, heapEntry));
+          heapEntry.setRawExpiry(timing().stopStartTimer(heapEntry, expiry, refreshTime));
           boolean entryExpired = heapEntry.isExpiredState();
           if (!expiredImmediately && entryExpired) {
             justExpired = true;
@@ -1444,6 +1455,50 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   public boolean isResultAvailable() {
     return resultAvailable;
+  }
+
+  @Override
+  public boolean isLoadException() {
+    return false;
+  }
+
+  @Override
+  public boolean isExceptionSuppressed() {
+    return false;
+  }
+
+  @Override
+  public long getStopTime() {
+    return 0;
+  }
+
+  @Override
+  public long getCurrentTime() {
+    return 0;
+  }
+
+  @Override
+  public long getExpiryTime() {
+    return Math.abs(expiry);
+  }
+
+  @Override
+  public boolean isAccessed() {
+    return false;
+  }
+
+  @Override
+  public Object getUserData() {
+    return null;
+  }
+
+  @Override
+  public void setUserData(Object data) {
+  }
+
+  @Override
+  public boolean isLoad() {
+    return valueDefinitelyLoaded;
   }
 
   public static class AbortWhenProcessingException extends CacheException { }

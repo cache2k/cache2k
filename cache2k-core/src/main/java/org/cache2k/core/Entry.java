@@ -270,7 +270,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
     public static final int LOAD = 4;
     public static final int LOAD_COMPLETE = 5;
     public static final int COMPUTE = 6;
-    public static final int REFRESH = 7;
     public static final int EXPIRY = 8;
     public static final int EXPIRY_COMPLETE = 9;
     public static final int WRITE = 10;
@@ -295,7 +294,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
       case ProcessingState.LOAD: return "LOAD";
       case ProcessingState.LOAD_COMPLETE: return "LOAD_COMPLETE";
       case ProcessingState.COMPUTE: return "COMPUTE";
-      case ProcessingState.REFRESH: return "REFRESH";
       case ProcessingState.EXPIRY: return "EXPIRY";
       case ProcessingState.EXPIRY_COMPLETE: return "EXPIRY_COMPLETE";
       case ProcessingState.WRITE: return "WRITE";
@@ -428,10 +426,6 @@ public class Entry<K, V> extends CompactEntry<K, V>
     if (interrupt) {
       Thread.currentThread().interrupt();
     }
-  }
-
-  public boolean isGettingRefresh() {
-    return getProcessingState() == ProcessingState.REFRESH;
   }
 
   private static final Entry LIST_REMOVED_MARKER = new Entry();

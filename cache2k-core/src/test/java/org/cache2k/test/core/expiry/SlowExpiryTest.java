@@ -432,7 +432,7 @@ public class SlowExpiryTest extends TestingBase {
   public void testExpireNoKeepSharpExpiryBeyondSafetyGap() {
     Cache<Integer, Integer> c = cache = builder(Integer.class, Integer.class)
       .loader(new IntCountingCacheSource())
-      .expireAfterWrite(TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS + 3, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(getEffectiveSafetyGapMillis() + 3, TimeUnit.MILLISECONDS)
       .keepDataAfterExpired(false)
       .sharpExpiry(true)
       .build();

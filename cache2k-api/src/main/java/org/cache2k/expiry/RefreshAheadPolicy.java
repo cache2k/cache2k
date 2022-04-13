@@ -59,6 +59,8 @@ public interface RefreshAheadPolicy<K, V, T> extends DataAware<K, V> {
    * Called after a load or refresh and after the expiry or resilience policy was run
    * to determine the refresh ahead time. For a refresh to happen, the result needs to be lower or
    * equal to expiry time.
+   *
+   * <p>
 c   */
   long refreshAheadTime(Context<T> ctx);
 
@@ -101,6 +103,11 @@ c   */
      *
      */
     boolean isAccessed();
+
+    /**
+     * {@code true}, if load request, includes refresh
+     */
+    boolean isLoad();
 
     /**
      * {@code True}, if the load was not triggered by a user request

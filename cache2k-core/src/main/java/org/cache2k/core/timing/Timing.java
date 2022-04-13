@@ -22,12 +22,14 @@ package org.cache2k.core.timing;
 
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.CacheEntry;
+import org.cache2k.core.EntryAction;
 import org.cache2k.core.api.InternalCacheBuildContext;
 import org.cache2k.core.api.InternalCacheCloseContext;
 import org.cache2k.core.Entry;
 import org.cache2k.core.ExceptionWrapper;
 import org.cache2k.core.api.NeedsClose;
 import org.cache2k.expiry.ExpiryPolicy;
+import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.expiry.ValueWithExpiryTime;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
@@ -118,10 +120,11 @@ public abstract class Timing<K, V> implements NeedsClose {
    * since 0 is a virgin entry. Restart the timer if needed.
    *
    * @param expiryTime calculated expiry time
+   * @param refreshTime
    * @return sanitized nextRefreshTime for storage in the entry.
    * @throws IllegalArgumentException if time is not supported
    */
-  public long stopStartTimer(long expiryTime, Entry<K, V> e) {
+  public long stopStartTimer(Entry<K, V> e, long expiryTime, long refreshTime) {
     if ((expiryTime > 0 && expiryTime < Long.MAX_VALUE) || expiryTime < 0) {
       throw new IllegalArgumentException("Expiry timer disabled via eternal = true");
     }
@@ -129,21 +132,9 @@ public abstract class Timing<K, V> implements NeedsClose {
   }
 
   /**
-   * Start probation timer.
-   */
-  public boolean startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
-    return true;
-  }
-
-  /**
    * Cancel the timer on the entry, if a timer was set.
    */
   public void cancelExpiryTimer(Entry<K, V> e) { }
-
-  /**
-   * Schedule second timer event for the expiry tie if sharp expiry is switched on.
-   */
-  public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) { }
 
   public long getExpiryAfterWriteTicks() { return ExpiryPolicy.ETERNAL; }
 
@@ -157,6 +148,10 @@ public abstract class Timing<K, V> implements NeedsClose {
   public Object wrapLoadValueForRefresh(Entry<K, V> e, Object valueOrException, long t0, long t,
                                         boolean load, long expiry) {
     return valueOrException;
+  }
+
+  public long calculateRefreshTime(RefreshAheadPolicy.Context<Object> context) {
+    return 0;
   }
 
 }

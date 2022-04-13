@@ -21,12 +21,14 @@ package org.cache2k.testsuite.expiry;
  */
 
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.pinpoint.TimeoutError;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.testsuite.support.AbstractCacheTester;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,7 +48,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
   }
 
   long refreshInterval = 1234;
-  long loadRequests = 0;
+  final AtomicInteger loadRequests = new AtomicInteger(0);
 
   private void checkNeutral(Runnable neutral, boolean sharpExpiry) {
     within(refreshInterval)
@@ -96,7 +98,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
     sleep(refreshInterval);
     sleep(refreshInterval);
     sleep(refreshInterval);
-    await(() -> loadRequests >= 2);
+    await(() -> loadRequests.get() >= 2);
     checkExpired(sharpExpiry);
     checkExpired(sharpExpiry);
     System.err.println(now());
@@ -112,7 +114,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
   <K, V> Cache2kBuilder<K, V> standardSetup(Cache2kBuilder<K, V> b) {
     return b
       .loader(key -> {
-        loadRequests++;
+        loadRequests.incrementAndGet();
         return (V) key;
       })
       .refreshAhead(true)
@@ -131,32 +133,38 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
     init(b -> standardSetup(b));
     get(k0);
     sleep(refreshInterval);
-    await("initial load and refresh", () -> loadRequests == 2);
+    await("initial load and refresh", () -> loadRequests.get() == 2);
     await("expires", () -> !containsKey(k0));
-    loadRequests = 0;
+    await("really expired", () -> asMap().size() == 0);
+    loadRequests.set(0);
     get(k0);
     sleep(refreshInterval);
-    await("initial load and refresh", () -> loadRequests == 2);
+    try {
+      await("initial load and refresh", () -> loadRequests.get() == 2);
+    } catch (TimeoutError err) {
+      System.err.println(loadRequests.get());
+      throw err;
+    }
     get(k0);
     if (now() >= reloadTime + refreshInterval) { return; }
-    assertThat(loadRequests).isEqualTo(2);
-    await("another refresh, since accessed", () -> loadRequests == 3);
+    assertThat(loadRequests.get()).isEqualTo(2);
+    await("another refresh, since accessed", () -> loadRequests.get() == 3);
   }
 
   public void checkTouchTwiceRequired() throws InterruptedException {
     init(b -> standardSetup(b));
     get(k0);
     sleep(refreshInterval);
-    await("initial load and refresh", () -> loadRequests == 2);
+    await("initial load and refresh", () -> loadRequests.get() == 2);
     await("expires", () -> !containsKey(k0));
-    loadRequests = 0;
+    loadRequests.set(0);
     get(k0);
     sleep(refreshInterval);
-    await("initial load and refresh", () -> loadRequests == 2);
+    await("initial load and refresh", () -> loadRequests.get() == 2);
     get(k0);
     if (now() > reloadTime + refreshInterval) { return; }
     assertThat(loadRequests).isEqualTo(2);
-    await("another refresh, since accessed", () -> loadRequests == 3);
+    await("another refresh, since accessed", () -> loadRequests.get() == 3);
   }
 
 }

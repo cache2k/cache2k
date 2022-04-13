@@ -419,8 +419,12 @@ public class TestingBase {
     return cnt;
   }
 
-  public long getEffectiveSafetyGapMillis() {
-    return TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS;
+  /**
+   * Safety gap is removed. Sharp timeout is always using the time comparison. Keep
+   * we keep some tests with it for the moment.
+   */
+  public static long getEffectiveSafetyGapMillis() {
+    return 765;
   }
 
   public TimeReference getClock() {

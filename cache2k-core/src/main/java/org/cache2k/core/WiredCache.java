@@ -795,15 +795,6 @@ public class WiredCache<K, V> extends BaseCache<K, V>
     metrics().timerEvent();
     synchronized (e) {
       if (e.getTask() != task) { return; }
-      long nrt = e.getRawExpiry();
-      long now = heapCache.clock.ticks();
-      if (now < Math.abs(nrt)) {
-        if (nrt > 0) {
-          heapCache.timing.scheduleFinalTimerForSharpExpiry(e);
-          e.setRawExpiry(-nrt);
-        }
-        return;
-      }
     }
     enqueueTimerAction(e, ops.expireEvent);
   }

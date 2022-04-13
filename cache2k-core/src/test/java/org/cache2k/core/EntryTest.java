@@ -80,18 +80,6 @@ public class EntryTest {
   }
 
   @Test
-  public void testProcessingFetch() {
-    Entry e = new Entry();
-    synchronized (e) {
-      e.setRawExpiry(4711);
-      e.startProcessing(REFRESH, null);
-      assertThat(e.isGettingRefresh()).isTrue();
-      e.processingDone();
-    }
-    assertThat(e.getProcessingState()).isEqualTo(DONE);
-  }
-
-  @Test
   public void testHot() {
     Entry e = new Entry();
     assertThat(e.isHot()).isFalse();
@@ -128,7 +116,6 @@ public class EntryTest {
     assertThat(num2processingStateText(MUTATE)).isEqualTo("MUTATE");
     assertThat(num2processingStateText(LOAD)).isEqualTo("LOAD");
     assertThat(num2processingStateText(COMPUTE)).isEqualTo("COMPUTE");
-    assertThat(num2processingStateText(REFRESH)).isEqualTo("REFRESH");
     assertThat(num2processingStateText(EXPIRY)).isEqualTo("EXPIRY");
     assertThat(num2processingStateText(EXPIRY_COMPLETE)).isEqualTo("EXPIRY_COMPLETE");
     assertThat(num2processingStateText(WRITE)).isEqualTo("WRITE");

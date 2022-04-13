@@ -47,7 +47,7 @@ import static org.junit.Assert.*;
 @Category(SlowTests.class) @RunWith(Parameterized.class)
 public class AllMutatorsExpireTest extends TestingBase {
 
-  static final long EXPIRY_BEYOND_GAP = TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS + 3;
+  static final long EXPIRY_BEYOND_GAP = getEffectiveSafetyGapMillis() + 3;
   static final Integer KEY = 1;
   static final Integer VALUE = 1;
 

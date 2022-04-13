@@ -41,6 +41,7 @@ import org.cache2k.core.concurrency.ThreadFactoryProvider;
 import org.cache2k.core.timing.TimeAgnosticTiming;
 import org.cache2k.core.timing.Timing;
 import org.cache2k.core.util.Util;
+import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.io.CacheLoader;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.log.Log;
@@ -651,22 +652,19 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return e;
   }
 
-  protected void finishLoadOrEviction(Entry<K, V> e, long nextRefreshTime) {
-    if (e.getProcessingState() != Entry.ProcessingState.REFRESH) {
-      restartTimer(e, nextRefreshTime);
-    } else {
-      startRefreshProbationTimer(e, nextRefreshTime);
-    }
+  protected void finishLoadOrEviction(Entry<K, V> e, long expiryTime, long refreshTime) {
+    restartTimer(e, expiryTime, refreshTime);
     e.processingDone();
   }
 
-  private void restartTimer(Entry<K, V> e, long nextRefreshTime) {
-      e.setRawExpiry(timing.stopStartTimer(nextRefreshTime, e));
+  private void restartTimer(Entry<K, V> e, long expiryTime, long refreshTime) {
+    e.setRawExpiry(timing.stopStartTimer(e, expiryTime, refreshTime));
     checkIfImmediatelyExpired(e);
   }
 
   private void checkIfImmediatelyExpired(Entry<K, V> e) {
-    if (e.isExpiredState() || disabled) {
+    final boolean expireImmediately = e.isExpiredState() || disabled;
+    if (expireImmediately) {
       expireAndRemoveEventuallyAfterProcessing(e);
     }
   }
@@ -1312,24 +1310,26 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   private Object loadGotException(Entry<K, V> e, long t0, long t, Throwable wrappedException) {
     ExceptionWrapper<K, V> exceptionWrapper =
       new ExceptionWrapper(keyObjFromEntry(e), wrappedException, t0, e, exceptionPropagator);
-    long nextRefreshTime = 0;
+    long expiry = 0;
+    long refreshTime = 0;
     boolean suppressException = false;
     try {
       if (e.isValidOrExpiredAndNoException()) {
-        nextRefreshTime = timing.suppressExceptionUntil(e, exceptionWrapper);
+        expiry = timing.suppressExceptionUntil(e, exceptionWrapper);
       }
-      if (nextRefreshTime > t0) {
+      if (expiry > t0) {
         suppressException = true;
       } else {
-        nextRefreshTime = timing.cacheExceptionUntil(e, exceptionWrapper);
+        expiry = timing.cacheExceptionUntil(e, exceptionWrapper);
       }
+      refreshTime = calculateRefreshTime(e, t0, t, true, expiry);
     } catch (Exception ex) {
       return resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex));
     }
-    exceptionWrapper = new ExceptionWrapper<>(exceptionWrapper, Math.abs(nextRefreshTime));
+    exceptionWrapper = new ExceptionWrapper<>(exceptionWrapper, Math.abs(expiry));
     Object loadResult;
     synchronized (e) {
-      insertUpdateStats(e, (V) exceptionWrapper, t0, t, true, nextRefreshTime, suppressException);
+      insertUpdateStats(e, (V) exceptionWrapper, t0, t, true, expiry, suppressException);
       if (suppressException) {
         e.setSuppressedLoadExceptionInformation(exceptionWrapper);
         loadResult = e.getValueOrException();
@@ -1340,7 +1340,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         e.setValueOrWrapper(exceptionWrapper);
         loadResult = exceptionWrapper;
       }
-      finishLoadOrEviction(e, nextRefreshTime);
+      finishLoadOrEviction(e, expiry, refreshTime);
     }
     return loadResult;
   }
@@ -1354,7 +1354,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   private Object resiliencePolicyException(Entry<K, V> e, long t0, long t, Throwable exception) {
     ExceptionWrapper<K, V> value =
       new ExceptionWrapper(keyObjFromEntry(e), exception, t0, e, exceptionPropagator);
-    return insert(e, value, t0, t, true, 0);
+    return insert(e, value, t0, t, true, 0, 0);
   }
 
   private void checkLoaderPresent() {
@@ -1379,8 +1379,10 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    */
   protected final Object insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, boolean load) {
     long expiry;
+    long refreshTime;
     try {
       expiry = timing.calculateExpiry(e, v, t0);
+      refreshTime = calculateRefreshTime(e, t0, t, load, expiry);
     } catch (Exception ex) {
       RuntimeException wrappedException = new ExpiryPolicyException(ex);
       if (load) {
@@ -1389,7 +1391,65 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       insertUpdateStats(e, v, t0, t, load, Long.MAX_VALUE, false);
       throw wrappedException;
     }
-    return insert(e, v, t0, t, load, expiry);
+    return insert(e, v, t0, t, load, expiry, refreshTime);
+  }
+
+  private long calculateRefreshTime(Entry<K, V> e, long t0, long t, boolean load, long expiry) {
+    return timing.calculateRefreshTime(new RefreshAheadPolicy.Context<Object>() {
+      @Override
+      public boolean isLoadException() {
+        return false;
+      }
+
+      @Override
+      public boolean isExceptionSuppressed() {
+        return false;
+      }
+
+      @Override
+      public long getStartTime() {
+        return t0;
+      }
+
+      @Override
+      public long getStopTime() {
+        return t;
+      }
+
+      @Override
+      public long getCurrentTime() {
+        return t;
+      }
+
+      @Override
+      public long getExpiryTime() {
+        return Math.abs(expiry);
+      }
+
+      @Override
+      public boolean isAccessed() {
+        return AccessWrapper.wasAccessed(e.getValueOrWrapper());
+      }
+
+      @Override
+      public boolean isRefreshAhead() {
+        return false;
+      }
+
+      @Override
+      public boolean isLoad() {
+        return load;
+      }
+
+      @Override
+      public Object getUserData() {
+        return null;
+      }
+
+      @Override
+      public void setUserData(Object data) {
+      }
+    });
   }
 
   public RuntimeException returnNullValueDetectedException() {
@@ -1397,7 +1457,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   protected final Object insert(Entry<K, V> e, Object valueOrException, long t0, long t,
-                                boolean load, long expiry) {
+                                boolean load, long expiry, long refreshTime) {
     if (load) {
       if (valueOrException == null && isRejectNullValues() && expiry != 0) {
         return loadGotException(e, t0, t, returnNullValueDetectedException());
@@ -1411,7 +1471,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
           timing.wrapLoadValueForRefresh(e, valueOrException, t0, t, load, expiry);
         e.setValueOrWrapper(wrappedValue);
         e.resetSuppressedLoadExceptionInformation();
-        finishLoadOrEviction(e, expiry);
+        finishLoadOrEviction(e, expiry, refreshTime);
       }
     } else {
       if (valueOrException == null && isRejectNullValues()) {
@@ -1423,13 +1483,13 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       e.setValueOrWrapper(valueOrException);
       e.resetSuppressedLoadExceptionInformation();
       insertUpdateStats(e, valueOrException, t0, t, load, expiry, false);
-      restartTimer(e, expiry);
+      restartTimer(e, expiry, refreshTime);
     }
     return valueOrException;
   }
 
   private void insertUpdateStats(Entry<K, V> e, Object valueOrException, long t0, long t, boolean load,
-                                 long nextRefreshTime, boolean suppressException) {
+                                 long expiryTime, boolean suppressException) {
     if (load) {
       if (suppressException) {
         metrics.suppressedException();
@@ -1439,7 +1499,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         }
       }
       long millis = t - t0;
-      if (e.isGettingRefresh()) {
+      if (false) {
         metrics.refresh(millis);
       } else {
         if (e.isVirgin()) {
@@ -1449,7 +1509,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         }
       }
     } else {
-      if (nextRefreshTime != 0) {
+      if (expiryTime != 0) {
         metrics.putNewEntry();
       }
     }
@@ -1467,13 +1527,6 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         metrics.refreshRejected();
         expireOrScheduleFinalExpireEvent(e);
       }
-    }
-  }
-
-  public void startRefreshProbationTimer(Entry<K, V> e, long nextRefreshTime) {
-    boolean expired = timing.startRefreshProbationTimer(e, nextRefreshTime);
-    if (expired) {
-      expireAndRemoveEventually(e);
     }
   }
 
@@ -1504,19 +1557,9 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   private void expireOrScheduleFinalExpireEvent(Entry<K, V> e) {
-    long nrt = e.getRawExpiry();
-    long t = clock.ticks();
-    if (t >= Math.abs(nrt)) {
-      try {
-        expireEntry(e);
-      } catch (CacheClosedException ignore) { }
-    } else {
-      if (nrt < 0) {
-        return;
-      }
-      timing.scheduleFinalTimerForSharpExpiry(e);
-      e.setRawExpiry(-nrt);
-    }
+    try {
+      expireEntry(e);
+    } catch (CacheClosedException ignore) { }
   }
 
   protected void expireEntry(Entry<K, V> e) {

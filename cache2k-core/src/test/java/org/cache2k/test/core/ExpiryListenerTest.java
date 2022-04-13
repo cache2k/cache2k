@@ -31,7 +31,6 @@ import org.cache2k.testing.category.SlowTests;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.cache2k.core.timing.TimingUnitTest.SHARP_EXPIRY_GAP_MILLIS;
 import static org.cache2k.expiry.ExpiryTimeValues.NOW;
 import static org.cache2k.test.core.TestingParameters.MINIMAL_TICK_MILLIS;
 
@@ -64,7 +63,6 @@ public class ExpiryListenerTest extends TestingBase {
   public void expireBeforePut() {
     AtomicInteger callCount = new AtomicInteger();
     final long expiryMillis = 100;
-    assertThat(SHARP_EXPIRY_GAP_MILLIS).isGreaterThan(expiryMillis);
     Cache<Integer, Integer> c = builder(Integer.class, Integer.class)
       .addListener((CacheEntryExpiredListener<Integer, Integer>) (c1, e) -> callCount.incrementAndGet())
       .expiryPolicy((key, value, startTime, currentEntry) -> startTime + expiryMillis)

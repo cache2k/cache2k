@@ -50,9 +50,6 @@ import static org.cache2k.expiry.ExpiryTimeValues.ETERNAL;
 @Category(FastTests.class)
 public class TimingUnitTest {
 
-  public static final long SHARP_EXPIRY_GAP_MILLIS =
-    StaticTiming.SHARP_EXPIRY_SAFETY_GAP.toMillis();
-
   private static final Entry ENTRY = new Entry();
   private static final long NOW = 10000000;
   private static final TimeReference CLOCK = TimeReference.DEFAULT;
@@ -284,10 +281,6 @@ public class TimingUnitTest {
     Entry e = new Entry();
     long later = sharpPointInTime - duration - 1;
     long t = h.calculateExpiry(e, null, later);
-    assertThat(SHARP_EXPIRY_GAP_MILLIS > duration)
-      .as("expect gap bigger then duration")
-      .isTrue();
-    assertThat(t).isNotEqualTo(sharpPointInTime - SHARP_EXPIRY_GAP_MILLIS);
     assertThat(abs(t)).isGreaterThan(NOW);
     assertThat(abs(t)).isLessThan(sharpPointInTime);
   }

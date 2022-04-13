@@ -35,35 +35,12 @@ import org.cache2k.expiry.ExpiryTimeValues;
 import org.cache2k.io.LoadExceptionInfo;
 import org.cache2k.io.ResiliencePolicy;
 
-import java.time.Duration;
-
 /**
  * Expiry time is constant
  *
  * @author Jens Wilke
  */
 public class StaticTiming<K, V> extends Timing<K, V> {
-
-  /**
-   * When sharp expiry is enabled, the expiry timer goes
-   * before the actual expiry to switch back to a time checking
-   * scheme when the cache is accessed. This prevents
-   * that an expired value gets served by the cache when the time
-   * is too late. Experiments showed that a value of one second is
-   * usually sufficient.
-   *
-   * <p>OS scheduling is not reliable on virtual servers (e.g. KVM)
-   * to give the expiry task compute time on a busy server. To be safe in
-   * extreme cases, this parameter is set to a high value.
-   */
-  public static final Duration SHARP_EXPIRY_SAFETY_GAP;
-
-  static {
-    long millis = Long.parseLong(
-      System.getProperty("org.cache2k.sharpExpirySafetyGapMillis", "27127")
-    );
-    SHARP_EXPIRY_SAFETY_GAP = Duration.ofMillis(millis);
-  }
 
   protected final ResiliencePolicy<K, V> resiliencePolicy;
   protected final TimeReference clock;
@@ -72,7 +49,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final long expiryTicks;
   private final Timer timer;
   private TimerEventListener<K, V> target;
-  private final long safetyGapTicks;
 
   StaticTiming(InternalCacheBuildContext<K, V> buildContext,
                ResiliencePolicy<K, V> resiliencePolicy) {
@@ -97,15 +73,6 @@ public class StaticTiming<K, V> extends Timing<K, V> {
         new DefaultTimer(clock, buildContext.createScheduler(), clock.toTicks(cfg.getTimerLag()));
     }
     this.resiliencePolicy = resiliencePolicy;
-    this.safetyGapTicks = fetchSafetyGapTicks(buildContext);
-  }
-
-  private static long fetchSafetyGapTicks(InternalCacheBuildContext<?, ?> ctx) {
-    long ticks = ctx.getTimeReference().toTicks(SHARP_EXPIRY_SAFETY_GAP);
-    if (ticks <= 0) {
-      ticks = Long.MAX_VALUE;
-    }
-    return ticks;
   }
 
   @Override
@@ -169,19 +136,21 @@ public class StaticTiming<K, V> extends Timing<K, V> {
    * {@link Entry#EXPIRED} is returned. Callers need to check that and may
    * be remove the entry consequently from the cache.
    *
-   * @param expiryTime expiry time with special values as defined in {@link ExpiryTimeValues}
    * @param e          the entry
+   * @param expiryTime expiry time with special values as defined in {@link ExpiryTimeValues}
+   *
+   * @param refreshTime
    * @return adjusted value for {@link Entry#setRawExpiry(long)}
    */
   @Override
-  public long stopStartTimer(long expiryTime, Entry<K, V> e) {
+  public long stopStartTimer(Entry<K, V> e, long expiryTime, long refreshTime) {
     cancelExpiryTimer(e);
     if (expiryTime == ExpiryTimeValues.NOW) {
       return Entry.EXPIRED;
     }
     if (expiryTime == ExpiryTimeValues.NEUTRAL) {
-      long nrt = e.getRawExpiry();
-      if (nrt == 0) {
+      long currentExpiry = e.getRawExpiry();
+      if (currentExpiry == 0) {
         throw new IllegalArgumentException("neutral expiry not allowed for creation");
       }
       return e.getRawExpiry();
@@ -190,54 +159,18 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       return expiryTime;
     }
     long now = clock.ticks();
-    if (Math.abs(expiryTime) <= now) {
+    long absExpiryTime = Math.abs(expiryTime);
+    if (absExpiryTime <= now) {
       return expiredEventuallyStartBackgroundRefresh(e, expiryTime < 0);
     }
-    if (expiryTime < 0) {
-      long timerTime = -expiryTime - safetyGapTicks - timer.getLagTicks();
-      if (timerTime >= now) {
-        e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
-        scheduleTask(timerTime, e);
-        expiryTime = -expiryTime;
-      } else {
-        scheduleFinalExpireWithOptionalRefresh(e, -expiryTime);
-      }
-    } else {
-      scheduleFinalExpireWithOptionalRefresh(e, expiryTime);
-    }
-    return expiryTime;
-  }
-
-  /**
-   * @return true, if entry is finally expired.
-   */
-  @Override
-  public boolean startRefreshProbationTimer(Entry<K, V> e, long expiry) {
-    cancelExpiryTimer(e);
-    e.setRawExpiry(expiry);
-    if (expiry != ExpiryTimeValues.ETERNAL) {
-      e.setTask(new Tasks.RefreshExpireTimerTask<K, V>().to(target, e));
-      scheduleTask(Math.abs(expiry), e);
-    }
-    return false;
-  }
-
-  @Override
-  public void scheduleFinalTimerForSharpExpiry(Entry<K, V> e) {
-    cancelExpiryTimer(e);
-    scheduleFinalExpireWithOptionalRefresh(e, e.getRawExpiry());
-  }
-
-  /**
-   * Sharp expiry is requested: Either schedule refresh or expiry.
-   */
-  void scheduleFinalExpireWithOptionalRefresh(Entry<K, V> e, long t) {
-    if (refreshAheadPolicy != null) {
+    if (refreshTime > 0) {
       e.setTask(new Tasks.RefreshTimerTask<K, V>().to(target, e));
+      scheduleTask(refreshTime, e);
     } else {
       e.setTask(new Tasks.ExpireTimerTask<K, V>().to(target, e));
+      scheduleTask(absExpiryTime, e);
     }
-    scheduleTask(t, e);
+    return expiryTime;
   }
 
   void scheduleTask(long t, Entry<K, V> e) {
@@ -259,6 +192,14 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   @Override
   public long getExpiryAfterWriteTicks() {
     return expiryTicks;
+  }
+
+  @Override
+  public long calculateRefreshTime(RefreshAheadPolicy.Context<Object> context) {
+    if (refreshAheadPolicy == null) {
+      return 0;
+    }
+    return refreshAheadPolicy.refreshAheadTime(context);
   }
 
   static <K, V> long calcNextRefreshTime(
@@ -341,6 +282,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
         @Override
         public boolean isRefreshAhead() {
           return false;
+        }
+
+        @Override
+        public boolean isLoad() {
+          return load;
         }
 
         @Override
