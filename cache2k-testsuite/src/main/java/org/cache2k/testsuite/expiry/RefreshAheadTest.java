@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -109,7 +110,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
   }
 
   /** Start time of reload or refresh */
-  long reloadTime = 0;
+  final AtomicLong reloadTime = new AtomicLong();
 
   <K, V> Cache2kBuilder<K, V> standardSetup(Cache2kBuilder<K, V> b) {
     return b
@@ -122,7 +123,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
       .timerLag(0, TimeUnit.MILLISECONDS)
       .expiryPolicy((key, value, startTime, currentEntry) -> {
         if (currentEntry != null) {
-          reloadTime = startTime;
+          reloadTime.set(startTime);
         }
         return startTime + refreshInterval;
       });
@@ -146,7 +147,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
       throw err;
     }
     get(k0);
-    if (now() >= reloadTime + refreshInterval) { return; }
+    if (now() >= reloadTime.get() + refreshInterval) { return; }
     assertThat(loadRequests.get()).isEqualTo(2);
     await("another refresh, since accessed", () -> loadRequests.get() == 3);
   }
@@ -162,7 +163,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
     sleep(refreshInterval);
     await("initial load and refresh", () -> loadRequests.get() == 2);
     get(k0);
-    if (now() > reloadTime + refreshInterval) { return; }
+    if (now() > reloadTime.get() + refreshInterval) { return; }
     assertThat(loadRequests).isEqualTo(2);
     await("another refresh, since accessed", () -> loadRequests.get() == 3);
   }

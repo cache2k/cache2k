@@ -224,9 +224,6 @@ public class StatisticsTest extends TestingBase {
       });
     sleep(expiryMillis * 3);
     c.get(1802);
-    if (g.getLoaderCalledCount() >= 3) {
-      assertThat(getInfo().getMissCount()).isEqualTo(2);
-    }
     assertThat(getInfo().getGetCount())
       .as("two get() counted")
       .isEqualTo(2);

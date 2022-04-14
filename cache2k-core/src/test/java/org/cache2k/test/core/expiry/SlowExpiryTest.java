@@ -727,7 +727,7 @@ public class SlowExpiryTest extends TestingBase {
       })
       .expectMaybe(() -> {
         await("Entry appears", () -> c.containsKey(key));
-        assertThat(getInfo().getRefreshCount()).isEqualTo(1);
+        await("Refresh status updated", () -> getInfo().getRefreshCount() == 1);
         int v = c.get(key);
         assertThat(v)
           .as("long expiry after refresh")
