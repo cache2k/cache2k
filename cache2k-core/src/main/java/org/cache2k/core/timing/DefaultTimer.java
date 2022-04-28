@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Standard timer implementation. Timer tasks are executed via a scheduler
- * that fires at more approximately at second intervals (lag time, configurable).
+ * that fires approximately at second intervals (lag time, configurable).
  * Typically, there is only one scheduler task per timer. In the case that a timer
  * task is scheduled more than one second before the last an earlier scheduler
  * event is inserted. The later scheduler event is not needed any more, but we
