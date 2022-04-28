@@ -21,13 +21,16 @@ package org.cache2k.testsuite.expiry;
  */
 
 import org.cache2k.Cache2kBuilder;
-import org.cache2k.pinpoint.TimeoutError;
+import org.cache2k.expiry.RefreshAheadPolicy;
+import org.cache2k.pinpoint.ExceptionCollector;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.testsuite.support.AbstractCacheTester;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -118,7 +121,6 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
         loadRequests.incrementAndGet();
         return (V) key;
       })
-      .refreshAhead(true)
       .sharpExpiry(true)
       .timerLag(0, TimeUnit.MILLISECONDS)
       .expiryPolicy((key, value, startTime, currentEntry) -> {
@@ -131,7 +133,7 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
 
   @Test
   public void checkLegacyPolicy() {
-    init(b -> standardSetup(b));
+    init(b -> standardSetup(b).refreshAhead(true));
     get(k0);
     sleep(refreshInterval);
     await("initial load and refresh", () -> loadRequests.get() == 2);
@@ -140,16 +142,151 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
     loadRequests.set(0);
     get(k0);
     sleep(refreshInterval);
-    try {
-      await("initial load and refresh", () -> loadRequests.get() == 2);
-    } catch (TimeoutError err) {
-      System.err.println(loadRequests.get());
-      throw err;
-    }
+    await("initial load and refresh", () -> loadRequests.get() == 2);
     get(k0);
     if (now() >= reloadTime.get() + refreshInterval) { return; }
     assertThat(loadRequests.get()).isEqualTo(2);
     await("another refresh, since accessed", () -> loadRequests.get() == 3);
+  }
+
+  @Test
+  public void checkPolicyCallForInitialLoad() throws InterruptedException {
+    Semaphore semaphore = new Semaphore(0);
+    ExceptionCollector collector = new ExceptionCollector();
+    AtomicLong t0 = new AtomicLong();
+    init(b -> standardSetup((b))
+      .refreshAheadPolicy(new RefreshAheadPolicy<K, V, Object>() {
+        @Override
+        public long refreshAheadTime(Context<Object> ctx) {
+          try {
+            assertThat(ctx.isLoad()).isTrue();
+            assertThat(ctx.isRefreshAhead()).isFalse();
+            assertThat(ctx.isAccessed()).isFalse();
+            assertThat(ctx.getStartTime()).isGreaterThanOrEqualTo(t0.get());
+            assertThat(ctx.getStopTime()).isGreaterThanOrEqualTo(ctx.getStartTime());
+            assertThat(ctx.getCurrentTime()).isEqualTo(ctx.getStopTime());
+            assertThat(ctx.getExpiryTime()).isEqualTo(ctx.getStartTime() + refreshInterval);
+          } catch (Throwable err) {
+            collector.exception(err);
+          }
+          semaphore.release();
+          return ctx.getExpiryTime();
+        }
+
+        @Override
+        public int requiredHits(Context<Object> ctx) {
+          try {
+            assertThat(ctx.isLoad()).isTrue();
+            assertThat(ctx.isRefreshAhead()).isFalse();
+            assertThat(ctx.isAccessed()).isFalse();
+            assertThat(ctx.getStartTime()).isGreaterThanOrEqualTo(t0.get());
+            assertThat(ctx.getStopTime()).isGreaterThanOrEqualTo(ctx.getStartTime());
+            assertThat(ctx.getCurrentTime()).isEqualTo(ctx.getStopTime());
+            assertThat(ctx.getExpiryTime()).isEqualTo(ctx.getStartTime() + refreshInterval);
+          } catch (Throwable err) {
+            collector.exception(err);
+          }
+          semaphore.release();
+          return 1;
+        }
+      })
+    );
+    t0.set(now());
+    get(k0);
+    semaphore.acquire();
+    semaphore.acquire();
+    collector.assertNoException();
+  }
+
+  @Test
+  public void checkPolicyCallForRefresh() throws InterruptedException {
+    Semaphore semaphore = new Semaphore(0);
+    ExceptionCollector collector = new ExceptionCollector();
+    AtomicLong t0 = new AtomicLong();
+    AtomicBoolean firstCallIsInitialLoad = new AtomicBoolean(true);
+    init(b -> standardSetup((b))
+      .refreshAheadPolicy(new RefreshAheadPolicy<K, V, Object>() {
+        @Override
+        public long refreshAheadTime(Context<Object> ctx) {
+          if (firstCallIsInitialLoad.get()) {
+            return ctx.getExpiryTime();
+          }
+          try {
+            checkContextForRefresh(ctx, t0);
+            semaphore.release();
+            return ctx.getExpiryTime();
+          } catch (Throwable err) {
+            collector.exception(err);
+          }
+          semaphore.release();
+          return ctx.getExpiryTime();
+        }
+
+        @Override
+        public int requiredHits(Context<Object> ctx) {
+          if (firstCallIsInitialLoad.get()) {
+            firstCallIsInitialLoad.set(false);
+            return 0;
+          }
+          try {
+            checkContextForRefresh(ctx, t0);
+          } catch (Throwable err) {
+            collector.exception(err);
+          }
+          semaphore.release();
+          return 0;
+        }
+      })
+    );
+    t0.set(now());
+    get(k0);
+    sleep(refreshInterval * 3);
+    semaphore.acquire();
+    semaphore.acquire();
+    collector.assertNoException();
+  }
+
+  private void checkContextForRefresh(RefreshAheadPolicy.Context<Object> ctx, AtomicLong t0) {
+    assertThat(ctx.isLoad()).isTrue();
+    assertThat(ctx.isRefreshAhead()).isTrue();
+    assertThat(ctx.isAccessed()).isFalse();
+    assertThat(ctx.getStartTime()).isGreaterThanOrEqualTo(t0.get());
+    assertThat(ctx.getStopTime()).isGreaterThanOrEqualTo(ctx.getStartTime());
+    assertThat(ctx.getCurrentTime()).isEqualTo(ctx.getStopTime());
+    assertThat(ctx.getExpiryTime()).isEqualTo(ctx.getStartTime() + refreshInterval);
+  }
+
+  @Test
+  public void checkPolicyCallForRefreshWithAccess() throws InterruptedException {
+    Semaphore semaphore = new Semaphore(0);
+    AtomicInteger callCount = new AtomicInteger(0);
+    AtomicBoolean wasAccessed = new AtomicBoolean(false);
+    init(b -> standardSetup((b))
+      .refreshAheadPolicy(new RefreshAheadPolicy<K, V, Object>() {
+        @Override
+        public long refreshAheadTime(Context<Object> ctx) {
+          if (callCount.get() == 1) {
+            wasAccessed.set(ctx.isAccessed());
+            semaphore.release();
+          }
+          return ctx.getExpiryTime();
+        }
+
+        @Override
+        public int requiredHits(Context<Object> ctx) {
+          callCount.incrementAndGet();
+          return 0;
+        }
+      })
+    );
+    long t0 = now();
+    get(k0);
+    peek(k0);
+    if (now() - t0 < refreshInterval) {
+      sleep(refreshInterval * 3);
+      semaphore.acquire();
+      assertThat(wasAccessed.get()).isTrue();
+    }
   }
 
   public void checkTouchTwiceRequired() throws InterruptedException {

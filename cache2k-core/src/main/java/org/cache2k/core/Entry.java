@@ -21,6 +21,7 @@ package org.cache2k.core;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.operation.TimeReference;
 import org.cache2k.core.timing.TimerTask;
 import org.cache2k.expiry.ExpiryPolicy;
@@ -235,12 +236,26 @@ public class Entry<K, V> extends CompactEntry<K, V>
   private static final long MODIFICATION_TIME_MASK = (1L << MODIFICATION_TIME_BITS) - 1;
 
   /**
-   * Used as current entry for expiry policy, loader or resilience policy suppress.
+   * Provide cache entry for inspection by policies, e.g. the expiry policy.
+   * Accesss to the value should not count towards an access for the refresh policy.
    */
   public CacheEntry<K, V> getInspectionEntry() {
-    Object obj = getValueOrException();
+    Object obj = getValueOrExceptionNoAccess();
     if (obj instanceof ExceptionWrapper) { return null; }
-    return this;
+    return new CacheEntry<K, V>() {
+      @Override
+      public K getKey() {
+        return Entry.this.getKey();
+      }
+      @Override
+      public V getValue() {
+        return (V) obj;
+      }
+      @Override
+      public @Nullable LoadExceptionInfo<K, V> getExceptionInfo() {
+        return null;
+      }
+    };
   }
 
   /**

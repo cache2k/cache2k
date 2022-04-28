@@ -145,8 +145,8 @@ public abstract class Timing<K, V> implements NeedsClose {
    * necessary into {@link org.cache2k.core.AccessWrapper} if refresh
    * is enabled.
    */
-  public Object wrapLoadValueForRefresh(Entry<K, V> e, Object valueOrException, long t0, long t,
-                                        boolean load, long expiry) {
+  public Object wrapLoadValueForRefresh(RefreshAheadPolicy.Context<Object> ctx, Entry<K, V> e,
+                                        Object valueOrException) {
     return valueOrException;
   }
 

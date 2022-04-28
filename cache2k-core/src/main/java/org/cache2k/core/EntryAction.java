@@ -811,7 +811,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
     semanticCallback++;
     heapEntry.nextProcessingStep(EXPIRE);
     expirySetOnly = true;
-    newValueOrException = heapEntry.getValueOrExceptionNoTouch();
+    newValueOrException = heapEntry.getValueOrExceptionNoAccess();
     if (heapCache.isModificationTimeNeeded()) {
       modificationTime = heapEntry.getModificationTime();
     }
@@ -1113,7 +1113,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
       return;
     }
     Cache<K, V> userCache = getCache();
-    Object oldValueOrException = heapEntry.getValueOrException();
+    Object oldValueOrException = heapEntry.getValueOrExceptionNoAccess();
     if (expiredImmediately || remove) {
       CacheEntry<K, V> entryCopy = heapCache.returnCacheEntry(getKey(), oldValueOrException);
       if (expiredImmediately) {
@@ -1220,22 +1220,8 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
           }
         }
       } else {
-        int accessCount = 47;
-        if (newValueOrException instanceof ExceptionWrapper) {
-          if (refresh) {
-            accessCount = 1;
-          } else {
-            accessCount = 0;
-          }
-        } else if (valueLoaded) {
-          accessCount = 0;
-          if (refresh) {
-            accessCount = 1;
-          }
-        } else if (expirySetOnly) {
-          accessCount = 0;
-        }
-        heapEntry.setValueOrWrapper(AccessWrapper.of(heapEntry, (V) newValueOrException, accessCount));
+        heapEntry.setValueOrWrapper(
+          timing().wrapLoadValueForRefresh(this, heapEntry, newValueOrException));
         evictionHint = heapCache.eviction.updateWeight(heapEntry);
       }
       if (remove) {
@@ -1469,12 +1455,12 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public long getStopTime() {
-    return 0;
+    return loadCompletedTime;
   }
 
   @Override
   public long getCurrentTime() {
-    return 0;
+    return getStopTime();
   }
 
   @Override
@@ -1484,7 +1470,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public boolean isAccessed() {
-    return false;
+    return isRefreshAhead() && AccessWrapper.wasAccessed(heapEntry.getValueOrWrapper());
   }
 
   @Override

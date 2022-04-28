@@ -69,7 +69,7 @@ public interface Semantic<K, V, R> {
     @SuppressWarnings("unchecked")
     @Override
     public void loaded(K key, Progress<K, V, R> c, ExaminationEntry<K, V> e) {
-      c.result((R) e.getValueOrExceptionNoTouch());
+      c.result((R) e.getValueOrExceptionNoAccess());
     }
 
   }

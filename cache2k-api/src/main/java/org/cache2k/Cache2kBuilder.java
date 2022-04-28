@@ -20,6 +20,7 @@ package org.cache2k;
  * #L%
  */
 
+import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.io.AsyncBulkCacheLoader;
 import org.cache2k.io.BulkCacheLoader;
 import org.cache2k.operation.Scheduler;
@@ -693,6 +694,12 @@ public class Cache2kBuilder<K, V>
   public final Cache2kBuilder<K, V> resiliencePolicy(
     CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> v) {
     cfg().setResiliencePolicy(v);
+    return this;
+  }
+
+  public final Cache2kBuilder<K, V> refreshAheadPolicy(
+    RefreshAheadPolicy<? super K, ? super V, ?> v) {
+    cfg().setRefreshAheadPolicy(wrapCustomizationInstance(v));
     return this;
   }
 

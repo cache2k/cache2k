@@ -21,6 +21,7 @@ package org.cache2k.core.api;
  */
 
 import org.cache2k.CacheManager;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.config.CacheBuildContext;
 import org.cache2k.config.CustomizationSupplier;
@@ -71,7 +72,7 @@ public interface InternalCacheBuildContext<K, V> extends CacheBuildContext<K, V>
   /**
    * Create the customization. Returns null if supplier is null.
    */
-  <T> T createCustomization(CustomizationSupplier<T> supplier);
+  @Nullable <T> T createCustomization(CustomizationSupplier<T> supplier);
 
   default <T> T createCustomization(CustomizationSupplier<? extends T> supplier,
                                     CustomizationSupplier<? extends T> fallback) {

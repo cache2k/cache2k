@@ -22,6 +22,7 @@ package org.cache2k.config;
 
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.DataAware;
+import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.operation.Weigher;
 import org.cache2k.operation.Scheduler;
 import org.cache2k.operation.TimeReference;
@@ -128,6 +129,8 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   private @Nullable CustomizationSupplier<? extends Scheduler> scheduler;
   private @Nullable
     CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> resiliencePolicy;
+  private @Nullable
+    CustomizationSupplier<? extends RefreshAheadPolicy<? super K, ? super V, ?>> refreshAheadPolicy;
   private @Nullable CustomizationSupplier<? extends CacheWriter<K, V>> writer;
   private @Nullable CustomizationSupplier<? extends CacheLoader<K, V>> loader;
   private @Nullable CustomizationSupplier<? extends AdvancedCacheLoader<K, V>> advancedLoader;
@@ -586,6 +589,15 @@ public class Cache2kConfig<K, V> implements ConfigBean<Cache2kConfig<K, V>, Cach
   public void setResiliencePolicy(
     @Nullable CustomizationSupplier<? extends ResiliencePolicy<? super K, ? super V>> v) {
     resiliencePolicy = v;
+  }
+
+  public CustomizationSupplier<? extends RefreshAheadPolicy<? super K, ? super V, ?>> getRefreshAheadPolicy() {
+    return refreshAheadPolicy;
+  }
+
+  public void setRefreshAheadPolicy(
+    @Nullable CustomizationSupplier<? extends RefreshAheadPolicy<? super K, ? super V, ?>> refreshAheadPolicy) {
+    this.refreshAheadPolicy = refreshAheadPolicy;
   }
 
   public boolean isStrictEviction() {

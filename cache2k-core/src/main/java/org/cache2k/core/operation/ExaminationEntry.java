@@ -45,7 +45,7 @@ public interface ExaminationEntry<K, V> {
   /** Get raw stored value in the entry */
   Object getValueOrWrapper();
 
-  default Object getValueOrExceptionNoTouch() {
+  default Object getValueOrExceptionNoAccess() {
     Object v = getValueOrWrapper();
     if (v instanceof AccessWrapper) {
       return ((AccessWrapper<?>) v).getValueNoTouch();

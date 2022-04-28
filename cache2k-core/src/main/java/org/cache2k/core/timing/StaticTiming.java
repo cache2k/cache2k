@@ -21,6 +21,7 @@ package org.cache2k.core.timing;
  */
 
 import org.cache2k.CacheEntry;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.core.AccessWrapper;
 import org.cache2k.core.api.InternalCacheBuildContext;
@@ -45,7 +46,7 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   protected final ResiliencePolicy<K, V> resiliencePolicy;
   protected final TimeReference clock;
   protected final boolean sharpExpiry;
-  protected final RefreshAheadPolicy<K, V, Object> refreshAheadPolicy;
+  @Nullable protected final RefreshAheadPolicy<? super K, ? super V, Object> refreshAheadPolicy;
   protected final long expiryTicks;
   private final Timer timer;
   private TimerEventListener<K, V> target;
@@ -61,9 +62,14 @@ public class StaticTiming<K, V> extends Timing<K, V> {
       this.expiryTicks = clock.toTicks(cfg.getExpireAfterWrite());
     }
     if (cfg.isRefreshAhead()) {
+      if (buildContext.getConfig().getRefreshAheadPolicy() != null) {
+        throw new IllegalArgumentException("User refreshAhead flag or policy but not both");
+      }
       refreshAheadPolicy = (RefreshAheadPolicy<K, V, Object>) RefreshAheadPolicy.LEGACY_DEFAULT;
     } else {
-      refreshAheadPolicy = null;
+      refreshAheadPolicy =
+        (RefreshAheadPolicy<? super K, ? super V, Object>)
+        buildContext.createCustomization(buildContext.getConfig().getRefreshAheadPolicy());
     }
     sharpExpiry = cfg.isSharpExpiry();
     if (cfg.getTimerLag() == null) {
@@ -243,66 +249,13 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
-  public Object wrapLoadValueForRefresh(Entry<K, V> e, Object valueOrException, long t0, long t, boolean load, long expiry) {
-    if (refreshAheadPolicy != null) {
-      RefreshAheadPolicy.Context<Object> ctx = new RefreshAheadPolicy.Context<Object>() {
-        @Override
-        public boolean isLoadException() {
-          return false;
-        }
-
-        @Override
-        public boolean isExceptionSuppressed() {
-          return false;
-        }
-
-        @Override
-        public long getStartTime() {
-          return t0;
-        }
-
-        @Override
-        public long getStopTime() {
-          return t;
-        }
-
-        @Override
-        public long getCurrentTime() { return t; }
-
-        @Override
-        public long getExpiryTime() {
-          return Math.abs(expiry);
-        }
-
-        @Override
-        public boolean isAccessed() {
-          return false;
-        }
-
-        @Override
-        public boolean isRefreshAhead() {
-          return false;
-        }
-
-        @Override
-        public boolean isLoad() {
-          return load;
-        }
-
-        @Override
-        public Object getUserData() {
-          return null;
-        }
-
-        @Override
-        public void setUserData(Object data) {
-          e.setRefreshPolicyData(data);
-        }
-      };
-      int requiredAccessCount = refreshAheadPolicy.requiredHits(ctx);
-      return AccessWrapper.of(e, (V) valueOrException, requiredAccessCount);
+  public Object wrapLoadValueForRefresh(RefreshAheadPolicy.Context<Object> ctx ,
+                                        Entry<K, V> e, Object valueOrException) {
+    if (refreshAheadPolicy == null) {
+      return valueOrException;
     }
-    return valueOrException;
+    int requiredAccessCount = refreshAheadPolicy.requiredHits(ctx);
+    return AccessWrapper.of(e, (V) valueOrException, requiredAccessCount);
   }
 
 }
