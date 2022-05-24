@@ -154,4 +154,8 @@ public abstract class Timing<K, V> implements NeedsClose {
     return 0;
   }
 
+  public boolean hasRefreshAheadPolicy() {
+    return false;
+  }
+
 }

@@ -1382,12 +1382,14 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
    */
   protected final Object insertOrUpdateAndCalculateExpiry(Entry<K, V> e, V v, long t0, long t, boolean load) {
     long expiry;
-    long refreshTime;
-    RefreshAheadPolicy.Context<Object> refreshCtx;
+    long refreshTime = 0;
+    RefreshAheadPolicy.Context<Object> refreshCtx = null;
     try {
       expiry = timing.calculateExpiry(e, v, t0);
-      refreshCtx = getContext(e, t0, t, load, expiry);
-      refreshTime = timing.calculateRefreshTime(refreshCtx);
+      if (timing.hasRefreshAheadPolicy()) {
+        refreshCtx = getContext(e, t0, t, load, expiry);
+        refreshTime = timing.calculateRefreshTime(refreshCtx);
+      }
     } catch (Exception ex) {
       RuntimeException wrappedException = new ExpiryPolicyException(ex);
       if (load) {
@@ -1399,7 +1401,8 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     return insert(e, v, t0, t, load, expiry, refreshTime, refreshCtx);
   }
 
-  private RefreshAheadPolicy.Context<Object> getContext(Entry<K, V> e, long t0, long t, boolean load, long expiry) {
+  private RefreshAheadPolicy.Context<Object> getContext(Entry<K, V> e, long t0, long t,
+                                                        boolean load, long expiry) {
     return new RefreshAheadPolicy.Context<Object>() {
       @Override
       public boolean isLoadException() {
@@ -1431,13 +1434,18 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
         return Math.abs(expiry);
       }
 
-      /** Always false, since this is only used for the initial load or put */
+      /**
+       * Always false, since this is only used for the initial load or put.  Refresh ahead is
+       * always processed via {@link EntryAction}
+       */
       @Override
       public boolean isAccessed() {
         return false;
       }
 
-      /** Always false, since this is only used for the initial load or put */
+      /**
+       * Always false, since this is only used for the initial load or put. Refresh ahead is
+       * always processed via {@link EntryAction} */
       @Override
       public boolean isRefreshAhead() {
         return false;

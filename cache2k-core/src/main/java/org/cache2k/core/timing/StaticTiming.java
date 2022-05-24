@@ -201,6 +201,11 @@ public class StaticTiming<K, V> extends Timing<K, V> {
   }
 
   @Override
+  public boolean hasRefreshAheadPolicy() {
+    return refreshAheadPolicy != null;
+  }
+
+  @Override
   public long calculateRefreshTime(RefreshAheadPolicy.Context<Object> context) {
     if (refreshAheadPolicy == null) {
       return 0;
