@@ -23,6 +23,7 @@ package org.cache2k.testsuite.expiry;
 import org.cache2k.Cache2kBuilder;
 import org.cache2k.expiry.RefreshAheadPolicy;
 import org.cache2k.pinpoint.ExceptionCollector;
+import org.cache2k.pinpoint.ExpectedException;
 import org.cache2k.testing.SimulatedClock;
 import org.cache2k.testsuite.support.AbstractCacheTester;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Jens Wilke
@@ -243,6 +244,55 @@ public class RefreshAheadTest<K, V> extends AbstractCacheTester<K, V> {
     sleep(refreshInterval * 3);
     semaphore.acquire();
     semaphore.acquire();
+    collector.assertNoException();
+  }
+
+  /**
+   * Check {@link RefreshAheadPolicy.Context#isLoadException()}
+   */
+  @Test
+  public void checkContextOnLoadException() throws InterruptedException {
+    Semaphore semaphore = new Semaphore(0);
+    ExceptionCollector collector = new ExceptionCollector();
+    AtomicLong t0 = new AtomicLong();
+    boolean exceptionNotCached = true;
+    init(b -> standardSetup((b))
+      .loader(key -> { throw new ExpectedException(); })
+      .refreshAheadPolicy(new RefreshAheadPolicy<K, V, Object>() {
+        @Override
+        public long refreshAheadTime(Context<Object> ctx) {
+          try {
+            assertThat(ctx.isLoadException()).isTrue();
+          } catch (Throwable err) {
+            collector.exception(err);
+          }
+          semaphore.release();
+          return ctx.getExpiryTime();
+        }
+
+        @Override
+        public int requiredHits(Context<Object> ctx) {
+          try {
+            if (exceptionNotCached) {
+              fail("Expected to be not called since exception is not cached");
+            }
+            assertThat(ctx.isLoadException()).isTrue();
+          } catch (Throwable err) {
+            collector.exception(err);
+          }
+          semaphore.release();
+          return 0;
+        }
+      })
+    );
+    t0.set(now());
+    assertThatCode(() -> get(k0))
+      .getRootCause().isInstanceOf(ExpectedException.class);
+    sleep(refreshInterval * 3);
+    semaphore.acquire();
+    if (!exceptionNotCached) {
+      semaphore.acquire();
+    }
     collector.assertNoException();
   }
 

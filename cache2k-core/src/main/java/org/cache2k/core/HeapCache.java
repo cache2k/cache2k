@@ -1323,15 +1323,19 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
       } else {
         expiry = timing.cacheExceptionUntil(e, exceptionWrapper);
       }
-      refreshCtx = getContext(e, t0, t, true, expiry);
+      refreshCtx = getContext(e, t0, t, true, true, false, expiry);
       refreshTime = timing.calculateRefreshTime(refreshCtx);
     } catch (Exception ex) {
       return resiliencePolicyException(e, t0, t, new ResiliencePolicyException(ex), null);
     }
     exceptionWrapper = new ExceptionWrapper<>(exceptionWrapper, Math.abs(expiry));
+    Object wrappedValue = exceptionWrapper;
+    if (expiry != 0) {
+      wrappedValue = timing.wrapLoadValueForRefresh(refreshCtx, e, exceptionWrapper);
+    }
     Object loadResult;
     synchronized (e) {
-      insertUpdateStats(e, (V) exceptionWrapper, t0, t, true, expiry, suppressException);
+      insertUpdateStats(e, (V) wrappedValue, t0, t, true, expiry, suppressException);
       if (suppressException) {
         e.setSuppressedLoadExceptionInformation(exceptionWrapper);
         loadResult = e.getValueOrException();
@@ -1387,7 +1391,7 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
     try {
       expiry = timing.calculateExpiry(e, v, t0);
       if (timing.hasRefreshAheadPolicy()) {
-        refreshCtx = getContext(e, t0, t, load, expiry);
+        refreshCtx = getContext(e, t0, t, load, false, false, expiry);
         refreshTime = timing.calculateRefreshTime(refreshCtx);
       }
     } catch (Exception ex) {
@@ -1402,11 +1406,12 @@ public class HeapCache<K, V> extends BaseCache<K, V> implements HeapCacheForEvic
   }
 
   private RefreshAheadPolicy.Context<Object> getContext(Entry<K, V> e, long t0, long t,
-                                                        boolean load, long expiry) {
+                                                        boolean load, boolean loadException,
+                                                        boolean suppressedLoadException, long expiry) {
     return new RefreshAheadPolicy.Context<Object>() {
       @Override
       public boolean isLoadException() {
-        return false;
+        return loadException;
       }
 
       @Override

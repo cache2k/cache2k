@@ -154,6 +154,11 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
    */
   boolean successfulLoad = false;
 
+  /**
+   * Load was yielding an exception. Also true when suppressed.
+   */
+  boolean loadException = false;
+
   boolean suppressException = false;
 
   Thread syncThread;
@@ -752,6 +757,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
   private void onLoadFailureIntern(Throwable t) {
     newValueOrException =
       new ExceptionWrapper<K, V>(key, t, loadStartedTime, heapEntry, getExceptionPropagator());
+    loadException = true;
     loadCompleted();
   }
 
@@ -1445,7 +1451,7 @@ public abstract class EntryAction<K, V, R> extends Entry.PiggyBack implements
 
   @Override
   public boolean isLoadException() {
-    return false;
+    return loadException;
   }
 
   @Override
