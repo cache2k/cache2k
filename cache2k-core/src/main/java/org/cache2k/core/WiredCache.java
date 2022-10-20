@@ -139,22 +139,22 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public V peekAndPut(K key, V value) {
+  public @Nullable V peekAndPut(K key, V value) {
     return returnValue(execute(key, ops.peekAndPut(key, value)));
   }
 
   @Override
-  public V peekAndRemove(K key) {
+  public @Nullable V peekAndRemove(K key) {
     return returnValue(execute(key, ops.peekAndRemove(key)));
   }
 
   @Override
-  public V peekAndReplace(K key, V value) {
+  public @Nullable V peekAndReplace(K key, V value) {
     return returnValue(execute(key, ops.peekAndReplace(key, value)));
   }
 
   @Override
-  public CacheEntry<K, V> peekEntry(K key) {
+  public @Nullable CacheEntry<K, V> peekEntry(K key) {
     return execute(key, ops.peekEntry());
   }
 
@@ -426,7 +426,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
 
 
   @Override
-  public V get(K key) {
+  public @Nullable V get(K key) {
     Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);
@@ -542,7 +542,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public CacheEntry<K, V> getEntry(K key) {
+  public @Nullable CacheEntry<K, V> getEntry(K key) {
     return execute(key, ops.getEntry(key));
   }
 
@@ -639,7 +639,7 @@ public class WiredCache<K, V> extends BaseCache<K, V>
   }
 
   @Override
-  public V peek(K key) {
+  public @Nullable V peek(K key) {
     Entry<K, V> e = lookupQuick(key);
     if (e != null && e.hasFreshData(getClock())) {
       return returnValue(e);

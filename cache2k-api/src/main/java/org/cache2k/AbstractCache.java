@@ -50,17 +50,17 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public CacheEntry<K, V> getEntry(K key) {
+  public @Nullable CacheEntry<K, V> getEntry(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public V peek(K key) {
+  public @Nullable V peek(K key) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public CacheEntry<K, V> peekEntry(K key) {
+  public @Nullable CacheEntry<K, V> peekEntry(K key) {
     throw new UnsupportedOperationException();
   }
 
@@ -125,7 +125,7 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public V peekAndPut(K key, V value) {
+  public @Nullable V peekAndPut(K key, V value) {
     throw new UnsupportedOperationException();
   }
 
@@ -145,7 +145,7 @@ public class AbstractCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public <@Nullable R> R invoke(K key, EntryProcessor<K, V, R> processor) {
+  public <@Nullable R> @Nullable R invoke(K key, EntryProcessor<K, V, R> processor) {
     throw new UnsupportedOperationException();
   }
 

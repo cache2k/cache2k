@@ -153,7 +153,7 @@ public abstract class ForwardingCache<K, V> implements Cache<K, V> {
 
   @SuppressWarnings("ConstantConditions")
   @Override
-  public <@Nullable R> R invoke(K key, EntryProcessor<K, V, R> processor) {
+  public <@Nullable R> @Nullable R invoke(K key, EntryProcessor<K, V, R> processor) {
     return delegate().invoke(key, processor);
   }
 
