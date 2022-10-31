@@ -17,11 +17,12 @@
  * limitations under the License.
  * #L%
  */
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
+import org.cache2k.AbstractCache
 import org.cache2k.Cache
 import org.cache2k.Cache2kBuilder
 import org.junit.jupiter.api.Test
-import java.lang.NullPointerException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 
@@ -87,4 +88,19 @@ class CompileAndRunTest {
         val value3: Int? = cache.invoke(123) { e -> 123 }
     }
 
+    @Test
+    fun abstractCacheChild() {
+        val cache = EverMissingCache<Int, Int>()
+        val actual = cache.peek(0)
+        assertThat(actual).isNull()
+    }
+
+    /**
+     * Prior https://github.com/cache2k/cache2k/pull/193 it was not possible to write such cache in Kotlin,
+     * inheriting AbstractCache, because of missing @Nullable annotations
+     */
+    private class EverMissingCache<K : Any, V> : AbstractCache<K, V>() {
+        override fun peek(key: K): V? = null
+        override fun get(key: K): V? = null
+    }
 }
