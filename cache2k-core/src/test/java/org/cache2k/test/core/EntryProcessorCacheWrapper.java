@@ -50,7 +50,7 @@ public class EntryProcessorCacheWrapper<K, V> extends ForwardingCache<K, V> {
    * Not replaced by entry processor invocation.
    */
   @Override
-  public V get(K key) {
+  public @Nullable V get(K key) {
     return super.get(key);
   }
 

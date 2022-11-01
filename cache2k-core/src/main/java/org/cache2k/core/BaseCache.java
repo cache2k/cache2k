@@ -24,6 +24,7 @@ import org.cache2k.Cache;
 import org.cache2k.CacheClosedException;
 import org.cache2k.CacheEntry;
 import org.cache2k.CacheException;
+import org.cache2k.annotation.Nullable;
 import org.cache2k.core.api.InternalCache;
 import org.cache2k.core.api.InternalCacheInfo;
 import org.cache2k.core.common.BaseCacheControl;
@@ -143,7 +144,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
    * lots of corner cases for loader and exception handling.
    */
   @Override
-  public <R> R invoke(K key, EntryProcessor<K, V, R> processor) {
+  public <@Nullable R> @Nullable R invoke(K key, EntryProcessor<K, V, R> processor) {
     if (key == null || processor == null) {
       throw new NullPointerException();
     }
@@ -151,7 +152,7 @@ public abstract class BaseCache<K, V> implements InternalCache<K, V> {
   }
 
   @Override
-  public <R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
+  public <@Nullable R> Map<K, EntryProcessingResult<R>> invokeAll(Iterable<? extends K> keys,
                                                         EntryProcessor<K, V, R> entryProcessor) {
     Map<K, EntryProcessingResult<R>> m = new HashMap<>();
     for (K k : keys) {
