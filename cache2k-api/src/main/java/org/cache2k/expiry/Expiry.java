@@ -38,7 +38,7 @@ public class Expiry implements ExpiryTimeValues {
    *
    * @param millis expiry time since the milliseconds since epoch or {@link #ETERNAL} if no
    *               expiry is requested.
-   * @throws IllegalArgumentException if the time value is negative
+   * @return The time representing a sharp expiry
    */
   public static long toSharpTime(long millis) {
     if (millis == ETERNAL) {
