@@ -1,5 +1,5 @@
-[![License](https://x.h7e.eu/badges/xz/txt/license/apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![Stack Overflow](https://x.h7e.eu/badges/xz/txt/stackoverflow/cache2k)](https://stackoverflow.com/questions/tagged/cache2k)
+[![License](https://x.h7e.eu/badges/txt/license/apache)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Stack Overflow](https://x.h7e.eu/badges/txt/stackoverflow/cache2k)](https://stackoverflow.com/questions/tagged/cache2k)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.cache2k/cache2k-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.cache2k/cache2k-core)
 [![CircleCI](https://circleci.com/gh/cache2k/cache2k/tree/master.svg?style=shield)](https://circleci.com/gh/cache2k/cache2k/tree/master)
 
