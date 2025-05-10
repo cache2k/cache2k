@@ -59,15 +59,32 @@ public class SerializableCopyTransformer<T> extends CopyTransformer<T> {
       ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
       ObjectInputStream in = new ObjectInputStream(bis) {
         @Override
-        protected Class<?> resolveClass(ObjectStreamClass desc)
-          throws IOException, ClassNotFoundException {
-          String name = desc.getName();
-          try {
-            return Class.forName(name, false, classLoader);
-          } catch (ClassNotFoundException ex) {
-            return super.resolveClass(desc);
-          }
+protected Class<?> resolveClass(ObjectStreamClass desc)
+    throws IOException, ClassNotFoundException {
+    
+    // First validate class name against whitelist
+    if (!found) {
+        if (!desc.getName().equals(mainClass.getName())) {
+            throw new InvalidClassException(
+                "unexpected class: ", desc.getName());
+        } else {
+            found = true;
         }
+    } else {
+        if (!components.contains(desc.getName())) {
+            throw new InvalidClassException(
+                "unexpected class: ", desc.getName());
+        }
+    }
+    
+    // Then use custom classloader (maintaining existing functionality)
+    String name = desc.getName();
+    try {
+        return Class.forName(name, false, classLoader);
+    } catch (ClassNotFoundException ex) {
+        return super.resolveClass(desc);
+    }
+}
       };
       return in.readObject();
     } catch (IOException ex) {
