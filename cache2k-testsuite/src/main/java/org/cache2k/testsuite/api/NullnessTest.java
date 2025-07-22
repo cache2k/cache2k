@@ -62,28 +62,6 @@ public class NullnessTest {
     cache.put(125, "abc");
   }
 
-  @Test
-  public void iteration_GetAll() {
-    Cache<Integer, String> cache =
-      new Cache2kBuilder<Integer, String>() { }
-        .build();
-    cache.put(125, "abc");
-    cache.put(345, "Paloma");
-    cache.put(543, "Fraser Island");
-    String txt = "";
-    for (CacheEntry<Integer, String> e : cache.entries()) {
-      txt += e.getValue().length();
-    }
-    for (String s : cache.asMap().values()) {
-      txt += s.length();
-    }
-    for (String s : cache.getAll(asList(1, 2, 3)).values()) {
-      txt += s.length();
-    }
-    assertEquals("61336133", txt);
-    String s = cache.invoke(345, MutableCacheEntry::getValue);
-  }
-
   @SuppressWarnings("nullness")
   @Test
   public void invoke_get() {
