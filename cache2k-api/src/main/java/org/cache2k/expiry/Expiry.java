@@ -35,10 +35,13 @@ public class Expiry implements ExpiryTimeValues {
   /**
    * Convert the time value to a time representing a sharp expiry.
    * This essentially negates the time value and is provided for a more speaking coding style.
+   * If the time value is already negative (already representing a sharp expiry), it is returned
+   * unchanged. {@link #ETERNAL} is returned unchanged.
    *
-   * @param millis expiry time since the milliseconds since epoch or {@link #ETERNAL} if no
-   *               expiry is requested.
-   * @throws IllegalArgumentException if the time value is negative
+   * @param millis expiry time in milliseconds since epoch, or a negative value already denoting
+   *               sharp expiry, or {@link #ETERNAL} if no expiry is requested
+   * @return the sharp expiry time (negative epoch millis), {@link #ETERNAL}, or the input if it
+   *         was already negative
    */
   public static long toSharpTime(long millis) {
     if (millis == ETERNAL) {
